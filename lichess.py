@@ -17,8 +17,8 @@ import config
 
 # python3 lichess.py [current|live]
 
-# This is our lichess access token, the game id we're playing, and the pid
-# of the centaur process
+# This is our lichess access token, the game id we're playing, fill it
+# in in config.py
 token = config.lichesstoken
 pid = -1
 
@@ -98,6 +98,8 @@ def stateThread():
     global status
     global playeriswhite
     global player
+    global whiteplayer
+    global blackplayer
     while True:
         gamestate = client.board.stream_game_state(gameid)
         for state in gamestate:
@@ -156,6 +158,16 @@ correcterror = -1
 halfturn = 0
 castled = ""
 
+boardfunctions.clearScreenBuffer()
+boardfunctions.writeText(0,blackplayer)
+boardfunctions.writeText(9,whiteplayer)
+fen = board.fen()
+sfen = fen[0 : fen.index(" ")]
+baseboard = chess.BaseBoard(sfen)
+pieces = []
+for x in range(0,64):
+    pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
+boardfunctions.drawBoard(pieces)
 
 while status == "started":
 
@@ -226,6 +238,14 @@ while status == "started":
                                 correcterror = fromsq
         print(board)
 
+    fen = board.fen()
+    sfen = fen[0 : fen.index(" ")]
+    baseboard = chess.BaseBoard(sfen)
+    pieces = []
+    for x in range(0,64):
+        pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
+    boardfunctions.drawBoard(pieces)
+
     if ourturn == 0:
         # Here we wait to get a move from the other player on lichess
         while status == "started" and str(remotemoves)[-4:] == lastmove:
@@ -263,6 +283,15 @@ while status == "started":
             boardfunctions.ledsOff()
             ourturn = 1
         print(board)
+
+    fen = board.fen()
+    sfen = fen[0 : fen.index(" ")]
+    baseboard = chess.BaseBoard(sfen)
+    pieces = []
+    for x in range(0,64):
+        pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
+    boardfunctions.drawBoard(pieces)
+
 
 
 print("Game Over")

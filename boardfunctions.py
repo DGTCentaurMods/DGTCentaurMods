@@ -21,6 +21,7 @@ epd = epd2in9d.EPD()
 
 
 def initScreen():
+    global screenbuffer
     epd.init()
     time.sleep(0.02)
     epd.Clear(0xff)
@@ -29,11 +30,62 @@ def initScreen():
 
 
 def clearScreen():
-    epd.Clear(0x00)
+    epd.Clear(0xff)
 
+def clearScreenBuffer():
+    global screenbuffer
+    screenbuffer = Image.new('1', (128, 296), 255)
 
 def sleepScreen():
     epd.sleep()
+
+def drawBoard(pieces):
+    global screenbuffer
+    chessfont = Image.open("/home/pi/centaur/fonts/ChessFontSmall.bmp")
+    image = screenbuffer.copy()
+    for x in range(0,64):
+        pos = (x - 63) * -1
+        row = 50 + (16 * (pos // 8))
+        col = (x % 8) * 16
+        px = 0
+        r = x // 8
+        c = x % 8
+        py = 0
+        if (r // 2 == r / 2 and c // 2 == c / 2):
+            py = py + 16
+        if (r //2 != r / 2 and c // 2 != c / 2):
+            py = py + 16
+        if pieces[x] == "P":
+            px = 16
+        if pieces[x] == "R":
+            px = 32
+        if pieces[x] == "N":
+            px = 48
+        if pieces[x] == "B":
+            px = 64
+        if pieces[x] == "Q":
+            px = 80
+        if pieces[x] == "K":
+            px = 96
+        if pieces[x] == "p":
+            px = 112
+        if pieces[x] == "r":
+            px = 128
+        if pieces[x] == "n":
+            px = 144
+        if pieces[x] == "b":
+            px = 160
+        if pieces[x] == "q":
+            px = 176
+        if pieces[x] == "k":
+            px = 192
+        piece = chessfont.crop((px, py, px+16, py+16))
+        image.paste(piece,(col, row))
+    screenbuffer = image.copy()
+    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    image = image.transpose(Image.FLIP_LEFT_RIGHT)
+    epd.DisplayPartial(epd.getbuffer(image))
+    time.sleep(0.1)
 
 
 def writeText(row, txt):
