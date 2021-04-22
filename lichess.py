@@ -295,5 +295,6 @@ while status == "started":
 
 
 print("Game Over")
+epd.sleepScreen()
 st.stop()
 sys.exit()
