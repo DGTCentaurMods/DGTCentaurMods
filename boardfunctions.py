@@ -1,0 +1,310 @@
+# DGT Centaur board control functions
+#
+# I am not really a python programmer, but the language choice here
+# made sense!
+#
+# Ed Nekebno
+
+import serial
+import sys
+import os
+import epd2in9d
+import time
+from PIL import Image, ImageDraw, ImageFont
+
+# Open the serial port, baudrate is 1000000
+ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
+font18 = ImageFont.truetype("/home/pi/centaur/py/Font.ttc", 18)
+screenbuffer = Image.new('1', (128, 296), 255)
+
+epd = epd2in9d.EPD()
+
+
+def initScreen():
+    epd.init()
+    time.sleep(0.02)
+    epd.Clear(0xff)
+    screenbuffer = Image.new('1', (128, 296), 255)
+    time.sleep(5)
+
+
+def clearScreen():
+    epd.Clear(0x00)
+
+
+def sleepScreen():
+    epd.sleep()
+
+
+def writeText(row, txt):
+    # Writes some text on the screen at the given row
+    rpos = row * 20
+    global screenbuffer
+    image = screenbuffer.copy()
+    draw = ImageDraw.Draw(image)
+    draw.text((0, rpos), txt, font=font18, fill=0)
+    screenbuffer = image.copy()
+    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    image = image.transpose(Image.FLIP_LEFT_RIGHT)
+    #startrow = 275 - rpos
+    #endrow = startrow + 20
+    #epd.DisplayRegion(startrow,endrow,epd.getbuffer(image)[int(((startrow) * 128)/8):int((128*296)/8)])
+    epd.DisplayPartial(epd.getbuffer(image))
+    time.sleep(0.1)
+
+
+def doMenu(items):
+    # Draw a menu, let the user navigate and return the value
+    # or "BACK" if the user backed out
+    # pass a menu like: menu = {'Lichess': 'Lichess', 'Centaur': 'DGT
+    # Centaur', 'Shutdown': 'Shutdown', 'Reboot': 'Reboot'}
+    selected = 1
+    buttonPress = 0
+    first = 1
+    epd.unsetRegion()
+    epd.Clear(0xff)
+    while (buttonPress != 2):
+        image = Image.new('1', (epd.width, epd.height), 255)
+        draw = ImageDraw.Draw(image)
+        rpos = 20
+        for k, v in items.items():
+            draw.text((20, rpos), str(v), font=font18, fill=0)
+            rpos = rpos + 20
+        draw.polygon([(2, (selected * 20)), (2, (selected * 20) + 20),
+                     (18, (selected * 20) + 10)], fill=0)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+        if first == 1:
+            epd.display(epd.getbuffer(image))
+            time.sleep(3)
+            first = 0
+            buttonPress = 3
+        else:
+            epd.DisplayPartial(epd.getbuffer(image))
+            #startrow = 276 - ((selected + 1) * 20)
+            #endrow = startrow + 60
+            # if (endrow > 296):
+            #endrow = 296
+            #epd.DisplayRegion(startrow,endrow-1,epd.getbuffer(image)[int(((startrow) * 128)/8):int((128*296)/8)])
+        # Next we wait for either the up/down/back or tick buttons to get
+        # pressed
+        timeout = time.time() + 60 * 15
+        while buttonPress == 0:
+            ser.read(1000000)
+            tosend = bytearray(b'\x83\x06\x50\x59')
+            ser.write(tosend)
+            expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+            resp = ser.read(10000)
+            resp = bytearray(resp)
+            tosend = bytearray(b'\x94\x06\x50\x6a')
+            ser.write(tosend)
+            expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+            resp = ser.read(10000)
+            resp = bytearray(resp)
+            if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                buttonPress = 1
+            if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                buttonPress = 2
+            if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                buttonPress = 3
+            if (resp.hex() == "b10010065000140a050200000000611d"):
+                buttonPress = 4
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
+        if (buttonPress == 2):
+            # Tick, so return the key for this menu item
+            c = 1
+            r = ""
+            for k, v in items.items():
+                if (c == selected):
+                    epd.unsetRegion()
+                    epd.Clear(0xff)
+                    selected = 99999
+                    return k
+                c = c + 1
+        if (buttonPress == 4 and selected < len(items)):
+            selected = selected + 1
+        if (buttonPress == 3 and selected > 1):
+            selected = selected - 1
+        if (buttonPress == 1):
+            epd.unsetRegion()
+            epd.Clear(0xff)
+            return "BACK"
+        if time.time() > timeout:
+            epd.unsetRegion()
+            epd.Clear(0xff)
+            return "BACK"
+        buttonPress = 0
+
+
+def clearBoardData():
+    ser.read(100000)
+    tosend = bytearray(b'\x83\x06\x50\x59')
+    ser.write(tosend)
+    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    ser.read(1000000)
+
+
+def waitMove():
+    # Wait for a player to lift a piece and set it down somewhere different
+    lifted = -1
+    placed = -1
+    moves = []
+    while placed == -1:
+        ser.read(100000)
+        tosend = bytearray(b'\x83\x06\x50\x59')
+        ser.write(tosend)
+        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+        if (bytearray(resp) != expect):
+            if (resp[0] == 133 and resp[1] == 0):
+                for x in range(0, len(resp) - 1):
+                    if (resp[x] == 64):
+                        # Calculate the square to 0(a1)-63(h8) so that
+                        # all functions match
+                        square = resp[x + 1]
+                        squarerow = (square // 8)
+                        squarecol = (square % 8)
+                        squarerow = 7 - squarerow
+                        newsquare = (squarerow * 8) + squarecol
+                        lifted = newsquare
+                        print(lifted)
+                        moves.append(newsquare * -1)
+                    if (resp[x] == 65):
+                        # Calculate the square to 0(a1)-63(h8) so that
+                        # all functions match
+                        square = resp[x + 1]
+                        squarerow = (square // 8)
+                        squarecol = (square % 8)
+                        squarerow = 7 - squarerow
+                        newsquare = (squarerow * 8) + squarecol
+                        placed = newsquare
+                        moves.append(newsquare)
+                        print(placed)
+        tosend = bytearray(b'\x94\x06\x50\x6a')
+        ser.write(tosend)
+        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+    print(moves)
+    return moves
+
+
+def poll():
+    # We need to continue poll the board to get data from it
+    # Perhaps there's a packet length in here somewhere but
+    # I haven't noticed it yet, therefore we need to process
+    # the data as it comes
+    ser.read(100000)
+    tosend = bytearray(b'\x83\x06\x50\x59')
+    ser.write(tosend)
+    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    resp = ser.read(10000)
+    resp = bytearray(resp)
+    if (bytearray(resp) != expect):
+        if (resp[0] == 133 and resp[1] == 0):
+            for x in range(0, len(resp) - 1):
+                if (resp[x] == 64):
+                    print("PIECE LIFTED")
+                    # Calculate the square to 0(a1)-63(h8) so that
+                    # all functions match
+                    square = resp[x + 1]
+                    squarerow = (square // 8)
+                    squarecol = (square % 8)
+                    squarerow = 7 - squarerow
+                    newsquare = (squarerow * 8) + squarecol
+                    print(newsquare)
+                if (resp[x] == 65):
+                    print("PIECE PLACED")
+                    # Calculate the square to 0(a1)-63(h8) so that
+                    # all functions match
+                    square = resp[x + 1]
+                    squarerow = (square // 8)
+                    squarecol = (square % 8)
+                    squarerow = 7 - squarerow
+                    newsquare = (squarerow * 8) + squarecol
+                    print(newsquare)
+    tosend = bytearray(b'\x94\x06\x50\x6a')
+    ser.write(tosend)
+    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+    resp = ser.read(10000)
+    resp = bytearray(resp)
+    if (resp != expect):
+        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+            print("BACK BUTTON")
+        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+            print("TICK BUTTON")
+        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+            print("UP BUTTON")
+        if (resp.hex() == "b10010065000140a050200000000611d"):
+            print("DOWN BUTTON")
+        if (resp.hex() == "b10010065000140a0540000000006d67"):
+            print("HELP BUTTON")
+        if (resp.hex() == "b10010065000140a0504000000002a68"):
+            print("PLAY BUTTON")
+
+
+SOUND_GENERAL = 1
+SOUND_FACTORY = 2
+SOUND_POWER_OFF = 3
+SOUND_POWER_ON = 4
+SOUND_WRONG = 5
+SOUND_WRONG_MOVE = 6
+
+
+def beep(beeptype):
+    # Ask the centaur to make a beep sound
+    if (beeptype == SOUND_GENERAL):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
+    if (beeptype == SOUND_FACTORY):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x40\x1b'))
+    if (beeptype == SOUND_POWER_OFF):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4c\x08\x48\x08\x35'))
+    if (beeptype == SOUND_POWER_ON):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x48\x08\x4c\x08\x35'))
+    if (beeptype == SOUND_WRONG):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4e\x0c\x48\x10\x43'))
+    if (beeptype == SOUND_WRONG_MOVE):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x48\x08\x5f'))
+
+
+def ledsOff():
+    # Switch the LEDs off on the centaur
+    ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
+
+
+def ledFromTo(lfrom, lto):
+    # Light up a from and to LED for move indication
+    # Note the call to this function is 0 for a1 and runs to 63 for h8
+    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
+    tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
+    # Recalculate lfrom to the different indexing system
+    lfromrow = (lfrom // 8)
+    lfromcol = (lfrom % 8)
+    # Now lfromrow and lfromcol run from 0 to 7, flip the row
+    lfromrow = 7 - lfromrow
+    newlfrom = (lfromrow * 8) + lfromcol
+    tosend[9] = newlfrom
+    # Same for lto
+    ltorow = (lto // 8)
+    ltocol = (lto % 8)
+    ltorow = 7 - ltorow
+    newlto = (ltorow * 8) + ltocol
+    tosend[10] = newlto
+    # The last byte seems to be some sort of checksum that I haven't worked
+    # out. You must send the right value. But there's only 256 options so
+    # it's quick to brute force it
+    for x in range(0, 255):
+        tosend[11] = x
+        ser.write(tosend)
+    # Read off any data
+    ser.read(100000)
+
+
+# poll()
+# beep(SOUND_GENERAL)
+# ledsOff()
+# ledFromTo(0,63)
+# while True:
+#	poll()
+# sys.exit()
