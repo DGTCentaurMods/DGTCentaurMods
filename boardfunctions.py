@@ -16,16 +16,19 @@ from PIL import Image, ImageDraw, ImageFont
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
 font18 = ImageFont.truetype("/home/pi/centaur/py/Font.ttc", 18)
 screenbuffer = Image.new('1', (128, 296), 255)
+initialised = 0
 
 epd = epd2in9d.EPD()
 
 
 def initScreen():
     global screenbuffer
+    global initialised
     epd.init()
     time.sleep(0.02)
     epd.Clear(0xff)
     screenbuffer = Image.new('1', (128, 296), 255)
+    initialised = 0
     time.sleep(5)
 
 
@@ -38,6 +41,18 @@ def clearScreenBuffer():
 
 def sleepScreen():
     epd.sleep()
+
+def clearSerial():
+    ser.read(1000000)
+    tosend = bytearray(b'\x83\x06\x50\x59')
+    ser.write(tosend)
+    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    resp = ser.read(10000)
+    resp = bytearray(resp)
+    tosend = bytearray(b'\x94\x06\x50\x6a')
+    ser.write(tosend)
+    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+    resp = ser.read(10000)
 
 def drawBoard(pieces):
     global screenbuffer
@@ -94,13 +109,11 @@ def writeText(row, txt):
     global screenbuffer
     image = screenbuffer.copy()
     draw = ImageDraw.Draw(image)
+    draw.rectangle([(0,rpos),(128,rpos+20)],fill=255)
     draw.text((0, rpos), txt, font=font18, fill=0)
     screenbuffer = image.copy()
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
-    #startrow = 275 - rpos
-    #endrow = startrow + 20
-    #epd.DisplayRegion(startrow,endrow,epd.getbuffer(image)[int(((startrow) * 128)/8):int((128*296)/8)])
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
 
@@ -113,8 +126,9 @@ def doMenu(items):
     selected = 1
     buttonPress = 0
     first = 1
-    epd.unsetRegion()
-    epd.Clear(0xff)
+    global initialised
+    if initialised == 0:
+        epd.Clear(0xff)
     while (buttonPress != 2):
         image = Image.new('1', (epd.width, epd.height), 255)
         draw = ImageDraw.Draw(image)
@@ -126,18 +140,15 @@ def doMenu(items):
                      (18, (selected * 20) + 10)], fill=0)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
         image = image.transpose(Image.FLIP_LEFT_RIGHT)
-        if first == 1:
+        if first == 1 and initialised == 0:
             epd.display(epd.getbuffer(image))
             time.sleep(3)
             first = 0
-            buttonPress = 3
+            epd.DisplayPartial(epd.getbuffer(image))
+            initialised = 1
         else:
             epd.DisplayPartial(epd.getbuffer(image))
-            #startrow = 276 - ((selected + 1) * 20)
-            #endrow = startrow + 60
-            # if (endrow > 296):
-            #endrow = 296
-            #epd.DisplayRegion(startrow,endrow-1,epd.getbuffer(image)[int(((startrow) * 128)/8):int((128*296)/8)])
+            time.sleep(0.2)
         # Next we wait for either the up/down/back or tick buttons to get
         # pressed
         timeout = time.time() + 60 * 15
@@ -168,8 +179,8 @@ def doMenu(items):
             r = ""
             for k, v in items.items():
                 if (c == selected):
-                    epd.unsetRegion()
-                    epd.Clear(0xff)
+                    #epd.unsetRegion()
+                    #epd.Clear(0xff)
                     selected = 99999
                     return k
                 c = c + 1
@@ -178,11 +189,9 @@ def doMenu(items):
         if (buttonPress == 3 and selected > 1):
             selected = selected - 1
         if (buttonPress == 1):
-            epd.unsetRegion()
             epd.Clear(0xff)
             return "BACK"
         if time.time() > timeout:
-            epd.unsetRegion()
             epd.Clear(0xff)
             return "BACK"
         buttonPress = 0

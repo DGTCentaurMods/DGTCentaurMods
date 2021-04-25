@@ -22,6 +22,8 @@ import config
 token = config.lichesstoken
 pid = -1
 
+boardfunctions.clearSerial()
+
 if (len(sys.argv) == 1):
     print("python3 lichess.py [current|live]")
     sys.exit()
@@ -90,9 +92,16 @@ playeriswhite = -1
 whiteplayer = ""
 blackplayer = ""
 
+whiteclock = 0
+blackclock = 0
+whiteincrement = 0
+blackincrement = 0
+
+# Lichess doesn't start the clocks until white moves
+starttime = -1
+
+
 # This thread keeps track of the moves made on lichess
-
-
 def stateThread():
     global remotemoves
     global status
@@ -100,6 +109,10 @@ def stateThread():
     global player
     global whiteplayer
     global blackplayer
+    global whiteclock
+    global blackclock
+    global whiteincrement
+    global blackincrement
     while True:
         gamestate = client.board.stream_game_state(gameid)
         for state in gamestate:
@@ -124,6 +137,18 @@ def stateThread():
                         playeriswhite = 1
                     else:
                         playeriswhite = 0
+            if ('state' in state.keys()):
+                if ('wtime' in state.get('state').keys()):
+                    wtime = int(state.get('state').get('wtime'))
+                    whiteclock = wtime
+                    winc = int(state.get('state').get('winc'))
+                    whiteincrement = winc
+                if ('btime' in state.get('state').keys()):
+                    btime = int(state.get('state').get('btime'))
+                    blackclock = btime
+                    binc = int(state.get('state').get('binc'))
+                    blackincrement = binc
+
             time.sleep(1)
 
 
@@ -139,11 +164,11 @@ beeped = 0
 
 while playeriswhite == -1:
     time.sleep(0.1)
-boardfunctions.writeText(7, "Playing as")
-if playeriswhite == 1:
-    boardfunctions.writeText(8, 'White')
-if playeriswhite == 0:
-    boardfunctions.writeText(8, 'Black')
+#boardfunctions.writeText(7, "Playing as")
+#if playeriswhite == 1:
+#    boardfunctions.writeText(8, 'White')
+#if playeriswhite == 0:
+#    boardfunctions.writeText(8, 'Black')
 
 # ready for white
 ourturn = 1
@@ -172,7 +197,20 @@ boardfunctions.drawBoard(pieces)
 while status == "started":
 
     if ourturn == 1:
+        if playeriswhite == 1:
+            currentmover = 1
+        else:
+            currentmover = 0
+    if ourturn == 0:
+        if playeriswhite == 1:
+            currentmover = 1
+        else:
+            currentmover = 0
+    currentmovestart = time.time()
+
+    if ourturn == 1:
         # Wait for the player's move
+        movestart = time.time()
         move = boardfunctions.waitMove()
         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
         # Pass the move through
@@ -238,6 +276,26 @@ while status == "started":
                                 correcterror = fromsq
         print(board)
 
+        if playeriswhite == 1:
+            whiteclock = whiteclock - ((time.time() - movestart) * 1000)
+            whiteclock = whiteclock + whiteincrement
+        else:
+            blackclock = blackclock + blackincrement
+            blackclock = blackclock - ((time.time() - movestart) * 1000)
+
+        wtext = ""
+        if whiteclock//60000 == 0:
+            wtext = str(whiteclock//1000).replace(".0","") + " secs      "
+        else:
+            wtext = str(whiteclock//60000).replace(".0","") + " mins      "
+        boardfunctions.writeText(10,wtext)
+        btext = ""
+        if blackclock // 60000 == 0:
+            btext = str(blackclock // 1000).replace(".0", "") + " secs      "
+        else:
+            btext = str(blackclock // 60000).replace(".0", "") + " mins      "
+        boardfunctions.writeText(1, btext)
+
     fen = board.fen()
     sfen = fen[0 : fen.index(" ")]
     baseboard = chess.BaseBoard(sfen)
@@ -248,6 +306,7 @@ while status == "started":
 
     if ourturn == 0:
         # Here we wait to get a move from the other player on lichess
+        movestart = time.time()
         while status == "started" and str(remotemoves)[-4:] == lastmove:
             time.sleep(0.5)
         if status == "started":
@@ -284,6 +343,29 @@ while status == "started":
             ourturn = 1
         print(board)
 
+        if playeriswhite == 0:
+            whiteclock = whiteclock - ((time.time() - movestart) * 1000)
+            whiteclock = whiteclock + whiteincrement
+        else:
+            blackclock = blackclock - ((time.time() - movestart) * 1000)
+            blackclock = blackclock + blackincrement
+
+        wtext = ""
+        if whiteclock//60000 == 0:
+            wtext = str(whiteclock//1000).replace(".0","") + " secs      "
+        else:
+            wtext = str(whiteclock//60000).replace(".0","") + " mins      "
+        boardfunctions.writeText(10,wtext)
+        btext = ""
+        if blackclock // 60000 == 0:
+            btext = str(blackclock // 1000).replace(".0", "") + " secs      "
+        else:
+            btext = str(blackclock // 60000).replace(".0", "") + " mins      "
+        boardfunctions.writeText(1, btext)
+
+        if starttime < 0:
+            starttime = time.time()
+
     fen = board.fen()
     sfen = fen[0 : fen.index(" ")]
     baseboard = chess.BaseBoard(sfen)
@@ -292,9 +374,8 @@ while status == "started":
         pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
     boardfunctions.drawBoard(pieces)
 
-
-
 print("Game Over")
 epd.sleepScreen()
 st.stop()
+tt.stop()
 sys.exit()
