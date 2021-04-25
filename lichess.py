@@ -304,7 +304,7 @@ while status == "started":
         pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
     boardfunctions.drawBoard(pieces)
 
-    if ourturn == 0:
+    if ourturn == 0 and status == "started":
         # Here we wait to get a move from the other player on lichess
         movestart = time.time()
         while status == "started" and str(remotemoves)[-4:] == lastmove:
@@ -328,8 +328,9 @@ while status == "started":
                 valid = 0
                 if move[0] == lrtocalc:
                         valid = 1
-                if move[1] == lrtocalc:
-                        valid = 1
+                if len(move) > 1:
+                    if move[1] == lrtocalc:
+                            valid = 1
                 if len(move) == 3:
                         if move[2] == lrtocalc:
                                 valid = 1
@@ -377,5 +378,4 @@ while status == "started":
 print("Game Over")
 epd.sleepScreen()
 st.stop()
-tt.stop()
 sys.exit()
