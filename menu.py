@@ -8,6 +8,7 @@ import sys
 boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
 boardfunctions.clearSerial()
 boardfunctions.initScreen()
+time.delay(2)
 boardfunctions.ledsOff()
 
 while True:
