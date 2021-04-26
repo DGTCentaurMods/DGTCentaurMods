@@ -3,12 +3,13 @@
 import boardfunctions
 import os
 import sys
+import time
 
 # Power on sound
 boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
 boardfunctions.clearSerial()
 boardfunctions.initScreen()
-time.delay(2)
+time.sleep(2)
 boardfunctions.ledsOff()
 
 while True:
