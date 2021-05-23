@@ -226,9 +226,9 @@ while status == "started":
                 if move[0] >= 0:
                         tosq = move[0]
                 if move[2] >= 0:
-                        tosq = move[1]
-                if move[1] >= 0:
                         tosq = move[2]
+                if move[1] >= 0:
+                        tosq = move[1]
                 fromsq = -1
                 if move[0] != (tosq * -1) and move[0] != tosq:
                         fromsq = move[0] * -1
