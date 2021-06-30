@@ -60,6 +60,7 @@ boardfunctions.writeText(4, player)
 # let's make the thread pause 5 seconds when it starts up so that we can be
 # sure that client.board.stream_incoming_events() has started well
 
+running = True
 
 def newGameThread():
     time.sleep(5)
@@ -75,6 +76,7 @@ gameid = ""
 if (str(sys.argv[1]) == "live"):
     #print("Looking for a game")
     gt = threading.Thread(target=newGameThread, args=())
+    gt.daemon = True
     gt.start()
 while gameid == "":
     for event in client.board.stream_incoming_events():
@@ -100,7 +102,6 @@ blackincrement = 0
 # Lichess doesn't start the clocks until white moves
 starttime = -1
 
-
 # This thread keeps track of the moves made on lichess
 def stateThread():
     global remotemoves
@@ -113,7 +114,7 @@ def stateThread():
     global blackclock
     global whiteincrement
     global blackincrement
-    while True:
+    while running:
         gamestate = client.board.stream_game_state(gameid)
         for state in gamestate:
             print(state)
@@ -154,6 +155,7 @@ def stateThread():
 
 print("Starting thread to track the game on Lichess")
 st = threading.Thread(target=stateThread, args=())
+st.daemon = True
 st.start()
 print("Started")
 
@@ -194,7 +196,7 @@ for x in range(0,64):
     pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
 boardfunctions.drawBoard(pieces)
 
-while status == "started":
+while status == "started" and ourturn != 0:
 
     if ourturn == 1:
         if playeriswhite == 1:
@@ -208,7 +210,7 @@ while status == "started":
             currentmover = 0
     currentmovestart = time.time()
 
-    if ourturn == 1:
+    if ourturn == 1 and status == "started":
         # Wait for the player's move
         movestart = time.time()
         move = boardfunctions.waitMove()
@@ -246,6 +248,9 @@ while status == "started":
         # the board screen. But I'll do that later!
         # Send the move
         lastmove = fromln + toln
+        print(lastmove)
+        print(castled)
+        print(correcterror)
         if lastmove == castled:
                 # If we're castling and this is just the rook move then ignore it
                 lastmove = ""
@@ -254,26 +259,41 @@ while status == "started":
                 boardfunctions.ledsOff()
                 correcterror = -1
         else:
-                mv = chess.Move.from_uci(lastmove)
-                if (mv in board.legal_moves):
-                        board.push(mv)
-                        if lastmove == "e1g1":
-                                castled = "h1f1"
-                        if lastmove == "e1c1":
-                                castled = "a1d1"
-                        if lastmove == "e8g8":
-                                castled = "h8f8"
-                        if lastmove == "e8c8":
-                                castled = "a8d8"
-                        ourturn = 0
-                        ret = client.board.make_move(gameid, fromln + toln)
-                        halfturn = halfturn + 1
-                else:
-                        if halfturn != 0:
-                                print("Not a legal move!")
-                                print(board.legal_moves)
-                                boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
-                                correcterror = fromsq
+                try:
+                    print("Checking validity")
+                    mv = chess.Move.from_uci(lastmove)
+                    print("Checked")
+                    if (mv in board.legal_moves):
+                            board.push(mv)
+                            if lastmove == "e1g1":
+                                    castled = "h1f1"
+                            if lastmove == "e1c1":
+                                    castled = "a1d1"
+                            if lastmove == "e8g8":
+                                    castled = "h8f8"
+                            if lastmove == "e8c8":
+                                    castled = "a8d8"
+                            ourturn = 0
+                            print("Making move with client")
+                            ret = client.board.make_move(gameid, fromln + toln)
+                            print("Made move with client")
+                            halfturn = halfturn + 1
+                    else:
+                            print("not a legal move checking for half turn")
+                            if halfturn != 0:
+                                    print("Not a legal move!")
+                                    print(board.legal_moves)
+                                    boardfunctions.clearBoardData()
+                                    boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+                                    correcterror = fromsq
+                except:
+                    print("exception checking for half turn")
+                    if halfturn != 0:
+                        print("Not a legal move!")
+                        print(board.legal_moves)
+                        boardfunctions.clearBoardData()
+                        boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+                        correcterror = fromsq
         print(board)
 
         if playeriswhite == 1:
@@ -335,13 +355,15 @@ while status == "started":
                         if move[2] == lrtocalc:
                                 valid = 1
                 if valid == 0:
-                    boardfunctions.beep(SOUND_WRONG_MOVE)
+                    boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
                 movedto = lrtocalc 
             boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+            boardfunctions.clearSerial()
             mv = chess.Move.from_uci(rr[-5:].strip())
             board.push(mv)
             boardfunctions.ledsOff()
             ourturn = 1
+
         print(board)
 
         if playeriswhite == 0:
@@ -375,7 +397,7 @@ while status == "started":
         pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
     boardfunctions.drawBoard(pieces)
 
+running = False
 print("Game Over")
-epd.sleepScreen()
-st.stop()
+boardfunctions.sleepScreen()
 sys.exit()
