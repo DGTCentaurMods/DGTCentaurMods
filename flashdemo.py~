@@ -1,0 +1,4 @@
+import boardfunctions
+
+boardfunctions.led(5);
+boardfunctions.ledFlash();

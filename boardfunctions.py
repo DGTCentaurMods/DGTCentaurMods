@@ -361,6 +361,24 @@ def ledFromTo(lfrom, lto):
     # Read off any data
     ser.read(100000)
 
+def led(num):
+    # Flashes a specific led
+    # Note the call to this function is 0 for a1 and runs to 63 for h8
+    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
+    tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
+    # Recalculate num to the different indexing system
+    lrow = (num // 8)
+    lcol = (num % 8)
+    tosend[5] = (lrow * 8) + lcol
+    ser.write(tosend)
+    # Read off any data
+    ser.read(100000)
+
+def ledFlash():
+    # Flashes the last led lit by led(num) above
+    tosend = bytearray(b'\xb0\x00\x0a\x06\x50\x05\x0a\x00\x01\x20')
+    ser.write(tosend)
+    ser.read(100000)
 
 # poll()
 # beep(SOUND_GENERAL)
