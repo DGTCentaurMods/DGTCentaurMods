@@ -340,24 +340,13 @@ def ledFromTo(lfrom, lto):
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
     # Recalculate lfrom to the different indexing system
-    lfromrow = (lfrom // 8)
-    lfromcol = (lfrom % 8)
-    # Now lfromrow and lfromcol run from 0 to 7, flip the row
-    lfromrow = 7 - lfromrow
-    newlfrom = (lfromrow * 8) + lfromcol
-    tosend[9] = newlfrom
+    tosend[9] = rotateField(lfrom)
     # Same for lto
-    ltorow = (lto // 8)
-    ltocol = (lto % 8)
-    ltorow = 7 - ltorow
-    newlto = (ltorow * 8) + ltocol
-    tosend[10] = newlto
-    # The last byte seems to be some sort of checksum that I haven't worked
-    # out. You must send the right value. But there's only 256 options so
-    # it's quick to brute force it
-    for x in range(0, 255):
-        tosend[11] = x
-        ser.write(tosend)
+    tosend[10] = rotateField(lto)
+    # Wipe checksum byte and append the new checksum.
+    tosend.pop()
+    tosend.append(checksum(tosend))
+    ser.write(tosend)
     # Read off any data
     ser.read(100000)
 
