@@ -367,9 +367,11 @@ def led(num):
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
     # Recalculate num to the different indexing system
-    lrow = (num // 8)
-    lcol = (num % 8)
-    tosend[5] = (lrow * 8) + lcol
+    # Last bit is the checksum
+    tosend[9] = rotateField(num)
+    # Wipe checksum byte and append the new checksum.
+    tosend.pop()
+    tosend.append(checksum(tosend))
     ser.write(tosend)
     # Read off any data
     ser.read(100000)
@@ -379,6 +381,20 @@ def ledFlash():
     tosend = bytearray(b'\xb0\x00\x0a\x06\x50\x05\x0a\x00\x01\x20')
     ser.write(tosend)
     ser.read(100000)
+
+def checksum(barr):
+    csum = 0
+    for c in bytes(barr):
+        csum += c
+    barr_csum = (csum % 128)
+    return barr_csum
+
+def rotateField(field):
+    lrow = (field // 8)
+    lcol = (field % 8)
+    newField = (7 - lrow) * 8 + lcol
+    return newField
+
 
 # poll()
 # beep(SOUND_GENERAL)
