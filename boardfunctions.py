@@ -223,22 +223,16 @@ def waitMove():
                     if (resp[x] == 64):
                         # Calculate the square to 0(a1)-63(h8) so that
                         # all functions match
-                        square = resp[x + 1]
-                        squarerow = (square // 8)
-                        squarecol = (square % 8)
-                        squarerow = 7 - squarerow
-                        newsquare = (squarerow * 8) + squarecol
+                        fieldHex = resp[x + 1]
+                        newsquare = rotateFieldHex(fieldHex)
                         lifted = newsquare
                         print(lifted)
                         moves.append(newsquare * -1)
                     if (resp[x] == 65):
                         # Calculate the square to 0(a1)-63(h8) so that
                         # all functions match
-                        square = resp[x + 1]
-                        squarerow = (square // 8)
-                        squarecol = (square % 8)
-                        squarerow = 7 - squarerow
-                        newsquare = (squarerow * 8) + squarecol
+                        fieldHex = resp[x + 1]
+                        newsquare = rotateFieldHex(fieldHex)
                         placed = newsquare
                         moves.append(newsquare)
                         print(placed)
@@ -269,21 +263,15 @@ def poll():
                     print("PIECE LIFTED")
                     # Calculate the square to 0(a1)-63(h8) so that
                     # all functions match
-                    square = resp[x + 1]
-                    squarerow = (square // 8)
-                    squarecol = (square % 8)
-                    squarerow = 7 - squarerow
-                    newsquare = (squarerow * 8) + squarecol
+                    fieldHex = resp[x + 1]
+                    newsquare = rotateFieldHex(fieldHex)
                     print(newsquare)
                 if (resp[x] == 65):
                     print("PIECE PLACED")
                     # Calculate the square to 0(a1)-63(h8) so that
                     # all functions match
-                    square = resp[x + 1]
-                    squarerow = (square // 8)
-                    squarecol = (square % 8)
-                    squarerow = 7 - squarerow
-                    newsquare = (squarerow * 8) + squarecol
+                    fieldHex = resp[x + 1]
+                    newsquare = rotateFieldHex(fieldHex)
                     print(newsquare)
     tosend = bytearray(b'\x94\x06\x50\x6a')
     ser.write(tosend)
@@ -383,6 +371,16 @@ def rotateField(field):
     lcol = (field % 8)
     newField = (7 - lrow) * 8 + lcol
     return newField
+
+def rotateFieldHex(fieldHex):
+    squarerow = (fieldHex // 8)
+    squarecol = (fieldHex % 8)
+    field = (7 - squarerow) * 8 + squarecol
+    return field
+
+def convertField(field):
+    square = chr((ord('a') + (field % 8))) + chr(ord('1') + (field // 8))
+    return square
 
 
 # poll()
