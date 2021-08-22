@@ -240,9 +240,9 @@ while status == "started" and ourturn != 0:
                         fromsq = move[2] * -1
         mylastfrom = fromsq
         # Convert to letter number square format
-        fromln = chr((ord('a') + (fromsq % 8))) + chr(ord('1') + (fromsq // 8))
+        fromln = boardfunctions.convertField(fromsq)
         print(fromln)
-        toln = chr((ord('a') + (tosq % 8))) + chr(ord('1') + (tosq // 8))
+        toln = boardfunctions.convertField(tosq)
         print(toln)
         # If the piece is a pawn we should take care of promotion here. You could choose it from
         # the board screen. But I'll do that later!
