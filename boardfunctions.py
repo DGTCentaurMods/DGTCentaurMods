@@ -380,7 +380,7 @@ def rotateFieldHex(fieldHex):
 
 def convertField(field):
     square = chr((ord('a') + (field % 8))) + chr(ord('1') + (field // 8))
-    return squar:wqe
+    return square
 
 def shutdown():
     """
