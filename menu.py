@@ -26,11 +26,8 @@ while True:
         os.system("/home/pi/centaur/centaur")
         sys.exit()
     if result == "Shutdown":
-        boardfunctions.clearScreen()
-        boardfunctions.sleepScreen()
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-        os.system("/sbin/shutdown now")
-        sys.exit()
+        boardfunctions.shutdown()
     if result == "Reboot":
         boardfunctions.clearScreen()
         boardfunctions.sleepScreen()
@@ -38,12 +35,8 @@ while True:
         os.system("/sbin/shutdown -r now")
         sys.exit()
     if result == "BACK":
-        boardfunctions.clearScreen()
-        boardfunctions.sleepScreen()
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-        os.system("/sbin/shutdown now")
-        sys.exit()
-
+        boardfunctions.shutdown()
     if result == "Lichess":
         lichessmenu = {'Current': 'Current', 'New': 'New Game'}
         result = boardfunctions.doMenu(lichessmenu)
