@@ -380,7 +380,18 @@ def rotateFieldHex(fieldHex):
 
 def convertField(field):
     square = chr((ord('a') + (field % 8))) + chr(ord('1') + (field // 8))
-    return square
+    return squar:wqe
+
+def shutdown():
+    """
+    Initiate shutdown sequence.
+    """
+    initScreen()
+    clearScreenBuffer()
+    sleepScreen()
+    tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
+    ser.write(tosend)
+
 
 
 # poll()
