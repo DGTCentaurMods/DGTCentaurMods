@@ -1,3 +1,7 @@
+# DGT Centaur mods
+
+This is a common base for modding the DGT Centaur chess board to add some missing functionalities such as PGN export and .
+
 Code for controlling a DGT Centaur chess board. Implements the reverse engineered protocols for piece detection, lights, sound, and display. Not currently in an actively usable state. Feel free to contribute - the goal is to make a menu giving the board additional features.
 
 To use: root the raspberry pi in your DGT centaur, replace with Raspberry Pi Zero W. Connect Wifi. Place your lichess api key in config.py
