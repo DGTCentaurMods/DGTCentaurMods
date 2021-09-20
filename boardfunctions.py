@@ -392,6 +392,37 @@ def shutdown():
     tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
     ser.write(tosend)
 
+def getBoardState():
+    # Query the board and return a representation of it
+    # Consider this function experimental
+    # lowerlimit/upperlimit may need adjusting
+    # Get the board data
+    tosend = bytearray(b'\xf0\x00\x07\x06\x50\x7f\x4c')
+    ser.write(tosend)
+    resp = ser.read(10000)
+    resp = resp = resp[6:(64 * 2) + 6]
+    boarddata = [None] * 64
+    for x in range(0, 127, 2):
+        tval = (resp[x] * 256) + resp[x+1];
+        boarddata[(int)(x/2)] = tval
+    # Any square lower than 400 is empty
+    # Any square higher than upper limit is also empty
+    upperlimit = 32000
+    lowerlimit = 300
+    for x in range(0,64):
+        if ((boarddata[x] < lowerlimit) or (boarddata[x] > upperlimit)):
+            boarddata[x] = 0
+        else:
+            boarddata[x] = 1
+    return boarddata
+
+def printBoardState():
+    # Helper to display board state
+    state = getBoardState()
+    for x in range(0,64,8):
+        for y in range(0,8):
+            print(state[x+y], end='')
+        print("\r")
 
 
 # poll()
