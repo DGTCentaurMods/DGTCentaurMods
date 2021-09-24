@@ -394,7 +394,7 @@ def shutdown():
     tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
     ser.write(tosend)
 
-def getBoardState():
+def getBoardState(field=None):
     # Query the board and return a representation of it
     # Consider this function experimental
     # lowerlimit/upperlimit may need adjusting
@@ -416,15 +416,19 @@ def getBoardState():
             boarddata[x] = 0
         else:
             boarddata[x] = 1
+    if field:
+        return boarddata[field]
     return boarddata
 
 def printBoardState():
     # Helper to display board state
     state = getBoardState()
     for x in range(0,64,8):
+        print("+---+---+---+---+---+---+---+---+")
         for y in range(0,8):
-            print(state[x+y], end='')
-        print("\r")
+            print("| " + str(state[x+y]) + " ", end='')
+        print("|\r")
+    print("+---+---+---+---+---+---+---+---+")
 
 
 # poll()
