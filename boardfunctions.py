@@ -322,12 +322,13 @@ def ledsOff():
     ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
 
 
-def ledFromTo(lfrom, lto):
+def ledFromTo(lfrom, lto, intensity=5):
     # Light up a from and to LED for move indication
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
     # Recalculate lfrom to the different indexing system
+    tosend[8] = intensity
     tosend[9] = rotateField(lfrom)
     # Same for lto
     tosend[10] = rotateField(lto)
@@ -338,13 +339,14 @@ def ledFromTo(lfrom, lto):
     # Read off any data
     ser.read(100000)
 
-def led(num):
+def led(num, intensity=5):
     # Flashes a specific led
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
     # Recalculate num to the different indexing system
     # Last bit is the checksum
+    tosend[8] = intensity
     tosend[9] = rotateField(num)
     # Wipe checksum byte and append the new checksum.
     tosend.pop()
