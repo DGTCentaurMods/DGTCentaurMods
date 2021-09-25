@@ -4,3 +4,5 @@ config.py
 epdmine.py
 !/.gitignore
 push.sh
+test.py
+__pycache__

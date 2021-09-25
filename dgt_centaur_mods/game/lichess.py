@@ -7,7 +7,7 @@ import pyrasite
 import psutil
 from dgt_centaur_mods.board import boardfunctions
 import chess
-import config
+from dgt_centaur_mods.config import config
 
 # Run a game on lichess
 # This is version two so we do it directly and with screen control!
