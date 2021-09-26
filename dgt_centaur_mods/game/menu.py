@@ -1,6 +1,6 @@
 # Bootup menu
 
-from dgt_centaur_mods import boardfunctions
+from dgt_centaur_mods.board import boardfunctions
 import os
 import sys
 import time
