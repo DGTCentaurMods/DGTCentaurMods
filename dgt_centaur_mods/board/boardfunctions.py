@@ -8,13 +8,13 @@
 import serial
 import sys
 import os
-import epd2in9d
+from dgt_centaur_mods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
 
 # Open the serial port, baudrate is 1000000
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
-font18 = ImageFont.truetype("/home/pi/centaur/py/Font.ttc", 18)
+font18 = ImageFont.truetype("/home/pi/mods/resources/Font.ttc", 18)
 screenbuffer = Image.new('1', (128, 296), 255)
 initialised = 0
 

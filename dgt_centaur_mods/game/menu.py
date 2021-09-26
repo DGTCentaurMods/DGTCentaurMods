@@ -1,6 +1,6 @@
 # Bootup menu
 
-import boardfunctions
+from dgt_centaur_mods.board import boardfunctions
 import os
 import sys
 import time
@@ -45,8 +45,8 @@ while True:
         if (result != "BACK"):
             if (result == "Current"):
                 boardfunctions.clearScreen()
-                os.chdir("/home/pi/centaur/py")
-                os.system("/bin/python3 /home/pi/centaur/py/lichess.py current")
+                os.chdir("/home/pi/centaur/mods")
+                os.system("/bin/python3 /home/pi/mods/game/lichess.py current")
                 sys.exit()
 
             livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
