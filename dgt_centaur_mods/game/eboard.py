@@ -13,7 +13,7 @@
 import serial
 import time
 from os.path import exists
-import boardfunctions
+from dgt_centaur_mods.board import boardfunctions
 
 # https://github.com/well69/picochess-1/blob/master/test/dgtbrd-ruud.h
 DGT_SEND_RESET = 0x40 # Puts the board into IDLE mode, cancelling any UPDATE mode
@@ -22,6 +22,10 @@ DGT_STARTBOOTLOADER = 0x4e
 DGT_TRADEMARK = 0x12
 DGT_RETURN_SERIALNR = 0x45
 DGT_SERIALNR = 0x11
+DGT_RETURN_LONG_SERIALNR = 0x55
+DGT_LONG_SERIALNR = 0x22
+DGT_SEND_CLK = 0x41
+DGT_BWTIME = 0x0d
 
 MESSAGE_BIT = 0x80
 
@@ -34,8 +38,12 @@ DGT_BOARD_DUMP = 0x06
 DGT_SEND_UPDATE = 0x43
 DGT_SEND_UPDATE_BRD = 0x44
 DGT_FIELD_UPDATE = 0x0e
+DGT_SEND_UPDATE_NICE = 0x4b
 DGT_SET_LEDS = 0x60
 DGT_CLOCK_MESSAGE = 0x2b
+
+DGT_SEND_BATTERY_STATUS = 0x4c
+DGT_BATTERY_STATUS = 0x20
 
 DGT_BUS_PING = 0x87
 DGT_MSG_BUS_PING = 0x07
@@ -176,7 +184,7 @@ while exists("/dev/rfcomm0") == False:
 
 print("Connected")
 
-bt= serial.Serial("/dev/rfcomm0",baudrate=9600, timeout=1)
+bt= serial.Serial("/dev/rfcomm0",baudrate=115200, timeout=10)
 boardfunctions.clearScreen()
 boardfunctions.writeText(0,'Connected')
 boardfunctions.writeText(1,'         ')
@@ -204,13 +212,11 @@ while True:
 			# Puts the board in BUS mode
 			handled = 1
 		if data[0] == DGT_RETURN_BUSADRES:
-			tosend = bytearray(b'\x00\x00\x00\x00\x00')
-			tosend[0] = DGT_RETURN_BUSADRES | MESSAGE_BIT
-			tosend[1] = 0
-			tosend[2] = 5
-			tosend[3] = 8
-			tosend[4] = 1
+			tosend = bytearray(b'\x00\x00\x05\x08\x01')
+			tosend[0] = DGT_BUSADRES | MESSAGE_BIT
 			bt.write(tosend)
+			bt.flushOutput()
+			sentbus = 1
 			handled = 1
 		if data[0] == DGT_SEND_TRADEMARK:
 			# Send DGT Trademark Message
@@ -221,6 +227,7 @@ while True:
 			tosend[3] = ord('T')
 			tosend[4] = ord('M')
 			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_BUS_PING:
 			# Received a ping message
@@ -234,6 +241,7 @@ while True:
 			tosend.append(1)
 			time.sleep(0.5)
 			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_RETURN_SERIALNR:
 			# Return our serial number
@@ -247,6 +255,34 @@ while True:
 			tosend.append(ord('1'))
 			tosend.append(ord('1'))
 			bt.write(tosend)
+			bt.flushOutput()
+			bt.write(tosend)
+			bt.flushOutput()
+			bt.write(tosend)
+			bt.flushOutput()
+			handled = 1
+		if data[0] == DGT_RETURN_LONG_SERIALNR:
+			# Return our long serial number
+			tosend = bytearray(b'')
+			tosend.append(DGT_LONG_SERIALNR | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(13)
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			tosend.append(ord('1'))
+			bt.write(tosend)
+			bt.flushOutput()
+			bt.write(tosend)
+			bt.flushOutput()
+			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_SEND_VERSION:
 			# Return our serial number
@@ -255,9 +291,9 @@ while True:
 			tosend.append(0)
 			tosend.append(5)
 			tosend.append(1)
-			#tosend.append(2)
 			tosend.append(0)
 			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_SEND_BRD:
 			# Send the board
@@ -268,6 +304,7 @@ while True:
 			for x in range(0,64):
 				tosend.append(board[x])
 			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_SET_LEDS:
 			# LEDs! But unfortunately this doesn't seem to work or I don't understand it yet :(
@@ -332,11 +369,53 @@ while True:
 			tosend.append(0)
 			tosend.append(board[0])
 			bt.write(tosend)
+			bt.flushOutput()
 			boardfunctions.writeText(0, 'PLAY   ')
 			boardfunctions.writeText(1, '         ')
 			# Here let's actually loop through reading the board states
 			lastlift = EMPTY
 			sendupdates = 1
+			handled = 1
+		if data[0] == DGT_SEND_UPDATE_NICE:
+			# Implementing this at the moment upsets RabbitPlugin :(
+			boardfunctions.writeText(0, 'PLAY   ')
+			boardfunctions.writeText(1, '         ')
+			lastlift = EMPTY
+			#sendupdates = 1
+			handled = 1
+		if data[0] == DGT_SEND_CLK:
+			# RabbitPlugin doesn't work without this so let's fake this for now
+			tosend = bytearray(DGT_BWTIME | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(10)
+			tosend.append(7)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(7)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(0)
+			bt.write(tosend)
+			bt.flushOutput()
+			handled = 1
+		if data[0] == DGT_SEND_BATTERY_STATUS:
+			# Ideally in the future we'll put a function in boardfunctions to get the
+			# battery status from the centaur. But for now, fake it!
+			tosend = bytearray(b'')
+			tosend.append(DGT_BATTERY_STATUS | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(12)
+			tosend.append(100) # 100%
+			tosend.append(0x7f)
+			tosend.append(0x7f)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(0)
+			tosend.append(0)
+			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if handled == 0:
 			print("Unhandled message type: " + data.hex())
@@ -367,11 +446,17 @@ while True:
 						tosend.append(field)
 						tosend.append(EMPTY)
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 					if (resp[x] == 65):
 						fieldHex = resp[x + 1]
 						squarerow = (fieldHex // 8)
@@ -387,11 +472,17 @@ while True:
 						tosend.append(field)
 						tosend.append(lastlift)
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						bt.write(tosend)
+						bt.flushOutput()
 						drawCurrentBoard()
 		tosend = bytearray(b'\x94\x06\x50\x6a')
 		boardfunctions.ser.write(tosend)
@@ -441,7 +532,8 @@ while True:
 					tosend.append(x)
 					tosend.append(board[x])
 					bt.write(tosend)
+					bt.flushOutput()
 				drawCurrentBoard()
-		if timer > 10:
+		if timer > 50:
 			timer = 0
 

@@ -45,7 +45,7 @@ while True:
         if (result != "BACK"):
             if (result == "Current"):
                 boardfunctions.clearScreen()
-                os.chdir("/home/pi/centaur/mods")
+                os.chdir("/home/pi/mods")
                 os.system("/bin/python3 /home/pi/mods/game/lichess.py current")
                 sys.exit()
 
