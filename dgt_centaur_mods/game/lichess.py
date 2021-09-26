@@ -5,7 +5,7 @@ import time
 import threading
 import pyrasite
 import psutil
-import boardfunctions
+from dgt_centaur_mods.board import boardfunctions
 import chess
 import config
 
