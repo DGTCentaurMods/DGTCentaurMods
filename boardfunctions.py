@@ -322,12 +322,13 @@ def ledsOff():
     ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
 
 
-def ledFromTo(lfrom, lto):
+def ledFromTo(lfrom, lto, intensity=5):
     # Light up a from and to LED for move indication
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
     # Recalculate lfrom to the different indexing system
+    tosend[8] = intensity
     tosend[9] = rotateField(lfrom)
     # Same for lto
     tosend[10] = rotateField(lto)
@@ -338,13 +339,14 @@ def ledFromTo(lfrom, lto):
     # Read off any data
     ser.read(100000)
 
-def led(num):
+def led(num, intensity=5):
     # Flashes a specific led
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
     tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
     # Recalculate num to the different indexing system
     # Last bit is the checksum
+    tosend[8] = intensity
     tosend[9] = rotateField(num)
     # Wipe checksum byte and append the new checksum.
     tosend.pop()
@@ -392,6 +394,41 @@ def shutdown():
     tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
     ser.write(tosend)
 
+def getBoardState(field=None):
+    # Query the board and return a representation of it
+    # Consider this function experimental
+    # lowerlimit/upperlimit may need adjusting
+    # Get the board data
+    tosend = bytearray(b'\xf0\x00\x07\x06\x50\x7f\x4c')
+    ser.write(tosend)
+    resp = ser.read(10000)
+    resp = resp = resp[6:(64 * 2) + 6]
+    boarddata = [None] * 64
+    for x in range(0, 127, 2):
+        tval = (resp[x] * 256) + resp[x+1];
+        boarddata[(int)(x/2)] = tval
+    # Any square lower than 400 is empty
+    # Any square higher than upper limit is also empty
+    upperlimit = 32000
+    lowerlimit = 300
+    for x in range(0,64):
+        if ((boarddata[x] < lowerlimit) or (boarddata[x] > upperlimit)):
+            boarddata[x] = 0
+        else:
+            boarddata[x] = 1
+    if field:
+        return boarddata[field]
+    return boarddata
+
+def printBoardState():
+    # Helper to display board state
+    state = getBoardState()
+    for x in range(0,64,8):
+        print("+---+---+---+---+---+---+---+---+")
+        for y in range(0,8):
+            print("| " + str(state[x+y]) + " ", end='')
+        print("|\r")
+    print("+---+---+---+---+---+---+---+---+")
 
 
 # poll()
