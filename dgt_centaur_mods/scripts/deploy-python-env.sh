@@ -15,7 +15,7 @@ then
     echo "::: Virtualenv is installed."
 else
    echo "::: Virtualenv missing, Installing..."
-   sudo pip3 inst5all virtualenv
+   sudo pip3 install virtualenv
 fi
 
 # Deploy python environment

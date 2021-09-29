@@ -2,3 +2,5 @@ Pillow==8.3.2
 pyserial==3.5
 RPi.GPIO==0.7.0
 spidev==3.5
+berserk==0.10.0
+chess==1.6.1

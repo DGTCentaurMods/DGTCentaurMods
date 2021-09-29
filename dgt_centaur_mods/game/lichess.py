@@ -3,7 +3,6 @@ import berserk
 import ssl
 import time
 import threading
-import pyrasite
 import psutil
 from dgt_centaur_mods.board import boardfunctions
 import chess
