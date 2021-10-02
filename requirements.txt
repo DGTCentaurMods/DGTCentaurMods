@@ -4,3 +4,4 @@ RPi.GPIO==0.7.0
 spidev==3.5
 berserk==0.10.0
 chess==1.6.1
+pathlib==1.0.1
