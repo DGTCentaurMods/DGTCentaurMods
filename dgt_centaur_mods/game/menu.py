@@ -4,6 +4,7 @@ from dgt_centaur_mods.board import boardfunctions
 import os
 import sys
 import time
+import pathlib
 
 # Power on sound
 boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
@@ -45,9 +46,10 @@ while True:
         if (result != "BACK"):
             if (result == "Current"):
                 boardfunctions.clearScreen()
-                os.chdir("/home/pi/mods")
-                os.system("/bin/python3 /home/pi/mods/game/lichess.py current")
+                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/lichess.py current")
                 sys.exit()
+
+            # These menu functions currently not coded
 
             livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
             result = boardfunctions.doMenu(livemenu)
