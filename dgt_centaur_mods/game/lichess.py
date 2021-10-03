@@ -17,6 +17,9 @@ from dgt_centaur_mods.config import config
 
 # This is our lichess access token, the game id we're playing, fill it
 # in in config.py
+#
+# Note the API requires that the raspberry pi clock has a reasonably
+# accurate time for the SSL
 token = config.lichesstoken
 pid = -1
 
@@ -120,8 +123,10 @@ def stateThread():
                 remotemoves = state.get('state').get('moves')
                 status = state.get('state').get('status')
             else:
-                remotemoves = state.get('moves')
-                status = state.get('status')
+                if ('moves' in state.keys()):
+                    remotemoves = state.get('moves')
+                if ('status' in state.keys()):
+                    status = state.get('status')
             remotemoves = str(remotemoves)
             status = str(status)
             if (remotemoves == "None"):

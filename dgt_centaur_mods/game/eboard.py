@@ -199,6 +199,7 @@ timer = 0
 
 while True:
 	data=bt.read(1)
+	print(data)
 
 	if len(data) > 0:
 		handled = 0

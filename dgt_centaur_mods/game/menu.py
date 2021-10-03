@@ -17,6 +17,8 @@ while True:
     menu = {
         'Lichess': 'Lichess',
         'Centaur': 'DGT Centaur',
+        'EmulateEB': 'e-Board',
+        'Pairing': 'Start BT Pair',
         'Shutdown': 'Shutdown',
         'Reboot': 'Reboot'}
     boardfunctions.initialised = 0
@@ -26,6 +28,11 @@ while True:
         os.chdir("/home/pi/centaur")
         os.system("/home/pi/centaur/centaur")
         sys.exit()
+    if result == "EmulateEB":
+        boardfunctions.clearScreen()
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
+    if result == "Pairing":
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
     if result == "Shutdown":
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
         boardfunctions.shutdown()
