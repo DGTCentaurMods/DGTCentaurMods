@@ -2,18 +2,17 @@
 #
 # Ed Nekebno
 #
-# Because of the way this works, remove any pieces from the board that are
-# captured first. The board state is known/maintained on the basis that
-# the piece being put down is the last piece lifted. In the future this could
-# track which turn it is and work that out for you.
-#
 # Pair first
 # Connect after the chessboard displays
 #
+# TODO
+# Castling - move king and then rook works in chess for android, but not whitepawn
+
 import serial
 import time
 from os.path import exists
 from dgt_centaur_mods.board import boardfunctions
+import threading
 
 # https://github.com/well69/picochess-1/blob/master/test/dgtbrd-ruud.h
 DGT_SEND_RESET = 0x40 # Puts the board into IDLE mode, cancelling any UPDATE mode
@@ -137,6 +136,7 @@ print("board is setup")
 boardfunctions.clearScreen()
 
 def drawCurrentBoard():
+	global board
 	pieces = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 	for q in range(0,64):
 		squarerow = (q // 8)
@@ -174,8 +174,180 @@ def drawCurrentBoard():
 			pieces[x]=' '
 	boardfunctions.drawBoard(pieces)
 
-drawCurrentBoard()
+boardtoscreen = 0
 
+def screenUpdate():
+	# Separate thread to display the screen/pieces should improve
+	# responsiveness
+	global board
+	global boardtoscreen
+	while True:
+		time.sleep(2)
+		if boardtoscreen == 1:
+			drawCurrentBoard()
+
+def pieceMoveDetectionThread():
+	# Separate thread to take care of detecting piece movement
+	# for the board, so that it isn't waiting on the bluetooth
+	# read from the other end
+	global bt
+	global sendupdates
+	global timer
+	global WROOK,WBISHOP,WKNIGHT,WQUEEN,WKING,WPAWN,BROOK,BBISHOP,BKNIGHT,BQUEEN,BKING,BPAWN,EMPTY
+	global board
+	global curturn
+	global boardtoscreen
+	lastlift = 0
+	kinglift = 0
+	lastfield = -1
+	castlemode = 0
+	while True:
+		time.sleep(0.05)
+		if sendupdates == 1:
+			boardtoscreen = 1
+			boardfunctions.ser.read(10000)
+			tosend = bytearray(b'\x83\x06\x50\x59')
+			boardfunctions.ser.write(tosend)
+			expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+			resp = boardfunctions.ser.read(1000)
+			resp = bytearray(resp)
+			if (bytearray(resp) != expect):
+				if (resp[0] == 133 and resp[1] == 0):
+					for x in range(0, len(resp) - 1):
+						if (resp[x] == 64):
+							# A piece has been lifted
+							fieldHex = resp[x + 1]
+							squarerow = (fieldHex // 8)
+							squarecol = (fieldHex % 8)
+							squarerow = 7 - squarerow
+							squarecol = 7 - squarecol
+							field = (squarerow * 8) + squarecol
+							print("UP: " + str(field))
+							if curturn == 1:
+								# white
+								item = board[field]
+								if (item == WROOK or item == WBISHOP or item == WKNIGHT or item == WQUEEN or item == WKING or item == WPAWN):
+									lastlift = board[field]
+							if curturn == 0:
+								#black
+								item = board[field]
+								if (item == BROOK or item == BBISHOP or item == BKNIGHT or item == BQUEEN or item == BKING or item == BPAWN):
+									lastlift = board[field]
+							print(lastlift)
+							board[field] = EMPTY
+							tosend = bytearray(b'')
+							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+							tosend.append(0)
+							tosend.append(5)
+							tosend.append(field)
+							tosend.append(EMPTY)
+							bt.write(tosend)
+							bt.write(tosend)
+							bt.write(tosend)
+							if item == WKING or item == BKING:
+								if field == 3 or field == 59:
+									# This is a king lift that could be part of castling.
+									print("kinglift")
+									kinglift = 1
+							else:
+								kinglift = 0
+							lastfield = field
+						if (resp[x] == 65):
+							# A piece has been placed
+							fieldHex = resp[x + 1]
+							squarerow = (fieldHex // 8)
+							squarecol = (fieldHex % 8)
+							squarerow = 7 - squarerow
+							squarecol = 7 - squarecol
+							field = (squarerow * 8) + squarecol
+							print("DOWN: " + str(field))
+							print(lastlift)
+							board[field] = lastlift
+							tosend = bytearray(b'')
+							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+							tosend.append(0)
+							tosend.append(5)
+							tosend.append(field)
+							tosend.append(lastlift)
+							bt.write(tosend)
+							bt.write(tosend)
+							bt.write(tosend)
+							boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+							if curturn == 1:
+								# white
+								if lastlift != EMPTY:
+									curturn = 0
+							else:
+								#black
+								if lastlift != EMPTY:
+									curturn = 1
+							# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
+							# 1 or 5 or 61 or 57 then the user is going to move the rook next
+							if kinglift == 1:
+								if lastfield == 3 or lastfield == 59:
+									if field == 1 or field == 5 or field == 61 or field == 57:
+										print("Castle attempt detected")
+										if curturn == 0:
+											curturn = 1
+										else:
+											curturn = 0
+							kinglift = 0
+							lastfield = field
+			tosend = bytearray(b'\x94\x06\x50\x6a')
+			boardfunctions.ser.write(tosend)
+			resp = boardfunctions.ser.read(1000)
+
+			timer = timer + 1
+			if timer > 50:
+				if bytearray(boardfunctions.getBoardState()) == startstate:
+					board = bytearray([EMPTY] * 64)
+					board[7] = WROOK
+					board[6] = WKNIGHT
+					board[5] = WBISHOP
+					board[4] = WQUEEN
+					board[3] = WKING
+					board[2] = WBISHOP
+					board[1] = WKNIGHT
+					board[0] = WROOK
+					board[15] = WPAWN
+					board[14] = WPAWN
+					board[13] = WPAWN
+					board[12] = WPAWN
+					board[11] = WPAWN
+					board[10] = WPAWN
+					board[9] = WPAWN
+					board[8] = WPAWN
+					board[55] = BPAWN
+					board[54] = BPAWN
+					board[53] = BPAWN
+					board[52] = BPAWN
+					board[51] = BPAWN
+					board[50] = BPAWN
+					board[49] = BPAWN
+					board[48] = BPAWN
+					board[63] = BROOK
+					board[62] = BKNIGHT
+					board[61] = BBISHOP
+					board[60] = BQUEEN
+					board[59] = BKING
+					board[58] = BBISHOP
+					board[57] = BKNIGHT
+					board[56] = BROOK
+					for x in range(0,64):
+						tosend = bytearray(b'')
+						tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+						tosend.append(0)
+						tosend.append(5)
+						tosend.append(x)
+						tosend.append(board[x])
+						bt.write(tosend)
+						bt.flushOutput()
+			if timer > 50:
+				timer = 0
+
+
+
+drawCurrentBoard()
 boardfunctions.writeText(0,'Connect remote')
 boardfunctions.writeText(1,'Device Now')
 
@@ -190,16 +362,27 @@ boardfunctions.writeText(0,'Connected')
 boardfunctions.writeText(1,'         ')
 print("start")
 
+scrUpd = threading.Thread(target=screenUpdate, args=())
+scrUpd.daemon = True
+scrUpd.start()
+
+sendupdates = 0
+timer = 0
+# 0 for black, 1 for white
+curturn = 1
+
+pMove = threading.Thread(target=pieceMoveDetectionThread,args=())
+pMove.daemon = True
+pMove.start()
+
 # Clear any remaining data sent from the board
 boardfunctions.clearBoardData()
 
-sendupdates = 0
+
 lastlift = EMPTY
-timer = 0
 
 while True:
 	data=bt.read(1)
-	print(data)
 
 	if len(data) > 0:
 		handled = 0
@@ -308,47 +491,51 @@ while True:
 			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_SET_LEDS:
-			# LEDs! But unfortunately this doesn't seem to work or I don't understand it yet :(
+			# LEDs! Not sure about this code, but at the moment it works with Chess for Android
+			# Note the mapping for the centaur goes 0 (a1) to 63 (h8)
+			# This mapping goes 0 (h1) to 63 (a8)
 			dd = bt.read(5)
 			print(dd.hex())
 			if dd[1] == 0:
 				# Off
-				squarerow = (dd[2] // 8)
-				squarecol = (dd[2] % 8)
-				squarerow = squarerow
-				squarecol = 7 - squarecol
+				print("off")
+				squarerow = 7 - (dd[2] // 8)
+				squarecol = 7 - (dd[2] % 8)
 				froms = (squarerow * 8) + squarecol
-				squarerow = (dd[3] // 8)
-				squarecol = (dd[3] % 8)
-				squarerow = squarerow
-				squarecol = 7 - squarecol
+				squarerow = 7 - (dd[3] // 8)
+				squarecol = 7 - (dd[3] % 8)
 				tos = (squarerow * 8) + squarecol
 				litsquares = list(filter(lambda a: a != froms, litsquares))
 				litsquares = list(filter(lambda a: a != tos, litsquares))
-				tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x08\x00\x05')
-				# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
-				for x in range(0, len(litsquares)):
-					tosend.append(litsquares[x])
-				tosend[2] = len(tosend) + 1
-				tosend.append(boardfunctions.checksum(tosend))
-				boardfunctions.ser.write(tosend)
+				if dd[2] == 0 and dd[3] == 63:
+					# This seems to be some code to turn the lights off
+					litsquares = []
+					boardfunctions.ledsOff()
+				print(len(litsquares))
+				if len(litsquares) > 0:
+					tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
+					# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
+					for x in range(0, len(litsquares)):
+						tosend.append(litsquares[x])
+					tosend[2] = len(tosend) + 1
+					tosend.append(boardfunctions.checksum(tosend))
+					boardfunctions.ser.write(tosend)
+				else:
+					boardfunctions.ledsOff()
 			if dd[1] == 1:
 				# On
-				squarerow = (dd[2] // 8)
-				squarecol = (dd[2] % 8)
-				squarerow = squarerow
-				squarecol = 7 - squarecol
+				print("on")
+				squarerow = 7 - (dd[2] // 8)
+				squarecol = 7 - (dd[2] % 8)
 				froms = (squarerow * 8) + squarecol
-				squarerow = (dd[3] // 8)
-				squarecol = (dd[3] % 8)
-				squarerow = squarerow
-				squarecol = 7 - squarecol
+				squarerow = 7 - (dd[3] // 8)
+				squarecol = 7 - (dd[3] % 8)
 				tos = (squarerow * 8) + squarecol
 				litsquares.append(froms)
 				litsquares.append(tos)
-				tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x08\x00\x05')
+				tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
 				# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
-				for x in range(0, len(litsquares)):
+				for x in range(0, len(litsquares) - 1):
 					tosend.append(litsquares[x])
 				tosend[2] = len(tosend) + 1
 				tosend.append(boardfunctions.checksum(tosend))
@@ -371,17 +558,15 @@ while True:
 			tosend.append(board[0])
 			bt.write(tosend)
 			bt.flushOutput()
-			boardfunctions.writeText(0, 'PLAY   ')
-			boardfunctions.writeText(1, '         ')
+			#boardfunctions.writeText(0, 'PLAY   ')
+			#boardfunctions.writeText(1, '         ')
 			# Here let's actually loop through reading the board states
-			lastlift = EMPTY
 			sendupdates = 1
 			handled = 1
 		if data[0] == DGT_SEND_UPDATE_NICE:
 			# Implementing this at the moment upsets RabbitPlugin :(
-			boardfunctions.writeText(0, 'PLAY   ')
-			boardfunctions.writeText(1, '         ')
-			lastlift = EMPTY
+			#boardfunctions.writeText(0, 'PLAY   ')
+			#boardfunctions.writeText(1, '         ')
 			#sendupdates = 1
 			handled = 1
 		if data[0] == DGT_SEND_CLK:
@@ -420,121 +605,3 @@ while True:
 			handled = 1
 		if handled == 0:
 			print("Unhandled message type: " + data.hex())
-
-	if sendupdates == 1:
-		boardfunctions.ser.read(10000)
-		tosend = bytearray(b'\x83\x06\x50\x59')
-		boardfunctions.ser.write(tosend)
-		expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
-		resp = boardfunctions.ser.read(1000)
-		resp = bytearray(resp)
-		if (bytearray(resp) != expect):
-			if (resp[0] == 133 and resp[1] == 0):
-				for x in range(0, len(resp) - 1):
-					if (resp[x] == 64):
-						fieldHex = resp[x + 1]
-						squarerow = (fieldHex // 8)
-						squarecol = (fieldHex % 8)
-						squarerow = 7 - squarerow
-						squarecol = 7 - squarecol
-						field = (squarerow * 8) + squarecol
-						lastlift = board[field]
-						board[field] = EMPTY
-						tosend = bytearray(b'')
-						tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
-						tosend.append(0)
-						tosend.append(5)
-						tosend.append(field)
-						tosend.append(EMPTY)
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-					if (resp[x] == 65):
-						fieldHex = resp[x + 1]
-						squarerow = (fieldHex // 8)
-						squarecol = (fieldHex % 8)
-						squarerow = 7 - squarerow
-						squarecol = 7 - squarecol
-						field = (squarerow * 8) + squarecol
-						board[field] = lastlift
-						tosend = bytearray(b'')
-						tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
-						tosend.append(0)
-						tosend.append(5)
-						tosend.append(field)
-						tosend.append(lastlift)
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						bt.write(tosend)
-						bt.flushOutput()
-						drawCurrentBoard()
-		tosend = bytearray(b'\x94\x06\x50\x6a')
-		boardfunctions.ser.write(tosend)
-		resp = boardfunctions.ser.read(1000)
-
-		timer = timer + 1
-		if timer > 50:
-			if bytearray(boardfunctions.getBoardState()) == startstate:
-				board = bytearray([EMPTY] * 64)
-				board[7] = WROOK
-				board[6] = WKNIGHT
-				board[5] = WBISHOP
-				board[4] = WQUEEN
-				board[3] = WKING
-				board[2] = WBISHOP
-				board[1] = WKNIGHT
-				board[0] = WROOK
-				board[15] = WPAWN
-				board[14] = WPAWN
-				board[13] = WPAWN
-				board[12] = WPAWN
-				board[11] = WPAWN
-				board[10] = WPAWN
-				board[9] = WPAWN
-				board[8] = WPAWN
-				board[55] = BPAWN
-				board[54] = BPAWN
-				board[53] = BPAWN
-				board[52] = BPAWN
-				board[51] = BPAWN
-				board[50] = BPAWN
-				board[49] = BPAWN
-				board[48] = BPAWN
-				board[63] = BROOK
-				board[62] = BKNIGHT
-				board[61] = BBISHOP
-				board[60] = BQUEEN
-				board[59] = BKING
-				board[58] = BBISHOP
-				board[57] = BKNIGHT
-				board[56] = BROOK
-				for x in range(0,64):
-					tosend = bytearray(b'')
-					tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
-					tosend.append(0)
-					tosend.append(5)
-					tosend.append(x)
-					tosend.append(board[x])
-					bt.write(tosend)
-					bt.flushOutput()
-				drawCurrentBoard()
-		if timer > 50:
-			timer = 0
-
