@@ -252,7 +252,7 @@ def pieceMoveDetectionThread():
 							else:
 								kinglift = 0
 							lastfield = field
-						if (resp[x] == 65):
+						if (resp[x] == 65 and lastlift != EMPTY):
 							# A piece has been placed
 							fieldHex = resp[x + 1]
 							squarerow = (fieldHex // 8)
@@ -293,6 +293,7 @@ def pieceMoveDetectionThread():
 											curturn = 0
 							kinglift = 0
 							lastfield = field
+							lastlift = EMPTY
 			tosend = bytearray(b'\x94\x06\x50\x6a')
 			boardfunctions.ser.write(tosend)
 			resp = boardfunctions.ser.read(1000)
