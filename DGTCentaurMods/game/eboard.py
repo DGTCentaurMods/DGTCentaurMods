@@ -13,7 +13,7 @@
 import serial
 import time
 from os.path import exists
-from dgt_centaur_mods.board import boardfunctions
+from DGTCentaurMods.board import boardfunctions
 
 # https://github.com/well69/picochess-1/blob/master/test/dgtbrd-ruud.h
 DGT_SEND_RESET = 0x40 # Puts the board into IDLE mode, cancelling any UPDATE mode
