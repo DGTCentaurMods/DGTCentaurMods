@@ -3,9 +3,9 @@ import berserk
 import ssl
 import time
 import threading
-from dgt_centaur_mods.board import boardfunctions
+from DGTCentaurMods.board import boardfunctions
 import chess
-from dgt_centaur_mods.config import config
+from DGTCentaurMods.config import config
 
 # Run a game on lichess
 # This is version two so we do it directly and with screen control!
