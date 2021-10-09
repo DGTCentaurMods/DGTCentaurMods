@@ -31,7 +31,7 @@
 #
 
 import logging
-from dgt_centaur_mods.display import epdconfig
+from DGTCentaurMods.display import epdconfig
 from PIL import Image
 import RPi.GPIO as GPIO
 
