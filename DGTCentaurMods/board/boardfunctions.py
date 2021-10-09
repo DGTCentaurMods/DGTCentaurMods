@@ -8,7 +8,7 @@
 import serial
 import sys
 import os
-from dgt_centaur_mods.display import epd2in9d
+from DGTCentaurMods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
