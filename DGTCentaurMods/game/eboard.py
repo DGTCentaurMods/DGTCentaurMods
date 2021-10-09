@@ -6,15 +6,16 @@
 # Connect after the chessboard displays
 #
 # TODO
-# Castling - move king and then rook works in chess for android, but not whitepawn. Whitepawn issue?
-# As the board cannot detect actual pieces - we must handle pawn promotion if WPAWN is on 8 or BPAWN on 1
-# Implement DGT_BUS_SET_START_GAME
+# Currently autopromotes pawn to queens - allow choice (as we cannot actually detect what piece is put down!)
 # Check all possible commands are catered for
 # Make it so bus address is unique and is checked before responding to messages ?
 # Regular serial (in addition to bluetooth) ?
+# Handle DGT_BUS_REPEAT_CHANGES bus message 0x04
+# RabbitPlugin disconnects when new start state detected
 
 import serial
 import time
+import sys
 from os.path import exists
 from DGTCentaurMods.board import boardfunctions
 import threading
@@ -61,11 +62,13 @@ DGT_BUS_SEND_CHANGES = 0x83
 DGT_MSG_BUS_UPDATE = 0x05
 DGT_BUS_SEND_CLK = 0x81
 DGT_BUS_SET_START_GAME = 0x85
+DGT_MSG_BUS_START_GAME_WRITTEN = 0x08
 
 DGT_RETURN_BUSADRES = 0x46
 DGT_SEND_TRADEMARK = 0x47
 
 DGT_UNKNOWN_1 = 0xDF
+DGT_UNKNOWN_2 = 0x92
 
 EE_POWERUP = 0x6a
 EE_EOF = 0x6b
@@ -236,6 +239,7 @@ EEPROM.append(56)
 EEPROM.append(EE_BEGINPOS)
 eepromlastsendpoint = 4
 
+dodie = 0
 
 boardfunctions.clearScreen()
 
@@ -288,7 +292,7 @@ def screenUpdate():
 	global boardtoscreen
 	lastboard = ""
 	while True:
-		time.sleep(0.2)
+		time.sleep(1.0)
 		if boardtoscreen == 1 and str(board) != lastboard:
 			lastboard = str(board)
 			drawCurrentBoard()
@@ -305,12 +309,14 @@ def pieceMoveDetectionThread():
 	global curturn
 	global boardtoscreen
 	global EEPROM
+	global dodie
 	lastlift = 0
 	kinglift = 0
 	lastfield = -1
+	startstateflag = 1
 	castlemode = 0
 	while True:
-		time.sleep(0.05)
+		time.sleep(0.3)
 		if sendupdates == 1:
 			boardtoscreen = 1
 			boardfunctions.ser.read(10000)
@@ -330,7 +336,11 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							#print("UP: " + str(field))
+							print("UP: " + chr(ord("a") + squarecol - 1) + chr(ord("1") + squarerow))
+							if curturn == 1:
+								print("White turn")
+							else:
+								print("Black turn")
 							if curturn == 1:
 								# white
 								item = board[field]
@@ -341,27 +351,29 @@ def pieceMoveDetectionThread():
 								item = board[field]
 								if (item == BROOK or item == BBISHOP or item == BKNIGHT or item == BQUEEN or item == BKING or item == BPAWN):
 									lastlift = board[field]
-							#print(lastlift)
-							board[field] = EMPTY
-							tosend = bytearray(b'')
-							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
-							tosend.append(0)
-							tosend.append(5)
-							tosend.append(field)
-							tosend.append(EMPTY)
-							bt.write(tosend)
-							bt.write(tosend)
-							bt.write(tosend)
-							EEPROM.append(EMPTY + 64)
-							EEPROM.append(field)
-							if item == WKING or item == BKING:
-								if field == 3 or field == 59:
-									# This is a king lift that could be part of castling.
-									#print("kinglift")
-									kinglift = 1
-							else:
-								kinglift = 0
-							lastfield = field
+							print(item)
+							print(lastlift)
+							if lastlift != EMPTY:
+								board[field] = EMPTY
+								tosend = bytearray(b'')
+								tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+								tosend.append(0)
+								tosend.append(5)
+								tosend.append(field)
+								tosend.append(EMPTY)
+								bt.write(tosend)
+								#bt.write(tosend)
+								#bt.write(tosend)
+								EEPROM.append(EMPTY + 64)
+								EEPROM.append(field)
+								if item == WKING or item == BKING:
+									if field == 3 or field == 59:
+										# This is a king lift that could be part of castling.
+										#print("kinglift")
+										kinglift = 1
+								else:
+									kinglift = 0
+								lastfield = field
 						if (resp[x] == 65 and lastlift != EMPTY):
 							# A piece has been placed
 							fieldHex = resp[x + 1]
@@ -370,8 +382,17 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							#print("DOWN: " + str(field))
-							#print(lastlift)
+							print("DOWN: " + chr(ord("a") + squarecol - 1) + chr(ord("1") + squarerow))
+							if curturn == 1:
+								print("White turn")
+							else:
+								print("Black turn")
+							print(lastlift)
+							# Auto promote to queen
+							if lastlift == WPAWN and field > 55:
+								lastlift = WQUEEN
+							if lastlift == BPAWN and field < 8:
+								lastlift = WQUEEN
 							board[field] = lastlift
 							tosend = bytearray(b'')
 							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -380,18 +401,18 @@ def pieceMoveDetectionThread():
 							tosend.append(field)
 							tosend.append(lastlift)
 							bt.write(tosend)
-							bt.write(tosend)
-							bt.write(tosend)
+							#bt.write(tosend)
+							#bt.write(tosend)
 							EEPROM.append(lastlift + 64)
 							EEPROM.append(field)
 							boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-							if curturn == 1 and field != lastfield:
+							if curturn == 1:
 								# white
 								if lastlift != EMPTY:
 									curturn = 0
 							else:
 								#black
-								if lastlift != EMPTY and field != lastfield:
+								if lastlift != EMPTY:
 									curturn = 1
 							# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
 							# 1 or 5 or 61 or 57 then the user is going to move the rook next
@@ -406,13 +427,13 @@ def pieceMoveDetectionThread():
 							kinglift = 0
 							lastfield = field
 							lastlift = EMPTY
-			tosend = bytearray(b'\x94\x06\x50\x6a')
-			boardfunctions.ser.write(tosend)
-			resp = boardfunctions.ser.read(1000)
 
 			timer = timer + 1
-			if timer > 500:
-				if bytearray(boardfunctions.getBoardState()) == startstate:
+			if timer > 5:
+				r = boardfunctions.getBoardState()
+				if bytearray(r) == startstate and startstateflag == 0:
+					print("start state detected")
+					startstateflag = 1
 					board = bytearray([EMPTY] * 64)
 					board[7] = WROOK
 					board[6] = WKNIGHT
@@ -455,9 +476,85 @@ def pieceMoveDetectionThread():
 						tosend.append(board[x])
 						bt.write(tosend)
 						bt.flushOutput()
-			if timer > 50:
+					EEPROM.append(WROOK + 64)
+					EEPROM.append(7)
+					EEPROM.append(WKNIGHT + 64)
+					EEPROM.append(6)
+					EEPROM.append(WBISHOP + 64)
+					EEPROM.append(5)
+					EEPROM.append(WQUEEN + 64)
+					EEPROM.append(4)
+					EEPROM.append(WKING + 64)
+					EEPROM.append(3)
+					EEPROM.append(WBISHOP + 64)
+					EEPROM.append(2)
+					EEPROM.append(WKNIGHT + 64)
+					EEPROM.append(1)
+					EEPROM.append(WROOK + 64)
+					EEPROM.append(0)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(15)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(14)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(13)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(12)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(11)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(10)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(9)
+					EEPROM.append(WPAWN + 64)
+					EEPROM.append(8)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(55)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(54)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(53)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(52)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(51)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(50)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(49)
+					EEPROM.append(BPAWN + 64)
+					EEPROM.append(48)
+					EEPROM.append(BROOK + 64)
+					EEPROM.append(63)
+					EEPROM.append(BKNIGHT + 64)
+					EEPROM.append(62)
+					EEPROM.append(BBISHOP + 64)
+					EEPROM.append(61)
+					EEPROM.append(BQUEEN + 64)
+					EEPROM.append(60)
+					EEPROM.append(BKING + 64)
+					EEPROM.append(59)
+					EEPROM.append(BBISHOP + 64)
+					EEPROM.append(58)
+					EEPROM.append(BKNIGHT + 64)
+					EEPROM.append(57)
+					EEPROM.append(BROOK + 64)
+					EEPROM.append(56)
+					EEPROM.append(EE_BEGINPOS)
+				else:
+					if bytearray(r) != startstate:
+						startstateflag = 0
 				timer = 0
-
+		tosend = bytearray(b'\x94\x06\x50\x6a')
+		boardfunctions.ser.write(tosend)
+		resp = boardfunctions.ser.read(1000)
+		resp = bytearray(resp)
+		if (resp.hex() == "b10011065000140a0501000000007d4700"):
+			# The back button has been pressed. Use this to exit eboard mode by setting a flag
+			# for the main thread
+			print("exit")
+			dodie = 1
+			boardfunctions.beep(boardfunctions.SOUND_GENERAL)
 
 
 drawCurrentBoard()
@@ -494,7 +591,7 @@ boardfunctions.clearBoardData()
 
 lastlift = EMPTY
 
-while True:
+while True and dodie == 0:
 	data=bt.read(1)
 
 	if len(data) > 0:
@@ -672,6 +769,94 @@ while True:
 			bt.flushOutput()
 			eepromlastsendpoint = len(EEPROM)
 			handled = 1
+		if data[0] == DGT_UNKNOWN_2:
+			# This is a bus mode packet. But I don't know what it does. It seems it can be ignored though
+			dump = bt.read(3)
+			handled = 1
+		if data[0] == DGT_BUS_SET_START_GAME:
+			dump = bt.read(3)
+			print("Bus set start game")
+			# Write EE_START_TAG to EEPROM
+			# Followed by piece positions
+			# Return DGT_MSG_BUS_START_GAME_WRITTEN message
+			EEPROM.append(EE_START_TAG)
+			EEPROM.append(WROOK + 64)
+			EEPROM.append(7)
+			EEPROM.append(WKNIGHT + 64)
+			EEPROM.append(6)
+			EEPROM.append(WBISHOP + 64)
+			EEPROM.append(5)
+			EEPROM.append(WQUEEN + 64)
+			EEPROM.append(4)
+			EEPROM.append(WKING + 64)
+			EEPROM.append(3)
+			EEPROM.append(WBISHOP + 64)
+			EEPROM.append(2)
+			EEPROM.append(WKNIGHT + 64)
+			EEPROM.append(1)
+			EEPROM.append(WROOK + 64)
+			EEPROM.append(0)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(15)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(14)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(13)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(12)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(11)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(10)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(9)
+			EEPROM.append(WPAWN + 64)
+			EEPROM.append(8)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(55)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(54)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(53)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(52)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(51)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(50)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(49)
+			EEPROM.append(BPAWN + 64)
+			EEPROM.append(48)
+			EEPROM.append(BROOK + 64)
+			EEPROM.append(63)
+			EEPROM.append(BKNIGHT + 64)
+			EEPROM.append(62)
+			EEPROM.append(BBISHOP + 64)
+			EEPROM.append(61)
+			EEPROM.append(BQUEEN + 64)
+			EEPROM.append(60)
+			EEPROM.append(BKING + 64)
+			EEPROM.append(59)
+			EEPROM.append(BBISHOP + 64)
+			EEPROM.append(58)
+			EEPROM.append(BKNIGHT + 64)
+			EEPROM.append(57)
+			EEPROM.append(BROOK + 64)
+			EEPROM.append(56)
+			EEPROM.append(EE_BEGINPOS)
+			tosend = bytearray(b'')
+			tosend.append(DGT_MSG_BUS_START_GAME_WRITTEN | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(6)
+			tosend.append(8)
+			tosend.append(1)
+			tosend.append(boardfunctions.checksum(tosend))
+			time.sleep(0.05)
+			bt.write(tosend)
+			bt.flushOutput()
+			sendupdates = 1
+			handled = 1
 		if data[0] == DGT_RETURN_SERIALNR:
 			# Return our serial number
 			tosend = bytearray(b'')
@@ -809,7 +994,6 @@ while True:
 			sendupdates = 1
 			handled = 1
 		if data[0] == DGT_SEND_UPDATE_NICE:
-			# Implementing this at the moment upsets RabbitPlugin :(
 			#boardfunctions.writeText(0, 'PLAY   ')
 			#boardfunctions.writeText(1, '         ')
 			sendupdates = 1
