@@ -140,6 +140,14 @@ def doMenu(items):
     if initialised == 0:
         epd.Clear(0xff)
     connected = checkInternetSocket()
+    quickselect = 0
+    quickselectpossible = -1
+    res = getBoardState()
+    print(res)
+    if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36]==0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
+        # If the 4th rank is empty then enable quick select mode. Then we can choose a menu option by placing and releasing a piece
+        quickselect = 1
+        print("Quick select mode available")
     while (buttonPress != 2):
         image = Image.new('1', (epd.width, epd.height), 255)
         draw = ImageDraw.Draw(image)
@@ -194,6 +202,44 @@ def doMenu(items):
                 buttonPress = 3
             if (resp.hex() == "b10010065000140a050200000000611d"):
                 buttonPress = 4
+            # check for quickselect
+            if quickselect == 1 and quickselectpossible < 1:
+                res = getBoardState()
+                print(res)
+                if res[32] > 0:
+                    quickselectpossible = 1
+                if res[33] > 0:
+                    quickselectpossible = 2
+                if res[34] > 0:
+                    quickselectpossible = 3
+                if res[35] > 0:
+                    quickselectpossible = 4
+                if res[36] > 0:
+                    quickselectpossible = 5
+                if res[37] > 0:
+                    quickselectpossible = 6
+                if res[38] > 0:
+                    quickselectpossible = 7
+                if res[39] > 0:
+                    quickselectpossible = 8
+                if quickselectpossible > 0:
+                    beep(SOUND_GENERAL)
+            if quickselect == 1 and quickselectpossible > 0:
+                res = getBoardState()
+                if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
+                    # Quickselect possible has been chosen
+                    print("Quick selected")
+                    print(quickselectpossible)
+                    c = 1
+                    r = ""
+                    for k, v in items.items():
+                        if (c == quickselectpossible):
+                            # epd.unsetRegion()
+                            # epd.Clear(0xff)
+                            selected = 99999
+                            return k
+                        c = c + 1
+
         ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
         if (buttonPress == 2):
             # Tick, so return the key for this menu item
