@@ -23,7 +23,7 @@ In order to run the project on a Raspberry Pi Zero W, these are some steps to be
 1. Root the Raspberry Pi Zero that comes with the board and backup the `/home/pi/centaur` folder somewhere
 2. Get a Raspberry Pi Zero W and flash the Rasberry Pi OS Lite image on its SD card
 3. Configure access to your wi-fi network and enable SSH access to the Pi (please refer to the official docs)
-4. Add `dtparam-spi=on`, `enable_uart=1`, `dtoverlay=disable-bt` and `dtoverlay=spi1-3cs` to /boot/config.txt of the Pi Zero W in order to enable the serial interface
+4. Add `dtparam-spi=on`, `enable_uart=1`, and `dtoverlay=spi1-3cs` to /boot/config.txt of the Pi Zero W in order to enable the serial interface
 5. Copy the `centaur` folder in `/home/pi`
 6. Copy the project files in home dir
 7. Edit `/etc/rc.local` to launch `menu.py` at startup
