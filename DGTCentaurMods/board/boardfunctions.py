@@ -12,6 +12,7 @@ from DGTCentaurMods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
+import socket
 
 # Open the serial port, baudrate is 1000000
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
@@ -118,6 +119,14 @@ def writeText(row, txt):
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
 
+def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        print(ex)
+        return False
 
 def doMenu(items):
     # Draw a menu, let the user navigate and return the value
@@ -130,6 +139,7 @@ def doMenu(items):
     global initialised
     if initialised == 0:
         epd.Clear(0xff)
+    connected = checkInternetSocket()
     while (buttonPress != 2):
         image = Image.new('1', (epd.width, epd.height), 255)
         draw = ImageDraw.Draw(image)
@@ -139,8 +149,19 @@ def doMenu(items):
             rpos = rpos + 20
         draw.polygon([(2, (selected * 20)), (2, (selected * 20) + 20),
                      (18, (selected * 20) + 10)], fill=0)
+
+        # Draw an image representing internet connectivity
+        wifion = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiontiny.bmp")
+        wifioff = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiofftiny.bmp")
+        if connected == True:
+            wifidispicon = wifion.resize((20,16))
+            image.paste(wifidispicon, (105, 5))
+        else:
+            wifidispicon = wifioff.resize((20, 16))
+            image.paste(wifidispicon, (105, 5))
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
         image = image.transpose(Image.FLIP_LEFT_RIGHT)
+
         if first == 1 and initialised == 0:
             epd.display(epd.getbuffer(image))
             time.sleep(3)
