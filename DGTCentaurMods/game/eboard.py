@@ -1,4 +1,4 @@
-# An attempt to emulate the DGT e-board protocol
+# Emulate the DGT e-board protocol
 #
 # Ed Nekebno
 #
@@ -6,7 +6,12 @@
 # Connect after the chessboard displays
 #
 # TODO
-# Castling - move king and then rook works in chess for android, but not whitepawn
+# Castling - move king and then rook works in chess for android, but not whitepawn. Whitepawn issue?
+# As the board cannot detect actual pieces - we must handle pawn promotion if WPAWN is on 8 or BPAWN on 1
+# Implement DGT_BUS_SET_START_GAME
+# Check all possible commands are catered for
+# Make it so bus address is unique and is checked before responding to messages ?
+# Regular serial (in addition to bluetooth) ?
 
 import serial
 import time
@@ -46,10 +51,36 @@ DGT_BATTERY_STATUS = 0x20
 
 DGT_BUS_PING = 0x87
 DGT_MSG_BUS_PING = 0x07
+DGT_BUS_IGNORE_NEXT_BUS_PING = 0x8a
+ignore_next_bus_ping = 0
+DGT_BUS_SEND_VERSION = 0x8b
+DGT_MSG_BUS_VERSION = 0x09
+DGT_BUS_SEND_FROM_START = 0x86
+DGT_MSG_BUS_FROM_START = 0x06
+DGT_BUS_SEND_CHANGES = 0x83
+DGT_MSG_BUS_UPDATE = 0x05
+DGT_BUS_SEND_CLK = 0x81
+DGT_BUS_SET_START_GAME = 0x85
 
 DGT_RETURN_BUSADRES = 0x46
 DGT_SEND_TRADEMARK = 0x47
 
+DGT_UNKNOWN_1 = 0xDF
+
+EE_POWERUP = 0x6a
+EE_EOF = 0x6b
+EE_FOURROWS = 0x6c
+EE_EMPTYBOARD = 0x6d
+EE_DOWNLOADED = 0x6e
+EE_BEGINPOS = 0x6f
+EE_BEGINPOS_ROT = 0x7a
+EE_START_TAG = 0x7b
+EE_WATCHDOG_ACTION = 0x7c
+EE_FUTURE_1 = 0x7d
+EE_FUTURE_2 = 0x7e
+EE_NOP = 0x7f
+EE_NOP2 = 0x00
+EEPROM = []
 
 EMPTY = 0x00
 WPAWN = 0x01
@@ -133,6 +164,79 @@ board[57] = BKNIGHT
 board[56] = BROOK
 print("board is setup")
 
+# Here we are emulating power on so push into the pretend eeprom
+EEPROM.append(EE_NOP)
+EEPROM.append(EE_NOP)
+EEPROM.append(EE_NOP)
+EEPROM.append(EE_POWERUP)
+EEPROM.append(WROOK + 64)
+EEPROM.append(7)
+EEPROM.append(WKNIGHT + 64)
+EEPROM.append(6)
+EEPROM.append(WBISHOP + 64)
+EEPROM.append(5)
+EEPROM.append(WQUEEN + 64)
+EEPROM.append(4)
+EEPROM.append(WKING + 64)
+EEPROM.append(3)
+EEPROM.append(WBISHOP + 64)
+EEPROM.append(2)
+EEPROM.append(WKNIGHT + 64)
+EEPROM.append(1)
+EEPROM.append(WROOK + 64)
+EEPROM.append(0)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(15)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(14)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(13)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(12)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(11)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(10)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(9)
+EEPROM.append(WPAWN + 64)
+EEPROM.append(8)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(55)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(54)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(53)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(52)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(51)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(50)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(49)
+EEPROM.append(BPAWN + 64)
+EEPROM.append(48)
+EEPROM.append(BROOK + 64)
+EEPROM.append(63)
+EEPROM.append(BKNIGHT + 64)
+EEPROM.append(62)
+EEPROM.append(BBISHOP + 64)
+EEPROM.append(61)
+EEPROM.append(BQUEEN + 64)
+EEPROM.append(60)
+EEPROM.append(BKING + 64)
+EEPROM.append(59)
+EEPROM.append(BBISHOP + 64)
+EEPROM.append(58)
+EEPROM.append(BKNIGHT + 64)
+EEPROM.append(57)
+EEPROM.append(BROOK + 64)
+EEPROM.append(56)
+EEPROM.append(EE_BEGINPOS)
+eepromlastsendpoint = 4
+
+
 boardfunctions.clearScreen()
 
 def drawCurrentBoard():
@@ -178,12 +282,15 @@ boardtoscreen = 0
 
 def screenUpdate():
 	# Separate thread to display the screen/pieces should improve
-	# responsiveness
+	# responsiveness. Be nice on the epaper and only update the display
+	# if the board state changes
 	global board
 	global boardtoscreen
+	lastboard = ""
 	while True:
-		time.sleep(2)
-		if boardtoscreen == 1:
+		time.sleep(0.2)
+		if boardtoscreen == 1 and str(board) != lastboard:
+			lastboard = str(board)
 			drawCurrentBoard()
 
 def pieceMoveDetectionThread():
@@ -197,6 +304,7 @@ def pieceMoveDetectionThread():
 	global board
 	global curturn
 	global boardtoscreen
+	global EEPROM
 	lastlift = 0
 	kinglift = 0
 	lastfield = -1
@@ -222,7 +330,7 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							print("UP: " + str(field))
+							#print("UP: " + str(field))
 							if curturn == 1:
 								# white
 								item = board[field]
@@ -233,7 +341,7 @@ def pieceMoveDetectionThread():
 								item = board[field]
 								if (item == BROOK or item == BBISHOP or item == BKNIGHT or item == BQUEEN or item == BKING or item == BPAWN):
 									lastlift = board[field]
-							print(lastlift)
+							#print(lastlift)
 							board[field] = EMPTY
 							tosend = bytearray(b'')
 							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -244,10 +352,12 @@ def pieceMoveDetectionThread():
 							bt.write(tosend)
 							bt.write(tosend)
 							bt.write(tosend)
+							EEPROM.append(EMPTY + 64)
+							EEPROM.append(field)
 							if item == WKING or item == BKING:
 								if field == 3 or field == 59:
 									# This is a king lift that could be part of castling.
-									print("kinglift")
+									#print("kinglift")
 									kinglift = 1
 							else:
 								kinglift = 0
@@ -260,8 +370,8 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							print("DOWN: " + str(field))
-							print(lastlift)
+							#print("DOWN: " + str(field))
+							#print(lastlift)
 							board[field] = lastlift
 							tosend = bytearray(b'')
 							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -272,14 +382,16 @@ def pieceMoveDetectionThread():
 							bt.write(tosend)
 							bt.write(tosend)
 							bt.write(tosend)
+							EEPROM.append(lastlift + 64)
+							EEPROM.append(field)
 							boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-							if curturn == 1:
+							if curturn == 1 and field != lastfield:
 								# white
 								if lastlift != EMPTY:
 									curturn = 0
 							else:
 								#black
-								if lastlift != EMPTY:
+								if lastlift != EMPTY and field != lastfield:
 									curturn = 1
 							# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
 							# 1 or 5 or 61 or 57 then the user is going to move the rook next
@@ -299,7 +411,7 @@ def pieceMoveDetectionThread():
 			resp = boardfunctions.ser.read(1000)
 
 			timer = timer + 1
-			if timer > 50:
+			if timer > 500:
 				if bytearray(boardfunctions.getBoardState()) == startstate:
 					board = bytearray([EMPTY] * 64)
 					board[7] = WROOK
@@ -395,38 +507,170 @@ while True:
 			handled = 1
 		if data[0] == DGT_TO_BUSMODE:
 			# Puts the board in BUS mode
+			#print("Bus mode")
 			handled = 1
 		if data[0] == DGT_RETURN_BUSADRES:
 			tosend = bytearray(b'\x00\x00\x05\x08\x01')
 			tosend[0] = DGT_BUSADRES | MESSAGE_BIT
+			#tosend.append(boardfunctions.checksum(tosend))
 			bt.write(tosend)
 			bt.flushOutput()
 			sentbus = 1
 			handled = 1
 		if data[0] == DGT_SEND_TRADEMARK:
 			# Send DGT Trademark Message
-			tosend = bytearray(b'\x00\x00\x00\x00\x00')
+			tosend = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 			tosend[0] = DGT_TRADEMARK | MESSAGE_BIT
 			tosend[1] = 0
-			tosend[2] = 5
-			tosend[3] = ord('T')
-			tosend[4] = ord('M')
+			tosend[2] = 36
+			tosend[3] = ord('D')
+			tosend[4] = ord('i')
+			tosend[5] = ord('g')
+			tosend[6] = ord('i')
+			tosend[7] = ord('t')
+			tosend[8] = ord('a')
+			tosend[9] = ord('l')
+			tosend[10] = ord(' ')
+			tosend[11] = ord('G')
+			tosend[12] = ord('a')
+			tosend[13] = ord('m')
+			tosend[14] = ord('e')
+			tosend[15] = ord(' ')
+			tosend[16] = ord('T')
+			tosend[17] = ord('e')
+			tosend[18] = ord('c')
+			tosend[19] = ord('h')
+			tosend[20] = ord('n')
+			tosend[21] = ord('o')
+			tosend[22] = ord('l')
+			tosend[23] = ord('o')
+			tosend[24] = ord('g')
+			tosend[25] = ord('y')
+			tosend[26] = ord(' ')
+			tosend[27] = ord('E')
+			tosend[28] = ord('m')
+			tosend[29] = ord('u')
+			tosend[30] = ord('l')
+			tosend[31] = ord('a')
+			tosend[32] = ord('t')
+			tosend[33] = ord('i')
+			tosend[34] = ord('o')
+			tosend[35] = ord('n')
 			bt.write(tosend)
 			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_BUS_PING:
 			# Received a ping message
 			# The message actually has two more bytes and a checksum
+			#print("bus pinged")
 			dump = bt.read(3)
+			#print(dump.hex())
+			if ignore_next_bus_ping == 1 and dump[0] == 0 and dump[1] == 0:
+				ignore_next_bus_ping = 0
+				#print("ignoring")
+				handled = 1
+			else:
+				#print(dump.hex())
+				tosend = bytearray(b'')
+				tosend.append(DGT_MSG_BUS_PING | MESSAGE_BIT)
+				tosend.append(0)
+				tosend.append(6)
+				tosend.append(8)
+				tosend.append(1)
+				tosend.append(boardfunctions.checksum(tosend))
+				time.sleep(0.05)
+				bt.write(tosend)
+				bt.flushOutput()
+				handled = 1
+		if data[0] == DGT_BUS_IGNORE_NEXT_BUS_PING:
+			# A ping message and response but ignore the next ping!
+			# The message actually has two more bytes and a checksum
+			#print("ignore next bus ping")
+			dump = bt.read(3)
+			#print(dump.hex())
 			tosend = bytearray(b'')
 			tosend.append(DGT_MSG_BUS_PING | MESSAGE_BIT)
 			tosend.append(0)
-			tosend.append(5)
+			tosend.append(6)
 			tosend.append(8)
 			tosend.append(1)
-			time.sleep(0.5)
+			tosend.append(boardfunctions.checksum(tosend))
+			time.sleep(0.05)
 			bt.write(tosend)
 			bt.flushOutput()
+			ignore_next_bus_ping = 1
+			handled = 1
+		if data[0] == DGT_BUS_SEND_VERSION:
+			# Send Version to bus
+			#print("sending version to bus")
+			dump = bt.read(3)
+			tosend = bytearray(b'')
+			tosend.append(DGT_MSG_BUS_VERSION | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(8)
+			tosend.append(8)
+			tosend.append(1)
+			tosend.append(1)
+			tosend.append(2)
+			tosend.append(boardfunctions.checksum(tosend))
+			bt.write(tosend)
+			bt.flushOutput()
+			handled = 1
+		if data[0] == DGT_BUS_SEND_CLK:
+			# Don't handle this for now but we still need to clear the extra bytes
+			# with ourbus  address and checksum
+			dump = bt.read(3)
+			handled = 1
+		if data[0] == DGT_BUS_SEND_FROM_START:
+			#print("Sending EEPROM data from start")
+			dump = bt.read(3)
+			# find the last occurrence of EE_START in the EEPROM
+			offset = -1
+			for i in range(len(EEPROM) - 1, -1, -1):
+				if EEPROM[i] == EE_START_TAG:
+					offset = i
+					break
+			tosend = bytearray(b'')
+			tosend.append(DGT_MSG_BUS_FROM_START | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(6)
+			tosend.append(8)
+			tosend.append(1)
+			if offset == -1:
+				#print("Sending but no data")
+				tosend.append(boardfunctions.checksum(tosend))
+				#print(tosend.hex())
+				bt.write(tosend)
+				bt.flushOutput()
+				handled = 1
+			else:
+				#print("Sending with data")
+				for i in range(offset, len(EEPROM)-1):
+					tosend.append(EEPROM[i])
+					tosend[2] = len(tosend) + 1
+					tosend.append(boardfunctions.checksum(tosend))
+					#print(tosend.hex())
+					bt.write(tosend)
+					bt.flushOutput()
+					handled = 1
+			sendupdates = 1
+		if data[0] == DGT_BUS_SEND_CHANGES:
+			#print("Sending changes since last request")
+			dump = bt.read(3)
+			tosend = bytearray(b'')
+			tosend.append(DGT_MSG_BUS_UPDATE | MESSAGE_BIT)
+			tosend.append(0)
+			tosend.append(6)
+			tosend.append(8)
+			tosend.append(1)
+			for i in range(eepromlastsendpoint, len(EEPROM)):
+				tosend.append(EEPROM[i])
+			tosend[2] = len(tosend) + 1
+			tosend.append(boardfunctions.checksum(tosend))
+			#print(tosend.hex())
+			bt.write(tosend)
+			bt.flushOutput()
+			eepromlastsendpoint = len(EEPROM)
 			handled = 1
 		if data[0] == DGT_RETURN_SERIALNR:
 			# Return our serial number
@@ -476,7 +720,7 @@ while True:
 			tosend.append(0)
 			tosend.append(5)
 			tosend.append(1)
-			tosend.append(0)
+			tosend.append(2)
 			bt.write(tosend)
 			bt.flushOutput()
 			handled = 1
@@ -496,10 +740,10 @@ while True:
 			# Note the mapping for the centaur goes 0 (a1) to 63 (h8)
 			# This mapping goes 0 (h1) to 63 (a8)
 			dd = bt.read(5)
-			print(dd.hex())
+			#print(dd.hex())
 			if dd[1] == 0:
 				# Off
-				print("off")
+				#print("off")
 				squarerow = 7 - (dd[2] // 8)
 				squarecol = 7 - (dd[2] % 8)
 				froms = (squarerow * 8) + squarecol
@@ -512,7 +756,7 @@ while True:
 					# This seems to be some code to turn the lights off
 					litsquares = []
 					boardfunctions.ledsOff()
-				print(len(litsquares))
+				#print(len(litsquares))
 				if len(litsquares) > 0:
 					tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
 					# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
@@ -525,7 +769,7 @@ while True:
 					boardfunctions.ledsOff()
 			if dd[1] == 1:
 				# On
-				print("on")
+				#print("on")
 				squarerow = 7 - (dd[2] // 8)
 				squarecol = 7 - (dd[2] % 8)
 				froms = (squarerow * 8) + squarecol
@@ -568,7 +812,7 @@ while True:
 			# Implementing this at the moment upsets RabbitPlugin :(
 			#boardfunctions.writeText(0, 'PLAY   ')
 			#boardfunctions.writeText(1, '         ')
-			#sendupdates = 1
+			sendupdates = 1
 			handled = 1
 		if data[0] == DGT_SEND_CLK:
 			# RabbitPlugin doesn't work without this so let's fake this for now
