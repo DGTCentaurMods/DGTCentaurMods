@@ -315,6 +315,8 @@ def pieceMoveDetectionThread():
 	lastfield = -1
 	startstateflag = 1
 	castlemode = 0
+	liftedthisturn = 0
+	lastcurturn = 1
 	while True:
 		time.sleep(0.3)
 		if sendupdates == 1:
@@ -336,7 +338,7 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							print("UP: " + chr(ord("a") + squarecol - 1) + chr(ord("1") + squarerow))
+							print("UP: " + chr(ord("a") + (7-squarecol)) + chr(ord("1") + squarerow))
 							if curturn == 1:
 								print("White turn")
 							else:
@@ -345,15 +347,22 @@ def pieceMoveDetectionThread():
 								# white
 								item = board[field]
 								if (item == WROOK or item == WBISHOP or item == WKNIGHT or item == WQUEEN or item == WKING or item == WPAWN):
-									lastlift = board[field]
+									if liftedthisturn == 0:
+										lastlift = board[field]
+										lastfield = field
+									liftedthisturn = liftedthisturn + 1
 							if curturn == 0:
 								#black
 								item = board[field]
 								if (item == BROOK or item == BBISHOP or item == BKNIGHT or item == BQUEEN or item == BKING or item == BPAWN):
-									lastlift = board[field]
+									if liftedthisturn == 0:
+										lastlift = board[field]
+										lastfield = field
+									liftedthisturn = liftedthisturn + 1
 							print(item)
 							print(lastlift)
-							if lastlift != EMPTY:
+							print(liftedthisturn)
+							if lastlift != EMPTY and liftedthisturn < 2:
 								board[field] = EMPTY
 								tosend = bytearray(b'')
 								tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -374,6 +383,8 @@ def pieceMoveDetectionThread():
 								else:
 									kinglift = 0
 								lastfield = field
+							else:
+								print("Nudge??")
 						if (resp[x] == 65 and lastlift != EMPTY):
 							# A piece has been placed
 							fieldHex = resp[x + 1]
@@ -382,51 +393,71 @@ def pieceMoveDetectionThread():
 							squarerow = 7 - squarerow
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
-							print("DOWN: " + chr(ord("a") + squarecol - 1) + chr(ord("1") + squarerow))
+							print("DOWN: " + chr(ord("a") + (7-squarecol)) + chr(ord("1") + squarerow))
 							if curturn == 1:
 								print("White turn")
 							else:
 								print("Black turn")
 							print(lastlift)
+							liftedthisturn = liftedthisturn - 1
+							print(liftedthisturn)
 							# Auto promote to queen
-							if lastlift == WPAWN and field > 55:
-								lastlift = WQUEEN
-							if lastlift == BPAWN and field < 8:
-								lastlift = WQUEEN
-							board[field] = lastlift
-							tosend = bytearray(b'')
-							tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
-							tosend.append(0)
-							tosend.append(5)
-							tosend.append(field)
-							tosend.append(lastlift)
-							bt.write(tosend)
-							#bt.write(tosend)
-							#bt.write(tosend)
-							EEPROM.append(lastlift + 64)
-							EEPROM.append(field)
-							boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-							if curturn == 1:
-								# white
-								if lastlift != EMPTY:
-									curturn = 0
-							else:
-								#black
-								if lastlift != EMPTY:
-									curturn = 1
-							# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
-							# 1 or 5 or 61 or 57 then the user is going to move the rook next
-							if kinglift == 1:
-								if lastfield == 3 or lastfield == 59:
-									if field == 1 or field == 5 or field == 61 or field == 57:
-										print("Castle attempt detected")
-										if curturn == 0:
-											curturn = 1
-										else:
-											curturn = 0
-							kinglift = 0
-							lastfield = field
-							lastlift = EMPTY
+							if liftedthisturn == 0:
+								if lastlift == WPAWN and field > 55:
+									lastlift = WQUEEN
+								if lastlift == BPAWN and field < 8:
+									lastlift = WQUEEN
+								board[field] = lastlift
+								tosend = bytearray(b'')
+								tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+								tosend.append(0)
+								tosend.append(5)
+								tosend.append(field)
+								tosend.append(lastlift)
+								bt.write(tosend)
+								#bt.write(tosend)
+								#bt.write(tosend)
+								EEPROM.append(lastlift + 64)
+								EEPROM.append(field)
+								if lastfield != field:
+									boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+								if curturn == 1:
+									# white
+									if lastlift != EMPTY:
+										curturn = 0
+										liftedthisturn = 0
+									if lastfield == field:
+										curturn = 1
+								else:
+									#black
+									if lastlift != EMPTY:
+										curturn = 1
+										liftedthisturn = 0
+									if lastfield == field:
+										curturn = 1
+								# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
+								# 1 or 5 or 61 or 57 then the user is going to move the rook next
+								if kinglift == 1:
+									if lastfield == 3 or lastfield == 59:
+										if field == 1 or field == 5 or field == 61 or field == 57:
+											print("Castle attempt detected")
+											if curturn == 0:
+												curturn = 1
+												liftedthisturn = 0
+											else:
+												curturn = 0
+												liftedthisturn = 0
+								kinglift = 0
+								lastfield = field
+								lastlift = EMPTY
+
+			if lastcurturn != curturn:
+				lastcurturn = curturn
+				print("--------------")
+				if curturn == 1:
+					print("White turn")
+				else:
+					print("Black turn")
 
 			timer = timer + 1
 			if timer > 5:
