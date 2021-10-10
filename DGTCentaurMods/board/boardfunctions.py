@@ -180,11 +180,10 @@ def getText(title):
             buttonPress = 3 # UP
         if (resp.hex() == "b10010065000140a050200000000611d"):
             buttonPress = 4 # DOWN
-        if buttonPress == 1 and typed == "":
+        if buttonPress == 1 and len(typed) > 0:
+            typed = typed[:-1]
             beep(SOUND_GENERAL)
-            initScreen()
-            time.sleep(2)
-            return ""
+            changed = 1
         if buttonPress == 2:
             beep(SOUND_GENERAL)
             initScreen()
