@@ -1,0 +1,10 @@
+<h2> Live board </h2>
+<div id='board1' style='width: 400px'></div>
+<script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+<script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
+<script>
+var ruyLopez = '{{ fen }}' 
+var board1 = Chessboard('board1', ruyLopez)
+</script>
+
+:

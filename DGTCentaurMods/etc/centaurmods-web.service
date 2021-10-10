@@ -1,0 +1,14 @@
+[Unit]
+Description=Centaur Web interface
+After=network.target
+
+[Service]
+ExecStart=flask run
+WorkingDirectory=/home/pi/dev/DGTCentaur/DGTCentaurMods/web/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
