@@ -104,6 +104,102 @@ def drawBoard(pieces):
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
 
+def getText(title):
+    # Allows text to be entered using a virtual keyboard where a chess piece
+    # is placed on the board in the correct position
+    global screenbuffer
+    clearstate = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    printableascii = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~                                                                "
+    charpage = 1
+    typed = ""
+    # First we need a clear board
+    res = getBoardState()
+    if bytearray(res) != clearstate:
+        writeText(0,'Remove board')
+        writeText(1,'pieces')
+        while bytearray(res) != clearstate:
+            time.sleep(0.5)
+            res = getBoardState()
+    changed = 1
+    clearBoardData()
+    while True:
+        if changed == 1:
+            # print our title and our box that the answer will go in
+            image = screenbuffer.copy()
+            draw = ImageDraw.Draw(image)
+            draw.rectangle([(0, 0), (128, 250)], fill=255)
+            draw.text((0,20),title, font=font18, fill=0)
+            draw.rectangle([(0,39),(128,61)],fill=255,outline=0)
+            draw.text((0,40),typed, font=font18, fill=0)
+            # Using the current charpage display the symbols that a square would represent
+            pos = (charpage -1) * 64
+            lchars = []
+            for i in range(pos,pos+64):
+                lchars.append(printableascii[i])
+            pos = 0
+            for i in range(0,len(lchars),8):
+                tsts = ""
+                for q in range(0,8):
+                    tsts = tsts + lchars[i + q]
+                    draw.text(((q*16),(pos*20)+80),lchars[i + q], font=font18, fill=0)
+                pos = pos + 1
+            screenbuffer = image.copy()
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
+            epd.DisplayPartial(epd.getbuffer(image))
+            time.sleep(0.1)
+            changed = 0
+        buttonPress = 0
+        ser.read(1000000)
+        tosend = bytearray(b'\x83\x06\x50\x59')
+        ser.write(tosend)
+        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+        # If a piece is placed it will type a character!
+        if (bytearray(resp) != expect):
+            if (resp[0] == 133 and resp[1] == 0):
+                for x in range(0, len(resp) - 1):
+                    if resp[x] == 65:
+                        # Calculate the square to 0(a1)-63(h8) so that
+                        # all functions match
+                        fieldHex = resp[x + 1]
+                        typed = typed + lchars[fieldHex]
+                        beep(SOUND_GENERAL)
+                        changed = 1
+        tosend = bytearray(b'\x94\x06\x50\x6a')
+        ser.write(tosend)
+        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+            buttonPress = 1 # BACK
+        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+            buttonPress = 2 # TICK
+        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+            buttonPress = 3 # UP
+        if (resp.hex() == "b10010065000140a050200000000611d"):
+            buttonPress = 4 # DOWN
+        if buttonPress == 1 and typed == "":
+            beep(SOUND_GENERAL)
+            initScreen()
+            time.sleep(2)
+            return ""
+        if buttonPress == 2:
+            beep(SOUND_GENERAL)
+            initScreen()
+            time.sleep(2)
+            return typed
+        if buttonPress == 3:
+            beep(SOUND_GENERAL)
+            charpage = 1
+            changed = 1
+        if buttonPress == 4:
+            beep(SOUND_GENERAL)
+            charpage = 2
+            changed = 1
+        time.sleep(0.2)
+
 
 def writeText(row, txt):
     # Writes some text on the screen at the given row
@@ -143,7 +239,6 @@ def doMenu(items):
     quickselect = 0
     quickselectpossible = -1
     res = getBoardState()
-    print(res)
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36]==0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         # If the 4th rank is empty then enable quick select mode. Then we can choose a menu option by placing and releasing a piece
         quickselect = 1
@@ -205,7 +300,6 @@ def doMenu(items):
             # check for quickselect
             if quickselect == 1 and quickselectpossible < 1:
                 res = getBoardState()
-                print(res)
                 if res[32] > 0:
                     quickselectpossible = 1
                 if res[33] > 0:
@@ -228,8 +322,6 @@ def doMenu(items):
                 res = getBoardState()
                 if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
                     # Quickselect possible has been chosen
-                    print("Quick selected")
-                    print(quickselectpossible)
                     c = 1
                     r = ""
                     for k, v in items.items():
