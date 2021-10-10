@@ -1,12 +1,12 @@
 #!/usr/bin/sh
 
 # Check if pip is installed
-if sudo dpkg -l | grep -q python-pip
+if sudo dpkg -l | grep -q python3-pip
 then
     echo "::: Pip is installed."
 else
     echo "::: Pip not installed. Installing now..."
-    sudo apt-get install -y python-pip
+    sudo apt-get install -y python3-pip
 fi
 
 # Check if virtualenv is installe
