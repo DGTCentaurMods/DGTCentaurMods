@@ -12,6 +12,7 @@ boardfunctions.clearSerial()
 boardfunctions.initScreen()
 time.sleep(2)
 boardfunctions.ledsOff()
+boardfunctions.initialised = 0
 
 while True:
     menu = {
@@ -22,7 +23,6 @@ while True:
         'WiFi': 'Wifi Conf',
         'Shutdown': 'Shutdown',
         'Reboot': 'Reboot'}
-    boardfunctions.initialised = 0
     result = boardfunctions.doMenu(menu)
     if result == "Centaur":
         boardfunctions.clearScreen()
