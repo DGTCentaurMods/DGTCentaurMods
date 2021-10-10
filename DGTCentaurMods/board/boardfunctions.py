@@ -235,8 +235,8 @@ def doMenu(items):
     buttonPress = 0
     first = 1
     global initialised
-    if initialised == 0:
-        epd.Clear(0xff)
+    #if initialised == 0:
+    #    epd.Clear(0xff)
     connected = checkInternetSocket()
     quickselect = 0
     quickselectpossible = -1
@@ -244,38 +244,50 @@ def doMenu(items):
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36]==0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         # If the 4th rank is empty then enable quick select mode. Then we can choose a menu option by placing and releasing a piece
         quickselect = 1
-        print("Quick select mode available")
+    image = Image.new('1', (epd.width, epd.height), 255)
     while (buttonPress != 2):
-        image = Image.new('1', (epd.width, epd.height), 255)
+        time.sleep(0.05)
         draw = ImageDraw.Draw(image)
-        rpos = 20
-        for k, v in items.items():
-            draw.text((20, rpos), str(v), font=font18, fill=0)
-            rpos = rpos + 20
-        draw.polygon([(2, (selected * 20)), (2, (selected * 20) + 20),
-                     (18, (selected * 20) + 10)], fill=0)
+        if first == 1:
+            rpos = 20
+            draw.rectangle([(0,0),(127,295)], fill=255, outline=255)
+            for k, v in items.items():
+                draw.text((20, rpos), str(v), font=font18, fill=0)
+                rpos = rpos + 20
+            draw.rectangle([(-1, 0), (17, 294)], fill=255, outline=0)
+            draw.polygon([(2, (selected * 20)), (2, (selected * 20) + 20),
+                          (18, (selected * 20) + 10)], fill=0)
+            # Draw an image representing internet connectivity
+            wifion = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiontiny.bmp")
+            wifioff = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiofftiny.bmp")
+            if connected == True:
+                wifidispicon = wifion.resize((20,16))
+                image.paste(wifidispicon, (105, 5))
+            else:
+                wifidispicon = wifioff.resize((20, 16))
+                image.paste(wifidispicon, (105, 5))
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
-        # Draw an image representing internet connectivity
-        wifion = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiontiny.bmp")
-        wifioff = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiofftiny.bmp")
-        if connected == True:
-            wifidispicon = wifion.resize((20,16))
-            image.paste(wifidispicon, (105, 5))
-        else:
-            wifidispicon = wifioff.resize((20, 16))
-            image.paste(wifidispicon, (105, 5))
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+        draw.rectangle([(110,0),(128,294)],fill=255,outline=0)
+        draw.polygon([(128 - 2, 276 - (selected * 20)), (128 - 2, 276 - (selected * 20) + 20),
+                      (128 - 18, 276 - (selected * 20) + 10)], fill=0)
 
         if first == 1 and initialised == 0:
+            epd.init()
             epd.display(epd.getbuffer(image))
-            time.sleep(3)
+            time.sleep(2)
             first = 0
-            epd.DisplayPartial(epd.getbuffer(image))
+            epd.DisplayRegion(0,295,epd.getbuffer(image))
             initialised = 1
         else:
-            epd.DisplayPartial(epd.getbuffer(image))
-            time.sleep(0.2)
+            if first == 1 and initialised == 1:
+                first = 0
+                epd.DisplayRegion(0, 295, epd.getbuffer(image))
+            else:
+                sl = 295 - (selected * 20) - 40
+                epd.DisplayRegion(sl,sl + 60,epd.getbuffer(image.crop((0,sl,127,sl+60))))
+
         # Next we wait for either the up/down/back or tick buttons to get
         # pressed
         timeout = time.time() + 60 * 15
