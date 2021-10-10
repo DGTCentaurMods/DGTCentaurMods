@@ -130,7 +130,10 @@ def getText(title):
             draw.rectangle([(0, 0), (128, 250)], fill=255)
             draw.text((0,20),title, font=font18, fill=0)
             draw.rectangle([(0,39),(128,61)],fill=255,outline=0)
-            draw.text((0,40),typed, font=font18, fill=0)
+            tt = typed
+            if len(tt) > 10:
+                tt = tt[-11:]
+            draw.text((0,40),tt, font=font18, fill=0)
             # Using the current charpage display the symbols that a square would represent
             pos = (charpage -1) * 64
             lchars = []
