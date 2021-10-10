@@ -19,6 +19,7 @@ while True:
         'Centaur': 'DGT Centaur',
         'EmulateEB': 'e-Board',
         'Pairing': 'Start BT Pair',
+        'WiFi': 'Wifi Conf',
         'Shutdown': 'Shutdown',
         'Reboot': 'Reboot'}
     boardfunctions.initialised = 0
@@ -33,6 +34,8 @@ while True:
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
     if result == "Pairing":
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
+    if result == "WiFi":
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
     if result == "Shutdown":
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
         boardfunctions.shutdown()
