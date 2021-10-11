@@ -13,6 +13,7 @@
 # Way to drop back to idle mode if rfcomm disconnects / Stay in eboard mode on disconnect. Back button exits
 # Button to resend last move in non-bus mode
 # Detect if physical board and board array are out of sync
+# On piece placed down, check if the piece lifted can actually move to that place on the board
 
 import serial
 import time
@@ -20,6 +21,7 @@ import sys
 from os.path import exists
 from DGTCentaurMods.board import boardfunctions
 import threading
+import chess
 
 # https://github.com/well69/picochess-1/blob/master/test/dgtbrd-ruud.h
 DGT_SEND_RESET = 0x40 # Puts the board into IDLE mode, cancelling any UPDATE mode
@@ -105,6 +107,7 @@ PIECE1 = 0x0d  # Magic piece: Draw
 PIECE2 = 0x0e  # Magic piece: White win
 PIECE3 = 0x0f  # Magic piece: Black win
 board = bytearray([EMPTY] * 64)
+boardhistory = []
 litsquares = []
 startstate = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
 
@@ -169,6 +172,11 @@ board[58] = BBISHOP
 board[57] = BKNIGHT
 board[56] = BROOK
 print("board is setup")
+cb = chess.Board()
+buffer1=bytearray([EMPTY] * 64)
+buffer1[:] = board
+boardhistory.append(buffer1)
+boardfunctions.ledsOff()
 
 # Here we are emulating power on so push into the pretend eeprom
 EEPROM.append(EE_NOP)
@@ -307,10 +315,12 @@ def pieceMoveDetectionThread():
 	global timer
 	global WROOK,WBISHOP,WKNIGHT,WQUEEN,WKING,WPAWN,BROOK,BBISHOP,BKNIGHT,BQUEEN,BKING,BPAWN,EMPTY
 	global board
+	global boardhistory
 	global curturn
 	global boardtoscreen
 	global EEPROM
 	global dodie
+	global cb
 	lastlift = 0
 	kinglift = 0
 	lastfield = -1
@@ -372,6 +382,9 @@ def pieceMoveDetectionThread():
 								tosend.append(field)
 								tosend.append(EMPTY)
 								bt.write(tosend)
+								buffer1 = bytearray([EMPTY] * 64)
+								buffer1[:] = board
+								boardhistory.append(buffer1)
 								#bt.write(tosend)
 								#bt.write(tosend)
 								EEPROM.append(EMPTY + 64)
@@ -395,6 +408,19 @@ def pieceMoveDetectionThread():
 							squarecol = 7 - squarecol
 							field = (squarerow * 8) + squarecol
 							print("DOWN: " + chr(ord("a") + (7-squarecol)) + chr(ord("1") + squarerow))
+
+							# Here we check if this was a valid move to make. If not then indicate it on
+							# the board
+							# We need to convert lastfield and field to square names
+							boardfunctions.ledsOff()
+							squarerow = (lastfield // 8)
+							squarecol = (lastfield % 8)
+							fromsq = chr(ord("a") + (7 - squarecol)) + chr(ord("1") + squarerow)
+							squarerow = (field // 8)
+							squarecol = (field % 8)
+							tosq = chr(ord("a") + (7 - squarecol)) + chr(ord("1") + squarerow)
+							mv = fromsq + tosq
+
 							if curturn == 1:
 								print("White turn")
 							else:
@@ -417,6 +443,9 @@ def pieceMoveDetectionThread():
 								tosend.append(lastlift)
 								#time.sleep(0.2)
 								bt.write(tosend)
+								buffer1 = bytearray([EMPTY] * 64)
+								buffer1[:] = board
+								boardhistory.append(buffer1)
 								#bt.write(tosend)
 								#bt.write(tosend)
 								EEPROM.append(lastlift + 64)
@@ -449,12 +478,96 @@ def pieceMoveDetectionThread():
 											else:
 												curturn = 0
 												liftedthisturn = 0
+								print(mv)
+								if fromsq != tosq:
+									cm = chess.Move.from_uci(mv)
+									legal = 1
+									if cm in cb.legal_moves:
+										print("Move is allowed")
+										cb.push(cm)
+										print(cb.fen())
+									else:
+										# The move is not allowed or the move is the rook move after a king move in castling
+										if (lastlift == WROOK or lastlift == BROOK) and (
+												fromsq == "a1" or fromsq == "a8" or fromsq == "h1" or fromsq == "h8"):
+											pass
+										else:
+											# Action the illegal move
+											print("Move not allowed")
+											squarerow = (lastfield // 8)
+											squarecol = 7 - (lastfield % 8)
+											tosq = (squarerow * 8) + squarecol
+											squarerow = (field // 8)
+											squarecol = 7 - (field % 8)
+											fromsq = (squarerow * 8) + squarecol
+											boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+											boardfunctions.ledFromTo(fromsq, tosq)
+											# Need to maintain some sort of board history
+											# Then every piece up and down from this point until
+											# fromsq is refilled is a history rewind
+											# but we'll also need to send the board differences as updates
+											boardhistory.pop()
+											breakout = 0
+											while breakout == 0:
+												tosend = bytearray(b'\x83\x06\x50\x59')
+												boardfunctions.ser.write(tosend)
+												expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+												resp = boardfunctions.ser.read(1000)
+												resp = bytearray(resp)
+												if (bytearray(resp) != expect):
+													if (resp[0] == 133 and resp[1] == 0):
+														# A piece has been raised or placed
+														print("event")
+														print(boardhistory)
+														oldboard = boardhistory.pop()
+														print(boardhistory)
+														print(oldboard)
+														# Next we need to calculate the difference between oldboard and
+														# board. It should be a single byte. And send messages to say
+														# it has changed
+														for x in range(0, len(oldboard)):
+															if oldboard[x] != board[x]:
+																print("Found difference at")
+																print(x)
+																print(oldboard[x])
+																tosend = bytearray(b'')
+																tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+																tosend.append(0)
+																tosend.append(5)
+																tosend.append(x)
+																tosend.append(oldboard[x])
+																# time.sleep(0.2)
+																bt.write(tosend)
+																EEPROM.append(oldboard[x] + 64)
+																EEPROM.append(x)
+														board[:] = oldboard
+														for x in range(0, len(resp) - 1):
+															if resp[x] == 65:
+																squarerow = (fieldHex // 8)
+																squarecol = (fieldHex % 8)
+																squarerow = 7 - squarerow
+																squarecol = squarecol
+																field = (squarerow * 8) + squarecol
+																if field == fromsq:
+																	print("Piece placed back")
+																	breakout = 1
+												#tosend = bytearray(b'\x94\x06\x50\x6a')
+												#boardfunctions.ser.write(tosend)
+												#resp = boardfunctions.ser.read(1000)
+												time.sleep(0.05)
+											if curturn == 0:
+												curturn = 1
+											else:
+												curturn = 0
+											boardfunctions.ledsOff()
+
 								kinglift = 0
 								lastfield = field
 								lastlift = EMPTY
 
 			if lastcurturn != curturn:
 				lastcurturn = curturn
+				print(boardhistory)
 				print("--------------")
 				if curturn == 1:
 					print("White turn")
@@ -500,6 +613,9 @@ def pieceMoveDetectionThread():
 					board[58] = BBISHOP
 					board[57] = BKNIGHT
 					board[56] = BROOK
+					buffer1 = bytearray([EMPTY] * 64)
+					buffer1[:] = board
+					boardhistory.append(buffer1)
 					for x in range(0,64):
 						tosend = bytearray(b'')
 						tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -574,6 +690,8 @@ def pieceMoveDetectionThread():
 					EEPROM.append(BROOK + 64)
 					EEPROM.append(56)
 					EEPROM.append(EE_BEGINPOS)
+					cb = chess.Board()
+					boardfunctions.ledsOff()
 					curturn = 1
 					lastlift = -1
 					lastfield = -1
@@ -608,6 +726,9 @@ boardfunctions.clearScreen()
 boardfunctions.writeText(0,'Connected')
 boardfunctions.writeText(1,'         ')
 print("start")
+
+cb = chess.Board()
+boardfunctions.ledsOff()
 
 scrUpd = threading.Thread(target=screenUpdate, args=())
 scrUpd.daemon = True
@@ -902,6 +1023,8 @@ while True and dodie == 0:
 			time.sleep(0.05)
 			bt.write(tosend)
 			bt.flushOutput()
+			cb = chess.Board()
+			boardfunctions.ledsOff()
 			sendupdates = 1
 			handled = 1
 		if data[0] == DGT_RETURN_SERIALNR:
