@@ -10,8 +10,9 @@
 # Check all possible commands are catered for
 # Make it so bus address is unique and is checked before responding to messages ?
 # Regular serial (in addition to bluetooth) ?
-# Handle DGT_BUS_REPEAT_CHANGES bus message 0x04
-# RabbitPlugin disconnects when new start state detected
+# Way to drop back to idle mode if rfcomm disconnects / Stay in eboard mode on disconnect. Back button exits
+# Button to resend last move in non-bus mode
+# Detect if physical board and board array are out of sync
 
 import serial
 import time
@@ -63,12 +64,14 @@ DGT_MSG_BUS_UPDATE = 0x05
 DGT_BUS_SEND_CLK = 0x81
 DGT_BUS_SET_START_GAME = 0x85
 DGT_MSG_BUS_START_GAME_WRITTEN = 0x08
+DGT_BUS_REPEAT_CHANGES = 0x84
+lastchangepacket = bytearray()
 
 DGT_RETURN_BUSADRES = 0x46
 DGT_SEND_TRADEMARK = 0x47
 
 DGT_UNKNOWN_1 = 0xDF
-DGT_UNKNOWN_2 = 0x92
+DGT_UNKNOWN_2 = 0x92 # LiveChess code suggests this is "randomize ping" DGT_BUS_RANDOMIZE_PIN
 
 EE_POWERUP = 0x6a
 EE_EOF = 0x6b
@@ -241,8 +244,6 @@ eepromlastsendpoint = 4
 
 dodie = 0
 
-boardfunctions.clearScreen()
-
 def drawCurrentBoard():
 	global board
 	pieces = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -382,7 +383,7 @@ def pieceMoveDetectionThread():
 										kinglift = 1
 								else:
 									kinglift = 0
-								lastfield = field
+								#lastfield = field
 							else:
 								print("Nudge??")
 						if (resp[x] == 65 and lastlift != EMPTY):
@@ -414,6 +415,7 @@ def pieceMoveDetectionThread():
 								tosend.append(5)
 								tosend.append(field)
 								tosend.append(lastlift)
+								#time.sleep(0.2)
 								bt.write(tosend)
 								#bt.write(tosend)
 								#bt.write(tosend)
@@ -434,7 +436,7 @@ def pieceMoveDetectionThread():
 										curturn = 1
 										liftedthisturn = 0
 									if lastfield == field:
-										curturn = 1
+										curturn = 0
 								# If kinglift is 1 and lastfield is 3 or 59 then if the king has moved to
 								# 1 or 5 or 61 or 57 then the user is going to move the rook next
 								if kinglift == 1:
@@ -572,6 +574,10 @@ def pieceMoveDetectionThread():
 					EEPROM.append(BROOK + 64)
 					EEPROM.append(56)
 					EEPROM.append(EE_BEGINPOS)
+					curturn = 1
+					lastlift = -1
+					lastfield = -1
+					lastcurturn = -2
 				else:
 					if bytearray(r) != startstate:
 						startstateflag = 0
@@ -617,8 +623,10 @@ pMove.daemon = True
 pMove.start()
 
 # Clear any remaining data sent from the board
-boardfunctions.clearBoardData()
-
+try:
+	boardfunctions.clearBoardData()
+except:
+	pass
 
 lastlift = EMPTY
 
@@ -798,7 +806,15 @@ while True and dodie == 0:
 			#print(tosend.hex())
 			bt.write(tosend)
 			bt.flushOutput()
+			lastchangepacket = tosend
 			eepromlastsendpoint = len(EEPROM)
+			handled = 1
+		if data[0] == DGT_BUS_REPEAT_CHANGES:
+			print("repeat changes")
+			dump = bt.read(3)
+			tosend = lastchangepacket
+			bt.write(tosend)
+			bt.flushOutput()
 			handled = 1
 		if data[0] == DGT_UNKNOWN_2:
 			# This is a bus mode packet. But I don't know what it does. It seems it can be ignored though
