@@ -518,10 +518,7 @@ def pieceMoveDetectionThread():
 													if (resp[0] == 133 and resp[1] == 0):
 														# A piece has been raised or placed
 														print("event")
-														print(boardhistory)
 														oldboard = boardhistory.pop()
-														print(boardhistory)
-														print(oldboard)
 														# Next we need to calculate the difference between oldboard and
 														# board. It should be a single byte. And send messages to say
 														# it has changed
