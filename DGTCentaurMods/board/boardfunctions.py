@@ -217,6 +217,40 @@ def writeText(row, txt):
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
 
+def writeTextFast(row, txt):
+    # Writes some text on the screen at the given row
+    # but uses partial updates. Note we don't sleep to check it goes through here, that is up to the
+    # end script
+    global screenbuffer
+    nimage = screenbuffer.copy()
+    image = Image.new('1', (128, 20), 255)
+    draw = ImageDraw.Draw(image)
+    draw.text((0,0), txt, font=font18, fill=0)
+    rimage = image.transpose(Image.FLIP_TOP_BOTTOM)
+    rimage = rimage.transpose(Image.FLIP_LEFT_RIGHT)
+    epd.DisplayRegion(296 - (row * 20) - 20, 296 - (row * 20), epd.getbuffer(rimage))
+    nimage.paste(image, (0, (row * 20)))
+    screenbuffer = nimage.copy()
+
+def writeTextToBuffer(row, txt):
+    # Writes some text on the screen at the given row
+    # Writes only to the screen buffer. Script can later call displayScreenBufferPartial to show it
+    global screenbuffer
+    nimage = screenbuffer.copy()
+    image = Image.new('1', (128, 20), 255)
+    draw = ImageDraw.Draw(image)
+    draw.text((0,0), txt, font=font18, fill=0)
+    nimage.paste(image, (0, (row * 20)))
+    screenbuffer = nimage.copy()
+
+def displayScreenBufferPartial():
+    global screenbuffer
+    image = screenbuffer.copy()
+    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    image = image.transpose(Image.FLIP_LEFT_RIGHT)
+    epd.DisplayPartial(epd.getbuffer(image))
+    time.sleep(0.1)
+
 def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
     try:
         socket.setdefaulttimeout(timeout)
