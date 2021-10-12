@@ -56,19 +56,33 @@ while True:
         if (result != "BACK"):
             if (result == "Current"):
                 boardfunctions.clearScreen()
-                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/lichess.py current")
+                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py current")
                 sys.exit()
-
-            # These menu functions currently not coded
-
             livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
             result = boardfunctions.doMenu(livemenu)
-            print(result)
-
-            colormenu = {'Random': 'Random', 'Black': 'Black', 'White': 'White'}
+            if result == "Rated":
+                rated = True
+            else:
+                rated = False
+            colormenu = {'white': 'White', 'random': 'Random', 'black': 'Black'}
             result = boardfunctions.doMenu(colormenu)
-            print(result)
-
-            timemenu = {'15': '15 Minutes', '30': '30 Minutes', '60': '60 Minutes'}
+            color = result
+            timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
+                        '30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
             result = boardfunctions.doMenu(timemenu)
-            print(result)
+            if result == '10 , 5':
+                gtime = '10'
+                gincrement = '5'
+            if result == '15 , 10':
+                gtime = '15'
+                gincrement = '10'
+            if result == '30':
+                gtime = '30'
+                gincrement = '0'
+            if result == '30 , 20':
+                gtime = '30'
+                gincrement = '20'
+            if result == "60 , 20":
+                gtime = '60'
+                gincrement = '20'
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New {gtime} {gincrement} {rated} {color}")
