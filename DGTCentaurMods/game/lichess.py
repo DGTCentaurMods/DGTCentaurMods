@@ -475,10 +475,9 @@ while status == "started" and ourturn != 0:
         pieces = []
         for x in range(0, 64):
             pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
-        boardfunctions.drawBoard(pieces)
         #boardfunctions.writeText(12, str(mv))
         boardfunctions.writeTextToBuffer(12, str(mv))
-        boardfunctions.displayScreenBufferPartial()
+        boardfunctions.drawBoard(pieces)
     if playeriswhite == 0 and newgame == 1:
         ourturn = 0
         if str(remotemoves) != '1234':
@@ -563,10 +562,9 @@ while status == "started" and ourturn != 0:
     pieces = []
     for x in range(0, 64):
         pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
-    boardfunctions.drawBoard(pieces)
     #boardfunctions.writeText(12, str(mv))
     boardfunctions.writeTextToBuffer(12, str(mv))
-    boardfunctions.displayScreenBufferPartial()
+    boardfunctions.drawBoard(pieces)
 
 running = False
 boardfunctions.writeText(11, 'Game over')
