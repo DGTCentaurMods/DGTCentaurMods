@@ -15,8 +15,8 @@ boardfunctions.initialised = 0
 
 while True:
     menu = {
-        'Lichess': 'Lichess',
         'Centaur': 'DGT Centaur',
+        'Lichess': 'Lichess',
         'EmulateEB': 'e-Board',
         'Pairing': 'Start BT Pair',
         'WiFi': 'Wifi Conf',
@@ -24,6 +24,9 @@ while True:
         'Reboot': 'Reboot',
         'Support': 'Get support'}
     result = boardfunctions.doMenu(menu)
+    if result == "BACK":
+        boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+        #oardfunctions.shutdown()
     if result == "Centaur":
         boardfunctions.clearScreen()
         os.chdir("/home/pi/centaur")
@@ -37,20 +40,20 @@ while True:
     if result == "WiFi":
         wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
         result = boardfunctions.doMenu(wifimenu)
-        if result == "BACK":
-             boardfunctions.doMenu(menu)
         if (result != "BACK"):
             if (result == 'wpa2'):
                 os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
             if (result == 'wps'):
                 if network.check_network():
-                    from DGTCentaurMods.display import epd2in9d
-                    epd = epd2in9d.EPD()
-                    epd.init()
+                    #from DGTCentaurMods.display import epd2in9d
+                    #epd = epd2in9d.EPD()
+                    #epd.init()
                     IP = network.check_network()
-                    boardfunctions.writeText(0, 'Network is up.')
-                    boardfunctions.writeText(1, 'Press OK to')
-                    boardfunctions.writeText(2, 'disconnect')
+                    boardfunctions.clearScreen()
+                    boardfunctions.clearScreenBuffer()
+                    boardfunctions.writeTextToBuffer(0, 'Network is up.')
+                    boardfunctions.writeTextToBuffer(1, 'Press OK to')
+                    boardfunctions.writeTextToBuffer(2, 'disconnect')
                     boardfunctions.writeText(4, IP)
                     time.sleep(10)
                     # TODO: Remove sleep() and wait to get OK button here
@@ -75,9 +78,6 @@ while True:
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
         os.system("/sbin/shutdown -r now")
         sys.exit()
-    if result == "BACK":
-        boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-        boardfunctions.shutdown()
     if result == "Lichess":
         lichessmenu = {'Current': 'Current', 'New': 'New Game'}
         result = boardfunctions.doMenu(lichessmenu)
