@@ -260,7 +260,7 @@ def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
         print(ex)
         return False
 
-def doMenu(items):
+def doMenu(items, fast = 0):
     # Draw a menu, let the user navigate and return the value
     # or "BACK" if the user backed out
     # pass a menu like: menu = {'Lichess': 'Lichess', 'Centaur': 'DGT
@@ -271,7 +271,9 @@ def doMenu(items):
     global initialised
     #if initialised == 0:
     #    epd.Clear(0xff)
-    connected = checkInternetSocket()
+    connected = 0
+    if fast == 0:
+        connected = checkInternetSocket()
     quickselect = 0
     quickselectpossible = -1
     res = getBoardState()
@@ -308,8 +310,9 @@ def doMenu(items):
                       (128 - 18, 276 - (selected * 20) + 10)], fill=0)
 
         if first == 1 and initialised == 0:
-            epd.init()
-            epd.display(epd.getbuffer(image))
+            if fast == 0:
+                epd.init()
+                epd.display(epd.getbuffer(image))
             time.sleep(2)
             first = 0
             epd.DisplayRegion(0,295,epd.getbuffer(image))
@@ -390,6 +393,7 @@ def doMenu(items):
                     #epd.unsetRegion()
                     #epd.Clear(0xff)
                     selected = 99999
+                    epd.display(epd.getbuffer(image))
                     return k
                 c = c + 1
         if (buttonPress == 4 and selected < len(items)):

@@ -3,22 +3,66 @@
 # Ed Nekebno
 #
 # Pair first
-# Connect after the chessboard displays
+# Connect when the display tells you to! Do not connect before.
 # BACK button exits
 # PLAY button resends last known check in case an app drops/ignores it
 # DOWN button scrolls back boardhistory in epaper in case of sync error
 # BEEPS 4 times on board start state detected (for new game)
+# Castle - Pick up, put down King, pick up rook, put down rook
+# Promotion - Pick up pawn, place down piece, choose piece from menu on epaper display (note you must do this
+#    for both sides, even your opponent)
 #
 # TODO
-# Currently autopromotes pawn to queens - allow choice (as we cannot actually detect what piece is put down!)
-# Check all possible commands are catered for
-# Make it so bus address is unique and is checked before responding to messages ?
-# Regular serial (in addition to bluetooth) ?
-# Way to drop back to idle mode if rfcomm disconnects / Stay in eboard mode on disconnect. Back button exits
-# Button to resend last move in non-bus mode
+#
+# NICE TO DO
 # Detect if physical board and board array are out of sync
 # Enhance illegal move takeback code (at the moment illegal moves are indicated, user can replace the pieces, putting
-# the moved piece down last. But this relies on no other pieces having been nudged, etc
+#     the moved piece down last. But this relies on no other pieces having been nudged, etc
+# IDEAS
+# Regular usb serial (in addition to bluetooth) ?
+
+# UPDATE (REGULAR) MODE - I've not yet found anything that uses the
+# non implemented items. They set the board to scan black squares,
+# white squares, and back to all. For checkers I guess.
+#DGT_SEND_RESET           0x40 [IMPLEMENTED]
+#DGT_TO_BUSMODE           0x4a [IMPLEMENTED]
+#DGT_STARTBOOTLOADER      0x4e [IMPLEMENTED]
+#DGT_SEND_CLK             0x41 [FAKED - NO CLOCK]
+#DGT_SEND_BRD             0x42 [IMPLEMENTED]
+#DGT_SEND_UPDATE          0x43 [IMPLEMENTED]
+#DGT_SEND_UPDATE_BRD      0x44 [IMPLEMENTED]
+#DGT_RETURN_SERIALNR      0x45 [IMPLEMENTED]
+#DGT_RETURN_BUSADRES      0x46 [IMPLEMENTED]
+#DGT_SEND_TRADEMARK       0x47 [IMPLEMENTED]
+#DGT_SEND_EE_MOVES        0x49 [IMPLEMENTED]
+#DGT_SEND_UPDATE_NICE     0x4b [IMPLEMENTED]
+#DGT_SEND_BATTERY_STATUS  0x4c [IMPLEMENTED]
+#DGT_SEND_VERSION         0x4d [IMPLEMENTED]
+#DGT_SEND_BRD_50B         0x50
+#DGT_SCAN_50B             0x51
+#DGT_SEND_BRD_50W         0x52
+#DGT_SCAN_50W             0x53
+#DGT_SCAN_100             0x54
+#DGT_RETURN_LONG_SERIALNR 0x55 [IMPLEMENTED]
+#DGT_SET_LEDS             0x60 [IMPLEMENTED]
+#DGT_CLOCK_MESSAGE        0x2b [FAKED - NO CLOCK]
+#DGT_BUS_UNKNOWN_2 (PING RANDOM REPLY) [NOT IMPLEMENTED - IGNORED]
+# BUS
+# It seems that only LiveChess uses bus mode and doesn't use them all
+# therefore it doesn't seem necessary to implement them all
+#DGT_BUS_SEND_CLK             (0x01 | MESSAGE_BIT) [FAKED - NO CLK]
+#DGT_BUS_SEND_BRD             (0x02 | MESSAGE_BIT)
+#DGT_BUS_SEND_CHANGES         (0x03 | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_REPEAT_CHANGES       (0x04 | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_SET_START_GAME       (0x05 | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_SEND_FROM_START      (0x06 | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_PING                 (0x07 | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_END_BUSMODE          (0x08 | MESSAGE_BIT)
+#DGT_BUS_RESET                (0x09 | MESSAGE_BIT)
+#DGT_BUS_IGNORE_NEXT_BUS_PING (0x0a | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_SEND_VERSION         (0x0b | MESSAGE_BIT) [IMPLEMENTED]
+#DGT_BUS_SEND_BRD_50B         (0x0c | MESSAGE_BIT)
+#DGT_BUS_SEND_ALL_D           (0x0d | MESSAGE_BIT)
 
 import serial
 import time
@@ -29,8 +73,11 @@ import threading
 import chess
 import os
 
+debugcmds = 1
+
 # https://github.com/well69/picochess-1/blob/master/test/dgtbrd-ruud.h
 DGT_SEND_RESET = 0x40 # Puts the board into IDLE mode, cancelling any UPDATE mode
+DGT_STARTBOOTLOADER = 0x4e # Hard reboot, treat like a reset
 DGT_TO_BUSMODE = 0x4a
 DGT_STARTBOOTLOADER = 0x4e
 DGT_TRADEMARK = 0x12
@@ -55,6 +102,8 @@ DGT_FIELD_UPDATE = 0x0e
 DGT_SEND_UPDATE_NICE = 0x4b
 DGT_SET_LEDS = 0x60
 DGT_CLOCK_MESSAGE = 0x2b
+DGT_SEND_EE_MOVES = 0x49
+DGT_EE_MOVES = 0x0f
 
 DGT_SEND_BATTERY_STATUS = 0x4c
 DGT_BATTERY_STATUS = 0x20
@@ -121,7 +170,7 @@ startstate = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x0
 boardfunctions.initScreen()
 
 if bytearray(boardfunctions.getBoardState()) != startstate:
-	boardfunctions.writeText(0,'Place pieces')
+	boardfunctions.writeTextToBuffer(0,'Place pieces')
 	boardfunctions.writeText(1,'in startpos')
 	# As the centaur can light up squares - let's use the
 	# squares to help people out
@@ -332,6 +381,7 @@ def pieceMoveDetectionThread():
 	global cb
 	global lastchangepacket
 	global startstate
+	global board
 	lastlift = 0
 	kinglift = 0
 	lastfield = -1
@@ -445,12 +495,43 @@ def pieceMoveDetectionThread():
 								print(lastlift)
 								liftedthisturn = liftedthisturn - 1
 								print(liftedthisturn)
-								# Auto promote to queen
+								# Promotion
+								promoted = 0
 								if liftedthisturn == 0:
 									if lastlift == WPAWN and field > 55:
-										lastlift = WQUEEN
+										boardtoscreen = 0
+										menu = {
+											WQUEEN: 'Queen',
+											WKNIGHT: 'Knight',
+											WROOK: 'Rook',
+											WBISHOP: 'Bishop',}
+										tosend = bytearray(
+											b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										tosend[2] = len(tosend)
+										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
+										boardfunctions.ser.write(tosend)
+										lastlift = boardfunctions.doMenu(menu, 1)
+										promoted = 1
+										boardfunctions.clearScreen()
+										drawCurrentBoard()
+										boardtoscreen = 1
 									if lastlift == BPAWN and field < 8:
-										lastlift = WQUEEN
+										boardtoscreen = 0
+										menu = {
+											BQUEEN: 'Queen',
+											BKNIGHT: 'Knight',
+											BROOK: 'Rook',
+											BBISHOP: 'Bishop', }
+										tosend = bytearray(
+											b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										tosend[2] = len(tosend)
+										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
+										boardfunctions.ser.write(tosend)
+										lastlift = boardfunctions.doMenu(menu, 1)
+										promoted = 1
+										boardfunctions.clearScreen()
+										drawCurrentBoard()
+										boardtoscreen = 1
 									board[field] = lastlift
 									tosend = bytearray(b'')
 									tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -500,6 +581,18 @@ def pieceMoveDetectionThread():
 													liftedthisturn = 0
 									print(mv)
 									if fromsq != tosq:
+										if promoted == 1:
+											print("promotion")
+											if lastlift == WQUEEN or lastlift == BQUEEN:
+												mv = mv + "q"
+											if lastlift == WROOK or lastlift == BROOK:
+												mv = mv + "r"
+											if lastlift == WBISHOP or lastlift == BBISHOP:
+												mv = mv + "b"
+											if lastlift == WKNIGHT or lastlift == BKNIGHT:
+												mv = mv + "n"
+											promoted = 0
+											print(mv)
 										cm = chess.Move.from_uci(mv)
 										legal = 1
 										if cm in cb.legal_moves:
@@ -766,7 +859,7 @@ def pieceMoveDetectionThread():
 			boardfunctions.beep(boardfunctions.SOUND_GENERAL)
 
 drawCurrentBoard()
-boardfunctions.writeText(0,'Connect remote')
+boardfunctions.writeTextToBuffer(0,'Connect remote')
 boardfunctions.writeText(1,'Device Now')
 
 while exists("/dev/rfcomm0") == False:
@@ -774,9 +867,9 @@ while exists("/dev/rfcomm0") == False:
 
 print("Connected")
 
-bt = serial.Serial("/dev/rfcomm0",baudrate=115200, timeout=10)
+bt = serial.Serial("/dev/rfcomm0",baudrate=9600, timeout=10)
 boardfunctions.clearScreen()
-boardfunctions.writeText(0,'Connected')
+boardfunctions.writeTextToBuffer(0,'Connected')
 boardfunctions.writeText(1,'         ')
 print("start")
 
@@ -819,17 +912,24 @@ while True and dodie == 0:
 		data=bt.read(1)
 		if len(data) > 0:
 			handled = 0
-			if data[0] == DGT_SEND_RESET:
+			if data[0] == DGT_SEND_RESET or data[0] == DGT_STARTBOOTLOADER:
 				# Puts the board in IDLE mode
 				#boardfunctions.clearBoardData()
 				#boardfunctions.writeText(0, 'Init')
 				#boardfunctions.writeText(1, '         ')
+				if debugcmds == 1:
+					print("DGT_SEND_RESET")
+				sendupdates = 0
 				handled = 1
 			if data[0] == DGT_TO_BUSMODE:
 				# Puts the board in BUS mode
 				#print("Bus mode")
+				if debugcmds == 1:
+					print("DGT_TO_BUSMODE")
 				handled = 1
 			if data[0] == DGT_RETURN_BUSADRES:
+				if debugcmds == 1:
+					print("DGT_RETURN_BUSADRES")
 				tosend = bytearray(b'\x00\x00\x05\x08\x01')
 				tosend[0] = DGT_BUSADRES | MESSAGE_BIT
 				#tosend.append(boardfunctions.checksum(tosend))
@@ -837,8 +937,22 @@ while True and dodie == 0:
 				bt.flushOutput()
 				sentbus = 1
 				handled = 1
+			if data[0] == DGT_SEND_EE_MOVES:
+				# Send EEPROM followed by EE_EOF
+				if debugcmds == 1:
+					print("DGT_SEND_EE_MOVES")
+				tosend = bytearray(b'')
+				tosend[0] = DGT_EE_MOVES | MESSAGE_BIT
+				for j in range(0,len(EEPROM)-1):
+					tosend.append(EEPROM[j])
+				tosend.append(EE_EOF)
+				bt.write(tosend)
+				bt.flushOutput()
+				handled = 1
 			if data[0] == DGT_SEND_TRADEMARK:
 				# Send DGT Trademark Message
+				if debugcmds == 1:
+					print("DGT_SEND_TRADEMARK")
 				tosend = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 				tosend[0] = DGT_TRADEMARK | MESSAGE_BIT
 				tosend[1] = 0
@@ -884,6 +998,8 @@ while True and dodie == 0:
 				# The message actually has two more bytes and a checksum
 				#print("bus pinged")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_PING " + dump.hex())
 				#print(dump.hex())
 				if ignore_next_bus_ping == 1 and dump[0] == 0 and dump[1] == 0:
 					ignore_next_bus_ping = 0
@@ -907,6 +1023,8 @@ while True and dodie == 0:
 				# The message actually has two more bytes and a checksum
 				#print("ignore next bus ping")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_IGNORE_NEXT_BUS_PING " + dump.hex())
 				#print(dump.hex())
 				tosend = bytearray(b'')
 				tosend.append(DGT_MSG_BUS_PING | MESSAGE_BIT)
@@ -924,6 +1042,8 @@ while True and dodie == 0:
 				# Send Version to bus
 				#print("sending version to bus")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_SEND_VERSION " + dump.hex())
 				tosend = bytearray(b'')
 				tosend.append(DGT_MSG_BUS_VERSION | MESSAGE_BIT)
 				tosend.append(0)
@@ -940,10 +1060,14 @@ while True and dodie == 0:
 				# Don't handle this for now but we still need to clear the extra bytes
 				# with ourbus  address and checksum
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_SEND_CLK " + dump.hex())
 				handled = 1
 			if data[0] == DGT_BUS_SEND_FROM_START:
 				#print("Sending EEPROM data from start")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_SEND_FROM_START " + dump.hex())
 				# find the last occurrence of EE_START in the EEPROM
 				offset = -1
 				for i in range(len(EEPROM) - 1, -1, -1):
@@ -977,6 +1101,8 @@ while True and dodie == 0:
 			if data[0] == DGT_BUS_SEND_CHANGES:
 				#print("Sending changes since last request")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_SEND_CHANGES " + dump.hex())
 				tosend = bytearray(b'')
 				tosend.append(DGT_MSG_BUS_UPDATE | MESSAGE_BIT)
 				tosend.append(0)
@@ -996,6 +1122,8 @@ while True and dodie == 0:
 			if data[0] == DGT_BUS_REPEAT_CHANGES:
 				print("repeat changes")
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_REPEAT_CHANGES " + dump.hex())
 				tosend = lastchangepacket
 				bt.write(tosend)
 				bt.flushOutput()
@@ -1003,9 +1131,13 @@ while True and dodie == 0:
 			if data[0] == DGT_UNKNOWN_2:
 				# This is a bus mode packet. But I don't know what it does. It seems it can be ignored though
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_UNKNOWN_2 (PING RANDOM REPLY) " + dump.hex())
 				handled = 1
 			if data[0] == DGT_BUS_SET_START_GAME:
 				dump = bt.read(3)
+				if debugcmds == 1:
+					print("DGT_BUS_SET_START_GAME " + dump.hex())
 				print("Bus set start game")
 				# Write EE_START_TAG to EEPROM
 				# Followed by piece positions
@@ -1098,6 +1230,8 @@ while True and dodie == 0:
 				handled = 1
 			if data[0] == DGT_RETURN_SERIALNR:
 				# Return our serial number
+				if debugcmds == 1:
+					print("DGT_RETURN_SERIALNR")
 				tosend = bytearray(b'')
 				tosend.append(DGT_SERIALNR | MESSAGE_BIT)
 				tosend.append(0)
@@ -1116,6 +1250,8 @@ while True and dodie == 0:
 				handled = 1
 			if data[0] == DGT_RETURN_LONG_SERIALNR:
 				# Return our long serial number
+				if debugcmds == 1:
+					print("DGT_RETURN_LONG_SERIALNR")
 				tosend = bytearray(b'')
 				tosend.append(DGT_LONG_SERIALNR | MESSAGE_BIT)
 				tosend.append(0)
@@ -1139,6 +1275,8 @@ while True and dodie == 0:
 				handled = 1
 			if data[0] == DGT_SEND_VERSION:
 				# Return our serial number
+				if debugcmds == 1:
+					print("DGT_SEND_VERSION")
 				tosend = bytearray(b'')
 				tosend.append(DGT_VERSION | MESSAGE_BIT)
 				tosend.append(0)
@@ -1150,6 +1288,8 @@ while True and dodie == 0:
 				handled = 1
 			if data[0] == DGT_SEND_BRD:
 				# Send the board
+				if debugcmds == 1:
+					print("DGT_SEND_BRD")
 				tosend = bytearray(b'')
 				tosend.append(DGT_BOARD_DUMP | MESSAGE_BIT)
 				tosend.append(0)
@@ -1164,6 +1304,8 @@ while True and dodie == 0:
 				# Note the mapping for the centaur goes 0 (a1) to 63 (h8)
 				# This mapping goes 0 (h1) to 63 (a8)
 				dd = bt.read(5)
+				if debugcmds == 1:
+					print("DGT_SET_LEDS " + dd.hex())
 				#print(dd.hex())
 				if dd[1] == 0:
 					# Off
@@ -1213,12 +1355,19 @@ while True and dodie == 0:
 			if data[0] == DGT_CLOCK_MESSAGE:
 				# For now don't display the clock, maybe later. But the other device acts as it
 				# Just drop the data
+				if debugcmds == 1:
+					print("DGT_CLOCK_MESSAGE")
 				sz = bt.read(1)
 				sz = sz[0]
 				d = bt.read(sz)
 				handled = 1
 			if data[0] == DGT_SEND_UPDATE or data[0] == DGT_SEND_UPDATE_BRD:
 				# Send an update
+				if debugcmds == 1:
+					if data[0] == DGT_SEND_UPDATE:
+						print("DGT_SEND_UPDATE")
+					else:
+						print("DGT_SEND_UPDATE_BRD")
 				tosend = bytearray(b'')
 				tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
 				tosend.append(0)
@@ -1235,10 +1384,14 @@ while True and dodie == 0:
 			if data[0] == DGT_SEND_UPDATE_NICE:
 				#boardfunctions.writeText(0, 'PLAY   ')
 				#boardfunctions.writeText(1, '         ')
+				if debugcmds == 1:
+					print("DGT_SEND_UPDATE_NICE")
 				sendupdates = 1
 				handled = 1
 			if data[0] == DGT_SEND_CLK:
 				# RabbitPlugin doesn't work without this so let's fake this for now
+				if debugcmds == 1:
+					print("DGT_SEND_CLK")
 				tosend = bytearray(DGT_BWTIME | MESSAGE_BIT)
 				tosend.append(0)
 				tosend.append(10)
@@ -1255,6 +1408,8 @@ while True and dodie == 0:
 			if data[0] == DGT_SEND_BATTERY_STATUS:
 				# Ideally in the future we'll put a function in boardfunctions to get the
 				# battery status from the centaur. But for now, fake it!
+				if debugcmds == 1:
+					print("DGT_SEND_BATTERY_STATUS")
 				tosend = bytearray(b'')
 				tosend.append(DGT_BATTERY_STATUS | MESSAGE_BIT)
 				tosend.append(0)
