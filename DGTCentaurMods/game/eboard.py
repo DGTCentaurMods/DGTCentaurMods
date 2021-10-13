@@ -909,8 +909,15 @@ drawCurrentBoard()
 boardfunctions.writeTextToBuffer(0,'Connect remote')
 boardfunctions.writeText(1,'Device Now')
 
-while exists("/dev/rfcomm0") == False:
+start = time.time()
+
+while exists("/dev/rfcomm0") == False and (time.time() - start < 30):
 	time.sleep(.01)
+
+if (time.time() - start >= 30):
+	boardfunctions.writeText(0,"TIMEOUT")
+	boardfunctions.writeText(1,"             ")
+	sys.exit()
 
 print("Connected")
 
