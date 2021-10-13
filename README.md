@@ -34,6 +34,10 @@ In order to run the project on a Raspberry Pi Zero W, these are some steps to be
 
 You should then be ready to connect to the board via SSH and tinker with it!
 
+## Support
+
+Join us on Discord: https://discord.gg/zqgUGK2x49
+
 ## Contributors welcome!
 
 If you can offer some time and effort to the project please get in contact! Everybody is more than welcomed!
