@@ -33,7 +33,6 @@ def initScreen():
     initialised = 0
     time.sleep(4)
 
-
 def clearScreen():
     epd.Clear(0xff)
 
@@ -217,21 +216,6 @@ def writeText(row, txt):
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
 
-def writeTextFast(row, txt):
-    # Writes some text on the screen at the given row
-    # but uses partial updates. Note we don't sleep to check it goes through here, that is up to the
-    # end script
-    global screenbuffer
-    nimage = screenbuffer.copy()
-    image = Image.new('1', (128, 20), 255)
-    draw = ImageDraw.Draw(image)
-    draw.text((0,0), txt, font=font18, fill=0)
-    rimage = image.transpose(Image.FLIP_TOP_BOTTOM)
-    rimage = rimage.transpose(Image.FLIP_LEFT_RIGHT)
-    epd.DisplayRegion(296 - (row * 20) - 20, 296 - (row * 20), epd.getbuffer(rimage))
-    nimage.paste(image, (0, (row * 20)))
-    screenbuffer = nimage.copy()
-
 def writeTextToBuffer(row, txt):
     # Writes some text on the screen at the given row
     # Writes only to the screen buffer. Script can later call displayScreenBufferPartial to show it
@@ -240,6 +224,26 @@ def writeTextToBuffer(row, txt):
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
     draw.text((0,0), txt, font=font18, fill=0)
+    nimage.paste(image, (0, (row * 20)))
+    screenbuffer = nimage.copy()
+
+def promotionOptionsToBuffer(row):
+    # Draws the promotion options to the screen buffer
+    global screenbuffer
+    nimage = screenbuffer.copy()
+    image = Image.new('1', (128, 20), 255)
+    draw = ImageDraw.Draw(image)
+    draw.text((0, 0), "    Q    R    N    B", font=font18, fill=0)
+    draw.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
+    draw.polygon([(35, 3), (51, 3), (43, 18)], fill=0)
+    o = 66
+    draw.line((0+o,16,16+o,16), fill=0, width=5)
+    draw.line((14+o,16,14+o,5), fill=0, width=5)
+    draw.line((16+o,6,4+o,6), fill=0, width=5)
+    draw.polygon([(8+o, 2), (8+o, 10), (0+o, 6)], fill=0)
+    o = 97
+    draw.line((6+o,16,16+o,4), fill=0, width=5)
+    draw.line((2+o,10, 8+o,16), fill=0, width=5)
     nimage.paste(image, (0, (row * 20)))
     screenbuffer = nimage.copy()
 
@@ -269,7 +273,7 @@ def doMenu(items, fast = 0):
     buttonPress = 0
     first = 1
     global initialised
-    #if initialised == 0:
+    #if initialised == 0 and fast == 0:
     #    epd.Clear(0xff)
     connected = 0
     if fast == 0:
@@ -291,7 +295,7 @@ def doMenu(items, fast = 0):
                 draw.text((20, rpos), str(v), font=font18, fill=0)
                 rpos = rpos + 20
             draw.rectangle([(-1, 0), (17, 294)], fill=255, outline=0)
-            draw.polygon([(2, (selected * 20)), (2, (selected * 20) + 20),
+            draw.polygon([(2, (selected * 20) + 2), (2, (selected * 20) + 18),
                           (18, (selected * 20) + 10)], fill=0)
             # Draw an image representing internet connectivity
             wifion = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiontiny.bmp")
@@ -306,21 +310,22 @@ def doMenu(items, fast = 0):
             image = image.transpose(Image.FLIP_LEFT_RIGHT)
 
         draw.rectangle([(110,0),(128,294)],fill=255,outline=0)
-        draw.polygon([(128 - 2, 276 - (selected * 20)), (128 - 2, 276 - (selected * 20) + 20),
+        draw.polygon([(128 - 2, 276 - (selected * 20) + 2), (128 - 2, 276 - (selected * 20) + 18),
                       (128 - 18, 276 - (selected * 20) + 10)], fill=0)
 
         if first == 1 and initialised == 0:
             if fast == 0:
                 epd.init()
                 epd.display(epd.getbuffer(image))
-            time.sleep(2)
             first = 0
             epd.DisplayRegion(0,295,epd.getbuffer(image))
+            time.sleep(2)
             initialised = 1
         else:
             if first == 1 and initialised == 1:
                 first = 0
                 epd.DisplayRegion(0, 295, epd.getbuffer(image))
+                time.sleep(2)
             else:
                 sl = 295 - (selected * 20) - 40
                 epd.DisplayRegion(sl,sl + 60,epd.getbuffer(image.crop((0,sl,127,sl+60))))
@@ -393,7 +398,7 @@ def doMenu(items, fast = 0):
                     #epd.unsetRegion()
                     #epd.Clear(0xff)
                     selected = 99999
-                    epd.display(epd.getbuffer(image))
+                    #epd.display(epd.getbuffer(image))
                     return k
                 c = c + 1
         if (buttonPress == 4 and selected < len(items)):

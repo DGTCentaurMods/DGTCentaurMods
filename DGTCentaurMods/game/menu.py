@@ -10,7 +10,6 @@ import pathlib
 boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
 boardfunctions.clearSerial()
 boardfunctions.initScreen()
-time.sleep(2)
 boardfunctions.ledsOff()
 boardfunctions.initialised = 0
 

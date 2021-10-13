@@ -10,7 +10,7 @@
 # BEEPS 4 times on board start state detected (for new game)
 # Castle - Pick up, put down King, pick up rook, put down rook
 # Promotion - Pick up pawn, place down piece, choose piece from menu on epaper display (note you must do this
-#    for both sides, even your opponent)
+#    for both sides, even your opponent) by pressing corresponding button
 #
 # TODO
 #
@@ -72,6 +72,9 @@ from DGTCentaurMods.board import boardfunctions
 import threading
 import chess
 import os
+from PIL import Image, ImageDraw, ImageFont
+from DGTCentaurMods.display import epd2in9d
+import pathlib
 
 debugcmds = 1
 
@@ -362,6 +365,9 @@ def screenUpdate():
 		if boardtoscreen == 1 and str(board) != lastboard:
 			lastboard = str(board)
 			drawCurrentBoard()
+		if boardtoscreen == 2:
+			drawCurrentBoard()
+			boardtoscreen = 1
 
 def pieceMoveDetectionThread():
 	# Separate thread to take care of detecting piece movement
@@ -499,39 +505,76 @@ def pieceMoveDetectionThread():
 								promoted = 0
 								if liftedthisturn == 0:
 									if lastlift == WPAWN and field > 55:
-										boardtoscreen = 0
-										menu = {
-											WQUEEN: 'Queen',
-											WKNIGHT: 'Knight',
-											WROOK: 'Rook',
-											WBISHOP: 'Bishop',}
-										tosend = bytearray(
-											b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										# This is a pawn promotion. So beep and ask what to promote to
+										tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
 										boardfunctions.ser.write(tosend)
-										lastlift = boardfunctions.doMenu(menu, 1)
+										boardfunctions.promotionOptionsToBuffer(9)
+										boardtoscreen = 2
+										# Wait for a button press and set last lift according to the choice
+										buttonPress = 0
+										while buttonPress == 0:
+											boardfunctions.ser.read(1000000)
+											tosend = bytearray(b'\x83\x06\x50\x59')
+											boardfunctions.ser.write(tosend)
+											resp = boardfunctions.ser.read(10000)
+											resp = bytearray(resp)
+											tosend = bytearray(b'\x94\x06\x50\x6a')
+											boardfunctions.ser.write(tosend)
+											expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+											resp = boardfunctions.ser.read(10000)
+											resp = bytearray(resp)
+											if (resp.hex() == "b10011065000140a0501000000007d4700"):
+												buttonPress = 1  # BACK
+												lastlift = WKNIGHT
+											if (resp.hex() == "b10011065000140a0510000000007d175f"):
+												buttonPress = 2  # TICK
+												lastlift = WBISHOP
+											if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+												buttonPress = 3  # UP
+												lastlift = WQUEEN
+											if (resp.hex() == "b10010065000140a050200000000611d"):
+												buttonPress = 4  # DOWN
+												lastlift = WROOK
+											time.sleep(0.2)
+										boardfunctions.writeTextToBuffer(9,"              ")
 										promoted = 1
-										boardfunctions.clearScreen()
-										drawCurrentBoard()
-										boardtoscreen = 1
 									if lastlift == BPAWN and field < 8:
-										boardtoscreen = 0
-										menu = {
-											BQUEEN: 'Queen',
-											BKNIGHT: 'Knight',
-											BROOK: 'Rook',
-											BBISHOP: 'Bishop', }
-										tosend = bytearray(
-											b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
 										boardfunctions.ser.write(tosend)
-										lastlift = boardfunctions.doMenu(menu, 1)
+										boardfunctions.promotionOptionsToBuffer(9)
+										boardtoscreen = 2
+										# Wait for a button press and set last lift according to the choice
+										buttonPress = 0
+										while buttonPress == 0:
+											boardfunctions.ser.read(1000000)
+											tosend = bytearray(b'\x83\x06\x50\x59')
+											boardfunctions.ser.write(tosend)
+											resp = boardfunctions.ser.read(10000)
+											resp = bytearray(resp)
+											tosend = bytearray(b'\x94\x06\x50\x6a')
+											boardfunctions.ser.write(tosend)
+											expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+											resp = boardfunctions.ser.read(10000)
+											resp = bytearray(resp)
+											if (resp.hex() == "b10011065000140a0501000000007d4700"):
+												buttonPress = 1  # BACK
+												lastlift = BKNIGHT
+											if (resp.hex() == "b10011065000140a0510000000007d175f"):
+												buttonPress = 2  # TICK
+												lastlift = BBISHOP
+											if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+												buttonPress = 3  # UP
+												lastlift = BQUEEN
+											if (resp.hex() == "b10010065000140a050200000000611d"):
+												buttonPress = 4  # DOWN
+												lastlift = BROOK
+											time.sleep(0.2)
+										boardfunctions.writeTextToBuffer(9,"              ")
 										promoted = 1
-										boardfunctions.clearScreen()
-										drawCurrentBoard()
-										boardtoscreen = 1
 									board[field] = lastlift
 									tosend = bytearray(b'')
 									tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
