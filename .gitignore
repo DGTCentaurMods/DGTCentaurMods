@@ -6,3 +6,4 @@ epdmine.py
 push.sh
 test.py
 __pycache__
+**/tests

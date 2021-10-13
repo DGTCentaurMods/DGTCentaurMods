@@ -336,7 +336,7 @@ class EPD:
         self.send_command(0x13)
         for i in range(0, int(self.width * (y1 - y0) / 8)):
             self.send_data(image[i])
-        epdconfig.delay_ms(10)
+        #epdconfig.delay_ms(10)
         self.TurnOnDisplay()
 
 
