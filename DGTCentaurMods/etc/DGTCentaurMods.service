@@ -1,0 +1,14 @@
+[Unit]
+Description=DGTCentaurMods software.
+After=network.target
+
+[Service]
+ExecStart=<put here path to menu.py>
+WorkingDirectory=/opt/DGTCentaurMods/
+StandardOutput=inherit
+StandardError=inherit
+Restart=no
+User=pi
+
+[Install]
+WantedBy=multi-user.target
