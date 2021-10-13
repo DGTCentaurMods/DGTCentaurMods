@@ -510,6 +510,8 @@ def pieceMoveDetectionThread():
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
 										boardfunctions.ser.write(tosend)
+										boardtoscreen = 0
+										time.sleep(1)
 										boardfunctions.promotionOptionsToBuffer(9)
 										boardtoscreen = 2
 										# Wait for a button press and set last lift according to the choice
@@ -545,6 +547,8 @@ def pieceMoveDetectionThread():
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
 										boardfunctions.ser.write(tosend)
+										boardtoscreen = 0
+										time.sleep(1)
 										boardfunctions.promotionOptionsToBuffer(9)
 										boardtoscreen = 2
 										# Wait for a button press and set last lift according to the choice
