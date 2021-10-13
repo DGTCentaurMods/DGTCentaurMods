@@ -13,6 +13,7 @@ import time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import socket
+import queue
 
 # Open the serial port, baudrate is 1000000
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
@@ -647,6 +648,90 @@ def printBoardState():
         print("|\r")
     print("+---+---+---+---+---+---+---+---+")
 
+# This section is the start of a new way of working with the board functions
+import threading
+eventsthreadpointer = ""
+eventsrunning = 1
+
+BTNBACK = 1
+BTNTICK = 2
+BTNUP = 3
+BTNDOWN = 4
+BTNHELP = 5
+BTNPLAY = 6
+
+def eventsThread(keycallback, fieldcallback):
+    # This monitors the board for events
+    # at the moment it only records keypress
+    global eventsrunning
+    while True:
+        if eventsrunning == 1:
+            buttonPress = 0
+            try:
+                tosend = bytearray(b'\x83\x06\x50\x59')
+                ser.write(tosend)
+                expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+                resp = ser.read(10000)
+                resp = bytearray(resp)
+                if (bytearray(resp) != expect):
+                    if (resp[0] == 133 and resp[1] == 0):
+                        for x in range(0, len(resp) - 1):
+                            if (resp[x] == 64):
+                                #print("PIECE LIFTED")
+                                # Calculate the square to 0(a1)-63(h8) so that
+                                # all functions match
+                                fieldHex = resp[x + 1]
+                                newsquare = rotateFieldHex(fieldHex)
+                                fieldcallback(newsquare)
+                            if (resp[x] == 65):
+                                #print("PIECE PLACED")
+                                # Calculate the square to 0(a1)-63(h8) so that
+                                # all functions match
+                                fieldHex = resp[x + 1]
+                                newsquare = rotateFieldHex(fieldHex)
+                                fieldcallback(newsquare * -1)
+            except:
+                pass
+            try:
+                tosend = bytearray(b'\x94\x06\x50\x6a')
+                ser.write(tosend)
+                expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                resp = ser.read(10000)
+                resp = bytearray(resp)
+                if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                    buttonPress = BTNBACK  # BACK
+                if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                    buttonPress = BTNTICK  # TICK
+                if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                    buttonPress = BTNUP  # UP
+                if (resp.hex() == "b10010065000140a050200000000611d"):
+                    buttonPress = BTNDOWN  # DOWN
+                if (resp.hex() == "b10010065000140a0540000000006d67"):
+                    buttonPress = BTNHELP   # HELP
+                if (resp.hex() == "b10010065000140a0504000000002a68"):
+                    buttonPress = BTNPLAY   # PLAY
+            except:
+                pass
+            time.sleep(0.2)
+            if buttonPress != 0:
+                keycallback(buttonPress)
+        time.sleep(0.05)
+
+def subscribeEvents(keycallback, fieldcallback):
+    # Called by any program wanting to subscribe to events
+    # Arguments are firstly the callback function for key presses, secondly for piece lifts and places
+    eventsthreadpointer = threading.Thread(target=eventsThread, args=([keycallback, fieldcallback]))
+    eventsthreadpointer.daemon = True
+    eventsthreadpointer.start()
+
+def pauseEvents():
+    global eventsrunning
+    eventsrunning = 0
+    time.sleep(0.5)
+
+def unPauseEvents():
+    global eventsrunning
+    eventsrunning = 1
 
 # poll()
 # beep(SOUND_GENERAL)

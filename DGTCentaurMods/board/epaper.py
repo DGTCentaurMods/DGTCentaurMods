@@ -2,6 +2,7 @@
 #
 # This method uses a thread to monitor for changes to an image
 # Then any alterations to the image will show on the epaper
+# You can either use the image functions in this file or modify epaper.epaperbuffer directly.
 from DGTCentaurMods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -24,7 +25,7 @@ def epaperUpdate():
     global epaperprocesschange
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
-    time.sleep(2)
+    time.sleep(4)
     print("epaper init image sent")
     while True:
         thishash = hashlib.md5(epaperbuffer.tobytes()).hexdigest()
@@ -44,11 +45,6 @@ def initEpaper():
     epaperbuffer = Image.new('1', (128, 296), 255)
     print("init epaper")
     epd.init()
-    time.sleep(0.5)
-    print("clear epaper")
-    epd.Clear(0xff)
-    time.sleep(4)
-    print("start epaper update thread")
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
     epaperUpd.daemon = True
     epaperUpd.start()
@@ -100,20 +96,3 @@ def clearScreen():
     global epaperbuffer
     epaperbuffer = Image.new('1', (128, 296), 255)
 
-#initEpaper()
-#while True:
-#    time.sleep(6)
-#    row = 1
-#    writeText(1,"Testing")
-#    writeText(2,"Next line")
-#    pauseEpaper()
-#    time.sleep(6)
-#    writeText(12,"Another")
-#    time.sleep(6)
-#    writeText(1,"Overwrite")
-#    unPauseEpaper()
-#    drawRectangle(50,50,100,100,255,0)
-#    clearArea(0,0,20,295)
-#    time.sleep(2)
-#    clearScreen()
-#    time.sleep(0.2)
