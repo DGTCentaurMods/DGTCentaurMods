@@ -734,6 +734,10 @@ def pieceMoveDetectionThread():
 			if lastcurturn != curturn:
 				lastcurturn = curturn
 				print("--------------")
+				fenlog = "/home/pi/centaur/fen.log"
+				f = open(fenlog,"w")
+				f.write(cb.fen())
+				f.close()
 				if curturn == 1:
 					print("White turn")
 				else:
