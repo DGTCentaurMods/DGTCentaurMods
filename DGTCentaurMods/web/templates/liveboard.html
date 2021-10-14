@@ -25,6 +25,9 @@
             var queryString = "?t=" + timestamp;
             el.src = imgURL + queryString;
         }
-        setInterval('refreshImage("epaper","/static/epaper.jpg")', 1000);
+        setInterval('refreshImage("epaper","/static/epaper.jpg")', 2000);
+        setTimeout(function(){
+            window.location.reload(1);
+        }, 2000); 
     </script>
 </div>
