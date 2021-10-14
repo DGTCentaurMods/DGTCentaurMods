@@ -17,6 +17,7 @@ lastepaperhash = 0
 epaperprocesschange = 1
 epd = epd2in9d.EPD()
 epaperUpd = ""
+kill = 0
 
 def saveImage():
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
@@ -27,11 +28,12 @@ def epaperUpdate():
     global epaperbuffer
     global lastepaperhash
     global epaperprocesschange
+    global kill
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
     time.sleep(4)
     print("epaper init image sent")
-    while True:
+    while True and kill == 0:
         thishash = hashlib.md5(epaperbuffer.tobytes()).hexdigest()
         if thishash != lastepaperhash and epaperprocesschange == 1:
             starttime = time.time()
@@ -73,8 +75,12 @@ def stopEpaper():
     global lastepaperhash
     global lastepaperbytes
     global epaperbuffer
-    epaperbuffer = Image.new('1', (128, 296), 255)
-    epaperUpd.stop()
+    global kill
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    #epaperbuffer = Image.new('1', (128, 296), 255)
+    epaperbuffer = Image.open(filename)
+    time.sleep(3)
+    kill = 1
     time.sleep(0.5)
     epd.sleep()
 
