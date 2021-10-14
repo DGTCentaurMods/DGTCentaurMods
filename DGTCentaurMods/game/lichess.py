@@ -184,6 +184,11 @@ whiteincrement = 0
 blackincrement = 0
 winner = ''
 
+fenlog = "/home/pi/centaur/fen.log"
+f = open(fenlog, "w")
+f.write("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+f.close()
+
 # Lichess doesn't start the clocks until white moves
 starttime = -1
 
@@ -475,6 +480,10 @@ while status == "started" and ourturn != 0:
         pieces = []
         for x in range(0, 64):
             pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
+        fenlog = "/home/pi/centaur/fen.log"
+        f = open(fenlog, "w")
+        f.write(sfen)
+        f.close()
         #boardfunctions.writeText(12, str(mv))
         boardfunctions.writeTextToBuffer(12, str(mv))
         boardfunctions.drawBoard(pieces)
@@ -562,6 +571,9 @@ while status == "started" and ourturn != 0:
     pieces = []
     for x in range(0, 64):
         pieces.append(str(chess.BaseBoard(sfen).piece_at(x)))
+    f = open(fenlog, "w")
+    f.write(sfen)
+    f.close()
     #boardfunctions.writeText(12, str(mv))
     boardfunctions.writeTextToBuffer(12, str(mv))
     boardfunctions.drawBoard(pieces)

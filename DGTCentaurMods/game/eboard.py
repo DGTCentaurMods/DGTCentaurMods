@@ -353,6 +353,11 @@ def drawCurrentBoard():
 
 boardtoscreen = 0
 
+fenlog = "/home/pi/centaur/fen.log"
+f = open(fenlog, "w")
+f.write("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+f.close()
+
 def screenUpdate():
 	# Separate thread to display the screen/pieces should improve
 	# responsiveness. Be nice on the epaper and only update the display
@@ -748,6 +753,10 @@ def pieceMoveDetectionThread():
 				r = boardfunctions.getBoardState()
 				if bytearray(r) == startstate and startstateflag == 0:
 					print("start state detected")
+					fenlog = "/home/pi/centaur/fen.log"
+					f = open(fenlog, "w")
+					f.write("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+					f.close()
 					tosend = bytearray(
 						b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x50\x08\x00\x08\x59\x08\x00\x08\x50\x08\x00\x08\x00');
 					tosend[2] = len(tosend)
@@ -1197,6 +1206,10 @@ while True and dodie == 0:
 				if debugcmds == 1:
 					print("DGT_BUS_SET_START_GAME " + dump.hex())
 				print("Bus set start game")
+				fenlog = "/home/pi/centaur/fen.log"
+				f = open(fenlog, "w")
+				f.write("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+				f.close()
 				# Write EE_START_TAG to EEPROM
 				# Followed by piece positions
 				# Return DGT_MSG_BUS_START_GAME_WRITTEN message
