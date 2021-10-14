@@ -18,6 +18,10 @@ epaperprocesschange = 1
 epd = epd2in9d.EPD()
 epaperUpd = ""
 
+def saveImage():
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+    epaperbuffer.save(filename)
+
 def epaperUpdate():
     # This is used as a thread to update the e-paper if the image has changed
     global epaperbuffer
@@ -32,6 +36,9 @@ def epaperUpdate():
         if thishash != lastepaperhash and epaperprocesschange == 1:
             starttime = time.time()
             im = epaperbuffer.copy()
+            saveScreenToImage = threading.Thread(target=saveImage, args=())
+            saveScreenToImage.daemon = True
+            saveScreenToImage.start()
             im = im.transpose(Image.FLIP_TOP_BOTTOM)
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
             epd.DisplayPartial(epd.getbuffer(im))

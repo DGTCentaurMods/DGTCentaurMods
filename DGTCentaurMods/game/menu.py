@@ -39,7 +39,7 @@ def keyPressed(id):
     epaper.clearArea(0,0,17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
-                  (18, (menuitem * 20) + 10)], fill=0)
+                  (17, (menuitem * 20) + 10)], fill=0)
     draw.line((17, 0, 17, 295), fill=0, width=1)
 
 quickselect = 0
@@ -86,7 +86,7 @@ def doMenu(menu):
         epaper.clearArea(0,0,17,295)
         draw = ImageDraw.Draw(epaper.epaperbuffer)
         draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
-                      (18, (menuitem * 20) + 10)], fill=0)
+                      (17, (menuitem * 20) + 10)], fill=0)
         draw.line((17,0,17,295), fill=0, width=1)
     while selection == "":
         time.sleep(0.1)

@@ -1,10 +1,29 @@
 <h2> Live board </h2>
-<div id='board1' style='width: 400px'></div>
-<script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
-<script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
-<script>
-var ruyLopez = '{{ fen }}' 
-var board1 = Chessboard('board1', ruyLopez)
-</script>
-
-:
+<div id="centaur" style="background-color: #212121; padding:9px; width: 685px;-webkit-border-radius: 23px;-moz-border-radius: 3px;border-radius: 3px;">
+    <style>
+        .white-1e1d7{background-color:#e5e5e5;color: #131313}
+        .black-3c85d{background-color:#b2b2b2;color: #131313}
+    </style>
+    <div id="boardsurround1" style="padding:2px;background-color:#e5e5e5;float:left;">
+        <div id="boardsurround2" style="padding:1px;background-color:#212121">
+            <div id='board1' style='width: 600px;margin-right:-4px;'></div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+    <script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
+    <script>
+    var ruyLopez = '{{ fen }}'
+    var board1 = Chessboard('board1', ruyLopez)
+    </script>
+    <img id='epaper' src="{{ url_for('static', filename='epaper.jpg') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 360px;">
+    <div style="clear:both"></div>
+    <script>
+        function refreshImage(imgElement, imgURL){
+            var timestamp = new Date().getTime();
+            var el = document.getElementById(imgElement);
+            var queryString = "?t=" + timestamp;
+            el.src = imgURL + queryString;
+        }
+        setInterval('refreshImage("epaper","/static/epaper.jpg")', 1000);
+    </script>
+</div>
