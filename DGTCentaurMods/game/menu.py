@@ -32,6 +32,9 @@ def keyPressed(id):
     if id == boardfunctions.BTNBACK:
         selection = "BACK"
         return
+    if id == boardfunctions.BTNHELP:
+        selection = "BTNHELP"
+        return
     if menuitem < 1:
         menuitem = 1
     if menuitem > len(curmenu):
@@ -111,7 +114,7 @@ while True:
         'Lichess': 'Lichess',
         'EmulateEB': 'e-Board',
         'Pairing': 'Start BT Pair',
-        'WiFi': 'Wifi Conf',
+        'WiFi': 'Wifi Setup',
         'Shutdown': 'Shutdown',
         'Reboot': 'Reboot',
         'Support': 'Get support'}
@@ -150,23 +153,26 @@ while True:
                     #from DGTCentaurMods.display import epd2in9d
                     #epd = epd2in9d.EPD()
                     #epd.init()
+                    # TODO: put here script to backup network.
                     IP = network.check_network()
                     epaper.clearScreen()
                     epaper.writeText(0, 'Network is up.')
                     epaper.writeText(1, 'Press OK to')
                     epaper.writeText(2, 'disconnect')
                     epaper.writeText(4, IP)
-                    time.sleep(10)
-                    # TODO: Remove sleep() and wait to get OK button here
-                    # execute connect
+                    while selection == "" and time.time() < timeout:
+                        if selection == "BTNTICK":
+                            print("") # Placeholder
+                            # network.disconnect_all() not enable until Restore
+                            # function is finished
                 else:
                     wpsMenu = {'connect': 'Connect wifi'}
                     result = doMenu(wpsMenu)
                     if (result == 'connect'):
-                        print('connect')
-                        # TODO: Enable this afet we implement recovery :)
+                        epaper.clearScreen()
                         epaper.writeText(0, 'Press WPS button')
-                        #network.wps_connect()
+                        network.wps_connect()
+                        time.sleep(30)
         if (result == 'recover'):
             print() # placeholer
             # TODO: Build funtion in network.py to force restore wifi.
@@ -226,12 +232,15 @@ while True:
                             boardfunctions.pauseEvents()
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New {gtime} {gincrement} {rated} {color}")
                             boardfunctions.unPauseEvents()
-    if result == "Support":
+    if result == "Support" or result == "BTNHELP":
+        selection = ""
         epaper.clearScreen()
         qr = Image.open(str(pathlib.Path(__file__).parent.resolve()) +"/../resources/qr-support.png")
         qr = qr.resize((128,128))
         epaper.epaperbuffer.paste(qr,(0,0))
-        time.sleep(15)
-        # TODO: implement wait for OK button here.
+        timeout = time.time() + 15
+        while selection == "" and time.time() < timeout:
+            if selection == "BTNTICK":
+                break
 
 
