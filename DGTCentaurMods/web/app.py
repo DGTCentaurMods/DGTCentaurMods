@@ -42,8 +42,11 @@ bw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bw
 nw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nw.png").convert("RGBA")
 qw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qw.png").convert("RGBA")
 kw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kw.png").convert("RGBA")
+logo = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/logo_mods_web.png")
+sc = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")
+moddate = os.stat(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")[8]
 def generateVideoFrame():
-	global pb, pw
+	global pb, pw, rb, bb, nb, qb, kb, rw, bw, nw, qw, kw, logo, sc, moddate
 	while True:
 		fenlog = "/home/pi/centaur/fen.log"
 		f = open(fenlog, "r")
@@ -113,15 +116,20 @@ def generateVideoFrame():
 			if col == 8:
 				col = 0
 				row = row + 1
-		sc = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")
+		newmoddate = os.stat(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")[8]
+		if newmoddate != moddate:
+			sc = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")
+			moddate = newmoddate
 		image.paste(sc, (345 + 1216 - 130, 635))
-		logo = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/logo_mods_web.png")
 		image.paste(logo, (345 + 1216 - 130, 0), logo)
 		output = io.BytesIO()
 		image = image.convert("RGB")
-		image.save(output, "JPEG")
+		image.save(output, "JPEG", quality=30)
+		cnn = output.getvalue()
 		yield (b'--frame\r\n'
-			b'Content-Type: image/jpeg\r\n\r\n' + output.getvalue() + b'\r\n')
+			b'Content-Type: image/jpeg\r\n'
+			b'Content-Length: ' + f"{len(cnn)}".encode() + b'\r\n'
+			b'\r\n' + cnn + b'\r\n')
 
 @app.route('/video')
 def video_feed():

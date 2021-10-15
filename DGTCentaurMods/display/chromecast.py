@@ -5,7 +5,7 @@ import pathlib
 import os
 import sys
 import pychromecast
-
+from random import random
 
 chromecasts = pychromecast.get_chromecasts()
 
@@ -98,7 +98,6 @@ def doMenu(menu):
 # Initialise the epaper display - after which functions in epaper.py are available but you can also draw to the
 # image epaper.epaperbuffer to change the screen.
 boardfunctions.ledsOff()
-boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
 boardfunctions.clearSerial()
 epaper.initEpaper()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
@@ -120,6 +119,6 @@ chromecasts[0][result].wait()
 mc = chromecasts[0][result].media_controller
 IP = network.check_network()
 print(IP)
-mc.play_media("http://" + IP + ":5000/video", 'image/jpeg')
+mc.play_media("http://" + IP + ":5000/video?" + str(random()), 'image/jpeg')
 mc.block_until_active()
 mc.play()
