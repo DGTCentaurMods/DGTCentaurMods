@@ -15,3 +15,4 @@ RPi.GPIO==0.7.0
 spidev==3.5
 urllib3==1.26.7
 wrapt==1.13.1
+pyChromecast==9.2.1

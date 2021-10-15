@@ -113,6 +113,7 @@ while True:
         'Centaur': 'DGT Centaur',
         'Lichess': 'Lichess',
         'EmulateEB': 'e-Board',
+        'Cast' : 'Chromecast',
         'Pairing': 'Start BT Pair',
         'WiFi': 'Wifi Setup',
         'Shutdown': 'Shutdown',
@@ -122,6 +123,11 @@ while True:
     if result == "BACK":
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
         #oardfunctions.shutdown()
+    if result == "Cast":
+        epaper.clearScreen()
+        boardfunctions.pauseEvents()
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
+        boardfunctions.unPauseEvents()
     if result == "Centaur":
         epaper.clearScreen()
         boardfunctions.pauseEvents()

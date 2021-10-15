@@ -648,7 +648,8 @@ def printBoardState():
         print("|\r")
     print("+---+---+---+---+---+---+---+---+")
 
-# This section is the start of a new way of working with the board functions
+# This section is the start of a new way of working with the board functions where those functions are
+# the board returning some kind of data
 import threading
 eventsthreadpointer = ""
 eventsrunning = 1
@@ -662,7 +663,7 @@ BTNPLAY = 6
 
 def eventsThread(keycallback, fieldcallback):
     # This monitors the board for events
-    # at the moment it only records keypress
+    # keypresses and pieces lifted/placed down
     global eventsrunning
     while True:
         if eventsrunning == 1:
