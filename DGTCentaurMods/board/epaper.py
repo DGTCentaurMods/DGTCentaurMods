@@ -167,3 +167,4 @@ def promotionOptions(row):
     o = 97
     draw.line((6+o,offset+16,16+o,offset+4), fill=0, width=5)
     draw.line((2+o,offset+10, 8+o,offset+16), fill=0, width=5)
+
