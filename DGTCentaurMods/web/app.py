@@ -29,7 +29,21 @@ def fen():
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	return fen
 
+
+pb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pb.png").convert("RGBA")
+pw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pw.png").convert("RGBA")
+rb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rb.png").convert("RGBA")
+bb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bb.png").convert("RGBA")
+nb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nb.png").convert("RGBA")
+qb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qb.png").convert("RGBA")
+kb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kb.png").convert("RGBA")
+rw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rw.png").convert("RGBA")
+bw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bw.png").convert("RGBA")
+nw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nw.png").convert("RGBA")
+qw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qw.png").convert("RGBA")
+kw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kw.png").convert("RGBA")
 def generateVideoFrame():
+	global pb, pw
 	while True:
 		fenlog = "/home/pi/centaur/fen.log"
 		f = open(fenlog, "r")
@@ -72,53 +86,29 @@ def generateVideoFrame():
 		for r in range(0, 64):
 			item = curfen[r]
 			if item == "r":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(rb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), rb)
 			if item == "b":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(bb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), bb)
 			if item == "n":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(nb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), nb)
 			if item == "q":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(qb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), qb)
 			if item == "k":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(kb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), kb)
 			if item == "p":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pb.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(pb, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), pb)
 			if item == "R":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(rw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), rw)
 			if item == "B":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(bw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), bw)
 			if item == "N":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(nw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), nw)
 			if item == "Q":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(qw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), qw)
 			if item == "K":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(kw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), kw)
 			if item == "P":
-				i = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pw.png").convert("RGBA")
-				i = i.resize((125, 125))
-				image.paste(i, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), i)
+				image.paste(pw, (345 + 18 + (int)(col * sqsize + 1), 16 + (int)(row * sqsize + 1)), pw)
 			col = col + 1
 			if col == 8:
 				col = 0
