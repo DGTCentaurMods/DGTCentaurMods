@@ -115,10 +115,6 @@ if result == "BACK":
 
 result = result - 1
 
-chromecasts[0][result].wait()
-mc = chromecasts[0][result].media_controller
-IP = network.check_network()
-print(IP)
-mc.play_media("http://" + IP + ":5000/video?" + str(random()), 'image/jpeg')
-mc.block_until_active()
-mc.play()
+ccname = chromecasts[0][result].device.friendly_name
+
+os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + '/../display/cchandler.py "' + ccname + '" &')

@@ -15,14 +15,34 @@ import pathlib
 import socket
 import queue
 
-# Open the serial port, baudrate is 1000000
+#
+# Useful constants
+#
+SOUND_GENERAL = 1
+SOUND_FACTORY = 2
+SOUND_POWER_OFF = 3
+SOUND_POWER_ON = 4
+SOUND_WRONG = 5
+SOUND_WRONG_MOVE = 6
+BTNBACK = 1
+BTNTICK = 2
+BTNUP = 3
+BTNDOWN = 4
+BTNHELP = 5
+BTNPLAY = 6
+
+
+# Various setup
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+
+#
+# Screen functions - deprecated, use epaper.py if possible
+#
+
 screenbuffer = Image.new('1', (128, 296), 255)
 initialised = 0
-
 epd = epd2in9d.EPD()
-
 
 def initScreen():
     global screenbuffer
@@ -43,18 +63,6 @@ def clearScreenBuffer():
 
 def sleepScreen():
     epd.sleep()
-
-def clearSerial():
-    ser.read(1000000)
-    tosend = bytearray(b'\x83\x06\x50\x59')
-    ser.write(tosend)
-    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
-    resp = ser.read(10000)
-    resp = bytearray(resp)
-    tosend = bytearray(b'\x94\x06\x50\x6a')
-    ser.write(tosend)
-    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
-    resp = ser.read(10000)
 
 def drawBoard(pieces):
     global screenbuffer
@@ -103,105 +111,6 @@ def drawBoard(pieces):
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
-
-def getText(title):
-    # Allows text to be entered using a virtual keyboard where a chess piece
-    # is placed on the board in the correct position
-    global screenbuffer
-    clearstate = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    printableascii = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~                                                                "
-    charpage = 1
-    typed = ""
-    # First we need a clear board
-    res = getBoardState()
-    if bytearray(res) != clearstate:
-        writeText(0,'Remove board')
-        writeText(1,'pieces')
-        while bytearray(res) != clearstate:
-            time.sleep(0.5)
-            res = getBoardState()
-    changed = 1
-    clearBoardData()
-    while True:
-        if changed == 1:
-            # print our title and our box that the answer will go in
-            image = screenbuffer.copy()
-            draw = ImageDraw.Draw(image)
-            draw.rectangle([(0, 0), (128, 250)], fill=255)
-            draw.text((0,20),title, font=font18, fill=0)
-            draw.rectangle([(0,39),(128,61)],fill=255,outline=0)
-            tt = typed
-            if len(tt) > 10:
-                tt = tt[-11:]
-            draw.text((0,40),tt, font=font18, fill=0)
-            # Using the current charpage display the symbols that a square would represent
-            pos = (charpage -1) * 64
-            lchars = []
-            for i in range(pos,pos+64):
-                lchars.append(printableascii[i])
-            pos = 0
-            for i in range(0,len(lchars),8):
-                tsts = ""
-                for q in range(0,8):
-                    tsts = tsts + lchars[i + q]
-                    draw.text(((q*16),(pos*20)+80),lchars[i + q], font=font18, fill=0)
-                pos = pos + 1
-            screenbuffer = image.copy()
-            image = image.transpose(Image.FLIP_TOP_BOTTOM)
-            image = image.transpose(Image.FLIP_LEFT_RIGHT)
-            epd.DisplayPartial(epd.getbuffer(image))
-            time.sleep(0.1)
-            changed = 0
-        buttonPress = 0
-        ser.read(1000000)
-        tosend = bytearray(b'\x83\x06\x50\x59')
-        ser.write(tosend)
-        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
-        resp = ser.read(10000)
-        resp = bytearray(resp)
-        # If a piece is placed it will type a character!
-        if (bytearray(resp) != expect):
-            if (resp[0] == 133 and resp[1] == 0):
-                for x in range(0, len(resp) - 1):
-                    if resp[x] == 65:
-                        # Calculate the square to 0(a1)-63(h8) so that
-                        # all functions match
-                        fieldHex = resp[x + 1]
-                        typed = typed + lchars[fieldHex]
-                        beep(SOUND_GENERAL)
-                        changed = 1
-        tosend = bytearray(b'\x94\x06\x50\x6a')
-        ser.write(tosend)
-        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
-        resp = ser.read(10000)
-        resp = bytearray(resp)
-        if (resp.hex() == "b10011065000140a0501000000007d4700"):
-            buttonPress = 1 # BACK
-        if (resp.hex() == "b10011065000140a0510000000007d175f"):
-            buttonPress = 2 # TICK
-        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
-            buttonPress = 3 # UP
-        if (resp.hex() == "b10010065000140a050200000000611d"):
-            buttonPress = 4 # DOWN
-        if buttonPress == 1 and len(typed) > 0:
-            typed = typed[:-1]
-            beep(SOUND_GENERAL)
-            changed = 1
-        if buttonPress == 2:
-            beep(SOUND_GENERAL)
-            initScreen()
-            time.sleep(2)
-            return typed
-        if buttonPress == 3:
-            beep(SOUND_GENERAL)
-            charpage = 1
-            changed = 1
-        if buttonPress == 4:
-            beep(SOUND_GENERAL)
-            charpage = 2
-            changed = 1
-        time.sleep(0.2)
-
 
 def writeText(row, txt):
     # Writes some text on the screen at the given row
@@ -255,15 +164,6 @@ def displayScreenBufferPartial():
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
     epd.DisplayPartial(epd.getbuffer(image))
     time.sleep(0.1)
-
-def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
-    try:
-        socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-        return True
-    except socket.error as ex:
-        print(ex)
-        return False
 
 def doMenu(items, fast = 0):
     # Draw a menu, let the user navigate and return the value
@@ -414,6 +314,21 @@ def doMenu(items, fast = 0):
             return "BACK"
         buttonPress = 0
 
+#
+# Board control - functions related to making the board do something
+#
+
+def clearSerial():
+    ser.read(1000000)
+    tosend = bytearray(b'\x83\x06\x50\x59')
+    ser.write(tosend)
+    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    resp = ser.read(10000)
+    resp = bytearray(resp)
+    tosend = bytearray(b'\x94\x06\x50\x6a')
+    ser.write(tosend)
+    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+    resp = ser.read(10000)
 
 def clearBoardData():
     ser.read(100000)
@@ -422,6 +337,78 @@ def clearBoardData():
     expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
     ser.read(1000000)
 
+def beep(beeptype):
+    # Ask the centaur to make a beep sound
+    if (beeptype == SOUND_GENERAL):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
+    if (beeptype == SOUND_FACTORY):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x40\x1b'))
+    if (beeptype == SOUND_POWER_OFF):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4c\x08\x48\x08\x35'))
+    if (beeptype == SOUND_POWER_ON):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x48\x08\x4c\x08\x35'))
+    if (beeptype == SOUND_WRONG):
+        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4e\x0c\x48\x10\x43'))
+    if (beeptype == SOUND_WRONG_MOVE):
+        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x48\x08\x5f'))
+
+def ledsOff():
+    # Switch the LEDs off on the centaur
+    ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
+
+def ledFromTo(lfrom, lto, intensity=5):
+    # Light up a from and to LED for move indication
+    # Note the call to this function is 0 for a1 and runs to 63 for h8
+    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
+    tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
+    # Recalculate lfrom to the different indexing system
+    tosend[8] = intensity
+    tosend[9] = rotateField(lfrom)
+    # Same for lto
+    tosend[10] = rotateField(lto)
+    # Wipe checksum byte and append the new checksum.
+    tosend.pop()
+    tosend.append(checksum(tosend))
+    ser.write(tosend)
+    # Read off any data
+    ser.read(100000)
+
+def led(num, intensity=5):
+    # Flashes a specific led
+    # Note the call to this function is 0 for a1 and runs to 63 for h8
+    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
+    tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
+    # Recalculate num to the different indexing system
+    # Last bit is the checksum
+    tosend[8] = intensity
+    tosend[9] = rotateField(num)
+    # Wipe checksum byte and append the new checksum.
+    tosend.pop()
+    tosend.append(checksum(tosend))
+    ser.write(tosend)
+    # Read off any data
+    ser.read(100000)
+
+def ledFlash():
+    # Flashes the last led lit by led(num) above
+    tosend = bytearray(b'\xb0\x00\x0a\x06\x50\x05\x0a\x00\x01\x20')
+    ser.write(tosend)
+    ser.read(100000)
+
+def shutdown():
+    """
+    Initiate shutdown sequence.
+    """
+    initScreen()
+    clearScreenBuffer()
+    sleepScreen()
+    tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
+    ser.write(tosend)
+
+
+#
+# Board response - functions related to get something from the board
+#
 
 def waitMove():
     # Wait for a player to lift a piece and set it down somewhere different
@@ -461,7 +448,6 @@ def waitMove():
         resp = bytearray(resp)
     print(moves)
     return moves
-
 
 def poll():
     # We need to continue poll the board to get data from it
@@ -510,107 +496,103 @@ def poll():
         if (resp.hex() == "b10010065000140a0504000000002a68"):
             print("PLAY BUTTON")
 
-
-SOUND_GENERAL = 1
-SOUND_FACTORY = 2
-SOUND_POWER_OFF = 3
-SOUND_POWER_ON = 4
-SOUND_WRONG = 5
-SOUND_WRONG_MOVE = 6
-
-
-def beep(beeptype):
-    # Ask the centaur to make a beep sound
-    if (beeptype == SOUND_GENERAL):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
-    if (beeptype == SOUND_FACTORY):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x40\x1b'))
-    if (beeptype == SOUND_POWER_OFF):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4c\x08\x48\x08\x35'))
-    if (beeptype == SOUND_POWER_ON):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x48\x08\x4c\x08\x35'))
-    if (beeptype == SOUND_WRONG):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4e\x0c\x48\x10\x43'))
-    if (beeptype == SOUND_WRONG_MOVE):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x48\x08\x5f'))
-
-
-def ledsOff():
-    # Switch the LEDs off on the centaur
-    ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
-
-
-def ledFromTo(lfrom, lto, intensity=5):
-    # Light up a from and to LED for move indication
-    # Note the call to this function is 0 for a1 and runs to 63 for h8
-    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
-    tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
-    # Recalculate lfrom to the different indexing system
-    tosend[8] = intensity
-    tosend[9] = rotateField(lfrom)
-    # Same for lto
-    tosend[10] = rotateField(lto)
-    # Wipe checksum byte and append the new checksum.
-    tosend.pop()
-    tosend.append(checksum(tosend))
-    ser.write(tosend)
-    # Read off any data
-    ser.read(100000)
-
-def led(num, intensity=5):
-    # Flashes a specific led
-    # Note the call to this function is 0 for a1 and runs to 63 for h8
-    # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
-    tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
-    # Recalculate num to the different indexing system
-    # Last bit is the checksum
-    tosend[8] = intensity
-    tosend[9] = rotateField(num)
-    # Wipe checksum byte and append the new checksum.
-    tosend.pop()
-    tosend.append(checksum(tosend))
-    ser.write(tosend)
-    # Read off any data
-    ser.read(100000)
-
-def ledFlash():
-    # Flashes the last led lit by led(num) above
-    tosend = bytearray(b'\xb0\x00\x0a\x06\x50\x05\x0a\x00\x01\x20')
-    ser.write(tosend)
-    ser.read(100000)
-
-def checksum(barr):
-    csum = 0
-    for c in bytes(barr):
-        csum += c
-    barr_csum = (csum % 128)
-    return barr_csum
-
-def rotateField(field):
-    lrow = (field // 8)
-    lcol = (field % 8)
-    newField = (7 - lrow) * 8 + lcol
-    return newField
-
-def rotateFieldHex(fieldHex):
-    squarerow = (fieldHex // 8)
-    squarecol = (fieldHex % 8)
-    field = (7 - squarerow) * 8 + squarecol
-    return field
-
-def convertField(field):
-    square = chr((ord('a') + (field % 8))) + chr(ord('1') + (field // 8))
-    return square
-
-def shutdown():
-    """
-    Initiate shutdown sequence.
-    """
-    initScreen()
-    clearScreenBuffer()
-    sleepScreen()
-    tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
-    ser.write(tosend)
+def getText(title):
+    # Allows text to be entered using a virtual keyboard where a chess piece
+    # is placed on the board in the correct position
+    global screenbuffer
+    clearstate = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    printableascii = " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~                                                                "
+    charpage = 1
+    typed = ""
+    # First we need a clear board
+    res = getBoardState()
+    if bytearray(res) != clearstate:
+        writeText(0,'Remove board')
+        writeText(1,'pieces')
+        while bytearray(res) != clearstate:
+            time.sleep(0.5)
+            res = getBoardState()
+    changed = 1
+    clearBoardData()
+    while True:
+        if changed == 1:
+            # print our title and our box that the answer will go in
+            image = screenbuffer.copy()
+            draw = ImageDraw.Draw(image)
+            draw.rectangle([(0, 0), (128, 250)], fill=255)
+            draw.text((0,20),title, font=font18, fill=0)
+            draw.rectangle([(0,39),(128,61)],fill=255,outline=0)
+            tt = typed
+            if len(tt) > 10:
+                tt = tt[-11:]
+            draw.text((0,40),tt, font=font18, fill=0)
+            # Using the current charpage display the symbols that a square would represent
+            pos = (charpage -1) * 64
+            lchars = []
+            for i in range(pos,pos+64):
+                lchars.append(printableascii[i])
+            pos = 0
+            for i in range(0,len(lchars),8):
+                tsts = ""
+                for q in range(0,8):
+                    tsts = tsts + lchars[i + q]
+                    draw.text(((q*16),(pos*20)+80),lchars[i + q], font=font18, fill=0)
+                pos = pos + 1
+            screenbuffer = image.copy()
+            image = image.transpose(Image.FLIP_TOP_BOTTOM)
+            image = image.transpose(Image.FLIP_LEFT_RIGHT)
+            epd.DisplayPartial(epd.getbuffer(image))
+            time.sleep(0.1)
+            changed = 0
+        buttonPress = 0
+        ser.read(1000000)
+        tosend = bytearray(b'\x83\x06\x50\x59')
+        ser.write(tosend)
+        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+        # If a piece is placed it will type a character!
+        if (bytearray(resp) != expect):
+            if (resp[0] == 133 and resp[1] == 0):
+                for x in range(0, len(resp) - 1):
+                    if resp[x] == 65:
+                        # Calculate the square to 0(a1)-63(h8) so that
+                        # all functions match
+                        fieldHex = resp[x + 1]
+                        typed = typed + lchars[fieldHex]
+                        beep(SOUND_GENERAL)
+                        changed = 1
+        tosend = bytearray(b'\x94\x06\x50\x6a')
+        ser.write(tosend)
+        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+        resp = ser.read(10000)
+        resp = bytearray(resp)
+        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+            buttonPress = 1 # BACK
+        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+            buttonPress = 2 # TICK
+        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+            buttonPress = 3 # UP
+        if (resp.hex() == "b10010065000140a050200000000611d"):
+            buttonPress = 4 # DOWN
+        if buttonPress == 1 and len(typed) > 0:
+            typed = typed[:-1]
+            beep(SOUND_GENERAL)
+            changed = 1
+        if buttonPress == 2:
+            beep(SOUND_GENERAL)
+            initScreen()
+            time.sleep(2)
+            return typed
+        if buttonPress == 3:
+            beep(SOUND_GENERAL)
+            charpage = 1
+            changed = 1
+        if buttonPress == 4:
+            beep(SOUND_GENERAL)
+            charpage = 2
+            changed = 1
+        time.sleep(0.2)
 
 def getBoardState(field=None):
     # Query the board and return a representation of it
@@ -648,18 +630,55 @@ def printBoardState():
         print("|\r")
     print("+---+---+---+---+---+---+---+---+")
 
+
+#
+# Miscellaneous functions - do they belong in this file?
+#
+
+def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        print(ex)
+        return False
+
+#
+# Helper functions - used by other functions or useful in manipulating board data
+#
+
+def checksum(barr):
+    csum = 0
+    for c in bytes(barr):
+        csum += c
+    barr_csum = (csum % 128)
+    return barr_csum
+
+def rotateField(field):
+    lrow = (field // 8)
+    lcol = (field % 8)
+    newField = (7 - lrow) * 8 + lcol
+    return newField
+
+def rotateFieldHex(fieldHex):
+    squarerow = (fieldHex // 8)
+    squarecol = (fieldHex % 8)
+    field = (7 - squarerow) * 8 + squarecol
+    return field
+
+def convertField(field):
+    square = chr((ord('a') + (field % 8))) + chr(ord('1') + (field // 8))
+    return square
+
+
 # This section is the start of a new way of working with the board functions where those functions are
 # the board returning some kind of data
 import threading
 eventsthreadpointer = ""
 eventsrunning = 1
 
-BTNBACK = 1
-BTNTICK = 2
-BTNUP = 3
-BTNDOWN = 4
-BTNHELP = 5
-BTNPLAY = 6
+
 
 def eventsThread(keycallback, fieldcallback):
     # This monitors the board for events
