@@ -1,4 +1,5 @@
-from DGTCentaurMods.board import boardfunctions, epaper, network
+from DGTCentaurMods.board import boardfunctions, network
+from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
 import time
 import pathlib

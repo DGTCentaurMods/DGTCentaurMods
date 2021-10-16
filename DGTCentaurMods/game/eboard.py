@@ -68,7 +68,8 @@ import serial
 import time
 import sys
 from os.path import exists
-from DGTCentaurMods.board import boardfunctions, epaper
+from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.display import epaper
 import threading
 import chess
 import os

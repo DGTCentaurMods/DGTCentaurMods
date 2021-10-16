@@ -3,7 +3,8 @@ import berserk
 import ssl
 import time
 import threading
-from DGTCentaurMods.board import boardfunctions, epaper
+from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.display import epaper
 import chess
 from DGTCentaurMods.config import config
 import os
