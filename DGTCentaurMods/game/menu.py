@@ -52,9 +52,13 @@ def fieldActivity(id):
     global quickselect
     global curmenu
     global selection
-    if quickselect == 1 and (id < -23 and id > -32):
+    if quickselect == 1 and (id < -15 and id > -32):
         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-        menuitem = (id * -1) - 23
+        menuitem = 1
+        if quickselect == 1 and (id < -23 and id > -32):
+            menuitem = (id * -1) - 23
+        if quickselect == 1 and (id < -15 and id > -24):
+            menuitem = (id * -1) - 7
         c = 1
         r = ""
         for k, v in curmenu.items():
@@ -79,9 +83,10 @@ def doMenu(menu):
     boardfunctions.pauseEvents()
     res = boardfunctions.getBoardState()
     boardfunctions.unPauseEvents()
-    if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36]==0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
-        # If the 4th rank is empty then enable quick select mode. Then we can choose a menu option by placing and releasing a piece
-        quickselect = 1
+    # If 3rd and 4th ranks are empty then enable quick select by placing and releasing a piece
+    if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
+        if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
+            quickselect = 1
     row = 1
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
