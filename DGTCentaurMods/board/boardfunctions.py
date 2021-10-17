@@ -694,7 +694,6 @@ def eventsThread(keycallback, fieldcallback):
                     if (resp[0] == 133 and resp[1] == 0):
                         for x in range(0, len(resp) - 1):
                             if (resp[x] == 64):
-                                #print("PIECE LIFTED")
                                 # Calculate the square to 0(a1)-63(h8) so that
                                 # all functions match
                                 fieldHex = resp[x + 1]
