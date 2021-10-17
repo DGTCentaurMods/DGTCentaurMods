@@ -146,6 +146,24 @@ def drawBoard(pieces):
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
 
+def drawFen(fen):
+    # As drawboard but draws a fen
+    curfen = fen
+    curfen = curfen.replace("/", "")
+    curfen = curfen.replace("1", " ")
+    curfen = curfen.replace("2", "  ")
+    curfen = curfen.replace("3", "   ")
+    curfen = curfen.replace("4", "    ")
+    curfen = curfen.replace("5", "     ")
+    curfen = curfen.replace("6", "      ")
+    curfen = curfen.replace("7", "       ")
+    curfen = curfen.replace("8", "        ")
+    nfen = ""
+    for a in range(8,0,-1):
+        for b in range(0,8):
+            nfen = nfen + curfen[((a-1)*8)+b]
+    drawBoard(nfen)
+
 def promotionOptions(row):
     # Draws the promotion options to the screen buffer
     global epaperbuffer
