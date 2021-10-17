@@ -119,10 +119,7 @@ while True:
         'Lichess': 'Lichess',
         'EmulateEB': 'e-Board',
         'Cast' : 'Chromecast',
-        'Pairing': 'Start BT Pair',
-        'WiFi': 'Wifi Setup',
-        'Shutdown': 'Shutdown',
-        'Reboot': 'Reboot',
+        'settings': 'Settings',
         'Support': 'Get support'}
     result = doMenu(menu)
     if result == "BACK":
@@ -147,57 +144,71 @@ while True:
         boardfunctions.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
         boardfunctions.unPauseEvents()
-    if result == "Pairing":
-        boardfunctions.pauseEvents()
-        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
-        boardfunctions.unPauseEvents()
-    if result == "WiFi":
-        wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
-        result = doMenu(wifimenu)
-        if (result != "BACK"):
-            if (result == 'wpa2'):
-                boardfunctions.pauseEvents()
-                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
-                boardfunctions.unPauseEvents()
-            if (result == 'wps'):
-                if network.check_network():
-                    #from DGTCentaurMods.display import epd2in9d
-                    #epd = epd2in9d.EPD()
-                    #epd.init()
-                    # TODO: put here script to backup network.
-                    IP = network.check_network()
-                    epaper.clearScreen()
-                    epaper.writeText(0, 'Network is up.')
-                    epaper.writeText(1, 'Press OK to')
-                    epaper.writeText(2, 'disconnect')
-                    epaper.writeText(4, IP)
-                    while selection == "" and time.time() < timeout:
-                        if selection == "BTNTICK":
-                            print("") # Placeholder
-                            # network.disconnect_all() not enable until Restore
-                            # function is finished
-                else:
-                    wpsMenu = {'connect': 'Connect wifi'}
-                    result = doMenu(wpsMenu)
-                    if (result == 'connect'):
+    if result == "settings":
+        setmenu = {
+                'WiFi': 'Wifi Setup',
+                'Pairing': 'Start BT Pair',
+                'Shutdown': 'Shutdown',
+                'Reboot': 'Reboot' }
+        result = doMenu(setmenu)
+        print(result)
+        if result == "WiFi":
+            wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
+            result = doMenu(wifimenu)
+            if (result != "BACK"):
+                if (result == 'wpa2'):
+                    boardfunctions.pauseEvents()
+                    os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
+                    boardfunctions.unPauseEvents()
+                if (result == 'wps'):
+                    if network.check_network():
+                        selection = ""
+                        #from DGTCentaurMods.display import epd2in9d
+                        #epd = epd2in9d.EPD()
+                        #epd.init()
+                        # TODO: put here script to backup network.
+                        IP = network.check_network()
                         epaper.clearScreen()
-                        epaper.writeText(0, 'Press WPS button')
-                        network.wps_connect()
-                        time.sleep(30)
-        if (result == 'recover'):
-            print() # placeholer
-            # TODO: Build funtion in network.py to force restore wifi.
-    if result == "Shutdown":
-        boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-        boardfunctions.pauseEvents()
-        boardfunctions.shutdown()
-    if result == "Reboot":
-        epaper.clearScreen()
-        epaper.stopEpaper()
-        boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-        boardfunctions.pauseEvents()
-        os.system("/sbin/shutdown -r now")
-        sys.exit()
+                        epaper.writeText(0, 'Network is up.')
+                        epaper.writeText(1, 'Press OK to')
+                        epaper.writeText(2, 'disconnect')
+                        epaper.writeText(4, IP)
+                        timeout = time.time() + 15
+                        while selection == "" and time.time() < timeout:
+                            if selection == "BTNTICK":
+                                print("") # Placeholder
+                                # network.disconnect_all() not enable until Restore
+                                # function is finished
+                    else:
+                        wpsMenu = {'connect': 'Connect wifi'}
+                        result = doMenu(wpsMenu)
+                        if (result == 'connect'):
+                            epaper.clearScreen()
+                            epaper.writeText(0, 'Press WPS button')
+                            network.wps_connect()
+                            time.sleep(30)
+                if (result == 'recover'):
+                    print() # placeholer
+                    # TODO: Build funtion in network.py to force restore wifi.
+        if result == "Pairing":
+            boardfunctions.pauseEvents()
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
+            boardfunctions.unPauseEvents()
+        if result == "Shutdown":
+            boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            epaper.clearScreen()
+            logo = Image.open(str(pathlib.Path(__file__).parent.resolve()) +"/../resources/logo_mods_screen.bmp")
+            epaper.epaperbuffer.paste(logo,(0,0))
+            epaper.stopEpaper()
+            boardfunctions.pauseEvents()
+            boardfunctions.shutdown()
+        if result == "Reboot":
+            epaper.clearScreen()
+            epaper.stopEpaper()
+            boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            boardfunctions.pauseEvents()
+            os.system("/sbin/shutdown -r now")
+            sys.exit()
     if result == "Lichess":
         lichessmenu = {'Current': 'Current', 'New': 'New Game'}
         result = doMenu(lichessmenu)
