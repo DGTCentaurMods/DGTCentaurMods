@@ -5,10 +5,13 @@ import time
 import pathlib
 import os
 import sys
+import threading
 
 menuitem = 1
 curmenu = None
 selection = ""
+
+event_key = threading.Event()
 
 def keyPressed(id):
     # This function receives key presses
@@ -31,9 +34,11 @@ def keyPressed(id):
             c = c + 1
     if id == boardfunctions.BTNBACK:
         selection = "BACK"
+        event_key.set()
         return
     if id == boardfunctions.BTNHELP:
         selection = "BTNHELP"
+        event_key.set()
         return
     if menuitem < 1:
         menuitem = 1
@@ -64,6 +69,7 @@ def fieldActivity(id):
         for k, v in curmenu.items():
             if (c == menuitem):
                 selection = k
+                event_key.set()
                 menuitem = 1
                 return
             c = c + 1
@@ -97,7 +103,7 @@ def doMenu(menu):
                       (17, (menuitem * 20) + 10)], fill=0)
         draw.line((17,0,17,295), fill=0, width=1)
     while selection == "":
-        time.sleep(0.1)
+        event_key.wait()
     return selection
 
 # Turn Leds off, beep, clear DGT Centaur Serial

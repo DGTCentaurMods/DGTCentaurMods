@@ -728,7 +728,7 @@ def eventsThread(keycallback, fieldcallback):
                     buttonPress = BTNPLAY   # PLAY
             except:
                 pass
-            time.sleep(0.2)
+            time.sleep(0.05)
             if buttonPress != 0:
                 keycallback(buttonPress)
         time.sleep(0.05)

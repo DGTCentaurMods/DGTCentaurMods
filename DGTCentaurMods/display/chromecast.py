@@ -98,6 +98,7 @@ def doMenu(menu):
 # Turn Leds off, beep, clear DGT Centaur Serial
 # Initialise the epaper display - after which functions in epaper.py are available but you can also draw to the
 # image epaper.epaperbuffer to change the screen.
+os.system("ps -ef | grep 'cchandler.py' | grep -v grep | awk '{print $2}' | xargs -r kill -9")
 boardfunctions.ledsOff()
 boardfunctions.clearSerial()
 epaper.initEpaper()
