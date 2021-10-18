@@ -18,6 +18,9 @@ epaperprocesschange = 1
 epd = epd2in9d.EPD()
 epaperUpd = ""
 kill = 0
+epapermode = 0
+lastepaperbytes = bytearray(b'')
+first = 1
 
 def epaperUpdate():
     # This is used as a thread to update the e-paper if the image has changed
@@ -25,27 +28,56 @@ def epaperUpdate():
     global lastepaperhash
     global epaperprocesschange
     global kill
+    global epapermode
+    global lastepaperbytes
+    global first
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
     time.sleep(4)
     print("epaper init image sent")
     while True and kill == 0:
-        thishash = hashlib.md5(epaperbuffer.tobytes()).hexdigest()
-        if thishash != lastepaperhash and epaperprocesschange == 1:
-            starttime = time.time()
-            im = epaperbuffer.copy()
+        im = epaperbuffer.copy()
+        im2 = im.copy()
+        tepaperbytes = im.tobytes()
+        if lastepaperbytes != tepaperbytes and epaperprocesschange == 1:
             filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
             epaperbuffer.save(filename)
             im = im.transpose(Image.FLIP_TOP_BOTTOM)
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
-            epd.DisplayPartial(epd.getbuffer(im))
-            lastepaperhash = thishash
+            if epapermode == 0 or first == 1:
+                epd.DisplayPartial(epd.getbuffer(im))
+                first = 0
+            else:
+                rs = 0
+                re = 295
+                for x in range(0, len(tepaperbytes)):
+                    if lastepaperbytes[x] != tepaperbytes[x]:
+                        rs = (x // 16) - 1
+                        break;
+                for x in range(len(tepaperbytes) - 1, 0, -1):
+                    if lastepaperbytes[x] != tepaperbytes[x]:
+                        re = (x // 16) + 1
+                        break;
+                if rs < 0:
+                    rs = 0
+                if re > 295:
+                    re = 295
+                if rs >= re:
+                    rs = 0
+                    re = 295
+                bb = im2.crop((0, rs + 1, 128, re))
+                bb = bb.transpose(Image.FLIP_TOP_BOTTOM)
+                bb = bb.transpose(Image.FLIP_LEFT_RIGHT)
+                epd.DisplayRegion(296 - re, 295 - rs, epd.getbuffer(bb))
+            lastepaperbytes = tepaperbytes
         time.sleep(0.2)
 
-def initEpaper():
+def initEpaper(mode = 0):
     # Set the screen to a known start state and start the epaperUpdate thread
     global epaperbuffer
     global epaperUpd
+    global epapermode
+    epapermode = mode
     epaperbuffer = Image.new('1', (128, 296), 255)
     print("init epaper")
     epd.init()
@@ -72,11 +104,10 @@ def stopEpaper():
     global epaperbuffer
     global kill
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
-    #epaperbuffer = Image.new('1', (128, 296), 255)
     epaperbuffer = Image.open(filename)
     time.sleep(3)
     kill = 1
-    time.sleep(0.5)
+    time.sleep(2)
     epd.sleep()
 
 def writeText(row,txt):

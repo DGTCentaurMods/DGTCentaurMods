@@ -32,9 +32,11 @@ print(answer)
 if answer == "BACK":
 	sys.exit()
 
+boardfunctions.initScreen()
+time.sleep(2)
+
 # If the answer is not "BACK" then answer contains our SSID
 # Now we need to get the password
-
 password = boardfunctions.getText("Wifi Password")
 
 if password == "":

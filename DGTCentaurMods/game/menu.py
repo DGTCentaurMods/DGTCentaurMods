@@ -228,9 +228,6 @@ while True:
             boardfunctions.unPauseEvents()
         if result == "Shutdown":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
-            epaper.clearScreen()
-            logo = Image.open(str(pathlib.Path(__file__).parent.resolve()) +"/../resources/logo_mods_screen.bmp")
-            epaper.epaperbuffer.paste(logo,(0,0))
             epaper.stopEpaper()
             boardfunctions.pauseEvents()
             boardfunctions.shutdown()
