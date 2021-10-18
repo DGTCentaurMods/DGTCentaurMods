@@ -21,6 +21,7 @@ kill = 0
 epapermode = 0
 lastepaperbytes = bytearray(b'')
 first = 1
+event_refresh = threading.Event()
 
 def epaperUpdate():
     # This is used as a thread to update the e-paper if the image has changed
@@ -31,6 +32,7 @@ def epaperUpdate():
     global epapermode
     global lastepaperbytes
     global first
+    global event_refresh
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
     time.sleep(4)
@@ -38,7 +40,8 @@ def epaperUpdate():
     while True and kill == 0:
         im = epaperbuffer.copy()
         im2 = im.copy()
-        tepaperbytes = im.tobytes()
+        if epaperprocesschange == 1:
+            tepaperbytes = im.tobytes()
         if lastepaperbytes != tepaperbytes and epaperprocesschange == 1:
             filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
             epaperbuffer.save(filename)
@@ -70,6 +73,7 @@ def epaperUpdate():
                 bb = bb.transpose(Image.FLIP_LEFT_RIGHT)
                 epd.DisplayRegion(296 - re, 295 - rs, epd.getbuffer(bb))
             lastepaperbytes = tepaperbytes
+            event_refresh.set()
         time.sleep(0.2)
 
 def initEpaper(mode = 0):
@@ -110,6 +114,10 @@ def stopEpaper():
     time.sleep(2)
     epd.sleep()
 
+def killEpaper():
+    global kill
+    kill = 1
+
 def writeText(row,txt):
     # Write Text on a give line number
     global epaperbuffer
@@ -133,7 +141,12 @@ def clearArea(x1, y1, x2, y2):
 def clearScreen():
     # Set the ePaper back to white
     global epaperbuffer
-    epaperbuffer = Image.new('1', (128, 296), 255)
+    global event_refresh
+    global first
+    #epaperbuffer = Image.new('1', (128, 296), 255)
+    draw = ImageDraw.Draw(epaperbuffer)
+    draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
+    first = 1
 
 def drawBoard(pieces):
     global epaperbuffer

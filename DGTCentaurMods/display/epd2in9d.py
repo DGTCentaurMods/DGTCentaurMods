@@ -275,8 +275,8 @@ class EPD:
         self.send_data(128 - 1)
         self.send_data(0)
         self.send_data(0)
-        self.send_data(int(296 / 256))
-        self.send_data(296 % 256 - 1)
+        self.send_data(int(self.height / 256))
+        self.send_data(self.height % 256 - 1)
         self.send_data(0x28)
         epdconfig.delay_ms(20)
         self.TurnOnDisplay()
@@ -341,16 +341,23 @@ class EPD:
 
 
     def Clear(self, color):
-        #self.send_command(0x10)
-        #for i in range(0, int(self.width * self.height / 8)):
-        #    self.send_data(0x00)
-        #epdconfig.delay_ms(10)
+        self.send_command(0x10)
+        for i in range(0, int(self.width * self.height / 8)):
+            self.send_data(0x00)
+        epdconfig.delay_ms(10)
 
         self.send_command(0x13)
         for i in range(0, int(self.width * self.height / 8)):
             self.send_data(0xFF)
         epdconfig.delay_ms(10)
 
+        self.TurnOnDisplay()
+
+    def HalfClear(self):
+        self.send_command(0x13)
+        for i in range(0, int(self.width * self.height / 8)):
+            self.send_data(0xFF)
+        epdconfig.delay_ms(10)
         self.TurnOnDisplay()
 
     def sleep(self):

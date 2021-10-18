@@ -28,8 +28,8 @@ def keyPressed(id):
     if id == boardfunctions.BTNTICK:
         if not curmenu:
             selection = "BTNTICK"
-#            event_key.set()
             print(selection)
+            #event_key.set()
             return
         c = 1
         r = ""
@@ -37,16 +37,19 @@ def keyPressed(id):
             if (c == menuitem):
                 selection = k
                 print(selection)
+                epaper.epd.HalfClear()
                 event_key.set()
                 menuitem = 1
                 return
             c = c + 1
     if id == boardfunctions.BTNBACK:
         selection = "BACK"
+        epaper.epd.HalfClear()
         event_key.set()
         return
     if id == boardfunctions.BTNHELP:
         selection = "BTNHELP"
+        epaper.epd.HalfClear()
         event_key.set()
         return
     if menuitem < 1:
@@ -90,6 +93,7 @@ def doMenu(menu):
     global selection
     global quickselect
     global event_key
+    epaper.epd.init()
     selection = ""
     curmenu = menu
     # Display the given menu
@@ -107,11 +111,11 @@ def doMenu(menu):
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
         row = row + 1
-        epaper.clearArea(0,0,17,295)
-        draw = ImageDraw.Draw(epaper.epaperbuffer)
-        draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
-                      (17, (menuitem * 20) + 10)], fill=0)
-        draw.line((17,0,17,295), fill=0, width=1)
+    epaper.clearArea(0,0,17,295)
+    draw = ImageDraw.Draw(epaper.epaperbuffer)
+    draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
+                  (17, (menuitem * 20) + 10)], fill=0)
+    draw.line((17,0,17,295), fill=0, width=1)
     event_key.wait()
     event_key.clear()
     return selection
@@ -122,7 +126,7 @@ def doMenu(menu):
 boardfunctions.ledsOff()
 boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
 boardfunctions.clearSerial()
-epaper.initEpaper()
+epaper.initEpaper(1)
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
 boardfunctions.subscribeEvents(keyPressed, fieldActivity)
