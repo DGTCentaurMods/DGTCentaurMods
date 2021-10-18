@@ -1,4 +1,5 @@
 from DGTCentaurMods.board import boardfunctions, network
+from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
 import time
@@ -153,7 +154,14 @@ while True:
         result = doMenu(setmenu)
         print(result)
         if result == "WiFi":
-            wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
+            if network.check_network():
+                wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup'}
+            else:
+                wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
+            if network.check_network():
+                cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh backup\""
+                print(cmd)
+                centaur.shell_run(cmd)
             result = doMenu(wifimenu)
             if (result != "BACK"):
                 if (result == 'wpa2'):
@@ -163,10 +171,6 @@ while True:
                 if (result == 'wps'):
                     if network.check_network():
                         selection = ""
-                        #from DGTCentaurMods.display import epd2in9d
-                        #epd = epd2in9d.EPD()
-                        #epd.init()
-                        # TODO: put here script to backup network.
                         IP = network.check_network()
                         epaper.clearScreen()
                         epaper.writeText(0, 'Network is up.')
@@ -175,10 +179,11 @@ while True:
                         epaper.writeText(4, IP)
                         timeout = time.time() + 15
                         while selection == "" and time.time() < timeout:
+                            print(selection)
                             if selection == "BTNTICK":
-                                print("") # Placeholder
-                                # network.disconnect_all() not enable until Restore
-                                # function is finished
+                                network.wps_disconnect_all()
+                                break
+                            time.sleep(2)
                     else:
                         wpsMenu = {'connect': 'Connect wifi'}
                         result = doMenu(wpsMenu)
@@ -186,10 +191,21 @@ while True:
                             epaper.clearScreen()
                             epaper.writeText(0, 'Press WPS button')
                             network.wps_connect()
-                            time.sleep(30)
                 if (result == 'recover'):
-                    print() # placeholer
-                    # TODO: Build funtion in network.py to force restore wifi.
+                    selection=""
+                    cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh restore\""
+                    centaur.shell_run(cmd)
+                    print(cmd)
+                    timeout = time.time() + 20
+                    epaper.clearScreen()
+                    epaper.writeText(0, 'Waiting fot')
+                    epaper.writeText(1, 'network...')
+                    while not network.check_network() and time.time() < timeout:
+                        time.sleep(1)
+                    if not network.check_network():
+                        epaper.writeText(1, 'Failed to restore...')
+                        time.sleep(4)
+
         if result == "Pairing":
             boardfunctions.pauseEvents()
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
