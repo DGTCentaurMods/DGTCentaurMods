@@ -28,7 +28,7 @@ def keyPressed(id):
     if id == boardfunctions.BTNTICK:
         if not curmenu:
             selection = "BTNTICK"
-            event_key.set()
+#            event_key.set()
             print(selection)
             return
         c = 1
@@ -194,10 +194,9 @@ while True:
                         epaper.writeText(2, 'disconnect')
                         epaper.writeText(4, IP)
                         timeout = time.time() + 15
-                        while selection == "" and time.time() < timeout:
+                        while time.time() < timeout:
                             if selection == "BTNTICK":
-                                print("Selection is: " + selection)
-                                #network.wps_disconnect_all()
+                                network.wps_disconnect_all()
                                 break
                             time.sleep(2)
                     else:
