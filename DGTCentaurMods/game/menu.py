@@ -18,6 +18,7 @@ def keyPressed(id):
     global menuitem
     global curmenu
     global selection
+    global event_key
     boardfunctions.beep(boardfunctions.SOUND_GENERAL)
     if id == boardfunctions.BTNDOWN:
         menuitem = menuitem + 1
@@ -29,6 +30,7 @@ def keyPressed(id):
         for k, v in curmenu.items():
             if (c == menuitem):
                 selection = k
+                event_key.set()
                 menuitem = 1
                 return
             c = c + 1
@@ -80,6 +82,7 @@ def doMenu(menu):
     global curmenu
     global selection
     global quickselect
+    global event_key
     selection = ""
     curmenu = menu
     # Display the given menu
@@ -102,8 +105,7 @@ def doMenu(menu):
         draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
                       (17, (menuitem * 20) + 10)], fill=0)
         draw.line((17,0,17,295), fill=0, width=1)
-    while selection == "":
-        event_key.wait()
+    event_key.wait()
     return selection
 
 # Turn Leds off, beep, clear DGT Centaur Serial
