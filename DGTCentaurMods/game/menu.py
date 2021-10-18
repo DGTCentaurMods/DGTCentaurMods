@@ -106,6 +106,7 @@ def doMenu(menu):
                       (17, (menuitem * 20) + 10)], fill=0)
         draw.line((17,0,17,295), fill=0, width=1)
     event_key.wait()
+    event_key.clear()
     return selection
 
 # Turn Leds off, beep, clear DGT Centaur Serial
