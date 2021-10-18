@@ -186,6 +186,7 @@ while True:
                 if (result == 'wps'):
                     if network.check_network():
                         selection = ""
+                        curmenu = None
                         IP = network.check_network()
                         epaper.clearScreen()
                         epaper.writeText(0, 'Network is up.')
@@ -194,10 +195,9 @@ while True:
                         epaper.writeText(4, IP)
                         timeout = time.time() + 15
                         while selection == "" and time.time() < timeout:
-                            curmenu = None
                             if selection == "BTNTICK":
                                 print("Selection is: " + selection)
-                                etwork.wps_disconnect_all()
+                                #network.wps_disconnect_all()
                                 break
                             time.sleep(2)
                     else:
