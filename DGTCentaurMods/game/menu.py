@@ -231,14 +231,20 @@ while True:
             boardfunctions.unPauseEvents()
         if result == "Shutdown":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            epaper.epd.HalfClear()
             epaper.stopEpaper()
+            time.sleep(2)
             boardfunctions.pauseEvents()
             boardfunctions.shutdown()
+            os.system("/sbin/shutdown now")
+            sys.exit()
         if result == "Reboot":
-            epaper.clearScreen()
-            epaper.stopEpaper()
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            epaper.epd.HalfClear()
+            epaper.stopEpaper()
+            time.sleep(2)
             boardfunctions.pauseEvents()
+            boardfunctions.shutdown()
             os.system("/sbin/shutdown -r now")
             sys.exit()
     if result == "Lichess":

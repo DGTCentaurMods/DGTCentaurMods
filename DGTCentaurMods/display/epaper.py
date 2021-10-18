@@ -108,7 +108,10 @@ def stopEpaper():
     global epaperbuffer
     global kill
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
-    epaperbuffer = Image.open(filename)
+    lg = Image.open(filename)
+    lgs = Image.new('1', (128, 296), 255)
+    lgs.paste(lg,(0,0))
+    epaperbuffer = lgs.copy()
     time.sleep(3)
     kill = 1
     time.sleep(2)
