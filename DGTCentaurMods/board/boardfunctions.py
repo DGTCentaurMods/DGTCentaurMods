@@ -736,6 +736,7 @@ def eventsThread(keycallback, fieldcallback):
 def subscribeEvents(keycallback, fieldcallback):
     # Called by any program wanting to subscribe to events
     # Arguments are firstly the callback function for key presses, secondly for piece lifts and places
+    clearSerial()
     eventsthreadpointer = threading.Thread(target=eventsThread, args=([keycallback, fieldcallback]))
     eventsthreadpointer.daemon = True
     eventsthreadpointer.start()

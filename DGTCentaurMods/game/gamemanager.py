@@ -12,6 +12,7 @@
 # Force next move
 
 from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.display import epaper
 import threading
 import time
 import chess
@@ -37,6 +38,7 @@ board = chess.Board()
 curturn = 1
 sourcesq = -1
 legalsquares = []
+pausekeys = 0
 
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
@@ -54,6 +56,8 @@ def fieldcallback(field):
     global legalsquares
     global eventcallbackfunction
     global newgame
+    global keycallback
+    global pausekeys
     lift = 0
     place = 0
     if field >= 0:
@@ -73,6 +77,7 @@ def fieldcallback(field):
     squarecol = 7 - squarecol
     fieldname = chr(ord("a") + (7 - squarecol)) + chr(ord("1") + squarerow)
     legalmoves = board.legal_moves
+    lmoves = list(legalmoves)
     if lift == 1 and field not in legalsquares and sourcesq < 0 and vpiece == 1:
         # Generate a list of places this piece can move to
         lifted = 1
@@ -85,12 +90,17 @@ def fieldcallback(field):
             sqxc = 7 - sqxc
             fx = chr(ord("a") + (7 - sqxc)) + chr(ord("1") + sqxr)
             tm = fieldname + fx
+            found = 0
             try:
-                tcm = chess.Move.from_uci(tm)
-                if tcm in legalmoves:
-                    legalsquares.append(x)
+                for q in range(0,len(lmoves)):
+                    if str(tm[0:4]) == str(lmoves[q])[0:4]:
+                        found = 1
+                        break
             except:
                 pass
+            if found == 1:
+                legalsquares.append(x)
+    print(legalsquares)
     if place == 1 and field in legalsquares:
         newgame = 0
         if field == sourcesq:
@@ -107,8 +117,91 @@ def fieldcallback(field):
             squarecol = (field % 8)
             squarecol = 7 - squarecol
             toname = chr(ord("a") + (7 - squarecol)) + chr(ord("1") + squarerow)
-            # TODO - add promotion choice here
-            mv = fromname + toname
+            # Promotion
+            # If this is a WPAWN and squarerow is 7
+            # or a BPAWN and squarerow is 0
+            pname = str(board.piece_at(sourcesq))
+            print("----")
+            print(field//8)
+            print(pname)
+            pr = ""
+            if (field // 8) == 7 and pname == "P":
+                print("promotion")
+                screenback = epaper.epaperbuffer.copy()
+                tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+                tosend[2] = len(tosend)
+                tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
+                boardfunctions.ser.write(tosend)
+                epaper.promotionOptions(13)
+                pausekeys = 1
+                time.sleep(0.2)
+                buttonPress = 0
+                while buttonPress == 0:
+                    boardfunctions.ser.read(1000000)
+                    tosend = bytearray(b'\x83\x06\x50\x59')
+                    boardfunctions.ser.write(tosend)
+                    resp = boardfunctions.ser.read(10000)
+                    resp = bytearray(resp)
+                    tosend = bytearray(b'\x94\x06\x50\x6a')
+                    boardfunctions.ser.write(tosend)
+                    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                    resp = boardfunctions.ser.read(10000)
+                    resp = bytearray(resp)
+                    if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                        buttonPress = 1  # BACK
+                        pr = "n"
+                    if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                        buttonPress = 2  # TICK
+                        pr = "b"
+                    if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                        buttonPress = 3  # UP
+                        pr = "q"
+                    if (resp.hex() == "b10010065000140a050200000000611d"):
+                        buttonPress = 4  # DOWN
+                        pr = "r"
+                    time.sleep(0.1)
+                epaper.epaperbuffer = screenback.copy()
+                pausekeys = 2
+            if (field // 8) == 0 and pname == "p":
+                print("promotion")
+                screenback = epaper.epaperbuffer.copy()
+                tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+                tosend[2] = len(tosend)
+                tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
+                boardfunctions.ser.write(tosend)
+                epaper.promotionOptions(13)
+                pausekeys = 1
+                time.sleep(0.2)
+                buttonPress = 0
+                while buttonPress == 0:
+                    boardfunctions.ser.read(1000000)
+                    tosend = bytearray(b'\x83\x06\x50\x59')
+                    boardfunctions.ser.write(tosend)
+                    resp = boardfunctions.ser.read(10000)
+                    resp = bytearray(resp)
+                    tosend = bytearray(b'\x94\x06\x50\x6a')
+                    boardfunctions.ser.write(tosend)
+                    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                    resp = boardfunctions.ser.read(10000)
+                    resp = bytearray(resp)
+                    if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                        buttonPress = 1  # BACK
+                        pr = "n"
+                    if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                        buttonPress = 2  # TICK
+                        pr = "b"
+                    if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                        buttonPress = 3  # UP
+                        pr = "q"
+                    if (resp.hex() == "b10010065000140a050200000000611d"):
+                        buttonPress = 4  # DOWN
+                        pr = "r"
+                    time.sleep(0.1)
+                epaper.epaperbuffer = screenback.copy()
+                pausekeys = 2
+
+            mv = fromname + toname + pr
+            print(mv)
             # Make the move and update fen.log
             board.push(chess.Move.from_uci(mv))
             fenlog = "/home/pi/centaur/fen.log"
@@ -148,11 +241,13 @@ def gameThread(eventCallback, moveCallback, keycallback):
     global keycallbackfunction
     global movecallbackfunction
     global eventcallbackfunction
+    global pausekeys
     keycallbackfunction = keycallback
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
     boardfunctions.subscribeEvents(keycallback, fieldcallback)
     t = 0
+    pausekeys = 0
     while kill == 0:
         # Detect if a new game has begun
         if newgame == 0:
@@ -179,6 +274,11 @@ def gameThread(eventCallback, moveCallback, keycallback):
                     t = 0
                 except:
                     pass
+        if pausekeys == 1:
+            boardfunctions.pauseEvents()
+        if pausekeys == 2:
+            boardfunctions.unPauseEvents()
+            pausekeys = 0
         time.sleep(0.1)
 
 def subscribeGame(eventCallback, moveCallback, keyCallback):

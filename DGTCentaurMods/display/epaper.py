@@ -214,6 +214,7 @@ def drawFen(fen):
 def promotionOptions(row):
     # Draws the promotion options to the screen buffer
     global epaperbuffer
+    print("drawing promotion options")
     offset = row * 20
     draw = ImageDraw.Draw(epaperbuffer)
     draw.text((0, offset+0), "    Q    R    N    B", font=font18, fill=0)
