@@ -15,10 +15,15 @@ Currently everything is to be considered a **work in progress**, as there aren't
 ## Current features
 
 eBoard Emulation - Revelation II. Enables you to use the DGT Centaur as if it was a bluetooth DGT eboard with apps, rabbit plugin, Livechess, etc
+
 Online Gameplay - Lichess (can be buggy, API key must currently be manually set in config.py)
+
 Web Interface - Shows live view of chessboard in a browser
+
 Streaming Video - On the web interface /video provides a live mjpeg stream (for example for live streaming in OBS)
+
 Chromecast - Stream live board view to Chromecast
+
 Wifi - Capability to join wifi from the board (WPS/WPA2)
 
 ## Roadmap
