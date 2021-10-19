@@ -25,15 +25,16 @@ for i in range(0,len(result)):
 	networks[result[i]] = result[i]
 
 print(networks)
-answer = boardfunctions.doMenu(networks)
+answer = boardfunctions.doMenu(networks,1)
 
 print(answer)
 
 if answer == "BACK":
 	sys.exit()
 
-boardfunctions.initScreen()
-time.sleep(2)
+#boardfunctions.initScreen()
+#time.sleep(2)
+boardfunctions.epd.init()
 
 # If the answer is not "BACK" then answer contains our SSID
 # Now we need to get the password
@@ -49,13 +50,16 @@ result = list(res)
 section = ""
 for i in range(0,len(result)):
 	section = section + result[i]
+print(section)
 if section.find("ssid") != -1:
 	wpas = open('/etc/wpa_supplicant/wpa_supplicant.conf','r')
 	curconf = wpas.read()
 	wpas.close()
+	print(curconf)
 	if curconf.find(answer) != -1:
 		# SSID is already in file
 		newtext = re.sub('network={[^\}]+?ssid=\"' + answer + '\"[^\}]+?\}\n','',curconf,re.DOTALL)
+		print(newtext)
 		wpas = open('/etc/wpa_supplicant/wpa_supplicant.conf','w')
 		wpas.write(newtext)
 		wpas.close()

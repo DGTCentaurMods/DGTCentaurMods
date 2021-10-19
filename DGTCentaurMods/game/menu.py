@@ -94,7 +94,7 @@ def doMenu(menu):
     global quickselect
     global event_key
     epaper.epd.init()
-    time.sleep(0.5)
+    time.sleep(0.2)
     selection = ""
     curmenu = menu
     # Display the given menu
@@ -143,16 +143,21 @@ while True:
         'settings': 'Settings',
         'Support': 'Get support'}
     result = doMenu(menu)
+    epaper.epd.init()
+    time.sleep(0.2)
     if result == "BACK":
         boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
         #oardfunctions.shutdown()
     if result == "Cast":
         epaper.clearScreen()
+        epaper.writeText(0,"Loading...")
         boardfunctions.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
         boardfunctions.unPauseEvents()
     if result == "Centaur":
         epaper.clearScreen()
+        epaper.writeText(0, "Loading...")
+        time.sleep(1)
         boardfunctions.pauseEvents()
         os.chdir("/home/pi/centaur")
         os.system("sudo systemctl start centaur.service")
@@ -162,6 +167,7 @@ while True:
         sys.exit()
     if result == "EmulateEB":
         epaper.clearScreen()
+        epaper.writeText(0, "Loading...")
         boardfunctions.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
         boardfunctions.unPauseEvents()
@@ -186,6 +192,7 @@ while True:
             if (result != "BACK"):
                 if (result == 'wpa2'):
                     boardfunctions.pauseEvents()
+                    epaper.writeText(0, "Loading...")
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
                     boardfunctions.unPauseEvents()
                 if (result == 'wps'):
@@ -218,7 +225,7 @@ while True:
                     print(cmd)
                     timeout = time.time() + 20
                     epaper.clearScreen()
-                    epaper.writeText(0, 'Waiting fot')
+                    epaper.writeText(0, 'Waiting for')
                     epaper.writeText(1, 'network...')
                     while not network.check_network() and time.time() < timeout:
                         time.sleep(1)
@@ -228,6 +235,7 @@ while True:
 
         if result == "Pairing":
             boardfunctions.pauseEvents()
+            epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
             boardfunctions.unPauseEvents()
         if result == "Shutdown":
@@ -259,6 +267,7 @@ while True:
         if (result != "BACK"):
             if (result == "Current"):
                 epaper.clearScreen()
+                epaper.writeText(0, "Loading...")
                 boardfunctions.pauseEvents()
                 os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py current")
                 boardfunctions.unPauseEvents()
@@ -293,6 +302,8 @@ while True:
                             if result == "60 , 20":
                                 gtime = '60'
                                 gincrement = '20'
+                            epaper.clearScreen()
+                            epaper.writeText(0, "Loading...")
                             boardfunctions.pauseEvents()
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New {gtime} {gincrement} {rated} {color}")
                             boardfunctions.unPauseEvents()
@@ -306,5 +317,7 @@ while True:
         while selection == "" and time.time() < timeout:
             if selection == "BTNTICK":
                 break
+        epaper.epd.init()
+        time.sleep(0.5)
 
 
