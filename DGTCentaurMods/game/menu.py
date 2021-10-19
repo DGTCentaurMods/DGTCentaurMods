@@ -246,9 +246,7 @@ while True:
             epaper.stopEpaper()
             time.sleep(2)
             boardfunctions.pauseEvents()
-            os.system("/sbin/shutdown now &")
             boardfunctions.shutdown()
-            sys.exit()
         if result == "Reboot":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
             epaper.epd.init()
