@@ -1,8 +1,8 @@
 # DGT Centaur mods
 
-This project aims to add some features to the DGT Centaur electronic chessboard, such as the ability to export your games via PGN files and use the chessboard as an interface for online play (e.g. Lichess)
+This project aims to add features to the DGT Centaur electronic chessboard, such as the ability to export your games via PGN files and use the chessboard as an interface for online play (e.g. Lichess)
 
-It implements the reverse engineered protocols for piece detection, lights, sound, and display.
+Inside the DGT Centaur is a Raspberry Pi Zero with an SD Card, by replacing that with a Raspberry Pi Zero W with our own software we get a wireless enabled chessboard that can theoretically do practically anything we can imagine. We've reversed engineered most of the protocols for for piece detection, lights, sound, and display (although we still occassionally discover the odd new thing). Now we can control the board, we're using that to create the software features.
 
 **A word of caution!**
 
@@ -12,9 +12,25 @@ It implements the reverse engineered protocols for piece detection, lights, soun
 
 Currently everything is to be considered a **work in progress**, as there aren't any plug'n'play images to be used and you need to tinker quite a bit with the board.
 
+## Current features
+
+eBoard Emulation - Revelation II. Enables you to use the DGT Centaur as if it was a bluetooth DGT eboard with apps, rabbit plugin, Livechess, etc
+Online Gameplay - Lichess (can be buggy, API key must currently be manually set in config.py)
+Web Interface - Shows live view of chessboard in a browser
+Streaming Video - On the web interface /video provides a live mjpeg stream (for example for live streaming in OBS)
+Chromecast - Stream live board view to Chromecast
+Wifi - Capability to join wifi from the board (WPS/WPA2)
+
 ## Roadmap
 
-T.B.D
+Currently we are working on...
+1. Structuring the control code so that it is easier to create scripts that work with the board.
+2. Builds/Releases/Installation method
+3. Squashing bugs
+
+And looking at/planning...
+1. Database backend (for configuration settings, record games, enable PGN export)
+2. Ability to play Stockfish (or UCI engines) without the adaptive mode
 
 ## Installation notes
 
@@ -29,7 +45,7 @@ In order to run the project on a Raspberry Pi Zero W, these are some steps to be
 7. Edit `/etc/rc.local` to launch `menu.py` at startup
 8. Install `libtiff5` via apt
 9. Ensure pip3 is available on the system or install it via apt
-10. Install `pyserial` and `Pillow` Python libraries via pip3
+10. Install the required libraries in requirements.txt `pip3 install -r requirements.txt`
 11. Reboot
 
 You should then be ready to connect to the board via SSH and tinker with it!
