@@ -458,8 +458,8 @@ def pieceMoveDetectionThread():
 									tosend.append(field)
 									tosend.append(EMPTY)
 									bt.write(tosend)
-									bt.flushOutput()
-									time.sleep(0.1)
+									bt.flush()
+									time.sleep(0.2)
 									print("SENT UP PACKET")
 									buffer1 = bytearray([EMPTY] * 64)
 									buffer1[:] = board
@@ -586,6 +586,44 @@ def pieceMoveDetectionThread():
 											time.sleep(0.2)
 										epaper.writeText(9,"              ")
 										promoted = 1
+									if lastlift == WPAWN and field >= 40 and field <= 47:
+										if (field == lastfield + 9) or (field == lastfield + 7):
+											time.sleep(0.2)
+											# This is an enpassant
+											tosend = bytearray(b'')
+											tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+											tosend.append(0)
+											tosend.append(5)
+											tosend.append(field - 8)
+											tosend.append(EMPTY)
+											bt.write(tosend)
+											bt.flush()
+											time.sleep(0.2)
+											buffer1 = bytearray([EMPTY] * 64)
+											buffer1[:] = board
+											boardhistory.append(buffer1)
+											turnhistory.append(curturn)
+											EEPROM.append(EMPTY + 64)
+											EEPROM.append(field - 8)
+									if lastlift == BPAWN and field >=16 and field <= 23:
+										if (field == lastfield - 9) or (field == lastfield - 7):
+											time.sleep(0.2)
+											# This is an enpassant
+											tosend = bytearray(b'')
+											tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
+											tosend.append(0)
+											tosend.append(5)
+											tosend.append(field + 8)
+											tosend.append(EMPTY)
+											bt.write(tosend)
+											bt.flush()
+											time.sleep(0.2)
+											buffer1 = bytearray([EMPTY] * 64)
+											buffer1[:] = board
+											boardhistory.append(buffer1)
+											turnhistory.append(curturn)
+											EEPROM.append(EMPTY + 64)
+											EEPROM.append(field + 8)
 									board[field] = lastlift
 									tosend = bytearray(b'')
 									tosend.append(DGT_FIELD_UPDATE | MESSAGE_BIT)
@@ -593,9 +631,10 @@ def pieceMoveDetectionThread():
 									tosend.append(5)
 									tosend.append(field)
 									tosend.append(lastlift)
-									time.sleep(0.1)
 									bt.write(tosend)
-									bt.flushOutput()
+									bt.flush()
+									time.sleep(0.2)
+									lastchangepacket = tosend
 									print("SENT DOWN PACKET")
 									buffer1 = bytearray([EMPTY] * 64)
 									buffer1[:] = board
@@ -747,8 +786,10 @@ def pieceMoveDetectionThread():
 				f.close()
 				if curturn == 1:
 					print("White turn")
+					epaper.writeText(10,"White turn")
 				else:
 					print("Black turn")
+					epaper.writeText(10,"Black turn")
 
 			timer = timer + 1
 			if timer > 5:
@@ -812,7 +853,7 @@ def pieceMoveDetectionThread():
 						tosend.append(x)
 						tosend.append(board[x])
 						bt.write(tosend)
-						bt.flushOutput()
+						bt.flush()
 					EEPROM.append(WROOK + 64)
 					EEPROM.append(7)
 					EEPROM.append(WKNIGHT + 64)
@@ -889,6 +930,7 @@ def pieceMoveDetectionThread():
 					castlemode = 0
 					liftedthisturn = 0
 					boardfunctions.clearSerial()
+					epaper.writeText(10, "White turn")
 				else:
 					if bytearray(r) != startstate:
 						startstateflag = 0
@@ -908,10 +950,18 @@ def pieceMoveDetectionThread():
 				# The play button has been pressed. This button resends the last update move as
 				# the WP app occassionally misses it
 				print("Resending last packet")
-				dump = bt.read(3)
+				#t = lastchangepacket[4]
+				#print(t)
+				#dpacket = lastchangepacket
+				#dpacket[4] = 0
+				#print(dpacket.hex())
+				#bt.write(dpacket)
+				#time.sleep(0.2)
+				#lastchangepacket[4] = t
 				tosend = lastchangepacket
+				print(tosend.hex())
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				boardfunctions.beep(boardfunctions.SOUND_GENERAL)
 			if (resp.hex() == "b10010065000140a050200000000611d"):
 				# The down button will scroll back one in the history to allow aligning the start described
@@ -957,6 +1007,7 @@ sendupdates = 0
 timer = 0
 # 0 for black, 1 for white
 curturn = 1
+epaper.writeText(10,"White turn")
 
 pMove = threading.Thread(target=pieceMoveDetectionThread,args=())
 pMove.daemon = True
@@ -1007,7 +1058,7 @@ while True and dodie == 0:
 				tosend[0] = DGT_BUSADRES | MESSAGE_BIT
 				#tosend.append(boardfunctions.checksum(tosend))
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				sentbus = 1
 				handled = 1
 			if data[0] == DGT_SEND_EE_MOVES:
@@ -1020,7 +1071,7 @@ while True and dodie == 0:
 					tosend.append(EEPROM[j])
 				tosend.append(EE_EOF)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_SEND_TRADEMARK:
 				# Send DGT Trademark Message
@@ -1064,7 +1115,7 @@ while True and dodie == 0:
 				tosend[34] = ord('o')
 				tosend[35] = ord('n')
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_BUS_PING:
 				# Received a ping message
@@ -1089,7 +1140,7 @@ while True and dodie == 0:
 					tosend.append(boardfunctions.checksum(tosend))
 					time.sleep(0.05)
 					bt.write(tosend)
-					bt.flushOutput()
+					bt.flush()
 					handled = 1
 			if data[0] == DGT_BUS_IGNORE_NEXT_BUS_PING:
 				# A ping message and response but ignore the next ping!
@@ -1108,7 +1159,7 @@ while True and dodie == 0:
 				tosend.append(boardfunctions.checksum(tosend))
 				time.sleep(0.05)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				ignore_next_bus_ping = 1
 				handled = 1
 			if data[0] == DGT_BUS_SEND_VERSION:
@@ -1127,7 +1178,7 @@ while True and dodie == 0:
 				tosend.append(2)
 				tosend.append(boardfunctions.checksum(tosend))
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_BUS_SEND_CLK:
 				# Don't handle this for now but we still need to clear the extra bytes
@@ -1158,7 +1209,7 @@ while True and dodie == 0:
 					tosend.append(boardfunctions.checksum(tosend))
 					#print(tosend.hex())
 					bt.write(tosend)
-					bt.flushOutput()
+					bt.flush()
 					handled = 1
 				else:
 					#print("Sending with data")
@@ -1168,7 +1219,7 @@ while True and dodie == 0:
 						tosend.append(boardfunctions.checksum(tosend))
 						#print(tosend.hex())
 						bt.write(tosend)
-						bt.flushOutput()
+						bt.flush()
 						handled = 1
 				sendupdates = 1
 			if data[0] == DGT_BUS_SEND_CHANGES:
@@ -1188,7 +1239,7 @@ while True and dodie == 0:
 				tosend.append(boardfunctions.checksum(tosend))
 				#print(tosend.hex())
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				lastchangepacket = tosend
 				eepromlastsendpoint = len(EEPROM)
 				handled = 1
@@ -1199,7 +1250,7 @@ while True and dodie == 0:
 					print("DGT_BUS_REPEAT_CHANGES " + dump.hex())
 				tosend = lastchangepacket
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_UNKNOWN_2:
 				# This is a bus mode packet. But I don't know what it does. It seems it can be ignored though
@@ -1294,7 +1345,7 @@ while True and dodie == 0:
 				tosend.append(boardfunctions.checksum(tosend))
 				time.sleep(0.05)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				cb = chess.Board()
 				curturn = 1
 				lastlift = 0
@@ -1319,11 +1370,11 @@ while True and dodie == 0:
 				tosend.append(ord('1'))
 				tosend.append(ord('1'))
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_RETURN_LONG_SERIALNR:
 				# Return our long serial number
@@ -1344,11 +1395,11 @@ while True and dodie == 0:
 				tosend.append(ord('1'))
 				tosend.append(ord('1'))
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_SEND_VERSION:
 				# Return our serial number
@@ -1361,7 +1412,7 @@ while True and dodie == 0:
 				tosend.append(1)
 				tosend.append(2)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_SEND_BRD:
 				# Send the board
@@ -1374,7 +1425,7 @@ while True and dodie == 0:
 				for x in range(0,64):
 					tosend.append(board[x])
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_SET_LEDS:
 				# LEDs! Not sure about this code, but at the moment it works with Chess for Android
@@ -1452,7 +1503,7 @@ while True and dodie == 0:
 				tosend.append(0)
 				tosend.append(board[0])
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				#boardfunctions.writeText(0, 'PLAY   ')
 				#boardfunctions.writeText(1, '         ')
 				# Here let's actually loop through reading the board states
@@ -1480,7 +1531,7 @@ while True and dodie == 0:
 				tosend.append(0)
 				tosend.append(0)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if data[0] == DGT_SEND_BATTERY_STATUS:
 				# Ideally in the future we'll put a function in boardfunctions to get the
@@ -1501,7 +1552,7 @@ while True and dodie == 0:
 				tosend.append(0)
 				tosend.append(0)
 				bt.write(tosend)
-				bt.flushOutput()
+				bt.flush()
 				handled = 1
 			if handled == 0:
 				print("Unhandled message type: " + data.hex())
