@@ -94,6 +94,7 @@ def doMenu(menu):
     global quickselect
     global event_key
     epaper.epd.init()
+    time.sleep(0.5)
     selection = ""
     curmenu = menu
     # Display the given menu
@@ -231,21 +232,24 @@ while True:
             boardfunctions.unPauseEvents()
         if result == "Shutdown":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            epaper.epd.init()
             epaper.epd.HalfClear()
+            time.sleep(5)
             epaper.stopEpaper()
             time.sleep(2)
             boardfunctions.pauseEvents()
+            os.system("/sbin/shutdown now &")
             boardfunctions.shutdown()
-            os.system("/sbin/shutdown now")
             sys.exit()
         if result == "Reboot":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            epaper.epd.init()
             epaper.epd.HalfClear()
+            time.sleep(5)
             epaper.stopEpaper()
             time.sleep(2)
             boardfunctions.pauseEvents()
-            boardfunctions.shutdown()
-            os.system("/sbin/shutdown -r now")
+            os.system("/sbin/shutdown -r now &")
             sys.exit()
     if result == "Lichess":
         lichessmenu = {'Current': 'Current', 'New': 'New Game'}
