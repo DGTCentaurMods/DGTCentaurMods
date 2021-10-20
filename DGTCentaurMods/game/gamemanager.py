@@ -6,10 +6,6 @@
 # keyCallback feeds back key presses from keys under the display
 
 # TODO
-# Promotion
-# Testing/Improve reliability move detection
-# Indicate next move
-# Force next move
 
 from DGTCentaurMods.board import boardfunctions
 from DGTCentaurMods.display import epaper
@@ -39,6 +35,8 @@ curturn = 1
 sourcesq = -1
 legalsquares = []
 pausekeys = 0
+computermove = ""
+forcemove = 0
 
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
@@ -58,6 +56,8 @@ def fieldcallback(field):
     global newgame
     global keycallback
     global pausekeys
+    global computermove
+    global forcemove
     lift = 0
     place = 0
     if field >= 0:
@@ -100,7 +100,23 @@ def fieldcallback(field):
                 pass
             if found == 1:
                 legalsquares.append(x)
-    print(legalsquares)
+    if forcemove == 1 and lift == 1 and vpiece == 1:
+        # If this is a forced move (computer move) then the piece lifted should equal the start of computermove
+        # otherwise set legalsquares so they can just put the piece back down! If it is the correct piece then
+        # adjust legalsquares so to only include the target square
+        if fieldname != computermove[0:2]:
+            # Forced move but wrong piece lifted
+            legalsquares = []
+            legalsquares.append(field)
+        else:
+            # Forced move, correct piece lifted, limit legal squares
+            target = computermove[2:4]
+            # Convert the text in target to the field number
+            sqcol = ord(target[0:1]) - ord('a')
+            sqrow = ord(target[1:2]) - ord('1')
+            tsq = (sqrow * 8) + (sqcol)
+            legalsquares = []
+            legalsquares.append(tsq)
     if place == 1 and field in legalsquares:
         newgame = 0
         if field == sourcesq:
@@ -121,12 +137,8 @@ def fieldcallback(field):
             # If this is a WPAWN and squarerow is 7
             # or a BPAWN and squarerow is 0
             pname = str(board.piece_at(sourcesq))
-            print("----")
-            print(field//8)
-            print(pname)
             pr = ""
             if (field // 8) == 7 and pname == "P":
-                print("promotion")
                 screenback = epaper.epaperbuffer.copy()
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
@@ -163,7 +175,6 @@ def fieldcallback(field):
                 epaper.epaperbuffer = screenback.copy()
                 pausekeys = 2
             if (field // 8) == 0 and pname == "p":
-                print("promotion")
                 screenback = epaper.epaperbuffer.copy()
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
@@ -201,7 +212,6 @@ def fieldcallback(field):
                 pausekeys = 2
 
             mv = fromname + toname + pr
-            print(mv)
             # Make the move and update fen.log
             board.push(chess.Move.from_uci(mv))
             fenlog = "/home/pi/centaur/fen.log"
@@ -210,6 +220,8 @@ def fieldcallback(field):
             f.close()
             legalsquares = []
             sourcesq = -1
+            boardfunctions.ledsOff()
+            forcemove = 0
             if movecallbackfunction != None:
                 movecallbackfunction(mv)
             boardfunctions.beep(boardfunctions.SOUND_GENERAL)
@@ -245,6 +257,7 @@ def gameThread(eventCallback, moveCallback, keycallback):
     keycallbackfunction = keycallback
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
+    boardfunctions.ledsOff()
     boardfunctions.subscribeEvents(keycallback, fieldcallback)
     t = 0
     pausekeys = 0
@@ -280,6 +293,22 @@ def gameThread(eventCallback, moveCallback, keycallback):
             boardfunctions.unPauseEvents()
             pausekeys = 0
         time.sleep(0.1)
+
+def computerMove(mv):
+    # Set the computer move that the player is expected to make
+    # in the format b2b4 , g7g8q , etc
+    global computermove
+    global forcemove
+    if len(mv) < 4:
+        return
+    # First set the globals so that the thread knows there is a computer move
+    computermove = mv
+    forcemove = 1
+    # Next indicate this on the board. First convert the text representation to the field number
+    fromnum = ((ord(mv[1:2]) - ord("1")) * 8) + (ord(mv[0:1]) - ord("a"))
+    tonum = ((ord(mv[3:4]) - ord("1")) * 8) + (ord(mv[2:3]) - ord("a"))
+    # Then light it up!
+    boardfunctions.ledFromTo(fromnum,tonum)
 
 def subscribeGame(eventCallback, moveCallback, keyCallback):
     # Subscribe to the game manager

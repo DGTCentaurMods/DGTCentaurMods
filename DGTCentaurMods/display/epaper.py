@@ -35,7 +35,7 @@ def epaperUpdate():
     global event_refresh
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
-    time.sleep(4)
+    time.sleep(6)
     print("epaper init image sent")
     while True and kill == 0:
         im = epaperbuffer.copy()

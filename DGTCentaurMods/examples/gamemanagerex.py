@@ -3,6 +3,8 @@ from DGTCentaurMods.display import epaper
 
 import time
 
+global curturn
+
 def keyCallback(key):
 	# This function will receive any keys presses on the keys
 	# under the display. Possibles:
@@ -11,14 +13,22 @@ def keyCallback(key):
 	print("Key event received: " + str(key))
 
 def eventCallback(event):
+	global curturn
 	# This function receives event callbacks about the game in play
 	if event == gamemanager.EVENT_NEW_GAME:
 		epaper.writeText(0,"New Game")
+		curturn = 1
 		epaper.drawFen(gamemanager.board.fen())
 	if event == gamemanager.EVENT_WHITE_TURN:
+		curturn = 1
 		epaper.writeText(0,"White turn")
 	if event == gamemanager.EVENT_BLACK_TURN:
+		curturn = 0
 		epaper.writeText(0,"Black turn")
+		# Here you would calculate and set the move the computer wants to make.
+		# But for an example let's just set a specific move
+		gamemanager.computerMove("b7b5")
+
 	if type(event) == str:
 		# Termination.CHECKMATE
 		# Termination.STALEMATE
@@ -42,6 +52,9 @@ def moveCallback(move):
 
 # Activate the epaper
 epaper.initEpaper()
+
+# Set the initial state of curturn to indicate white's turn
+curturn = 1
 
 # Subscribe to the game manager to activate the previous functions
 gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
