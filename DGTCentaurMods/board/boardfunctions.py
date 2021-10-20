@@ -429,14 +429,14 @@ def waitMove():
                         newsquare = rotateFieldHex(fieldHex)
                         lifted = newsquare
                         print(lifted)
-                        moves.append(newsquare * -1)
+                        moves.append((newsquare+1) * -1)
                     if (resp[x] == 65):
                         # Calculate the square to 0(a1)-63(h8) so that
                         # all functions match
                         fieldHex = resp[x + 1]
                         newsquare = rotateFieldHex(fieldHex)
                         placed = newsquare
-                        moves.append(newsquare)
+                        moves.append(newsquare + 1)
                         print(placed)
         tosend = bytearray(b'\x94\x06\x50\x6a')
         ser.write(tosend)
@@ -698,14 +698,14 @@ def eventsThread(keycallback, fieldcallback):
                                 # all functions match
                                 fieldHex = resp[x + 1]
                                 newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback(newsquare)
+                                fieldcallback(newsquare + 1)
                             if (resp[x] == 65):
                                 #print("PIECE PLACED")
                                 # Calculate the square to 0(a1)-63(h8) so that
                                 # all functions match
                                 fieldHex = resp[x + 1]
                                 newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback(newsquare * -1)
+                                fieldcallback((newsquare + 1) * -1)
             except:
                 pass
             try:

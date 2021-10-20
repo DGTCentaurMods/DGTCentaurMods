@@ -389,6 +389,11 @@ while status == "started" and ourturn != 0:
                 fromsq = move[0] * -1
             if move[1] != (tosq * -1):
                 fromsq = move[1] * -1
+
+        # Added to reduce the numbering back to 0-64 after change to boardfunctions
+        fromsq = fromsq - 1
+        tosq = tosq - 1
+
         mylastfrom = fromsq
         # Convert to letter number square format
         fromln = boardfunctions.convertField(fromsq)
@@ -529,6 +534,7 @@ while status == "started" and ourturn != 0:
                     valid = 1
             if valid == 0:
                 boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+            # Subtract one here to return to 0-64 after change in boardfunctions
             movedto = lrtocalc
         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
         boardfunctions.clearSerial()

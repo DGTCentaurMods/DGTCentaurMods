@@ -26,8 +26,8 @@ def eventCallback(event):
 		curturn = 0
 		epaper.writeText(0,"Black turn")
 		# Here you would calculate and set the move the computer wants to make.
-		# But for an example let's just set a specific move
-		gamemanager.computerMove("b7b5")
+		# But for an example  just set a specific move you'd do
+		# gamemanager.computerMove("b7b5")
 
 	if type(event) == str:
 		# Termination.CHECKMATE
