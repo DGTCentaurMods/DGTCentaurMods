@@ -9,9 +9,14 @@
 
 from DGTCentaurMods.board import boardfunctions
 from DGTCentaurMods.display import epaper
+from DGTCentaurMods.db import models
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, MetaData, func
 import threading
 import time
 import chess
+import sys
+import inspect
 
 # Some useful constants
 BTNBACK = 1
@@ -37,6 +42,9 @@ legalsquares = []
 pausekeys = 0
 computermove = ""
 forcemove = 0
+source = ""
+gamedbid = -1
+session = None
 
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
@@ -58,6 +66,9 @@ def fieldcallback(field):
     global pausekeys
     global computermove
     global forcemove
+    global source
+    global gamedbid
+    global session
     lift = 0
     place = 0
     if field >= 0:
@@ -223,6 +234,13 @@ def fieldcallback(field):
             f = open(fenlog, "w")
             f.write(board.fen())
             f.close()
+            gamemove = models.GameMove(
+                gameid=gamedbid,
+                move=mv,
+                fen=str(board.fen())
+            )
+            session.add(gamemove)
+            session.commit()
             legalsquares = []
             sourcesq = -1
             boardfunctions.ledsOff()
@@ -263,6 +281,9 @@ def gameThread(eventCallback, moveCallback, keycallback):
     global movecallbackfunction
     global eventcallbackfunction
     global pausekeys
+    global source
+    global gamedbid
+    global session
     keycallbackfunction = keycallback
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
@@ -293,6 +314,23 @@ def gameThread(eventCallback, moveCallback, keycallback):
                         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
                         time.sleep(0.3)
                         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+                        # Log a new game in the db
+                        game = models.Game(
+                            source=source
+                        )
+                        print(game)
+                        session.add(game)
+                        session.commit()
+                        # Get the max game id as that is this game id and fill it into gamedbid
+                        gamedbid = session.query(func.max(models.Game.id)).scalar()
+                        # Now make an entry in GameMove for this start state
+                        gamemove = models.GameMove(
+                            gameid = gamedbid,
+                            move = '',
+                            fen = str(board.fen())
+                        )
+                        session.add(gamemove)
+                        session.commit()
                     t = 0
                 except:
                     pass
@@ -321,6 +359,13 @@ def computerMove(mv):
 
 def subscribeGame(eventCallback, moveCallback, keyCallback):
     # Subscribe to the game manager
+    global source
+    global gamedbid
+    global session
+    source = inspect.getsourcefile(sys._getframe(1))
+    Session = sessionmaker(bind=models.engine)
+    session = Session()
+
     boardfunctions.clearSerial()
     gamethread = threading.Thread(target=gameThread, args=([eventCallback, moveCallback, keyCallback]))
     gamethread.daemon = True
