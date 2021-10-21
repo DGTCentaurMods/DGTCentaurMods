@@ -1,4 +1,4 @@
-# Play pure stockfish without DGT Centaur Adaptive Play
+# Play pure ct800 without DGT Centaur Adaptive Play
 #
 from DGTCentaurMods.game import gamemanager
 from DGTCentaurMods.display import epaper

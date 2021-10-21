@@ -76,6 +76,12 @@ def epaperUpdate():
             event_refresh.set()
         time.sleep(0.2)
 
+def refresh():
+    # Just waits for a refresh
+    event_refresh.clear()
+    event_refresh.wait()
+    event_refresh.clear()
+
 def initEpaper(mode = 0):
     # Set the screen to a known start state and start the epaperUpdate thread
     global epaperbuffer

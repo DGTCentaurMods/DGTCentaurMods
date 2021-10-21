@@ -176,6 +176,7 @@ while True:
         setmenu = {
                 'WiFi': 'Wifi Setup',
                 'Pairing': 'Start BT Pair',
+                'LichessAPI': 'Lichess API',
                 'Shutdown': 'Shutdown',
                 'Reboot': 'Reboot' }
         result = doMenu(setmenu)
@@ -238,6 +239,11 @@ while True:
             boardfunctions.pauseEvents()
             epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
+            boardfunctions.unPauseEvents()
+        if result == "LichessAPI":
+            boardfunctions.pauseEvents()
+            epaper.writeText(0, "Loading...")
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
             boardfunctions.unPauseEvents()
         if result == "Shutdown":
             boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
