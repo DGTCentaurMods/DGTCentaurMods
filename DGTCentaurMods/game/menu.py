@@ -329,7 +329,6 @@ while True:
                     epaper.writeText(0, "Loading...")
                     boardfunctions.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/ct800.py " + color + " " + elo)
-                    epaper.epd.init()
                     boardfunctions.unPauseEvents()
         if result == "stockfish":
             sfmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
@@ -344,7 +343,6 @@ while True:
                     epaper.writeText(0, "Loading...")
                     boardfunctions.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
-                    epaper.epd.init()
                     boardfunctions.unPauseEvents()
     if result == "Support" or result == "BTNHELP":
         selection = ""
