@@ -70,12 +70,19 @@ import sys
 from os.path import exists
 from DGTCentaurMods.board import boardfunctions
 from DGTCentaurMods.display import epaper
+from DGTCentaurMods.db import models
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, MetaData, func
 import threading
 import chess
 import os
 from PIL import Image, ImageDraw, ImageFont
 from DGTCentaurMods.display import epd2in9d
 import pathlib
+
+source = ""
+gamedbid = -1
+session = None
 
 debugcmds = 1
 
@@ -395,6 +402,9 @@ def pieceMoveDetectionThread():
 	global lastchangepacket
 	global startstate
 	global board
+	global source
+	global gamedbid
+	global session
 	lastlift = 0
 	kinglift = 0
 	lastfield = -1
@@ -691,6 +701,13 @@ def pieceMoveDetectionThread():
 										if cm in cb.legal_moves:
 											print("Move is allowed")
 											cb.push(cm)
+											gamemove = models.GameMove(
+												gameid=gamedbid,
+												move=mv,
+												fen=str(cb.fen())
+											)
+											session.add(gamemove)
+											session.commit()
 											print(cb.fen())
 										else:
 											# The move is not allowed or the move is the rook move after a king move in castling
@@ -930,6 +947,23 @@ def pieceMoveDetectionThread():
 					castlemode = 0
 					liftedthisturn = 0
 					boardfunctions.clearSerial()
+					# Log a new game in the db
+					game = models.Game(
+						source=source
+					)
+					print(game)
+					session.add(game)
+					session.commit()
+					# Get the max game id as that is this game id and fill it into gamedbid
+					gamedbid = session.query(func.max(models.Game.id)).scalar()
+					# Now make an entry in GameMove for this start state
+					gamemove = models.GameMove(
+						gameid=gamedbid,
+						move='',
+						fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+					)
+					session.add(gamemove)
+					session.commit()
 					epaper.writeText(10, "White turn")
 				else:
 					if bytearray(r) != startstate:
@@ -998,6 +1032,28 @@ print("start")
 
 cb = chess.Board()
 boardfunctions.ledsOff()
+
+source = "eboard.py"
+Session = sessionmaker(bind=models.engine)
+session = Session()
+
+# Log a new game in the db
+game = models.Game(
+	source=source
+)
+print(game)
+session.add(game)
+session.commit()
+# Get the max game id as that is this game id and fill it into gamedbid
+gamedbid = session.query(func.max(models.Game.id)).scalar()
+# Now make an entry in GameMove for this start state
+gamemove = models.GameMove(
+	gameid = gamedbid,
+	move = '',
+	fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+)
+session.add(gamemove)
+session.commit()
 
 scrUpd = threading.Thread(target=screenUpdate, args=())
 scrUpd.daemon = True
