@@ -11,6 +11,7 @@ import threading
 menuitem = 1
 curmenu = None
 selection = ""
+centaur_software="/home/pi/centaur/centaur"
 
 event_key = threading.Event()
 
@@ -135,14 +136,23 @@ boardfunctions.subscribeEvents(keyPressed, fieldActivity)
 
 # Handle the menu structure
 while True:
-    menu = {
-        'Centaur': 'DGT Centaur',
-        'Lichess': 'Lichess',
-        'Engines' : 'Engines',
-        'EmulateEB': 'e-Board',
-        'Cast' : 'Chromecast',
-        'settings': 'Settings',
-        'Support': 'Get support'}
+    if not os.path.exists(centaur_software):
+        menu = { 
+            'Lichess': 'Lichess',
+            'Engines' : 'Engines',
+            'EmulateEB': 'e-Board',
+            'Cast' : 'Chromecast',
+            'settings': 'Settings',
+            'Support': 'Get support'}
+    else:
+        menu = {
+            'Centaur': 'DGT Centaur',
+            'Lichess': 'Lichess',
+            'Engines' : 'Engines',
+            'EmulateEB': 'e-Board',
+            'Cast' : 'Chromecast',
+            'settings': 'Settings',
+            'Support': 'Get support'}
     result = doMenu(menu)
     epaper.epd.init()
     time.sleep(0.2)
