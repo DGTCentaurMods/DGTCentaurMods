@@ -9,6 +9,8 @@ __pycache__
 **/tests
 epaper.jpg
 **/epaper.jpg
+centaur.db
+**/centaur.db
 web/static/epaper.jpg
 DGTCentaurMods/web/static/epaper.jpg
 /DGTCentaurMods/web/static/epaper.jpg
