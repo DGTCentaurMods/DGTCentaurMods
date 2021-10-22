@@ -1,9 +1,17 @@
 from flask import Flask, render_template, Response
+from DGTCentaurMods.db import models
 from board import LiveBoard
 from PIL import Image, ImageDraw, ImageFont
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.sql import func
+from sqlalchemy import select
 import os
 import pathlib
 import io
+import chess
+import chess.pgn
+import json
 
 app = Flask(__name__)
 
@@ -29,6 +37,79 @@ def fen():
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	return fen
 
+@app.route("/pgn")
+def pgn():
+	return render_template('pgn.html')
+
+@app.route("/getgames/<page>")
+def getGames(page):
+	# Return batches of 20 games by listing games in reverse order
+	Session = sessionmaker(bind=models.engine)
+	session = Session()
+	gamedata = session.execute(
+		select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round,
+			   models.Game.white, models.Game.black, models.Game.result, models.Game.id).
+			order_by(models.Game.id.desc())
+	).all()
+	t = (int(page) * 20) - 20
+	games = {}
+	try:
+		for x in range(0,20):
+			gameitem = {}
+			gameitem["id"] = str(gamedata[x+t][8])
+			gameitem["created_at"] = str(gamedata[x+t][0])
+			gameitem["source"] = os.path.basename(str(gamedata[x + t][1]))
+			gameitem["event"] = str(gamedata[x + t][2])
+			gameitem["site"] = str(gamedata[x + t][3])
+			gameitem["round"] = str(gamedata[x + t][4])
+			gameitem["white"] = str(gamedata[x + t][5])
+			gameitem["black"] = str(gamedata[x + t][6])
+			gameitem["result"] = str(gamedata[x + t][7])
+			games[x] = gameitem
+	except:
+		pass
+	session.close()
+	return json.dumps(games)
+
+@app.route("/getpgn/<gameid>")
+def makePGN(gameid):
+	# Export a PGN of the specified game
+	Session = sessionmaker(bind=models.engine)
+	session = Session()
+	g= chess.pgn.Game()
+	gamedata = session.execute(
+		select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round, models.Game.white, models.Game.black, models.Game.result).
+			where(models.Game.id == gameid)
+	).first()
+	g.headers["Source"] = os.path.basename(str(gamedata[1]))
+	g.headers["Date"] = str(gamedata[0])
+	g.headers["Event"] = str(gamedata[2])
+	g.headers["Site"] = str(gamedata[3])
+	g.headers["Round"] = str(gamedata[4])
+	g.headers["White"] = str(gamedata[5])
+	g.headers["Black"] = str(gamedata[6])
+	g.headers["Result"] = str(gamedata[7])
+	for key in g.headers:
+			if g.headers[key] == "None":
+				g.headers[key] = ""
+	print(gamedata)
+	moves = session.execute(
+		select(models.GameMove.move_at, models.GameMove.move, models.GameMove.fen).
+			where(models.GameMove.gameid == gameid)
+	).all()
+	first = 1
+	node = None
+	for x in range(0,len(moves)):
+		if moves[x][1] != '':
+			if first == 1:
+				node = g.add_variation(chess.Move.from_uci(moves[x][1]))
+				first = 0
+			else:
+				node = node.add_variation(chess.Move.from_uci(moves[x][1]))
+	exporter = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
+	pgn_string = g.accept(exporter)
+	session.close()
+	return pgn_string
 
 pb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pb.png").convert("RGBA")
 pw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pw.png").convert("RGBA")
