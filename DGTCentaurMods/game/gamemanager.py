@@ -46,6 +46,12 @@ source = ""
 gamedbid = -1
 session = None
 
+gameinfo_event = ""
+gameinfo_site = ""
+gameinfo_round = ""
+gameinfo_white = ""
+gameinfo_black = ""
+
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
     global keycallbackfunction
@@ -249,7 +255,9 @@ def fieldcallback(field):
                 movecallbackfunction(mv)
             boardfunctions.beep(boardfunctions.SOUND_GENERAL)
             # Check the outcome
-            outc = board.outcome()
+            print("check outcome")
+            outc = board.outcome(claim_draw=True)
+            print(outc)
             if outc == None or outc == "None" or outc == 0:
                 # Switch the turn
                 if curturn == 0:
@@ -265,6 +273,12 @@ def fieldcallback(field):
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
                 boardfunctions.ser.write(tosend)
+                # Depending on the outcome we can update the game information for the result
+                resultstr = str(board.result())
+                tg = session.query(models.Game).filter(models.Game.id == gamedbid).first()
+                tg.result = resultstr
+                session.flush()
+                session.commit()
                 eventcallbackfunction(str(outc.termination))
 
 
@@ -284,6 +298,11 @@ def gameThread(eventCallback, moveCallback, keycallback):
     global source
     global gamedbid
     global session
+    global gameinfo_event
+    global gameinfo_site
+    global gameinfo_round
+    global gameinfo_white
+    global gameinfo_black
     keycallbackfunction = keycallback
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
@@ -316,7 +335,12 @@ def gameThread(eventCallback, moveCallback, keycallback):
                         boardfunctions.beep(boardfunctions.SOUND_GENERAL)
                         # Log a new game in the db
                         game = models.Game(
-                            source=source
+                            source=source,
+                            event=gameinfo_event,
+                            site=gameinfo_site,
+                            round=gameinfo_round,
+                            white=gameinfo_white,
+                            black=gameinfo_black
                         )
                         print(game)
                         session.add(game)
@@ -356,6 +380,19 @@ def computerMove(mv):
     tonum = ((ord(mv[3:4]) - ord("1")) * 8) + (ord(mv[2:3]) - ord("a"))
     # Then light it up!
     boardfunctions.ledFromTo(fromnum,tonum)
+
+def setGameInfo(gi_event,gi_site,gi_round,gi_white,gi_black):
+    # Call before subscribing if you want to set further information about the game for the PGN files
+    global gameinfo_event
+    global gameinfo_site
+    global gameinfo_round
+    global gameinfo_white
+    global gameinfo_black
+    gameinfo_event = gi_event
+    gameinfo_site = gi_site
+    gameinfo_round = gi_round
+    gameinfo_white = gi_white
+    gameinfo_black = gi_black
 
 def subscribeGame(eventCallback, moveCallback, keyCallback):
     # Subscribe to the game manager
