@@ -136,23 +136,19 @@ boardfunctions.subscribeEvents(keyPressed, fieldActivity)
 
 # Handle the menu structure
 while True:
-    if not os.path.exists(centaur_software):
-        menu = { 
-            'Lichess': 'Lichess',
+    menu = {}
+    if os.path.exists(centaur_software):
+        centaur_item = {'Centaur': 'DGT Centaur'}
+        menu.update(centaur_item)
+    if centaur.lichess_api:
+        lichess_item = {'Lichess': 'Lichess'}
+        menu.update(lichess_item)
+    menu.update({
             'Engines' : 'Engines',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
-            'Support': 'Get support'}
-    else:
-        menu = {
-            'Centaur': 'DGT Centaur',
-            'Lichess': 'Lichess',
-            'Engines' : 'Engines',
-            'EmulateEB': 'e-Board',
-            'Cast' : 'Chromecast',
-            'settings': 'Settings',
-            'Support': 'Get support'}
+            'Support': 'Get support'})
     result = doMenu(menu)
     epaper.epd.init()
     time.sleep(0.2)
