@@ -1,18 +1,18 @@
 # Quick temporary script to set up the lichess token until we have a db method
 #
 
-from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.board import board
 import os
 import time
 import sys
 import re
 import pathlib
 
-boardfunctions.initScreen()
+board.initScreen()
 time.sleep(2)
 
 # Get the token
-token = boardfunctions.getText("API Token")
+token = board.getText("API Token")
 
 if token == "":
 	sys.exit()
