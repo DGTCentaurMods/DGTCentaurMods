@@ -255,9 +255,7 @@ def fieldcallback(field):
                 movecallbackfunction(mv)
             boardfunctions.beep(boardfunctions.SOUND_GENERAL)
             # Check the outcome
-            print("check outcome")
             outc = board.outcome(claim_draw=True)
-            print(outc)
             if outc == None or outc == "None" or outc == 0:
                 # Switch the turn
                 if curturn == 0:

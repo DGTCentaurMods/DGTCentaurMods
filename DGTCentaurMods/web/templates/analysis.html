@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block mainpage %}
+
+<script type="text/javascript" src="{{ url_for('static', filename='stockfish/stockfish.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/domarrow.js') }}"></script>
+
+<style>
+    .gameitem {
+        border: 1px solid #c3c3c3;
+        width: 100%;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        margin: 10px;
+    }
+    .gamemaindetails {
+        background-color: #d2cfcf;
+        padding: 5px;
+    }
+    .gamecr {
+        float: left;
+        padding-right: 20px;
+    }
+    .gamesr {
+    }
+    .gameld {
+        clear: both;
+        padding: 5px;
+    }
+    .gamelditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamegd {
+        clear: both;
+        padding: 5px;
+    }
+    .gamegditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamepgn {
+        clear:both;
+        padding: 5px;
+    }
+    connection .line .arrow {
+      top: -5px;
+      height: 0px;
+      width: 0px;
+      position: absolute;
+      border-bottom: 6px solid transparent;
+      border-top: 6px solid transparent;
+      background-clip: border-box;
+    }
+    connection .line .arrow-fw {
+      border-right: 12px solid black;
+    }
+
+    connection .line .arrow-bw {
+      left: 100%;
+      border-left: 12px solid black;
+      transform: translateX(-12px);
+    }
+
+    connection .line .text {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+    }
+
+    connection .line {
+      position:absolute;
+      height:2px;
+
+      background-color: black;
+    }
+</style>
+
+<div style="width:100%">
+    <div id="centaur" style="background-color: #212121; padding:9px; width: 685px;-webkit-border-radius: 23px;-moz-border-radius: 3px;border-radius: 3px;">
+        <style>
+            .white-1e1d7{background-color:#e5e5e5;color: #131313}
+            .black-3c85d{background-color:#b2b2b2;color: #131313}
+        </style>
+        <div id="boardsurround1" style="padding:2px;background-color:#e5e5e5;float:left;">
+            <div id="boardsurround2" style="padding:1px;background-color:#212121">
+                <div id='board1' style='width: 600px;margin-right:-4px;'></div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+        <script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
+        <script type=text/javascript src="{{ url_for('static', filename='js/chess.js') }}"></script>
+        <script>
+        var ruyLopez = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        var config = {
+            position: ruyLopez,
+            pieceTheme: "{{ url_for('static', filename='chessboardjs/img/chesspieces/wikipedia/') }}" + "{piece}.png"
+        }
+        var board1 = Chessboard('board1', config)
+        </script>
+        <img id='logo' src="{{ url_for('static', filename='logo_mods_web.png') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 1px; background-color: #212121">
+        <div style="clear:both"></div>
+        <script>
+            var ratio = 1;
+            function getFen(){
+                var xmlhttp;
+                xmlhttp = new XMLHttpRequest();
+                xmlhttp.onreadystatechange = function(){
+                    if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                        board1.position(xmlhttp.responseText)
+                    }
+                }
+                xmlhttp.open("GET", "/fen", true);
+                xmlhttp.send();
+            }
+            function sizeBoard(newsize) {
+                ratio = 600/newsize;
+                document.getElementById("board1").style.width = newsize + "px";
+                var sheet = document.createElement('style')
+                var sq = document.getElementsByClassName("white-1e1d7");
+                for (i = 0; i < sq.length; i++) {
+                    sq[i].style.width = Math.floor(74/ratio) + "px";
+                    sq[i].style.height = Math.floor(74/ratio) + "px";
+                }
+                var sq = document.getElementsByClassName("black-3c85d");
+                for (i = 0; i < sq.length; i++) {
+                    sq[i].style.width = Math.floor(74/ratio) + "px";
+                    sq[i].style.height = Math.floor(74/ratio) + "px";
+                }
+                var p = document.getElementsByClassName("piece-417db");
+                for (i = 0; i < p.length; i++) {
+                    p[i].style.width = Math.floor(74/ratio) + "px";
+                    p[i].style.height = Math.floor(74/ratio) + "px";
+                }
+                var l = document.getElementById('logo');
+                l.style.width = Math.floor(128/(2 * ratio)) + "px";
+                l.style.paddingLeft = Math.floor(13 / ratio) + "px";
+                document.getElementsByClassName('board-b72b1')[0].style.width='';
+                document.getElementById("board1").style.marginRight="-" + Math.floor(4*ratio) + "px";
+                var ct = document.getElementById('centaur');
+                ct.style.width = Math.floor(newsize + 5 + (95/ratio)) + "px";
+                if (newsize < 600) {
+                    document.getElementsByClassName('board-b72b1')[0].style.border='0px solid transparent';
+                    document.getElementById("board1").style.width = "";
+                    document.getElementById("board1").style.marginRight = "";
+                }
+                board1.resize();
+            }
+        </script>
+    </div>
+    <nav class="pagination" role="navigation" aria-label="pagination" style="margin-top:10px;display:none;" id="pgnnav">
+          <a class="pagination-link" onClick="showPGNFirstMove()">&lt;&lt;</a>
+          <a class="pagination-link" onClick="showPGNPreviousMove()">&lt;</a>
+          <a class="pagination-link" onClick="showPGNNextMove()">&gt;</a>
+          <a class="pagination-link" onClick="showPGNLastMove()">&gt;&gt;</a>
+    </nav>
+</div>
+
+<div id="pgndiv" style="margin-top:10px;">
+  <textarea id="gamepgn" class="textarea" placeholder="" rows="12"></textarea>
+</div>
+
+<script>
+
+    var gameid = {{ gameid }};
+
+    var stockfishbestmove = "";
+    const chess = new Chess();
+    var moves;
+    var movepos = 0;
+
+    var stockfish = new Worker("{{ url_for('static', filename='stockfish/stockfish.js') }}");
+
+    function queryStockfish() {
+        stockfish.postMessage("position fen " + chess.fen());
+        stockfish.postMessage("go depth 17");
+    }
+
+    stockfish.onmessage = function (event) {
+        console.log(event.data ? event.data : event);
+        if (event.data.indexOf("bestmove ") == 0) {
+            stockfishbestmove = event.data.substring(9,13).replace(" ","");
+            var from = document.getElementsByClassName("square-" + stockfishbestmove.substring(0,2))[0].id;
+            var to = document.getElementsByClassName("square-" + stockfishbestmove.substring(2,4))[0].id;
+            $('connection').remove();
+            $("body").append('<connection from="#' + from + '" to="#' + to + '" color="#8fce8ff0" width="6" tail></connection>');
+        }
+    }
+
+    function showPGNNextMove() {
+        if (movepos < moves.length) {
+            $('connection').remove();
+            chess.move(moves[movepos]);
+            h = chess.history({ verbose: true })[movepos];
+            al = h.from + "-" + h.to;
+            board1.move(al);
+            movepos = movepos + 1;
+            queryStockfish()
+        }
+    }
+
+    function showPGNPreviousMove() {
+        if (movepos > 0) {
+            $('connection').remove();
+            chess.undo();
+            board1.position(chess.fen());
+            movepos = movepos - 1;
+            queryStockfish()
+        }
+    }
+
+    function showPGNLastMove() {
+        $('connection').remove();
+        for (x = movepos; x < moves.length; x++) {
+            chess.move(moves[movepos]);
+            movepos = movepos + 1;
+        }
+        board1.position(chess.fen());
+        queryStockfish()
+    }
+
+    function showPGNFirstMove() {
+        $('connection').remove();
+        movepos = 0;
+        chess.reset();
+        board1.position(chess.fen());
+        queryStockfish()
+    }
+
+    function showPGNPos(x) {
+        // Show the pgn on the chessboard at position x
+        $('connection').remove();
+        if (x==0) {
+            chess.reset();
+        } else {
+            chess.reset();
+            for (var i = 0; i < x; i++) {
+                chess.move(moves[i]);
+            }
+        }
+        board1.position(chess.fen());
+        console.log(chess.ascii());
+        queryStockfish()
+    }
+
+    function loadAnalysisPGN() {
+        $('connection').remove();
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                gamepgn.value = xmlhttp.responseText;
+                chess.load_pgn(xmlhttp.responseText);
+                console.log(chess.ascii());
+                moves = chess.history();
+                movepos = 0;
+                chess.reset();
+                console.log(moves);
+                document.getElementById("pgnnav").style.display='block';
+                queryStockfish()
+            }
+        }
+        xmlhttp.open("GET", "/getpgn/" + gameid, true);
+        xmlhttp.send();
+    }
+
+    window.onload = function () {
+        hideLastPGN();
+        hideLastGames();
+        if (document.getElementById("maincolumn").offsetWidth < 660) {
+            sizeBoard(document.getElementById("maincolumn").offsetWidth - 80);
+        }
+        loadAnalysisPGN();
+    }
+</script>
+
+{% endblock %}

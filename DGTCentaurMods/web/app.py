@@ -41,9 +41,29 @@ def fen():
 def pgn():
 	return render_template('pgn.html')
 
+@app.route("/configure")
+def configure():
+	# Get the lichessapikey from config.py (later we need to get this from an ini file or the db)
+	lifile = str(pathlib.Path(__file__).parent.resolve()) + "/../config/config.py"
+	with open(lifile, 'r') as file:
+		likeyfromfile = file.read().replace('\n', '').replace('\r','').replace('\"','').replace("lichesstoken=",'')
+	return render_template('configure.html', lichesskey=likeyfromfile)
+
+@app.route("/lichesskey/<key>")
+def lichesskey(key):
+	lifile = str(pathlib.Path(__file__).parent.resolve()) + "/../config/config.py"
+	with open(lifile, 'w') as file:
+		file.write("lichesstoken=\"" + key + "\"")
+		file.close()
+	return "ok"
+
+@app.route("/analyse/<gameid>")
+def analyse(gameid):
+	return render_template('analysis.html', gameid=gameid)
+
 @app.route("/getgames/<page>")
 def getGames(page):
-	# Return batches of 20 games by listing games in reverse order
+	# Return batches of 10 games by listing games in reverse order
 	Session = sessionmaker(bind=models.engine)
 	session = Session()
 	gamedata = session.execute(
@@ -51,7 +71,7 @@ def getGames(page):
 			   models.Game.white, models.Game.black, models.Game.result, models.Game.id).
 			order_by(models.Game.id.desc())
 	).all()
-	t = (int(page) * 20) - 20
+	t = (int(page) * 10) - 10
 	games = {}
 	try:
 		for x in range(0,20):

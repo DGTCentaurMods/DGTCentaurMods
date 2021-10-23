@@ -43,7 +43,7 @@
     }
 </style>
 
-<div style="width:600px">
+<div style="width:100%">
     <div id="gameslisting">
 
     </div>
@@ -53,15 +53,6 @@
 <script>
 
     var page = 1;
-
-    Object.size = function(obj) {
-      var size = 0,
-        key;
-      for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
-      }
-      return size;
-    };
 
     function showPGN(gameid) {
         var xmlhttp;
@@ -75,84 +66,10 @@
         xmlhttp.send();
     }
 
-    function getGames() {
-        var xmlhttp;
-        xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function(){
-            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
-                const obj = JSON.parse(xmlhttp.responseText);
-                var gl = document.getElementById('gameslisting');
-                gl.innerHTML = '';
-                for (x = 0; x < Object.size(obj); x++) {
-                    if (obj[x]["result"] == "None") { obj[x]["result"] = ""; }
-                    if (obj[x]["created_at"] == "None") { obj[x]["created_at"] = ""; }
-                    if (obj[x]["source"] == "None") { obj[x]["source"] = ""; }
-                    if (obj[x]["event"] == "None") { obj[x]["event"] = ""; }
-                    if (obj[x]["site"] == "None") { obj[x]["site"] = ""; }
-                    if (obj[x]["round"] == "None") { obj[x]["round"] = ""; }
-                    if (obj[x]["white"] == "None") { obj[x]["white"] = ""; }
-                    if (obj[x]["black"] == "None") { obj[x]["black"] = ""; }
-                    console.log(obj[x]);
-                    // Create a representation for this object
-                    var d = document.createElement("div");
-                    d.className = "gameitem";
-                    d.id = "game-" + obj[x]["id"];
-                    gl.appendChild(d);
-                    var me = document.createElement("div");
-                    me.className = "gamemaindetails";
-                    var cr = document.createElement("div");
-                    cr.className = "gamecr";
-                    cr.innerHTML = obj[x]["created_at"];
-                    var sr = document.createElement("div");
-                    sr.className = "gamesr";
-                    sr.innerHTML = "Source: " + obj[x]["source"];
-                    me.appendChild(cr);
-                    me.appendChild(sr);
-                    d.appendChild(me);
-                    var ld = document.createElement("div");
-                    ld.className = "gameld";
-                    var ev = document.createElement("div");
-                    ev.className = "gamelditem";
-                    ev.innerHTML = "Event: " + obj[x]["event"];
-                    var st = document.createElement("div");
-                    st.className = "gamelditem";
-                    st.innerHTML = "Site: " + obj[x]["site"];
-                    var rd = document.createElement("div");
-                    rd.className = "gamelditem";
-                    rd.innerHTML = "Round: " + obj[x]["round"];
-                    ld.appendChild(ev);
-                    ld.appendChild(st);
-                    ld.appendChild(rd);
-                    d.appendChild(ld);
-                    var gd = document.createElement("div");
-                    gd.className = "gamegd";
-                    var gw = document.createElement("div");
-                    gw.className = "gamegditem";
-                    gw.innerHTML = "White: " + obj[x]["white"];
-                    var gb = document.createElement("div");
-                    gb.className = "gamegditem";
-                    gb.innerHTML = "Black: " + obj[x]["black"];
-                    var gr = document.createElement("div");
-                    gr.className = "gamegditem";
-                    gr.innerHTML = "Result: " + obj[x]["result"];
-                    gd.appendChild(gw);
-                    gd.appendChild(gb);
-                    gd.appendChild(gr);
-                    d.appendChild(gd);
-                    var gpgn = document.createElement("div");
-                    gpgn.id = "gamepgn-" + obj[x]["id"];
-                    gpgn.className = "gamepgn";
-                    gpgn.innerHTML = "<a href='#' onClick='showPGN(" + obj[x]["id"] + ")'>Show PGN</a>"
-                    d.appendChild(gpgn);
-                }
-            }
-        }
-        xmlhttp.open("GET", "/getgames/" + page, true);
-        xmlhttp.send();
-    }
-
     window.onload = function () {
-        getGames();
+        hideLastPGN();
+        hideLastGames();
+        getGamesPGNList();
     }
 </script>
 
