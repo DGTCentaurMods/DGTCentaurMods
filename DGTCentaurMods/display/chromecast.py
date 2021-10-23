@@ -1,4 +1,4 @@
-from DGTCentaurMods.board import boardfunctions, network
+from DGTCentaurMods.board import board, network
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
 import time
@@ -18,12 +18,12 @@ def keyPressed(id):
     global menuitem
     global curmenu
     global selection
-    boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-    if id == boardfunctions.BTNDOWN:
+    board.beep(board.SOUND_GENERAL)
+    if id == board.BTNDOWN:
         menuitem = menuitem + 1
-    if id == boardfunctions.BTNUP:
+    if id == board.BTNUP:
         menuitem = menuitem - 1
-    if id == boardfunctions.BTNTICK:
+    if id == board.BTNTICK:
         c = 1
         r = ""
         for v in curmenu:
@@ -32,7 +32,7 @@ def keyPressed(id):
                 menuitem = 1
                 return
             c = c + 1
-    if id == boardfunctions.BTNBACK:
+    if id == board.BTNBACK:
         selection = "BACK"
         return
     if menuitem < 1:
@@ -53,7 +53,7 @@ def fieldActivity(id):
     global curmenu
     global selection
     if quickselect == 1 and (id < -23 and id > -32):
-        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+        board.beep(board.SOUND_GENERAL)
         menuitem = (id * -1) - 23
         c = 1
         r = ""
@@ -76,9 +76,9 @@ def doMenu(menu):
     epaper.clearScreen()
     menuitem = 1
     quickselect = 0
-    boardfunctions.pauseEvents()
-    res = boardfunctions.getBoardState()
-    boardfunctions.unPauseEvents()
+    board.pauseEvents()
+    res = board.getBoardState()
+    board.unPauseEvents()
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36]==0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         # If the 4th rank is empty then enable quick select mode. Then we can choose a menu option by placing and releasing a piece
         quickselect = 1
@@ -99,12 +99,12 @@ def doMenu(menu):
 # Initialise the epaper display - after which functions in epaper.py are available but you can also draw to the
 # image epaper.epaperbuffer to change the screen.
 os.system("ps -ef | grep 'cchandler.py' | grep -v grep | awk '{print $2}' | xargs -r kill -9")
-boardfunctions.ledsOff()
-boardfunctions.clearSerial()
+board.ledsOff()
+board.clearSerial()
 epaper.initEpaper()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
-boardfunctions.subscribeEvents(keyPressed, fieldActivity)
+board.subscribeEvents(keyPressed, fieldActivity)
 
 for cc in chromecasts[0]:
     curmenu.append(cc.device.friendly_name)

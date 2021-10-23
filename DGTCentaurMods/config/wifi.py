@@ -1,13 +1,13 @@
 # Connect to a Wifi Network
 #
 
-from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.board import board
 import os
 import time
 import sys
 import re
 
-boardfunctions.initScreen()
+board.initScreen()
 time.sleep(2)
 
 command = """iwlist wlan0 scan | grep -i 'essid:"' | cut -c28-500"""
@@ -25,20 +25,20 @@ for i in range(0,len(result)):
 	networks[result[i]] = result[i]
 
 print(networks)
-answer = boardfunctions.doMenu(networks,1)
+answer = board.doMenu(networks,1)
 
 print(answer)
 
 if answer == "BACK":
 	sys.exit()
 
-#boardfunctions.initScreen()
+#board.initScreen()
 #time.sleep(2)
-boardfunctions.epd.init()
+board.epd.init()
 
 # If the answer is not "BACK" then answer contains our SSID
 # Now we need to get the password
-password = boardfunctions.getText("Wifi Password")
+password = board.getText("Wifi Password")
 
 if password == "":
 	sys.exit()
