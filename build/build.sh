@@ -20,19 +20,24 @@ function config_setup {
         SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
         
         # Setup DGT Centaur Mods service
-        echo "::: Setting up service:  DGTCentaurMods.service"
+        echo "::: Configuring service:  DGTCentaurMods.service"
             sed -i "s/ExecStart.*/ExecStart=python3.7 game\/menu.py/g" DGTCentaurMods.service
             sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
             sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
         
         # Setup web service
-        echo "::: Setting up service: centaurmods-web.service"
+        echo "::: Configuring service: centaurmods-web.service"
             sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
             sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
-
+        
     cd $BASE
-    cp control ${STAGE}/DEBIAN
+    # Setup postinst file
+        echo "::: Configuring postinst."
+        sed -i "s/^SETUP_DIR.*/SETUP_DIR=${SETUP_DIR}\/${PCK_NAME}/g" postinst
+        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" postinst
 
+    cp control ${STAGE}/DEBIAN
+    cp postinst ${STAGE}/DEBIAN
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
 
