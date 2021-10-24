@@ -18,7 +18,7 @@ def eventCallback(event):
 	if event == gamemanager.EVENT_NEW_GAME:
 		epaper.writeText(0,"New Game")
 		curturn = 1
-		epaper.drawFen(gamemanager.board.fen())
+		epaper.drawFen(gamemanager.cboard.fen())
 	if event == gamemanager.EVENT_WHITE_TURN:
 		curturn = 1
 		epaper.writeText(0,"White turn")
@@ -45,8 +45,8 @@ def eventCallback(event):
 
 def moveCallback(move):
 	# This function receives valid moves made on the board
-	# Note: the board state is in python-chess object gamemanager.board
-	epaper.drawFen(gamemanager.board.fen())
+	# Note: the board state is in python-chess object gamemanager.cboard
+	epaper.drawFen(gamemanager.cboard.fen())
 	epaper.writeText(9, move)
 
 
@@ -58,7 +58,7 @@ curturn = 1
 
 # Subscribe to the game manager to activate the previous functions
 gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
-epaper.drawFen(gamemanager.board.fen())
+epaper.drawFen(gamemanager.cboard.fen())
 
 while True:
 	time.sleep(0.1)

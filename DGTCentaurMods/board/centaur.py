@@ -5,8 +5,17 @@ import configparser
 import pathlib
 
 def get_lichess_api():
+    global config
     lichess_api = config["lichess"]["api_token"]
     return lichess_api
+
+def set_lichess_api(key):
+    global config
+    global config_file
+    config.set('lichess', 'api_token', key)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()
 
 def rel_path():
     return str(pathlib.Path(__file__).parent.resolve()) + "/.."
@@ -26,7 +35,7 @@ def shell_run(rcmd):
         return response_stdout
 
 config_file = rel_path() + "/config/centaur.ini"
-config =  configparser.ConfigParser()
+config = configparser.ConfigParser()
 config.read(config_file)
 
 # Import configs
