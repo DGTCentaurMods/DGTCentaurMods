@@ -4,6 +4,8 @@
 #### HARDWARE CONFIGURATION
 CONFIG="/boot/config.txt"
 SETUP_DIR=/home/pi/DGTCentaurMods
+CMDLINEFILE=/boot/cmdline.txt
+NEWCMDFILE=/tmp/cmdline.txt
 
 echo -e "Hardware configuration"
 # Enabke SPI bus if not enbaled
@@ -32,6 +34,10 @@ echo "::: Checking serial port. "
     else
         sed -i "s/#enable_uart=1/enable_uart=1/g" $CONFIG
     fi
+    echo -e "::: Disable console on ttyS0"
+        sed 's/[^ ]* *//' $CMDLINEFILE > $NEWCMDFILE
+        sudo mv $NEWCMDFILE $CMDLINEFILE
+        sudo chown root.root $CMDLINEFILE
 
 ##### Enable systemd services.
 echo -e "Services setup\n"
