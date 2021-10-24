@@ -3,40 +3,61 @@
 # Script to produce deb pacjage
 
 ##### VARIABLESi
+BASE=`pwd`
 REPO_NAME="DGTCentaur"
 REPO_URL="https://github.com/EdNekebno/DGTCentaur"
+PCK_NAME="DGTCentaurMods"
+SETUP_DIR="/home/pi"
 
 function build {
-    dpkg-deb --build ${REPO_NAME}_${TAG}_armhf
+    dpkg-deb --build ${STAGE}
 }
 
-function edit_control {
+function config_setup {
     sed -i "s/Version:.*/Version: $TAG/g" control
-    cp control ${REPO_NAME}_${TAG}_armhf/DEBIAN
+    
+    cd ${STAGE}/etc/systemd/system
+        SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
+        
+        # Setup DGT Centaur Mods service
+        echo "::: Setting up service:  DGTCentaurMods.service"
+            sed -i "s/ExecStart.*/ExecStart=python3.7 game\/menu.py/g" DGTCentaurMods.service
+            sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
+            sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
+        
+        # Setup web service
+        echo "::: Setting up service: centaurmods-web.service"
+            sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
+            sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
+
+    cd $BASE
+    cp control ${STAGE}/DEBIAN
+
+    # Set permissions
+    sudo chown -R root.root ${STAGE}/etc
+
     build
 }
 function stage {
-    mkdir ${REPO_NAME}_${TAG}_armhf
-    mkdir -p ${REPO_NAME}_${TAG}_armhf/DEBIAN ${REPO_NAME}_${TAG}_armhf/home/pi ${REPO_NAME}_${TAG}_armhf/etc/systemd/system
+    STAGE="${PCK_NAME}_${TAG}_armhf"
+    mkdir ${STAGE}
+    mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
     
     # Move system services
-    mv $REPO_NAME/${REPO_NAME}Mods/etc/* ${REPO_NAME}_${TAG}_armhf/etc/systemd/system
+    mv $REPO_NAME/${PCK_NAME}/etc/* ${STAGE}/etc/systemd/system
     
     # Removed unnecessary stuff
-    rm -rf $REPO_NAME/${REPO_NAME}Mods/etc
+    rm -rf $REPO_NAME/${PCK_NAME}/etc
     rm $REPO_NAME/*.md
 
     # Move main software in /home/pi
-    mv $REPO_NAME/${REPO_NAME}Mods ${REPO_NAME}_${TAG}_armhf/home/pi
-    mv $REPO_NAME/requirements.txt ${REPO_NAME}_${TAG}_armhf/home/pi/{REPO_NAME}Mods
-
-    # Set permissions
-    sudo chown -R root.root ${REPO_NAME}_${TAG}_armhf/etc/systemd/system
+    mv $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
+    mv $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
     rm -rf $REPO_NAME
     
-    edit_control
+    config_setup
 }
 
 
@@ -45,9 +66,9 @@ if [ -x $1 ]
 then
     TAG="0"
     # Clean any existing data
-    if [ -d ${REPO_NAME}_${TAG}_arm ]
+    if [ -d ${STAGE} ]
     then
-        sudo rm -rf ${REPO_NAME}_${TAG}
+        sudo rm -rf ${STAGE}
     fi
     git clone --depth 1 $REPO_URL && stage
 else
@@ -60,6 +81,11 @@ fi
 
 case $1 in
     master* )  build_release; exit;;
+    clean* ) 
+        sudo rm -rf ${REPO_NAME}
+        sudo rm -rf  ${PCK_NAME}*
+        exit 0
+        ;;
 esac
         read -p "Is this a release from master (Y/N(: "
         case $REPLY in
