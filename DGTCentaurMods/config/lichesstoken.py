@@ -2,6 +2,7 @@
 #
 
 from DGTCentaurMods.board import board
+from DGTCentaurMods.board import centaur
 import os
 import time
 import sys
@@ -17,8 +18,4 @@ token = board.getText("API Token")
 if token == "":
 	sys.exit()
 
-token = "lichesstoken=\"" + token + "\"\r\n"
-file = str(pathlib.Path(__file__).parent.resolve()) + "/config.py"
-cfile = open(file,"w")
-cfile.write(token)
-cfile.close()
+centaur.set_lichess_api(token)
