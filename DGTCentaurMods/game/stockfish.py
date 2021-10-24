@@ -53,7 +53,7 @@ def eventCallback(event):
 		epaper.writeText(0,"New Game")
 		epaper.writeText(1, "               ")
 		curturn = 1
-		epaper.drawFen(gamemanager.board.fen())
+		epaper.drawFen(gamemanager.cboard.fen())
 	if event == gamemanager.EVENT_WHITE_TURN:
 		curturn = 1
 		epaper.writeText(0,"White turn")
@@ -61,7 +61,7 @@ def eventCallback(event):
 			options = ({"UCI_LimitStrength": True, "UCI_Elo": eloarg})
 			engine.configure(options)
 			limit = chess.engine.Limit(time=2)
-			mv = engine.play(gamemanager.board, limit, info=chess.engine.INFO_ALL)
+			mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
 			print(mv)
 			mv = mv.move
 			epaper.writeText(12, "Engine: " + str(mv))
@@ -73,7 +73,7 @@ def eventCallback(event):
 			options = ({"UCI_LimitStrength": True, "UCI_Elo": eloarg})
 			engine.configure(options)
 			limit = chess.engine.Limit(time=2)
-			mv = engine.play(gamemanager.board, limit, info=chess.engine.INFO_BASIC)
+			mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_BASIC)
 			print(mv)
 			mv = mv.move
 			epaper.writeText(12, "Engine: " + str(mv))
@@ -98,7 +98,7 @@ def eventCallback(event):
 def moveCallback(move):
 	# This function receives valid moves made on the board
 	# Note: the board state is in python-chess object gamemanager.board
-	epaper.drawFen(gamemanager.board.fen())
+	epaper.drawFen(gamemanager.cboard.fen())
 	epaper.writeText(9, move)
 
 
