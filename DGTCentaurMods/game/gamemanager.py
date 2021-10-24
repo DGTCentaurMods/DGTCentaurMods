@@ -7,7 +7,7 @@
 
 # TODO
 
-from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.db import models
 from sqlalchemy.orm import sessionmaker
@@ -45,6 +45,12 @@ forcemove = 0
 source = ""
 gamedbid = -1
 session = None
+
+gameinfo_event = ""
+gameinfo_site = ""
+gameinfo_round = ""
+gameinfo_white = ""
+gameinfo_black = ""
 
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
@@ -130,7 +136,7 @@ def fieldcallback(field):
             legalsquares = []
             legalsquares.append(tsq)
     if place == 1 and field not in legalsquares:
-        boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+        board.beep(board.SOUND_WRONG_MOVE)
     if place == 1 and field in legalsquares:
         newgame = 0
         if field == sourcesq:
@@ -156,22 +162,22 @@ def fieldcallback(field):
                 screenback = epaper.epaperbuffer.copy()
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
-                tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
-                boardfunctions.ser.write(tosend)
+                tosend[len(tosend) - 1] = board.checksum(tosend)
+                board.ser.write(tosend)
                 epaper.promotionOptions(13)
                 pausekeys = 1
                 time.sleep(1)
                 buttonPress = 0
                 while buttonPress == 0:
-                    boardfunctions.ser.read(1000000)
+                    board.ser.read(1000000)
                     tosend = bytearray(b'\x83\x06\x50\x59')
-                    boardfunctions.ser.write(tosend)
-                    resp = boardfunctions.ser.read(10000)
+                    board.ser.write(tosend)
+                    resp = board.ser.read(10000)
                     resp = bytearray(resp)
                     tosend = bytearray(b'\x94\x06\x50\x6a')
-                    boardfunctions.ser.write(tosend)
+                    board.ser.write(tosend)
                     expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
-                    resp = boardfunctions.ser.read(10000)
+                    resp = board.ser.read(10000)
                     resp = bytearray(resp)
                     if (resp.hex() == "b10011065000140a0501000000007d4700"):
                         buttonPress = 1  # BACK
@@ -192,23 +198,23 @@ def fieldcallback(field):
                 screenback = epaper.epaperbuffer.copy()
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
-                tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
-                boardfunctions.ser.write(tosend)
+                tosend[len(tosend) - 1] = board.checksum(tosend)
+                board.ser.write(tosend)
                 if forcemove == 0:
                     epaper.promotionOptions(13)
                     pausekeys = 1
                     time.sleep(1)
                     buttonPress = 0
                     while buttonPress == 0:
-                        boardfunctions.ser.read(1000000)
+                        board.ser.read(1000000)
                         tosend = bytearray(b'\x83\x06\x50\x59')
-                        boardfunctions.ser.write(tosend)
-                        resp = boardfunctions.ser.read(10000)
+                        board.ser.write(tosend)
+                        resp = board.ser.read(10000)
                         resp = bytearray(resp)
                         tosend = bytearray(b'\x94\x06\x50\x6a')
-                        boardfunctions.ser.write(tosend)
+                        board.ser.write(tosend)
                         expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
-                        resp = boardfunctions.ser.read(10000)
+                        resp = board.ser.read(10000)
                         resp = bytearray(resp)
                         if (resp.hex() == "b10011065000140a0501000000007d4700"):
                             buttonPress = 1  # BACK
@@ -243,13 +249,13 @@ def fieldcallback(field):
             session.commit()
             legalsquares = []
             sourcesq = -1
-            boardfunctions.ledsOff()
+            board.ledsOff()
             forcemove = 0
             if movecallbackfunction != None:
                 movecallbackfunction(mv)
-            boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+            board.beep(board.SOUND_GENERAL)
             # Check the outcome
-            outc = board.outcome()
+            outc = board.outcome(claim_draw=True)
             if outc == None or outc == "None" or outc == 0:
                 # Switch the turn
                 if curturn == 0:
@@ -263,8 +269,14 @@ def fieldcallback(field):
             else:
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
-                tosend[len(tosend) - 1] = boardfunctions.checksum(tosend)
-                boardfunctions.ser.write(tosend)
+                tosend[len(tosend) - 1] = board.checksum(tosend)
+                board.ser.write(tosend)
+                # Depending on the outcome we can update the game information for the result
+                resultstr = str(board.result())
+                tg = session.query(models.Game).filter(models.Game.id == gamedbid).first()
+                tg.result = resultstr
+                session.flush()
+                session.commit()
                 eventcallbackfunction(str(outc.termination))
 
 
@@ -284,11 +296,16 @@ def gameThread(eventCallback, moveCallback, keycallback):
     global source
     global gamedbid
     global session
+    global gameinfo_event
+    global gameinfo_site
+    global gameinfo_round
+    global gameinfo_white
+    global gameinfo_black
     keycallbackfunction = keycallback
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
-    boardfunctions.ledsOff()
-    boardfunctions.subscribeEvents(keycallback, fieldcallback)
+    board.ledsOff()
+    board.subscribeEvents(keycallback, fieldcallback)
     t = 0
     pausekeys = 0
     while kill == 0:
@@ -298,9 +315,9 @@ def gameThread(eventCallback, moveCallback, keycallback):
                 t = t + 1
             else:
                 try:
-                    boardfunctions.pauseEvents()
-                    cs = boardfunctions.getBoardState()
-                    boardfunctions.unPauseEvents()
+                    board.pauseEvents()
+                    cs = board.getBoardState()
+                    board.unPauseEvents()
                     if bytearray(cs) == startstate:
                         eventCallback(EVENT_NEW_GAME)
                         eventCallback(EVENT_WHITE_TURN)
@@ -311,12 +328,17 @@ def gameThread(eventCallback, moveCallback, keycallback):
                         f = open(fenlog, "w")
                         f.write(board.fen())
                         f.close()
-                        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+                        board.beep(board.SOUND_GENERAL)
                         time.sleep(0.3)
-                        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+                        board.beep(board.SOUND_GENERAL)
                         # Log a new game in the db
                         game = models.Game(
-                            source=source
+                            source=source,
+                            event=gameinfo_event,
+                            site=gameinfo_site,
+                            round=gameinfo_round,
+                            white=gameinfo_white,
+                            black=gameinfo_black
                         )
                         print(game)
                         session.add(game)
@@ -335,9 +357,9 @@ def gameThread(eventCallback, moveCallback, keycallback):
                 except:
                     pass
         if pausekeys == 1:
-            boardfunctions.pauseEvents()
+            board.pauseEvents()
         if pausekeys == 2:
-            boardfunctions.unPauseEvents()
+            board.unPauseEvents()
             pausekeys = 0
         time.sleep(0.1)
 
@@ -355,7 +377,20 @@ def computerMove(mv):
     fromnum = ((ord(mv[1:2]) - ord("1")) * 8) + (ord(mv[0:1]) - ord("a"))
     tonum = ((ord(mv[3:4]) - ord("1")) * 8) + (ord(mv[2:3]) - ord("a"))
     # Then light it up!
-    boardfunctions.ledFromTo(fromnum,tonum)
+    board.ledFromTo(fromnum,tonum)
+
+def setGameInfo(gi_event,gi_site,gi_round,gi_white,gi_black):
+    # Call before subscribing if you want to set further information about the game for the PGN files
+    global gameinfo_event
+    global gameinfo_site
+    global gameinfo_round
+    global gameinfo_white
+    global gameinfo_black
+    gameinfo_event = gi_event
+    gameinfo_site = gi_site
+    gameinfo_round = gi_round
+    gameinfo_white = gi_white
+    gameinfo_black = gi_black
 
 def subscribeGame(eventCallback, moveCallback, keyCallback):
     # Subscribe to the game manager
@@ -366,7 +401,7 @@ def subscribeGame(eventCallback, moveCallback, keyCallback):
     Session = sessionmaker(bind=models.engine)
     session = Session()
 
-    boardfunctions.clearSerial()
+    board.clearSerial()
     gamethread = threading.Thread(target=gameThread, args=([eventCallback, moveCallback, keyCallback]))
     gamethread.daemon = True
     gamethread.start()

@@ -26,6 +26,11 @@ if computerarg == "random":
 # Pass an ELO between 1000 and 2400
 eloarg = int(sys.argv[2])
 
+if computeronturn == 0:
+	gamemanager.setGameInfo(str(eloarg) + " ELO", "", "", "Player", "CT800")
+else:
+	gamemanager.setGameInfo(str(eloarg) + " ELO", "", "", "CT800", "Player")
+
 def keyCallback(key):
 	# This function will receive any keys presses on the keys
 	# under the display. Possibles:

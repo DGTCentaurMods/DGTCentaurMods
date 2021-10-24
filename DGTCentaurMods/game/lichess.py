@@ -3,7 +3,7 @@ import berserk
 import ssl
 import time
 import threading
-from DGTCentaurMods.board import boardfunctions
+from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 import chess
 from DGTCentaurMods.config import config
@@ -24,7 +24,7 @@ import os
 # accurate time for the SSL
 token = config.lichesstoken
 pid = -1
-boardfunctions.clearSerial()
+board.clearSerial()
 epaper.initEpaper()
 
 if (len(sys.argv) == 1):
@@ -49,8 +49,8 @@ if (sys.argv[1] == "current"):
 else:
     epaper.writeText(0, 'New Game')
 epaper.writeText(1, 'on Lichess')
-# boardfunctions.writeText(2, 'LEDs Off')
-boardfunctions.ledsOff()
+# board.writeText(2, 'LEDs Off')
+board.ledsOff()
 
 # Get the current player's username
 who = client.account.get()
@@ -151,7 +151,7 @@ def newGameThread():
         client.board.seek(60, 20, rated=True, variant='standard', color='random', rating_range=None)
 
 
-# boardfunctions.writeText(7, 'Game ID')
+# board.writeText(7, 'Game ID')
 
 # Wait for a game to start and get the game id!
 gameid = ""
@@ -302,7 +302,7 @@ st.daemon = True
 st.start()
 # print("Started")
 
-boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+board.beep(board.SOUND_GENERAL)
 boardmoves = ""
 lastboardmove = ""
 beeped = 0
@@ -314,14 +314,14 @@ while playeriswhite == -1:
 if playeriswhite == 0:
     lastmove = "1234"
     remotemoves = "1234"
-#    boardfunctions.writeText(8, 'Black')
+#    board.writeText(8, 'Black')
 
 # ready for white
 ourturn = 1
 # if playeriswhite == 0 or playeriswhite == 1:
 #	ourturn = 0
 
-boardfunctions.clearBoardData()
+board.clearBoardData()
 
 oldremotemoves = ""
 correcterror = -1
@@ -361,8 +361,8 @@ while status == "started" and ourturn != 0:
         movestart = time.time()
         startzeit = time.time()
         # print(str(startzeit-startzeit))
-        move = boardfunctions.waitMove()
-        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+        move = board.waitMove()
+        board.beep(board.SOUND_GENERAL)
 
         # Pass the move through
 
@@ -372,9 +372,9 @@ while status == "started" and ourturn != 0:
             fromsq = move[0] * -1
             mylastfrom = fromsq
             tosq = move[1]
-        # boardfunctions.writeText(12, 'normal move')
+        # board.writeText(12, 'normal move')
         if (len(move) == 3):
-            # boardfunctions.writeText(12, 'kick move')
+            # board.writeText(12, 'kick move')
             # This move should consist of two lifted and one place (two positives, 1 negative)
             # it is a piece take. So the negative that is not the inverse of the positive
             # is the piece that has moved and the positive is the tosq
@@ -390,16 +390,16 @@ while status == "started" and ourturn != 0:
             if move[1] != (tosq * -1):
                 fromsq = move[1] * -1
 
-        # Added to reduce the numbering back to 0-64 after change to boardfunctions
+        # Added to reduce the numbering back to 0-64 after change to board
         fromsq = fromsq - 1
         tosq = tosq - 1
 
         mylastfrom = fromsq
         # Convert to letter number square format
-        fromln = boardfunctions.convertField(fromsq)
+        fromln = board.convertField(fromsq)
         # print(fromln)
 
-        toln = boardfunctions.convertField(tosq)
+        toln = board.convertField(tosq)
 
         # If the piece is a pawn we should take care of promotion here. You could choose it from
         # the board screen. But I'll do that later!
@@ -411,7 +411,7 @@ while status == "started" and ourturn != 0:
             lastmove = ""
             correcterror = tosq
         if correcterror == tosq:
-            boardfunctions.ledsOff()
+            board.ledsOff()
             correcterror = -1
         else:
             try:
@@ -442,16 +442,16 @@ while status == "started" and ourturn != 0:
                     if halfturn != 0:
                         # print("Not a legal move!")
                         # print(board.legal_moves)
-                        boardfunctions.clearBoardData()
-                        boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+                        board.clearBoardData()
+                        board.beep(board.SOUND_WRONG_MOVE)
                         correcterror = fromsq
             except:
                 # print("exception checking for half turn")
                 if halfturn != 0:
                     # print("Not a legal move!")
                     # print(board.legal_moves)
-                    boardfunctions.clearBoardData()
-                    boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
+                    board.clearBoardData()
+                    board.beep(board.SOUND_WRONG_MOVE)
                     correcterror = fromsq
 
         # print(board)
@@ -470,14 +470,14 @@ while status == "started" and ourturn != 0:
             wtext = str(whiteclock // 1000).replace(".0", "") + " secs      "
         else:
             wtext = str(whiteclock // 60000).replace(".0", "") + " mins      "
-        #boardfunctions.writeText(10, wtext)
+        #board.writeText(10, wtext)
         epaper.writeText(10,wtext)
         btext = ""
         if blackclock // 60000 == 0:
             btext = str(blackclock // 1000).replace(".0", "") + " secs      "
         else:
             btext = str(blackclock // 60000).replace(".0", "") + " mins      "
-        #boardfunctions.writeText(1, btext)
+        #board.writeText(1, btext)
         epaper.writeText(10, btext)
         fen = board.fen()
         sfen = fen[0: fen.index(" ")]
@@ -489,7 +489,7 @@ while status == "started" and ourturn != 0:
         f = open(fenlog, "w")
         f.write(sfen)
         f.close()
-        #boardfunctions.writeText(12, str(mv))
+        #board.writeText(12, str(mv))
         epaper.writeText(12, str(mv))
         epaper.drawBoard(pieces)
     if playeriswhite == 0 and newgame == 1:
@@ -509,7 +509,7 @@ while status == "started" and ourturn != 0:
     if status == "started":
         # There's an incoming move to deal with
         lichesstime = time.time()
-        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+        board.beep(board.SOUND_GENERAL)
         rr = "   " + str(remotemoves)
         lrmove = rr[-5:].strip()
         lrmove = lrmove[:4]
@@ -517,12 +517,12 @@ while status == "started" and ourturn != 0:
         lrto = lrmove[2:4]
         lrfromcalc = (ord(lrfrom[:1]) - 97) + ((int(lrfrom[1:2]) - 1) * 8)
         lrtocalc = (ord(lrto[:1]) - 97) + ((int(lrto[1:2]) - 1) * 8)
-        boardfunctions.clearBoardData()
-        boardfunctions.ledFromTo(lrfromcalc, lrtocalc)
+        board.clearBoardData()
+        board.ledFromTo(lrfromcalc, lrtocalc)
         # Then wait for a piece to be moved TO that position
         movedto = -1
         while movedto != lrtocalc and status == "started":
-            move = boardfunctions.waitMove()
+            move = board.waitMove()
             valid = 0
             if move[0] == lrtocalc:
                 valid = 1
@@ -533,14 +533,14 @@ while status == "started" and ourturn != 0:
                 if move[2] == lrtocalc:
                     valid = 1
             if valid == 0:
-                boardfunctions.beep(boardfunctions.SOUND_WRONG_MOVE)
-            # Subtract one here to return to 0-64 after change in boardfunctions
+                board.beep(board.SOUND_WRONG_MOVE)
+            # Subtract one here to return to 0-64 after change in board
             movedto = lrtocalc
-        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-        boardfunctions.clearSerial()
+        board.beep(board.SOUND_GENERAL)
+        board.clearSerial()
         mv = chess.Move.from_uci(rr[-5:].strip())
         board.push(mv)
-        boardfunctions.ledsOff()
+        board.ledsOff()
         newgame = 0
         ourturn = 1
 
@@ -559,14 +559,14 @@ while status == "started" and ourturn != 0:
         wtext = str(whiteclock // 1000).replace(".0", "") + " secs      "
     else:
         wtext = str(whiteclock // 60000).replace(".0", "") + " mins      "
-    #boardfunctions.writeText(10, wtext)
+    #board.writeText(10, wtext)
     epaper.writeText(10, wtext)
     btext = ""
     if blackclock // 60000 == 0:
         btext = str(blackclock // 1000).replace(".0", "") + " secs      "
     else:
         btext = str(blackclock // 60000).replace(".0", "") + " mins      "
-    #boardfunctions.writeText(1, btext)
+    #board.writeText(1, btext)
     epaper.writeText(1, btext)
     if starttime < 0:
         starttime = time.time()
@@ -580,7 +580,7 @@ while status == "started" and ourturn != 0:
     f = open(fenlog, "w")
     f.write(sfen)
     f.close()
-    #boardfunctions.writeText(12, str(mv))
+    #board.writeText(12, str(mv))
     epaper.writeText(12, str(mv))
     epaper.drawBoard(pieces)
 

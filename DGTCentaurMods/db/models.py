@@ -13,6 +13,12 @@ class Game(Base):
     id = Column(Integer, primary_key=True, autoincrement="auto")
     created_at = Column(DateTime, server_default=func.now())
     source = Column(String(255), nullable=False) # centaur, lichess, eboard, ct800, etc
+    event = Column(String(255), nullable=True)
+    site = Column(String(255), nullable=True)
+    round = Column(String(255), nullable=True)
+    white = Column(String(255), nullable=True)
+    black = Column(String(255), nullable=True)
+    result = Column(String(255), nullable=True)
 
     def __repr__(self):
         return "<Game(id='%s', created_at='%s', source='%s')>" % (str(self.id), str(self.created_at), self.source)

@@ -1,4 +1,3 @@
-<h2> Live board </h2>
 <div id="centaur" style="background-color: #212121; padding:9px; width: 685px;-webkit-border-radius: 23px;-moz-border-radius: 3px;border-radius: 3px;">
     <style>
         .white-1e1d7{background-color:#e5e5e5;color: #131313}
@@ -13,12 +12,17 @@
     <script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
     <script>
     var ruyLopez = '{{ fen }}'
-    var board1 = Chessboard('board1', ruyLopez)
+    var config = {
+        position: ruyLopez,
+        pieceTheme: "{{ url_for('static', filename='chessboardjs/img/chesspieces/wikipedia/') }}" + "{piece}.png"
+    }
+    var board1 = Chessboard('board1', config)
     </script>
     <img id='logo' src="{{ url_for('static', filename='logo_mods_web.png') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 1px; background-color: #212121">
     <img id='epaper' src="{{ url_for('static', filename='epaper.jpg') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 210px;">
     <div style="clear:both"></div>
     <script>
+        var ratio = 1;
         function refreshImage(imgElement, imgURL){
             var timestamp = new Date().getTime();
             var el = document.getElementById(imgElement);
@@ -36,7 +40,51 @@
             xmlhttp.open("GET", "/fen", true);
             xmlhttp.send();
         }
-        setInterval('refreshImage("epaper","/static/epaper.jpg")', 1000);
+        setInterval('refreshImage("epaper","/static/epaper.jpg")', 1500);
         setInterval('getFen()', 2000);
+        function sizeBoard(newsize) {
+            ratio = 600/newsize;
+            document.getElementById("board1").style.width = newsize + "px";
+            var sheet = document.createElement('style')
+            var sq = document.getElementsByClassName("white-1e1d7");
+            for (i = 0; i < sq.length; i++) {
+                sq[i].style.width = Math.floor(74/ratio) + "px";
+                sq[i].style.height = Math.floor(74/ratio) + "px";
+            }
+            var sq = document.getElementsByClassName("black-3c85d");
+            for (i = 0; i < sq.length; i++) {
+                sq[i].style.width = Math.floor(74/ratio) + "px";
+                sq[i].style.height = Math.floor(74/ratio) + "px";
+            }
+            var p = document.getElementsByClassName("piece-417db");
+            for (i = 0; i < p.length; i++) {
+                p[i].style.width = Math.floor(74/ratio) + "px";
+                p[i].style.height = Math.floor(74/ratio) + "px";
+            }
+            var l = document.getElementById('logo');
+            l.style.width = Math.floor(128/(2 * ratio)) + "px";
+            l.style.paddingLeft = Math.floor(13 / ratio) + "px";
+            var ep = document.getElementById('epaper');
+            ep.style.width = Math.floor(128/(2 * ratio)) + "px";
+            ep.style.paddingLeft = Math.floor(13 / ratio) + "px";
+            ep.style.paddingTop = Math.floor(210 / ratio) + "px";
+            document.getElementsByClassName('board-b72b1')[0].style.width='';
+            document.getElementById("board1").style.marginRight="-" + Math.floor(4*ratio) + "px";
+            var ct = document.getElementById('centaur');
+            ct.style.width = Math.floor(newsize + 5 + (95/ratio)) + "px";
+            if (newsize < 600) {
+                document.getElementsByClassName('board-b72b1')[0].style.border='0px solid transparent';
+                document.getElementById("board1").style.width = "";
+                document.getElementById("board1").style.marginRight = "";
+            }
+            board1.resize();
+        }
+        window.onload = function () {
+            if (document.getElementById("maincolumn").offsetWidth < 660) {
+                sizeBoard(document.getElementById("maincolumn").offsetWidth - 80);
+            }
+            showLastPGN();
+            showLastGames();
+        }
     </script>
 </div>

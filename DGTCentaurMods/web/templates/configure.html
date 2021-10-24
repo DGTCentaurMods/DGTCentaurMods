@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block mainpage %}
+
+<style>
+    .gameitem {
+        border: 1px solid #c3c3c3;
+        width: 100%;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        margin: 10px;
+    }
+    .gamemaindetails {
+        background-color: #d2cfcf;
+        padding: 5px;
+    }
+    .gamecr {
+        float: left;
+        padding-right: 20px;
+    }
+    .gamesr {
+    }
+    .gameld {
+        clear: both;
+        padding: 5px;
+    }
+    .gamelditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamegd {
+        clear: both;
+        padding: 5px;
+    }
+    .gamegditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamepgn {
+        clear:both;
+        padding: 5px;
+    }
+</style>
+
+<div style="width:100%">
+    <div id="settings">
+        <article class="panel is-info">
+          <p class="panel-heading">
+            Lichess
+          </p>
+            <div class="panel-block">
+                <p>
+                We use a <a href="https://lichess.org/account/oauth/token" target="_new">Lichess API key</a> to create and play games directly from the board.
+              </p>
+            </div>
+          <div class="panel-block">
+            <p class="control has-icons-left">
+
+              <input class="input is-primary" id="lichesskey" type="text" placeholder="Enter Lichess API Key" value="{{ lichesskey }}" onkeydown="document.getElementById('lichesssavebutton').className='button is-info';">
+              <span class="icon is-left">
+                <i class="fas fa-search" aria-hidden="true"></i>
+              </span>
+            </p>
+              <button class="button" id="lichesssavebutton" style="margin-left:10px;" onClick="saveLichessKey()">Save</button>
+          </div>
+        </article>
+    </div>
+</div>
+
+
+<script>
+
+    var page = 1;
+
+    function saveLichessKey() {
+        var newkey = document.getElementById("lichesskey").value;
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                if (xmlhttp.responseText == "ok") {
+                    document.getElementById('lichesssavebutton').className='button';
+                }
+            }
+        }
+        xmlhttp.open("GET", "/lichesskey/" + newkey, true);
+        xmlhttp.send();
+    }
+
+    window.onload = function () {
+        hideLastPGN();
+        hideLastGames();
+    }
+</script>
+
+{% endblock %}

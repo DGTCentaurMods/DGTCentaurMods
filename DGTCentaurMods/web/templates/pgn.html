@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block mainpage %}
+
+<style>
+    .gameitem {
+        border: 1px solid #c3c3c3;
+        width: 100%;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        margin: 10px;
+    }
+    .gamemaindetails {
+        background-color: #d2cfcf;
+        padding: 5px;
+    }
+    .gamecr {
+        float: left;
+        padding-right: 20px;
+    }
+    .gamesr {
+    }
+    .gameld {
+        clear: both;
+        padding: 5px;
+    }
+    .gamelditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamegd {
+        clear: both;
+        padding: 5px;
+    }
+    .gamegditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamepgn {
+        clear:both;
+        padding: 5px;
+    }
+</style>
+
+<div style="width:100%">
+    <div id="gameslisting">
+
+    </div>
+</div>
+
+
+<script>
+
+    var page = 1;
+
+    function showPGN(gameid) {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                document.getElementById("gamepgn-" + gameid).innerText = xmlhttp.responseText;
+            }
+        }
+        xmlhttp.open("GET", "/getpgn/" + gameid, true);
+        xmlhttp.send();
+    }
+
+    window.onload = function () {
+        hideLastPGN();
+        hideLastGames();
+        getGamesPGNList();
+    }
+</script>
+
+{% endblock %}

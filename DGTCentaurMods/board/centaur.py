@@ -1,6 +1,15 @@
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
+import configparser
+import pathlib
+
+def get_lichess_api():
+    lichess_api = config["lichess"]["api_token"]
+    return lichess_api
+
+def rel_path():
+    return str(pathlib.Path(__file__).parent.resolve()) + "/.."
 
 def shell_run(rcmd):
     cmd = shlex.split(rcmd)
@@ -16,4 +25,9 @@ def shell_run(rcmd):
         print(response_stdout)
         return response_stdout
 
+config_file = rel_path() + "/config/centaur.ini"
+config =  configparser.ConfigParser()
+config.read(config_file)
 
+# Import configs
+lichess_api = config["lichess"]["api_token"]

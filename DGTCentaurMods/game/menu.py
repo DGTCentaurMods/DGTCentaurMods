@@ -1,4 +1,4 @@
-from DGTCentaurMods.board import boardfunctions, network
+from DGTCentaurMods.board import board, network
 from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
@@ -21,12 +21,12 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
-    boardfunctions.beep(boardfunctions.SOUND_GENERAL)
-    if id == boardfunctions.BTNDOWN:
+    board.beep(board.SOUND_GENERAL)
+    if id == board.BTNDOWN:
         menuitem = menuitem + 1
-    if id == boardfunctions.BTNUP:
+    if id == board.BTNUP:
         menuitem = menuitem - 1
-    if id == boardfunctions.BTNTICK:
+    if id == board.BTNTICK:
         if not curmenu:
             selection = "BTNTICK"
             print(selection)
@@ -43,12 +43,12 @@ def keyPressed(id):
                 menuitem = 1
                 return
             c = c + 1
-    if id == boardfunctions.BTNBACK:
+    if id == board.BTNBACK:
         selection = "BACK"
         epaper.epd.HalfClear()
         event_key.set()
         return
-    if id == boardfunctions.BTNHELP:
+    if id == board.BTNHELP:
         selection = "BTNHELP"
         epaper.epd.HalfClear()
         event_key.set()
@@ -71,7 +71,7 @@ def fieldActivity(id):
     global curmenu
     global selection
     if quickselect == 1 and (id < -15 and id > -32):
-        boardfunctions.beep(boardfunctions.SOUND_GENERAL)
+        board.beep(board.SOUND_GENERAL)
         menuitem = 1
         if quickselect == 1 and (id < -23 and id > -32):
             menuitem = (id * -1) - 23
@@ -102,9 +102,9 @@ def doMenu(menu):
     epaper.clearScreen()
     menuitem = 1
     quickselect = 0
-    boardfunctions.pauseEvents()
-    res = boardfunctions.getBoardState()
-    boardfunctions.unPauseEvents()
+    board.pauseEvents()
+    res = board.getBoardState()
+    board.unPauseEvents()
     # If 3rd and 4th ranks are empty then enable quick select by placing and releasing a piece
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
@@ -125,51 +125,47 @@ def doMenu(menu):
 # Turn Leds off, beep, clear DGT Centaur Serial
 # Initialise the epaper display - after which functions in epaper.py are available but you can also draw to the
 # image epaper.epaperbuffer to change the screen.
-boardfunctions.ledsOff()
-boardfunctions.beep(boardfunctions.SOUND_POWER_ON)
-boardfunctions.clearSerial()
+board.ledsOff()
+board.beep(board.SOUND_POWER_ON)
+board.clearSerial()
 epaper.initEpaper(1)
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
-boardfunctions.subscribeEvents(keyPressed, fieldActivity)
+board.subscribeEvents(keyPressed, fieldActivity)
 
 
 # Handle the menu structure
 while True:
-    if not os.path.exists(centaur_software):
-        menu = { 
-            'Lichess': 'Lichess',
+    menu = {}
+    if os.path.exists(centaur_software):
+        centaur_item = {'Centaur': 'DGT Centaur'}
+        menu.update(centaur_item)
+    if centaur.lichess_api:
+        lichess_item = {'Lichess': 'Lichess'}
+        menu.update(lichess_item)
+    menu.update({
             'Engines' : 'Engines',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
-            'Support': 'Get support'}
-    else:
-        menu = {
-            'Centaur': 'DGT Centaur',
-            'Lichess': 'Lichess',
-            'Engines' : 'Engines',
-            'EmulateEB': 'e-Board',
-            'Cast' : 'Chromecast',
-            'settings': 'Settings',
-            'Support': 'Get support'}
+            'Support': 'Get support'})
     result = doMenu(menu)
     epaper.epd.init()
     time.sleep(0.2)
     if result == "BACK":
-        boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+        board.beep(board.SOUND_POWER_OFF)
         #oardfunctions.shutdown()
     if result == "Cast":
         epaper.clearScreen()
         epaper.writeText(0,"Loading...")
-        boardfunctions.pauseEvents()
+        board.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
-        boardfunctions.unPauseEvents()
+        board.unPauseEvents()
     if result == "Centaur":
         epaper.clearScreen()
         epaper.writeText(0, "Loading...")
         time.sleep(1)
-        boardfunctions.pauseEvents()
+        board.pauseEvents()
         os.chdir("/home/pi/centaur")
         os.system("sudo systemctl start centaur.service")
         # Once started we cannot return to DGTCentaurMods, we can kill that
@@ -179,9 +175,9 @@ while True:
     if result == "EmulateEB":
         epaper.clearScreen()
         epaper.writeText(0, "Loading...")
-        boardfunctions.pauseEvents()
+        board.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
-        boardfunctions.unPauseEvents()
+        board.unPauseEvents()
     if result == "settings":
         setmenu = {
                 'WiFi': 'Wifi Setup',
@@ -203,10 +199,10 @@ while True:
             result = doMenu(wifimenu)
             if (result != "BACK"):
                 if (result == 'wpa2'):
-                    boardfunctions.pauseEvents()
+                    board.pauseEvents()
                     epaper.writeText(0, "Loading...")
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
-                    boardfunctions.unPauseEvents()
+                    board.unPauseEvents()
                 if (result == 'wps'):
                     if network.check_network():
                         selection = ""
@@ -246,32 +242,32 @@ while True:
                         time.sleep(4)
 
         if result == "Pairing":
-            boardfunctions.pauseEvents()
+            board.pauseEvents()
             epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
-            boardfunctions.unPauseEvents()
+            board.unPauseEvents()
         if result == "LichessAPI":
-            boardfunctions.pauseEvents()
+            board.pauseEvents()
             epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
-            boardfunctions.unPauseEvents()
+            board.unPauseEvents()
         if result == "Shutdown":
-            boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            board.beep(board.SOUND_POWER_OFF)
             epaper.epd.init()
             epaper.epd.HalfClear()
             time.sleep(5)
             epaper.stopEpaper()
             time.sleep(2)
-            boardfunctions.pauseEvents()
-            boardfunctions.shutdown()
+            board.pauseEvents()
+            board.shutdown()
         if result == "Reboot":
-            boardfunctions.beep(boardfunctions.SOUND_POWER_OFF)
+            board.beep(board.SOUND_POWER_OFF)
             epaper.epd.init()
             epaper.epd.HalfClear()
             time.sleep(5)
             epaper.stopEpaper()
             time.sleep(2)
-            boardfunctions.pauseEvents()
+            board.pauseEvents()
             os.system("/sbin/shutdown -r now &")
             sys.exit()
     if result == "Lichess":
@@ -283,9 +279,9 @@ while True:
             if (result == "Current"):
                 epaper.clearScreen()
                 epaper.writeText(0, "Loading...")
-                boardfunctions.pauseEvents()
+                board.pauseEvents()
                 os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py current")
-                boardfunctions.unPauseEvents()
+                board.unPauseEvents()
             else:
                 livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
                 result = doMenu(livemenu)
@@ -319,9 +315,9 @@ while True:
                                 gincrement = '20'
                             epaper.clearScreen()
                             epaper.writeText(0, "Loading...")
-                            boardfunctions.pauseEvents()
+                            board.pauseEvents()
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New {gtime} {gincrement} {rated} {color}")
-                            boardfunctions.unPauseEvents()
+                            board.unPauseEvents()
     if result == "Engines":
         enginemenu = {'stockfish': 'Stockfish', 'CT800': 'CT800'}
         result = doMenu(enginemenu)
@@ -337,9 +333,9 @@ while True:
                 if elo != "BACK":
                     epaper.clearScreen()
                     epaper.writeText(0, "Loading...")
-                    boardfunctions.pauseEvents()
+                    board.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/ct800.py " + color + " " + elo)
-                    boardfunctions.unPauseEvents()
+                    board.unPauseEvents()
         if result == "stockfish":
             sfmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
             color = doMenu(sfmenu)
@@ -351,9 +347,9 @@ while True:
                 if elo != "BACK":
                     epaper.clearScreen()
                     epaper.writeText(0, "Loading...")
-                    boardfunctions.pauseEvents()
+                    board.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
-                    boardfunctions.unPauseEvents()
+                    board.unPauseEvents()
     if result == "Support" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()

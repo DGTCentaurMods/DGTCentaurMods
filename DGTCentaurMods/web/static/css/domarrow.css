@@ -1,0 +1,33 @@
+connection .line .arrow {
+  top: -5px;
+  height: 0px;
+  width: 0px;
+  position: absolute;
+  border-bottom: 6px solid transparent;
+  border-top: 6px solid transparent;
+  background-clip: border-box;
+}
+connection .line .arrow-fw {
+  border-right: 12px solid black;
+}
+
+connection .line .arrow-bw {
+  left: 100%;
+  border-left: 12px solid black;
+  transform: translateX(-12px);
+}
+
+connection .line .text {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+}
+
+connection .line {
+  position:absolute;
+  height:2px;
+
+  background-color: black;
+}
+

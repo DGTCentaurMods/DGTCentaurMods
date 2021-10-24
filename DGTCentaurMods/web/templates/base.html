@@ -2,13 +2,255 @@
 <html>
   <head>
 	<link rel="stylesheet" href="{{url_for('static', filename='chessboardjs/css/chessboard-1.0.0.css')  }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DGT Centaur Board</title>
+      <style>
+        .main {
+          display: flex;
+          min-height: 100vh;
+          flex-direction: column;
+        }
+        .section {
+          flex: 1;
+        }
+        .column.is-offset-1 {
+          margin-left: 2%;
+        }
+      </style>
   </head>
-  <body>
-  <title>DGT Centaur Board</title>
-    <h1>DGT Centaur</h1>
+  <body class="main">
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+      if ($navbarBurgers.length > 0) {
+        $navbarBurgers.forEach( el => {
+          el.addEventListener('click', () => {
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+            el.classList.toggle('is-active');
+            $target.classList.toggle('is-active');
+          });
+        });
+      }
+    });
+  </script>
+  <nav class="navbar is-info" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div id="navbarBasic" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" href="/">
+          Home
+        </a>
+        <a class="navbar-item" href="/pgn">
+          Games
+        </a>
+        <a class="navbar-item" href="/configure">
+          Configure
+        </a>
+      </div>
+      <div class="navbar-end">
 
-{% block mainpage %}{% endblock %}
+      </div>
+    </div>
+  </nav>
 
+  <section class="section">
+    <div class="container">
+
+    <div class="columns">
+      <div class="column is-half" id="maincolumn">{% block mainpage %}{% endblock %}</div>
+      <div class="column is-offset-1">
+        <div class="tile is-ancestor">
+          <div class="tile is-vertical is-parent">
+            <div class="tile is-child box">
+              <p class="title">DGT Centaur Mods</p>
+              <p>Taking the chess board, reversing the protocols, and making it do more things.</p>
+            </div>
+            <div class="tile is-child" id="lastestgamesdiv" style="display:none;">
+              <article class="panel">
+                <p class="panel-heading">
+                  Latest Games
+                </p>
+                <a class="panel-block is-active" id="latest1">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest2">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest3">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest4">
+                  &nbsp;
+                </a>
+                <a class="panel-block is-active" id="latest5">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest6">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest7">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest8">
+                  &nbsp;
+                </a>
+                <a class="panel-block" id="latest9">
+                  &nbsp;
+                </a>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="lastpgndiv" style="display:none;">
+      <p><strong>Last PGN</strong></p>
+      <textarea id="lastpgn" class="textarea" placeholder="" rows="12"></textarea>
+    </div>
+
+    </div>
+  </section>
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        <strong>DGT Centaur Mods</strong> - This board has enhanced functionality from the DGT Centaur Mods project on <a href="https://github.com/EdNekebno/DGTCentaur">github</a>
+      </p>
+    </div>
+  </footer>
+  <script>
+      var timer;
+        Object.size = function(obj) {
+        var size = 0,
+          key;
+        for (key in obj) {
+          if (obj.hasOwnProperty(key)) size++;
+        }
+        return size;
+      };
+      function hideLastPGN() {
+        document.getElementById("lastpgndiv").style.display="none";
+      }
+      function showLastPGN() {
+        document.getElementById("lastpgndiv").style.display="block";
+      }
+      function hideLastGames() {
+        document.getElementById("lastestgamesdiv").style.display="none";
+        clearInterval(timer);
+      }
+      function showLastGames() {
+        document.getElementById("lastestgamesdiv").style.display="block";
+        clearInterval(timer);
+      }
+      function getGamesPGNList() {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                const obj = JSON.parse(xmlhttp.responseText);
+                var gl = document.getElementById('gameslisting');
+                gl.innerHTML = '';
+                for (x = 0; x < Object.size(obj); x++) {
+                    if (obj[x]["result"] == "None") { obj[x]["result"] = ""; }
+                    if (obj[x]["created_at"] == "None") { obj[x]["created_at"] = ""; }
+                    if (obj[x]["source"] == "None") { obj[x]["source"] = ""; }
+                    if (obj[x]["event"] == "None") { obj[x]["event"] = ""; }
+                    if (obj[x]["site"] == "None") { obj[x]["site"] = ""; }
+                    if (obj[x]["round"] == "None") { obj[x]["round"] = ""; }
+                    if (obj[x]["white"] == "None") { obj[x]["white"] = ""; }
+                    if (obj[x]["black"] == "None") { obj[x]["black"] = ""; }
+                    // Create the card
+                    var card = document.createElement("div");
+                    card.className = "card";
+                    var cardcontent = document.createElement("div");
+                    cardcontent.className = "card-content";
+                    card.appendChild(cardcontent);
+                    content = document.createElement("div");
+                    content.className = "content";
+                    psource = document.createElement("p");
+                    psource.className = "subtitle";
+                    psource.innerHTML = "<strong>" + obj[x]["source"] + "</strong>";
+                    content.appendChild(psource);
+                    var desc = document.createElement("div");
+                    desc.innerHTML = "";
+                    if (obj[x]["event"] != "") { desc.innerHTML = desc.innerHTML + obj[x]["event"] + ",   "; }
+                    if (obj[x]["site"] != "") { desc.innerHTML = desc.innerHTML + obj[x]["site"] + ",   "; }
+                    if (obj[x]["round"] != "") { desc.innerHTML = desc.innerHTML + obj[x]["round"] + ",   "; }
+                    if (obj[x]["white"] != "" || obj[x]["black"] != "") { desc.innerHTML = desc.innerHTML + obj[x]["white"] + " vs. " + obj[x]["black"] + ",   "; }
+                    if (obj[x]["result"] != "") { desc.innerHTML = desc.innerHTML + obj[x]["result"] + ""; }
+                    content.appendChild(desc);
+                    var gpgn = document.createElement("div");
+                    gpgn.id = "gamepgn-" + obj[x]["id"];
+                    gpgn.className = "gamepgn";
+                    content.appendChild(gpgn);
+                    cardcontent.appendChild(content);
+                    var ft = document.createElement("footer");
+                    ft.className = "card-footer";
+                    var a1 = document.createElement("a");
+                    a1.className = "card-footer-item";
+                    a1.innerHTML = "<a href='#' onClick='showPGN(" + obj[x]["id"] + ")'>Show PGN</a>"
+                    ft.appendChild(a1);
+                    var a2 = document.createElement("a");
+                    a2.className = "card-footer-item";
+                    a2.innerHTML = "<a href='/analyse/" + obj[x]["id"] + "'>Analyse</a>"
+                    ft.appendChild(a2);
+                    card.appendChild(ft);
+                    card.style.marginBottom = "10px";
+                    gl.appendChild(card);
+                }
+            }
+        }
+        xmlhttp.open("GET", "/getgames/" + page, true);
+        xmlhttp.send();
+    }
+
+    function fillLatestGames() {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                var obj = JSON.parse(xmlhttp.responseText);
+                counter = 1;
+                var x;
+                for (x = 0; x < Object.size(obj); x++) {
+                  var xmlhttp2;
+                  xmlhttp2 = new XMLHttpRequest();
+                  xmlhttp2.onreadystatechange = function() {
+                      if (xmlhttp2.readyState == 4 && xmlhttp2.status == 200){
+                          if (xmlhttp2.responseText.indexOf("1. ") > 0) {
+                            if (counter == 1) {
+                              document.getElementById("lastpgn").value = xmlhttp2.responseText;
+                            }
+                            if (obj[x]["created_at"] == "None") { obj[x]["created_at"] = ""; }
+                            if (obj[x]["source"] == "None") { obj[x]["source"] = ""; }
+                            document.getElementById('latest' + counter).innerHTML = obj[x]["created_at"] + "&nbsp;&nbsp;&nbsp;" + obj[x]["source"];
+                            document.getElementById('latest' + counter).href = "/analyse/" + obj[x]["id"];
+                            counter = counter + 1;
+                            if (counter > 10) {
+                              return;
+                            }
+                          }
+                      }
+                  }
+                  xmlhttp2.open("GET", "/getpgn/" + obj[x]["id"], false);
+                  xmlhttp2.send();
+                }
+            }
+        }
+        xmlhttp.open("GET", "/getgames/" + 1, true);
+        xmlhttp.send();
+    }
+    fillLatestGames();
+    timer = setInterval('fillLatestGames()', 10000);
+  </script>
 
   </body>
 </html>
