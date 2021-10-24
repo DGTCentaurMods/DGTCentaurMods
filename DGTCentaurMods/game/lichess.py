@@ -24,6 +24,7 @@ import os
 # Note the API requires that the raspberry pi clock has a reasonably
 # accurate time for the SSL
 token = centaur.get_lichess_api()
+print(token)
 pid = -1
 board.clearSerial()
 epaper.initEpaper()
@@ -43,7 +44,7 @@ client = berserk.Client(session=session)
 remotemoves = ""
 # changed dso
 status = ""
-board = chess.Board()
+cboard = chess.Board()
 
 if (sys.argv[1] == "current"):
     epaper.writeText(0, 'Joining Game')
@@ -332,7 +333,7 @@ castled = ""
 epaper.clearScreen()
 epaper.writeText(0, blackplayer)
 epaper.writeText(9, whiteplayer)
-fen = board.fen()
+fen = cboard.fen()
 sfen = fen[0: fen.index(" ")]
 baseboard = chess.BaseBoard(sfen)
 pieces = []
@@ -419,8 +420,8 @@ while status == "started" and ourturn != 0:
 
                 mv = chess.Move.from_uci(lastmove)
                 print("Checked")
-                if (mv in board.legal_moves):
-                    board.push(mv)
+                if (mv in cboard.legal_moves):
+                    cboard.push(mv)
 
                     if lastmove == "e1g1":
                         castled = "h1f1"
@@ -480,7 +481,7 @@ while status == "started" and ourturn != 0:
             btext = str(blackclock // 60000).replace(".0", "") + " mins      "
         #board.writeText(1, btext)
         epaper.writeText(10, btext)
-        fen = board.fen()
+        fen = cboard.fen()
         sfen = fen[0: fen.index(" ")]
         baseboard = chess.BaseBoard(sfen)
         pieces = []
@@ -540,7 +541,7 @@ while status == "started" and ourturn != 0:
         board.beep(board.SOUND_GENERAL)
         board.clearSerial()
         mv = chess.Move.from_uci(rr[-5:].strip())
-        board.push(mv)
+        cboard.push(mv)
         board.ledsOff()
         newgame = 0
         ourturn = 1
@@ -572,7 +573,7 @@ while status == "started" and ourturn != 0:
     if starttime < 0:
         starttime = time.time()
     # eingerückt
-    fen = board.fen()
+    fen = cboard.fen()
     sfen = fen[0: fen.index(" ")]
     baseboard = chess.BaseBoard(sfen)
     pieces = []
