@@ -1,0 +1,73 @@
+#!/usr/bin/bash
+
+
+#### HARDWARE CONFIGURATION
+CONFIG="/boot/config.txt"
+SETUP_DIR=/home/pi/DGTCentaurMods
+
+echo -e "Hardware configuration"
+# Enabke SPI bus if not enbaled
+echo "::: Checking SPI"
+    SPION=$(cat $CONFIG | grep "*#dtparam=spi=on")
+    SPI10=$(cat $CONFIG | grep "^dtoverlay=spi1-3cs")
+    if [ -n $SPION ]
+    then
+        sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" $CONFIG
+    else
+        sed -i "$ a dtparam=spi=on" $CONFIG
+    fi    
+    
+    echo -e ":::::: Checking SPI 1.0 bus.\n"
+    if [ -z $SPI10 ]
+    then
+        sed -i "$ a dtoverlay=spi1-3cs" $CONFIG
+    fi
+
+echo "::: Checking serial port. "
+    UARTON=$(cat $CONFIG | grep "^enable_uart=1")
+    if [ -n UARTON ]
+    then
+        echo "::: Enabling serial port..."
+        sed -i "$ a enable_uart=1" $CONFIG
+    else
+        sed -i "s/#enable_uart=1/enable_uart=1/g" $CONFIG
+    fi
+
+##### Enable systemd services.
+echo -e "Services setup\n"
+    systemctl daemon-reload
+    systemctl enable centaurmods-web.service
+    systemctl enable centaur.service
+    systemctl enable DGTCentaurMods.service
+    systemctl enable ntp
+
+# Check if pip is installed
+if sudo dpkg -l | grep -q python3-pip
+then
+    echo "::: Pip is installed."
+else
+    echo "::: Pip not installed. Installing now..."
+    sudo apt-get install -y python3-pip
+fi
+
+echo -e "::: Installing python packages.\n"
+    cd $SETUP_DIR
+    pip3 install -r $SETUP_DIR/requirements.txt
+
+function add_lichess_key {
+CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
+read -p "Lichess API token: "
+sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
+}
+
+
+# Setting up lichess key
+read -p "Do you have a Lichess API token? (y/n): "
+case $REPLY in
+    [Yy]* ) add_lichess_key;;
+    [Nn]* )
+        exit
+        ;;
+    * ) ;;
+esac
+

@@ -1,0 +1,7 @@
+Package: dgtcentaurmods
+Version: 0
+Architecture: armhf
+Maintainer: wormstein<email@gmail.com>
+Depends: ntp, ssmtp
+Homepage: https://github.com/EdNekebno/DGTCentaur
+Description: DGT Centaur Mods is a set of new features to the DGT Centaur computer chess board.
