@@ -1,5 +1,6 @@
 from flask import Flask, render_template, Response
 from DGTCentaurMods.db import models
+from DGTCentaurMods.board import centaur
 from board import LiveBoard
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
@@ -43,18 +44,12 @@ def pgn():
 
 @app.route("/configure")
 def configure():
-	# Get the lichessapikey from config.py (later we need to get this from an ini file or the db)
-	lifile = str(pathlib.Path(__file__).parent.resolve()) + "/../config/config.py"
-	with open(lifile, 'r') as file:
-		likeyfromfile = file.read().replace('\n', '').replace('\r','').replace('\"','').replace("lichesstoken=",'')
-	return render_template('configure.html', lichesskey=likeyfromfile)
+	# Get the lichessapikey
+	return render_template('configure.html', lichesskey=centaur.get_lichess_api())
 
 @app.route("/lichesskey/<key>")
 def lichesskey(key):
-	lifile = str(pathlib.Path(__file__).parent.resolve()) + "/../config/config.py"
-	with open(lifile, 'w') as file:
-		file.write("lichesstoken=\"" + key + "\"")
-		file.close()
+	centaur.set_lichess_api(key)
 	return "ok"
 
 @app.route("/analyse/<gameid>")
