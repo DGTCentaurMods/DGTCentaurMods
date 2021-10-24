@@ -4,6 +4,7 @@ import ssl
 import time
 import threading
 from DGTCentaurMods.board import board
+from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epaper
 import chess
 from DGTCentaurMods.config import config
@@ -22,7 +23,7 @@ import os
 #
 # Note the API requires that the raspberry pi clock has a reasonably
 # accurate time for the SSL
-token = config.lichesstoken
+token = centaur.get_lichess_api()
 pid = -1
 board.clearSerial()
 epaper.initEpaper()
