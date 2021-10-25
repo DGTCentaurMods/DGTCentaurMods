@@ -35,7 +35,7 @@ Play Engines - Stockfish (without centaur adaptive mode), ct800
 ## Roadmap
 
 Currently we are working on...
-1. Enhacing board emulation support
+1. Enhancing board emulation support
 2. Builds/Releases/Installation method
 3. Squashing bugs
 4. Choose what engines you want to play
