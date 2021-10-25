@@ -40,7 +40,7 @@
             xmlhttp.open("GET", "/fen", true);
             xmlhttp.send();
         }
-        setInterval('refreshImage("epaper","/static/epaper.jpg")', 1500);
+        setInterval('refreshImage("epaper","/static/epaper.jpg")', 2000);
         setInterval('getFen()', 2000);
         function sizeBoard(newsize) {
             ratio = 600/newsize;

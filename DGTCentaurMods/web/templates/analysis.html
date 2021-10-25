@@ -151,6 +151,7 @@
         </script>
     </div>
     <nav class="pagination" role="navigation" aria-label="pagination" style="margin-top:10px;display:none;" id="pgnnav">
+        <progress id="analysisbar" class="progress is-large" value="15" max="100" style="margin-left:13px;">15%</progress>
           <a class="pagination-link" onClick="showPGNFirstMove()">&lt;&lt;</a>
           <a class="pagination-link" onClick="showPGNPreviousMove()">&lt;</a>
           <a class="pagination-link" onClick="showPGNNextMove()">&gt;</a>
@@ -167,13 +168,18 @@
     var gameid = {{ gameid }};
 
     var stockfishbestmove = "";
+    stockfishscore = 0;
+    stockfishpos = -1;
+    lastcp = 0;
     const chess = new Chess();
     var moves;
+    var movescores;
     var movepos = 0;
 
     var stockfish = new Worker("{{ url_for('static', filename='stockfish/stockfish.js') }}");
 
     function queryStockfish() {
+        stockfishpos = movepos;
         stockfish.postMessage("position fen " + chess.fen());
         stockfish.postMessage("go depth 17");
     }
@@ -186,6 +192,28 @@
             var to = document.getElementsByClassName("square-" + stockfishbestmove.substring(2,4))[0].id;
             $('connection').remove();
             $("body").append('<connection from="#' + from + '" to="#' + to + '" color="#8fce8ff0" width="6" tail></connection>');
+            document.getElementById("analysisbar").value = stockfishscore;
+            if (stockfishpos > 0) {
+                movescores[stockfishpos - 1] = lastcp;
+                buildMovesTable();
+            }
+        }
+        if (event.data.indexOf("score cp") > 0) {
+            cp = event.data.substring(event.data.indexOf("score cp")+9,event.data.indexOf(" ",event.data.indexOf("score cp")+9));
+            cp = parseInt(cp)
+            if (movepos % 2 !== 0) {
+                cp = cp * -1;
+            }
+            lastcp = cp;
+            cp = Math.floor(cp/100);
+            if (cp > 20) {
+                cp = 20;
+            }
+            if (cp < -20) {
+                cp = -20;
+            }
+            pb = 50 - (cp * 2.5);
+            stockfishscore = pb;
         }
     }
 
@@ -197,7 +225,8 @@
             al = h.from + "-" + h.to;
             board1.move(al);
             movepos = movepos + 1;
-            queryStockfish()
+            buildMovesTable();
+            queryStockfish();
         }
     }
 
@@ -207,7 +236,8 @@
             chess.undo();
             board1.position(chess.fen());
             movepos = movepos - 1;
-            queryStockfish()
+            buildMovesTable();
+            queryStockfish();
         }
     }
 
@@ -218,7 +248,8 @@
             movepos = movepos + 1;
         }
         board1.position(chess.fen());
-        queryStockfish()
+        buildMovesTable();
+        queryStockfish();
     }
 
     function showPGNFirstMove() {
@@ -226,7 +257,8 @@
         movepos = 0;
         chess.reset();
         board1.position(chess.fen());
-        queryStockfish()
+        buildMovesTable();
+        queryStockfish();
     }
 
     function showPGNPos(x) {
@@ -245,6 +277,68 @@
         queryStockfish()
     }
 
+    function buildMovesTable() {
+        // Build the table
+        from = (Math.ceil(movepos/2) * 2) - 18;
+        if (from < 0) { from = 0; }
+        var tb = document.createElement('table');
+        tb.className = 'table is-bordered is-striped';
+        tb.style.width='100%';
+        tb.style.tableLayout='fixed';
+        for (t = from; (t < moves.length) && (t < from+24); t=t+2) {
+            var tr = document.createElement('tr');
+            tr.style.width='100%';
+            tb.appendChild(tr);
+            var tn = document.createElement('td');
+            tn.innerHTML = "<b>" + (Math.floor(t/2) + 1) + "</b>";
+            tn.style.width='50px';
+            tr.appendChild(tn);
+            var td1 = document.createElement('td');
+            ih = moves[t];
+//            if (movescores[t] != -1) {
+//                prevsc = -1;
+//                if (t == 0) {
+//                    prevsc = 0;
+//                } else {
+//                    prevsc = movescores[t-1];
+//                }
+//                if (prevsc != -1) {
+//                    ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t] - prevsc) + "</span>";
+//                }
+//            }
+            if (movescores[t] != -1) {
+                    ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t])/100 + "</span>";
+            }
+            td1.innerHTML = ih;
+            td1.style.width='50%';
+            if ((t + 1) == movepos) {
+                td1.style.backgroundColor = "#eeeeee";
+            }
+            tr.appendChild(td1);
+            var td2 = document.createElement('td');
+            td2.style.width='50%';
+            if (t+1 < moves.length) {
+                ih = moves[t+1];
+//                if (movescores[t+1] != -1) {
+//                    prevsc = movescores[t];
+//                    if (prevsc != -1) {
+//                        ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t+1] - prevsc) + "</span>";
+//                    }
+//                }
+                if (movescores[t+1] != -1) {
+                        ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t+1])/100 + "</span>";
+                }
+                td2.innerHTML = ih;
+                if ((t + 2) == movepos) {
+                    td2.style.backgroundColor = "#eeeeee";
+                }
+            }
+            tr.appendChild(td2);
+        }
+        document.getElementById('moveholder').innerHTML="";
+        document.getElementById('moveholder').appendChild(tb);
+    }
+
     function loadAnalysisPGN() {
         $('connection').remove();
         var xmlhttp;
@@ -255,10 +349,14 @@
                 chess.load_pgn(xmlhttp.responseText);
                 console.log(chess.ascii());
                 moves = chess.history();
+                movescores = [];
+                for (p = 0; p < moves.length; p++) {
+                    movescores.push(-1);
+                }
                 movepos = 0;
                 chess.reset();
-                console.log(moves);
                 document.getElementById("pgnnav").style.display='block';
+                buildMovesTable();
                 queryStockfish()
             }
         }

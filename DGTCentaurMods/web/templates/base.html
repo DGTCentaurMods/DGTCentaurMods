@@ -73,6 +73,8 @@
               <p class="title">DGT Centaur Mods</p>
               <p>Taking the chess board, reversing the protocols, and making it do more things.</p>
             </div>
+            <div id="moveholder">
+            </div>
             <div class="tile is-child" id="lastestgamesdiv" style="display:none;">
               <article class="panel">
                 <p class="panel-heading">
@@ -148,7 +150,6 @@
       }
       function showLastGames() {
         document.getElementById("lastestgamesdiv").style.display="block";
-        clearInterval(timer);
       }
       function getGamesPGNList() {
         var xmlhttp;
