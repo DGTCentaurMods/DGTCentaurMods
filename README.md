@@ -16,9 +16,13 @@ Currently everything is to be considered a **work in progress**, as there aren't
 
 eBoard Emulation - Revelation II. Enables you to use the DGT Centaur as if it was a bluetooth DGT eboard with apps, rabbit plugin, Livechess, etc
 
-Online Gameplay - Lichess (can be buggy, API key must currently be manually set in config.py)
+Online Gameplay - Lichess (can be buggy)
 
 Web Interface - Shows live view of chessboard in a browser
+
+PGN Download - For all played games from web interface
+
+Game Analysis - Simple playback/analysis of played games from web interface.
 
 Streaming Video - On the web interface /video provides a live mjpeg stream (for example for live streaming in OBS)
 
@@ -26,16 +30,17 @@ Chromecast - Stream live board view to Chromecast
 
 Wifi - Capability to join wifi from the board (WPS/WPA2)
 
+Play Engines - Stockfish (without centaur adaptive mode), ct800
+
 ## Roadmap
 
 Currently we are working on...
-1. Structuring the control code so that it is easier to create scripts that work with the board.
+1. Enhacing board emulation support
 2. Builds/Releases/Installation method
 3. Squashing bugs
-
-And looking at/planning...
-1. Database backend (for configuration settings, record games, enable PGN export)
-2. Ability to play Stockfish (or UCI engines) without the adaptive mode
+4. Choose what engines you want to play
+5. Configuration options
+6. Admiring the fact that the DGT centaur is now the most awesome electronic chess board available :)
 
 ## Installation notes
 
