@@ -33,7 +33,7 @@ function config_setup {
     cd $BASE
     # Setup postinst file
         echo "::: Configuring postinst."
-        sed -i "s/^SETUP_DIR.*/SETUP_DIR=${SETUP_DIR}\/${PCK_NAME}/g" postinst
+        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" postinst
         sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" postinst
 
     cp control ${STAGE}/DEBIAN
