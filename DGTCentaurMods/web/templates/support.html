@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block mainpage %}
+
+<style>
+    .gameitem {
+        border: 1px solid #c3c3c3;
+        width: 100%;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+        margin: 10px;
+    }
+    .gamemaindetails {
+        background-color: #d2cfcf;
+        padding: 5px;
+    }
+    .gamecr {
+        float: left;
+        padding-right: 20px;
+    }
+    .gamesr {
+    }
+    .gameld {
+        clear: both;
+        padding: 5px;
+    }
+    .gamelditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamegd {
+        clear: both;
+        padding: 5px;
+    }
+    .gamegditem {
+        float:left;
+        padding-right: 20px;
+    }
+    .gamepgn {
+        clear:both;
+        padding: 5px;
+    }
+	.github-widget {
+		min-width: 100%;
+	}
+</style>
+
+<div style="width:100%">
+    <div id="settings">
+        <article class="panel is-info">
+          <p class="panel-heading">
+            Key Contributors
+          </p>
+            <div class="panel-block" style="padding-bottom:20px;">
+                <p>
+                <div class="github-widget" data-username="ednekebno" style="width:100% !important;background-color:#f0f0f0"></div>
+              </p>
+            </div>
+            <div class="panel-block">
+                <p>
+                <div class="github-widget" data-username="wormstein" style="width:100% !important;background-color:#f0f0f0"></div>
+                <script src="https://unpkg.com/github-card@1.2.1/dist/widget.js"></script>
+              </p>
+            </div>
+        </article>
+        <article class="panel is-info">
+          <p class="panel-heading">
+            Github Issues
+          </p>
+            <div class="panel-block" style="padding-bottom:20px;">
+                    <iframe src="https://azu.github.io/github-issue-widget/?owner=ednekebno&repo=DGTCentaur&limit=30&state=open" allowtransparency="true" frameborder="0" scrolling="0" width="100%"></iframe>
+            </div>
+            <div class="panel-block" style="padding-bottom:20px;">
+                    <p><a href="https://github.com/EdNekebno/DGTCentaur/issues" target="_new">Report an issue on github</a></p>
+            </div>
+        </article>
+    </div>
+</div>
+
+
+<script>
+
+    var page = 1;
+
+    window.onload = function () {
+        hideLastPGN();
+        hideLastGames();
+        // Build discord widget
+        // 	 <iframe src="https://discord.com/widget?id=897479776950972506&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+        var t = document.getElementById("dgtcmods");
+        var i = document.createElement("iframe");
+        i.width = "100%";
+        i.height = "500";
+        i.allowtransparency="true";
+        i.frameborder="0";
+        i.sandbox = "allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts";
+        i.src = "https://discord.com/widget?id=897479776950972506&theme=light";
+        t.appendChild(i);
+    }
+</script>
+
+{% endblock %}

@@ -47,6 +47,10 @@ def configure():
 	# Get the lichessapikey
 	return render_template('configure.html', lichesskey=centaur.get_lichess_api())
 
+@app.route("/support")
+def support():
+	return render_template('support.html')
+
 @app.route("/lichesskey/<key>")
 def lichesskey(key):
 	centaur.set_lichess_api(key)
@@ -144,7 +148,7 @@ sc = None
 if os.path.isfile(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"):
 	sc = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")
 	moddate = os.stat(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg")[8]
-	
+
 def generateVideoFrame():
 	global pb, pw, rb, bb, nb, qb, kb, rw, bw, nw, qw, kw, logo, sc, moddate
 	while True:
