@@ -2,11 +2,14 @@
 
 
 #### HARDWARE CONFIGURATION
+CURRHOSTNAME=`hostname`
+HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
-SETUP_DIR=
+SETUP_DIR="/home/pi/DGTCentaurMods"
 CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
+BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 
 echo -e "Hardware configuration"
 echo -e "Backup first"
@@ -52,9 +55,34 @@ echo "::: Checking serial port. "
 ##### Enable systemd services.
 echo -e "Services setup\n"
     systemctl daemon-reload
+    systemctl enable rfcomm.service
     systemctl enable centaurmods-web.service
     systemctl enable DGTCentaurMods.service
     systemctl enable ntp
+
+# Update bluetooth service
+    echo -e "Updating bluetooth service."
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap"
+    REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
+    sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+
+   systemctl daemon-reload
+
+# Update rc.local
+    cp /etc/rc.local /etc/rc.local.bak
+    sed -i "$ a	sudo sdptool add SP & \n\
+\n\
+sudo bluetoothctl <<EOF \n\
+power on \n\
+agent on \n\
+discoverable on \n\
+pairable on \n\
+EOF" /etc/rc.local
+    
+function update_hostname {
+    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
+    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
+}
 
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
@@ -75,7 +103,6 @@ read -p "Lichess API token: "
 sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
 }
 
-
 # Setting up lichess key
 echo -e "\n\n"
 read -p "Do you have a Lichess API token? (y/n): "
@@ -87,3 +114,4 @@ case $REPLY in
     * ) ;;
 esac
 
+update_hostname

@@ -38,6 +38,7 @@ function config_setup {
 
     cp control ${STAGE}/DEBIAN
     cp postinst ${STAGE}/DEBIAN
+    cp bluetooth ${STAGE}/DEBIAN 
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
 
