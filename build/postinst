@@ -43,7 +43,6 @@ echo "::: Checking serial port. "
 echo -e "Services setup\n"
     systemctl daemon-reload
     systemctl enable centaurmods-web.service
-    systemctl enable centaur.service
     systemctl enable DGTCentaurMods.service
     systemctl enable ntp
 
