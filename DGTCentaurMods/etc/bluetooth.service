@@ -1,0 +1,8 @@
+[Unit]
+Description=Bluetooth service
+
+[Service]
+ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap
+
+[Install]
+WantedBy=multi-user.target
