@@ -8,10 +8,27 @@ REPO_NAME="DGTCentaur"
 REPO_URL="https://github.com/EdNekebno/DGTCentaur"
 PCK_NAME="DGTCentaurMods"
 SETUP_DIR="/home/pi"
+STOCKFISH_REPO="https://github.com/wormstein/Stockfish"
 
 function build {
     dpkg-deb --build ${STAGE}
 }
+
+function insertStockfish {
+    git clone $STOCKFISH_REPO
+
+    cd Stockfish/src
+        make clean
+        make map
+        make build ARCH=armv7
+
+        mv stockfish stockfish_pi
+        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
+        
+    cd $BASE
+        rm -rf Stockfish
+}
+
 
 function config_setup {
     sed -i "s/Version:.*/Version: $TAG/g" control
@@ -63,6 +80,12 @@ function stage {
     # Remove files from Git
     rm -rf $REPO_NAME
     
+    read -p "Do you want to add Stockfish? (y/n)"
+        case $REPLY in
+            [Yy]* ) insertStockfish;;
+            [Nn]* ) ;;
+        esac
+    
     config_setup
 }
 
@@ -90,6 +113,7 @@ case $1 in
     clean* ) 
         sudo rm -rf ${REPO_NAME}
         sudo rm -rf  ${PCK_NAME}*
+        rm -rf Stockfish
         exit 0
         ;;
 esac
