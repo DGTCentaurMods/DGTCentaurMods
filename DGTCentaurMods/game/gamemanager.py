@@ -7,7 +7,7 @@
 
 # TODO
 
-from DGTCentaurMods.board import board
+from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.db import models
 from sqlalchemy.orm import sessionmaker

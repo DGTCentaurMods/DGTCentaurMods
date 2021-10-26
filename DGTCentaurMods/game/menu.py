@@ -1,5 +1,4 @@
-from DGTCentaurMods.board import board, network
-from DGTCentaurMods.board import centaur
+from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
 import time
