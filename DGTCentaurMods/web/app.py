@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy import select
+from sqlalchemy import delete
 import os
 import pathlib
 import io
@@ -59,6 +60,18 @@ def lichesskey(key):
 @app.route("/analyse/<gameid>")
 def analyse(gameid):
 	return render_template('analysis.html', gameid=gameid)
+
+@app.route("/deletegame/<gameid>")
+def deletegame(gameid):
+	Session = sessionmaker(bind=models.engine)
+	session = Session()
+	stmt = delete(models.GameMove).where(models.GameMove.gameid == gameid)
+	session.execute(stmt)
+	stmt = delete(models.Game).where(models.Game.id == gameid)
+	session.execute(stmt)
+	session.commit()
+	session.close()
+	return "ok"
 
 @app.route("/getgames/<page>")
 def getGames(page):

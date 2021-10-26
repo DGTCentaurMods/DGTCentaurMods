@@ -173,6 +173,7 @@
                     if (obj[x]["black"] == "None") { obj[x]["black"] = ""; }
                     // Create the card
                     var card = document.createElement("div");
+                    card.id = "gamecard" + obj[x]["id"];
                     card.className = "card";
                     var cardcontent = document.createElement("div");
                     cardcontent.className = "card-content";
@@ -200,11 +201,15 @@
                     ft.className = "card-footer";
                     var a1 = document.createElement("a");
                     a1.className = "card-footer-item";
-                    a1.innerHTML = "<a href='#' onClick='showPGN(" + obj[x]["id"] + ")'>Show PGN</a>"
+                    a1.innerHTML = "<a href='#' onClick='showPGN(" + obj[x]["id"] + ")'>Show PGN</a>";
                     ft.appendChild(a1);
+                    var a3 = document.createElement("a");
+                    a3.className = "card-footer-item";
+                    a3.innerHTML = "<a href='#' onClick='deletePGN(" + obj[x]["id"] + ")'>Delete</a>";
+                    ft.appendChild(a3);
                     var a2 = document.createElement("a");
                     a2.className = "card-footer-item";
-                    a2.innerHTML = "<a href='/analyse/" + obj[x]["id"] + "'>Analyse</a>"
+                    a2.innerHTML = "<a href='/analyse/" + obj[x]["id"] + "'>Analyse</a>";
                     ft.appendChild(a2);
                     card.appendChild(ft);
                     card.style.marginBottom = "10px";
@@ -214,6 +219,62 @@
         }
         xmlhttp.open("GET", "/getgames/" + page, true);
         xmlhttp.send();
+    }
+
+    function deletePGN(delid) {
+      var modal = document.createElement("div");
+      modal.id = "deleteconfirm";
+      modal.className = "modal is-active";
+      var modalback = document.createElement("div");
+      modalback.className = "modal-background";
+      modal.appendChild(modalback);
+      var modalcard = document.createElement("div");
+      modalcard.className = "modal-card";
+      modal.appendChild(modalcard);
+      var modalhead = document.createElement("div");
+      modalhead.className = "modal-card-head";
+      var modaltitle = document.createElement("div");
+      modaltitle.className = "modal-card-title";
+      modaltitle.innerHTML = "Are you sure?";
+      modalhead.appendChild(modaltitle);
+      modalcard.appendChild(modalhead);
+      var modalsection = document.createElement("section");
+      modalsection.className = "modal-card-body";
+      modalsection.innerHTML = "Deleting this game is permanent";
+      modalcard.appendChild(modalsection);
+      var modalfooter = document.createElement("footer");
+      modalfooter.className = "modal-card-foot";
+      //justify-content: flex-end;
+      modalfooter.style.justifyContent = "flex-end";
+      modalcard.appendChild(modalfooter);
+      var btns = document.createElement("div");
+      btns.className = "buttons";
+      modalfooter.appendChild(btns);
+      var okaybutton = document.createElement("button");
+      okaybutton.innerHTML = "Okay";
+      okaybutton.className = "button is-success";
+      delitem = delid;
+      okaybutton.onclick = function () {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                element = document.getElementById("gamecard" + delitem);
+                element.parentNode.removeChild(element);
+            }
+        }
+        xmlhttp.open("GET", "/deletegame/" + delid, true);
+        xmlhttp.send();
+        element = document.getElementById('deleteconfirm');element.parentNode.removeChild(element);return false;
+      };
+      var cancelbutton = document.createElement("button");
+      cancelbutton.innerHTML = "Cancel";
+      cancelbutton.className = "button";
+      cancelbutton.href = "#";
+      cancelbutton.onclick = function() {element = document.getElementById('deleteconfirm');element.parentNode.removeChild(element);return false;};
+      btns.appendChild(cancelbutton);
+      btns.appendChild(okaybutton);
+      document.body.appendChild(modal);
     }
 
     function fillLatestGames() {
