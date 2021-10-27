@@ -79,6 +79,9 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 from DGTCentaurMods.display import epd2in9d
 import pathlib
+import select
+import bluetooth
+import subprocess
 
 source = ""
 gamedbid = -1
@@ -1006,13 +1009,49 @@ def pieceMoveDetectionThread():
 		except:
 			pass
 
+def pairThread():
+	# Emulate bluetooth pairing by providing pairing in a separate thread too
+	while True:
+		print('running pair thread')
+		p = subprocess.Popen(['/usr/bin/bt-agent --capability=NoInputNoOutput -p /etc/bluetooth/pin.conf'],stdout=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+		poll_obj = select.poll()
+		poll_obj.register(p.stdout, select.POLLIN)
+		running = 1
+		spamyes = 0
+		spamtime = 0;
+		while running == 1:
+			poll_result = poll_obj.poll(0)
+			if spamyes == 1:
+				if time.time() - spamtime < 3:
+					print("spamming yes!")
+					p.stdin.write(b'yes\n')
+					time.sleep(1)
+				else:
+					p.terminate()
+					running = 0
+			if poll_result and spamyes == 0:
+				line = p.stdout.readline()
+				if b'Device:' in line:
+					print("detected device")
+					p.stdin.write(b'yes\n')
+					spamyes = 1
+					spamtime = time.time()
+			r = p.poll()
+			if r is not None:
+				running = 0
+		time.sleep(0.1)
+
 drawCurrentBoard()
 epaper.writeText(0,'Connect remote')
 epaper.writeText(1,'Device Now')
 
+pairThread = threading.Thread(target=pairThread, args=())
+pairThread.daemon = True
+pairThread.start()
+
 start = time.time()
 
-while exists("/dev/rfcomm0") == False and (time.time() - start < 30):
+while exists("/dev/rfcomm0") == False and (time.time() - start < 60):
 	time.sleep(.01)
 
 if (time.time() - start >= 30):
@@ -1083,6 +1122,8 @@ lastfield = -1
 lastcurturn = 0
 boardhistory = []
 turnhistory = []
+serialcount = 0
+reversed = 0
 
 time.sleep(0.2)
 
@@ -1420,16 +1461,29 @@ while True and dodie == 0:
 				tosend.append(0)
 				tosend.append(8)
 				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
+				tosend.append(ord('2'))
+				tosend.append(ord('3'))
+				tosend.append(ord('4'))
+				tosend.append(ord('5'))
 				bt.write(tosend)
 				bt.flush()
 				bt.write(tosend)
 				bt.flush()
 				bt.write(tosend)
 				bt.flush()
+				# If something is just repeatedly asking for the serial then start sending updates anyway
+				serialcount = serialcount + 1
+				if serialcount > 5:
+					sendupdates = 1
+					# Also send a version
+					tosend = bytearray(b'')
+					tosend.append(DGT_VERSION | MESSAGE_BIT)
+					tosend.append(0)
+					tosend.append(5)
+					tosend.append(1)
+					tosend.append(2)
+					bt.write(tosend)
+					bt.flush()
 				handled = 1
 			if data[0] == DGT_RETURN_LONG_SERIALNR:
 				# Return our long serial number
@@ -1439,16 +1493,16 @@ while True and dodie == 0:
 				tosend.append(DGT_LONG_SERIALNR | MESSAGE_BIT)
 				tosend.append(0)
 				tosend.append(13)
+				tosend.append(ord('3'))
+				tosend.append(ord('.'))
+				tosend.append(ord('3'))
+				tosend.append(ord('6'))
+				tosend.append(ord('0'))
 				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
-				tosend.append(ord('1'))
+				tosend.append(ord('2'))
+				tosend.append(ord('3'))
+				tosend.append(ord('4'))
+				tosend.append(ord('5'))
 				bt.write(tosend)
 				bt.flush()
 				bt.write(tosend)
@@ -1493,21 +1547,31 @@ while True and dodie == 0:
 				if dd[1] == 0:
 					# Off
 					#print("off")
-					squarerow = 7 - (dd[2] // 8)
-					squarecol = 7 - (dd[2] % 8)
-					froms = (squarerow * 8) + squarecol
-					squarerow = 7 - (dd[3] // 8)
-					squarecol = 7 - (dd[3] % 8)
-					tos = (squarerow * 8) + squarecol
+					tos = 0
+					froms = 0
+					if reversed == 1:
+						squarerow = 7 - (dd[2] // 8)
+						squarecol = 7 - (dd[2] % 8)
+						froms = (squarerow * 8) + squarecol
+						squarerow = 7 - (dd[3] // 8)
+						squarecol = 7 - (dd[3] % 8)
+						tos = (squarerow * 8) + squarecol
+					else:
+						froms = dd[2]
+						tos = dd[3]
 					litsquares = list(filter(lambda a: a != froms, litsquares))
 					litsquares = list(filter(lambda a: a != tos, litsquares))
-					if dd[2] == 0 and dd[3] == 63:
+					if (dd[2] == 0 and dd[3] >= 63) or (dd[2] == 64):
 						# This seems to be some code to turn the lights off
 						litsquares = []
 						board.ledsOff()
+						# The 0 63 in particular seems to define reversed mode in chess for android
+						if (dd[2] == 0 and dd[3] == 63):
+							reversed = 1
 					#print(len(litsquares))
 					if len(litsquares) > 0:
-						tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
+						board.ledsOff()
+						tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x05\x00\x05')
 						# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
 						for x in range(0, len(litsquares)):
 							tosend.append(litsquares[x])
@@ -1519,17 +1583,23 @@ while True and dodie == 0:
 				if dd[1] == 1:
 					# On
 					#print("on")
-					squarerow = 7 - (dd[2] // 8)
-					squarecol = 7 - (dd[2] % 8)
-					froms = (squarerow * 8) + squarecol
-					squarerow = 7 - (dd[3] // 8)
-					squarecol = 7 - (dd[3] % 8)
-					tos = (squarerow * 8) + squarecol
+					tos = 0
+					froms = 0
+					if reversed == 1:
+						squarerow = 7 - (dd[2] // 8)
+						squarecol = 7 - (dd[2] % 8)
+						froms = (squarerow * 8) + squarecol
+						squarerow = 7 - (dd[3] // 8)
+						squarecol = 7 - (dd[3] % 8)
+						tos = (squarerow * 8) + squarecol
+					else:
+						froms = dd[2]
+						tos = dd[3]
 					litsquares.append(froms)
 					litsquares.append(tos)
 					tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
 					# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
-					for x in range(0, len(litsquares) - 1):
+					for x in range(0, len(litsquares)):
 						tosend.append(litsquares[x])
 					tosend[2] = len(tosend) + 1
 					tosend.append(board.checksum(tosend))
@@ -1583,7 +1653,7 @@ while True and dodie == 0:
 				tosend.append(0)
 				tosend.append(7)
 				tosend.append(0)
-				tosend.append(0)
+				tosend.append(36)
 				tosend.append(0)
 				bt.write(tosend)
 				bt.flush()
