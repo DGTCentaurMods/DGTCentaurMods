@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-
+set -e
 # Script to produce deb pacjage
 
 ##### VARIABLESi

@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-
+set -e
 
 #### HARDWARE CONFIGURATION
 CURRHOSTNAME=`hostname`
@@ -13,7 +13,8 @@ BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 CENTAUR_ENGINE="/home/pi/centaur/engine"
 STOCKFISH="stockfish_pi"
 
-STOCKFISH_DL="https://drive.google.com/file/d/1IwciQvbwWrxRqsiFMmLaFUXVnea8uF50/view?usp=sharing"
+case $1 in
+install* )
 
 echo -e "Hardware configuration"
 echo -e "Backup first"
@@ -136,3 +137,11 @@ case $REPLY in
 esac
 
 update_hostname
+
+exit 0
+;;
+
+upgrade *)
+;;
+
+esac
