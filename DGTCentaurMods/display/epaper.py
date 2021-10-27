@@ -159,7 +159,7 @@ def clearScreen():
 
 def drawBoard(pieces):
     global epaperbuffer
-    chessfont = Image.open("/home/pi/centaur/fonts/ChessFontSmall.bmp")
+    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
     for x in range(0,64):
         pos = (x - 63) * -1
         row = 50 + (16 * (pos // 8))

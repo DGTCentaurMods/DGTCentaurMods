@@ -66,7 +66,7 @@ def sleepScreen():
 
 def drawBoard(pieces):
     global screenbuffer
-    chessfont = Image.open("/home/pi/centaur/fonts/ChessFontSmall.bmp")
+    hessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
     image = screenbuffer.copy()
     for x in range(0,64):
         pos = (x - 63) * -1
