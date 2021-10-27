@@ -10,6 +10,10 @@ CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
+CENTAUR_ENGINE="/home/pi/centaur/engine"
+STOCKFISH="stockfish_pi"
+
+STOCKFISH_DL="https://drive.google.com/file/d/1IwciQvbwWrxRqsiFMmLaFUXVnea8uF50/view?usp=sharing"
 
 echo -e "Hardware configuration"
 echo -e "Backup first"
@@ -83,6 +87,23 @@ function update_hostname {
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
 }
+
+# Install Stockfish if in build
+echo -e "::: Installing Stockfish engine"
+if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
+then
+    if [[ -d $CENTAUR_ENGINE ]]
+    then
+        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
+    else
+        mkdir -p $CENTAUR_ENGINE
+        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
+    fi
+else
+    echo -e "Downloading Stockfish..."
+    # TODO: find a way to download.
+fi
+chown -R pi.pi $CENTAUR_ENGINE
 
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
