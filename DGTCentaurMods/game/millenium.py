@@ -113,10 +113,9 @@ start = time.time()
 
 #bt = serial.Serial("/dev/rfcomm0",baudrate=38400)
 
-while time.time() - start < 30:
+while time.time() - start < 60:
 	try:
 		bt = serial.Serial("/dev/rfcomm0",baudrate=38400,timeout=60)
-		time.sleep(2)
 		break
 	except:
 		pass
@@ -186,8 +185,10 @@ while kill == 0:
 		handled = 1
 	if chr(cmd) == 'I':
 		# Chess.com app is sending this but I can't find info on what it is!
-		bt.read(4)
+		# Apparently an initialise command
+		data = bt.read(4)
 		print("hit i")
+		print(data.hex())
 		sendMilleniumCommand("i00")
 	if chr(cmd) == 'X':
 		# Extinguish all LEDs
