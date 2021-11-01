@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-
+set -e
 # Script to produce deb pacjage
 
 ##### VARIABLESi
@@ -8,16 +8,33 @@ REPO_NAME="DGTCentaur"
 REPO_URL="https://github.com/EdNekebno/DGTCentaur"
 PCK_NAME="DGTCentaurMods"
 SETUP_DIR="/home/pi"
+STOCKFISH_REPO="https://github.com/wormstein/Stockfish"
 
 function build {
     dpkg-deb --build ${STAGE}
 }
 
-function config_setup {
+function insertStockfish {
+    git clone $STOCKFISH_REPO
+
+    cd Stockfish/src
+        make clean
+        make map
+        make build ARCH=armv7
+
+        mv stockfish stockfish_pi
+        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
+        
+    cd $BASE
+        rm -rf Stockfish
+}
+
+
+function configSetup {
     sed -i "s/Version:.*/Version: $TAG/g" control
     
     cd ${STAGE}/etc/systemd/system
-        SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
+        local SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
         
         # Setup DGT Centaur Mods service
         echo "::: Configuring service:  DGTCentaurMods.service"
@@ -41,9 +58,9 @@ function config_setup {
  
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
-
-    build
 }
+
+
 function stage {
     STAGE="${PCK_NAME}_${TAG}_armhf"
     mkdir ${STAGE}
@@ -62,12 +79,10 @@ function stage {
 
     # Remove files from Git
     rm -rf $REPO_NAME
-    
-    config_setup
 }
 
 
-function build_release {
+function gitCheckout {
 if [ -x $1 ]
 then
     TAG="0"
@@ -76,31 +91,45 @@ then
     then
         sudo rm -rf ${STAGE}
     fi
-    git clone --depth 1 $REPO_URL && stage
+    git clone --depth 1 $REPO_URL && stage || exit 1
+
 else
     TAG=$1
-    git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage
-fi  
+    git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
+fi
 }
 
 ##### START ###
 
 case $1 in
-    master* )  build_release; exit;;
+    master* )  gitCheckout;;
     clean* ) 
         sudo rm -rf ${REPO_NAME}
         sudo rm -rf  ${PCK_NAME}*
+        rm -rf Stockfish
         exit 0
         ;;
 esac
+    if [[ -z $1 ]]
+    then
         read -p "Is this a release from master (Y/N(: "
         case $REPLY in
-            [Yy]* ) build_release;;
+            [Yy]* ) gitCheckout;;
             [Nn]* ) 
                 read -p "Please input release number: "
-                build_release $REPLY
+                gitCheckout $REPLY
                 ;;
-            * ) echo "Please answer yes or no.";;
-     
-   
-    esac
+            * ) echo "Please answer a tag number"; exit 1;;
+        esac
+    fi
+       
+configSetup
+
+read -p "DO you want to integrate Stockfish for this build? (y/n):"
+case $REPLY in
+    [Yy]* ) insertStockfish;;
+    Nn]* ) echo "::: Build starting";;
+esac
+
+echo "::: Build starting"
+build
