@@ -75,7 +75,8 @@ echo -e "Services setup\n"
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
-    sed -i "$ a	sudo sdptool add SP & \n\
+    sed -i "$ a	sudo hcitool cmd 0x3f 0x001 0x66 0x66 0x77 0x77 0x88 0x88\n\
+sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
 power on \n\
