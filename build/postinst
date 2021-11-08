@@ -67,7 +67,7 @@ echo -e "Services setup\n"
 
 # Update bluetooth service
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap"
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
 
