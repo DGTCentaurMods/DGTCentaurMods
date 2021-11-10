@@ -10,15 +10,15 @@ Inside the DGT Centaur is a Raspberry Pi Zero with an SD Card, by replacing that
 
 ## Project status
 
-Currently everything is to be considered a **work in progress**, as there aren't any plug'n'play images to be used and you need to tinker quite a bit with the board. We're currently working on a build process to make it easier for devs and end users
+Currently everything is to be considered in alpha
 
 ## Current features
 
-eBoard Emulation - Revelation II. Enables you to use the DGT Centaur as if it was a bluetooth DGT eboard with apps, rabbit plugin, Livechess, etc
+eBoard Emulation - DGT Revelation II - Enables you to use the DGT Centaur as if it was a bluetooth DGT eboard with apps, rabbit plugin, Livechess, etc. Millennium (Bluetooth Classic) - Works with Chess for Android, Chess.com app on android (experimental)
 
-Online Gameplay - Lichess (can be buggy)
+Online Gameplay - Lichess (set Lichess API token from the web interface) then play from the board.
 
-Web Interface - Shows live view of chessboard in a browser
+Web Interface - on http://ipaddress:5000 Shows live view of chessboard in a browser
 
 PGN Download - For all played games from web interface
 
@@ -30,17 +30,20 @@ Chromecast - Stream live board view to Chromecast
 
 Wifi - Capability to join wifi from the board (WPS/WPA2)
 
-Play Engines - Stockfish (without centaur adaptive mode), ct800
+Play Engines - Stockfish (without centaur adaptive mode), ct800 . Upload your own engines from the web interface.
+
+General Settings - Connect Wifi, Pair bluetooth, sound, lichess api token
 
 ## Roadmap
 
 Currently we are working on...
-1. Enhancing board emulation support
-2. Builds/Releases/Installation method
-3. Squashing bugs
-4. Choose what engines you want to play
-5. Configuration options
-6. Admiring the fact that the DGT centaur is now the most awesome electronic chess board available :)
+1. Builds/Releases
+2. Squashing bugs
+3. BLE boards emulation
+4. Improving Gamemanager features (gamemanager is the central system that handles chess games)
+5. Code tidyup
+6. Instructions
+7. Admiring the fact that the DGT centaur is now the most awesome electronic chess board available :)
 
 ## Installation notes
 
