@@ -15,7 +15,4 @@ time.sleep(2)
 # Get the token
 token = board.getText("API Token")
 
-if token == "":
-	sys.exit()
-
 centaur.set_lichess_api(token)
