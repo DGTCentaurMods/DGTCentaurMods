@@ -125,7 +125,7 @@ def writeText(row, txt):
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
     epd.DisplayPartial(epd.getbuffer(image))
-    time.sleep(0.1)
+    time.sleep(0.5)
 
 def writeTextToBuffer(row, txt):
     # Writes some text on the screen at the given row
@@ -507,8 +507,9 @@ def getText(title):
     # First we need a clear board
     res = getBoardState()
     if bytearray(res) != clearstate:
-        writeText(0,'Remove board')
+        writeTextToBuffer(0,'Remove board')
         writeText(1,'pieces')
+        time.sleep(10)
         while bytearray(res) != clearstate:
             time.sleep(0.5)
             res = getBoardState()
