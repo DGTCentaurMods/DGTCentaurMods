@@ -2,16 +2,36 @@ import time
 import select
 import bluetooth
 import subprocess
+import psutil
 from DGTCentaurMods.display import epaper
 
 epaper.initEpaper()
 time.sleep(3)
+
+for p in psutil.process_iter(attrs=['pid', 'name']):
+    if "bt-agent" in p.info["name"]:
+        p.kill()
+        time.sleep(3)
+
+p = subprocess.Popen(['/usr/bin/bluetoothctl'], stdout=subprocess.PIPE, stdin=subprocess.PIPE, universal_newlines=True,
+                     shell=True)
+poll_obj = select.poll()
+poll_obj.register(p.stdout, select.POLLIN)
+p.stdin.write("power on\n")
+p.stdin.flush()
+p.stdin.write("discoverable on\n")
+p.stdin.flush()
+p.stdin.write("pairable on\n")
+p.stdin.flush()
+time.sleep(4)
+p.terminate()
 
 epaper.writeText(0,"Pair Now use")
 epaper.writeText(1,"any passcode if")
 epaper.writeText(2,"prompted.")
 epaper.writeText(4,"Times out in")
 epaper.writeText(5,"one minute.")
+
 
 p = subprocess.Popen(['/usr/bin/bt-agent --capability=NoInputNoOutput -p /etc/bluetooth/pin.conf'],stdout=subprocess.PIPE,stdin=subprocess.PIPE,shell = True)
 poll_obj = select.poll()

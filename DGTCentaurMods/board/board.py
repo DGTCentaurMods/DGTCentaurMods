@@ -9,6 +9,7 @@ import serial
 import sys
 import os
 from DGTCentaurMods.display import epd2in9d
+from DGTCentaurMods.board import centaur
 import time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
@@ -339,6 +340,8 @@ def clearBoardData():
 
 def beep(beeptype):
     # Ask the centaur to make a beep sound
+    if centaur.get_sound() == "off":
+        return
     if (beeptype == SOUND_GENERAL):
         ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
     if (beeptype == SOUND_FACTORY):

@@ -28,6 +28,8 @@ BTNPLAY = 6
 EVENT_NEW_GAME = 1
 EVENT_BLACK_TURN = 2
 EVENT_WHITE_TURN = 3
+EVENT_REQUEST_DRAW = 4
+EVENT_RESIGN_GAME = 5
 
 kill = 0
 startstate = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
@@ -52,11 +54,33 @@ gameinfo_round = ""
 gameinfo_white = ""
 gameinfo_black = ""
 
+inmenu = 0
+
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
+    # Here we make an exception though and takeover control of the ? key. We can use this
+    # key to present a menu for draw offers or resigning.
     global keycallbackfunction
+    global eventcallbackfunction
+    global inmenu
     if keycallbackfunction != None:
-        keycallbackfunction(keypressed)
+        if inmenu == 0 and keypressed != BTNHELP:
+            keycallbackfunction(keypressed)
+        if inmenu == 0 and keypressed == BTNHELP:
+            # If we're not already in the menu and the user presses the question mark
+            # key then let's bring up the menu
+            inmenu = 1
+            epaper.resignDrawMenu(14)
+        if inmenu == 1 and keypressed == BTNBACK:
+            epaper.writeText(14,"                   ")
+        if inmenu == 1 and keypressed == BTNUP:
+            epaper.writeText(14,"                   ")
+            eventcallbackfunction(EVENT_REQUEST_DRAW)
+            inmenu = 0
+        if inmenu == 1 and keypressed == BTNDOWN:
+            epaper.writeText(14,"                   ")
+            eventcallbackfunction(EVENT_RESIGN_GAME)
+            inmenu = 0
 
 def fieldcallback(field):
     # Receives field events. Positive is a field lift, negative is a field place. Numbering 0 = a1, 63 = h8
@@ -68,7 +92,6 @@ def fieldcallback(field):
     global legalsquares
     global eventcallbackfunction
     global newgame
-    global keycallback
     global pausekeys
     global computermove
     global forcemove
@@ -254,6 +277,8 @@ def fieldcallback(field):
             if movecallbackfunction != None:
                 movecallbackfunction(mv)
             board.beep(board.SOUND_GENERAL)
+            # Also light up the square moved to
+            board.led(field)
             # Check the outcome
             outc = cboard.outcome(claim_draw=True)
             if outc == None or outc == "None" or outc == 0:
@@ -279,8 +304,29 @@ def fieldcallback(field):
                 session.commit()
                 eventcallbackfunction(str(outc.termination))
 
+def resignGame(sideresigning):
+    # Take care of updating the data for a resigned game and callback to the program with the
+    # winner. sideresigning = 1 for white, 2 for black
+    resultstr = ""
+    if sideresigning == 1:
+        resultstr = "0-1"
+    else:
+        resultstr = "1-0"
+    tg = session.query(models.Game).filter(models.Game.id == gamedbid).first()
+    tg.result = resultstr
+    session.flush()
+    session.commit()
+    eventcallbackfunction("Termination.RESIGN")
 
-def gameThread(eventCallback, moveCallback, keycallback):
+def drawGame():
+    # Take care of updating the data for a drawn game
+    tg = session.query(models.Game).filter(models.Game.id == gamedbid).first()
+    tg.result = "1/2-1/2"
+    session.flush()
+    session.commit()
+    eventcallbackfunction("Termination.DRAW")
+
+def gameThread(eventCallback, moveCallback, keycallbacki):
     # The main thread handles the actual chess game functionality and calls back to
     # eventCallback with game events and
     # moveCallback with the actual moves made
@@ -301,7 +347,7 @@ def gameThread(eventCallback, moveCallback, keycallback):
     global gameinfo_round
     global gameinfo_white
     global gameinfo_black
-    keycallbackfunction = keycallback
+    keycallbackfunction = keycallbacki
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
     board.ledsOff()
@@ -319,11 +365,9 @@ def gameThread(eventCallback, moveCallback, keycallback):
                     cs = board.getBoardState()
                     board.unPauseEvents()
                     if bytearray(cs) == startstate:
-                        eventCallback(EVENT_NEW_GAME)
-                        eventCallback(EVENT_WHITE_TURN)
                         newgame = 1
                         curturn = 1
-                        cboard = chess.Board()
+                        cboard = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
                         fenlog = "/home/pi/centaur/fen.log"
                         f = open(fenlog, "w")
                         f.write(cboard.fen())
@@ -331,6 +375,8 @@ def gameThread(eventCallback, moveCallback, keycallback):
                         board.beep(board.SOUND_GENERAL)
                         time.sleep(0.3)
                         board.beep(board.SOUND_GENERAL)
+                        eventCallback(EVENT_NEW_GAME)
+                        eventCallback(EVENT_WHITE_TURN)
                         # Log a new game in the db
                         game = models.Game(
                             source=source,
@@ -362,6 +408,48 @@ def gameThread(eventCallback, moveCallback, keycallback):
             board.unPauseEvents()
             pausekeys = 0
         time.sleep(0.1)
+
+def clockThread():
+    # This thread just decrements the clock and updates the epaper
+    global whitetime
+    global blacktime
+    global curturn
+    global kill
+    global cboard
+    while kill == 0:
+        time.sleep(2) # epaper refresh rate means we can only have an accuracy of around 2 seconds :(
+        if whitetime > 0 and curturn == 1 and cboard.fen() != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1":
+            whitetime = whitetime - 2
+        if blacktime > 0 and curturn == 0:
+            blacktime = blacktime - 2
+        wmin = whitetime // 60
+        wsec = whitetime % 60
+        bmin = blacktime // 60
+        bsec = blacktime % 60
+        timestr = "{:02d}".format(wmin) + ":" + "{:02d}".format(wsec) + "       " + "{:02d}".format(
+            bmin) + ":" + "{:02d}".format(bsec)
+        epaper.writeText(13, timestr)
+
+whitetime = 0
+blacktime = 0
+def setClock(white,black):
+    # Set the clock
+    global whitetime
+    global blacktime
+    whitetime = white
+    blacktime = black
+
+def startClock():
+    # Start the clock. It writes to line 13
+    wmin = whitetime // 60
+    wsec = whitetime % 60
+    bmin = blacktime // 60
+    bsec = blacktime % 60
+    timestr = "{:02d}".format(wmin) + ":" + "{:02d}".format(wsec) + "       " + "{:02d}".format(bmin) + ":" + "{:02d}".format(bsec)
+    epaper.writeText(13,timestr)
+    clockthread = threading.Thread(target=clockThread, args=())
+    clockthread.daemon = True
+    clockthread.start()
 
 def computerMove(mv):
     # Set the computer move that the player is expected to make

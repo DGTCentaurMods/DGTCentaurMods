@@ -92,6 +92,7 @@
         <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
         <script type=text/javascript src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.min.js') }}"></script>
         <script type=text/javascript src="{{ url_for('static', filename='js/chess.js') }}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
         <script>
         var ruyLopez = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
         var config = {
@@ -150,6 +151,9 @@
             }
         </script>
     </div>
+    <div style="padding-top:10px;margin-left:12px; margin-bottom: -25px;">
+        <canvas id="chart-game"></canvas>
+    </div>
     <nav class="pagination" role="navigation" aria-label="pagination" style="margin-top:10px;display:none;" id="pgnnav">
         <progress id="analysisbar" class="progress is-large" value="15" max="100" style="margin-left:13px;">15%</progress>
           <a class="pagination-link" onClick="showPGNFirstMove()">&lt;&lt;</a>
@@ -165,23 +169,117 @@
 
 <script>
 
+    function customRadius( context )
+    {
+      let index = context.dataIndex;
+      return index == movepos? 5: 3;
+    }
+
+    var gamechart = new Chart(document.getElementById("chart-game"),{"type":"line",
+    "data":{"labels":[],
+    "datasets":[{"label":"","data":[],"fill":true,"borderColor":"rgb(250, 250,250)","borderWidth":1,"lineTension":0.4,"backgroundColor":"rgb(150, 150, 150)"}]},
+    options: {
+            title: {
+              display: false,
+              text: 'Game'
+            },
+            legend: {
+                    display: false
+            },
+            layout: {
+                    padding: {
+                            bottom: -25
+                    }
+            },
+          elements: {
+                    point: {
+                      radius : customRadius,
+                      display: true,
+                      backgroundColor: "rgba(255, 255, 255,255)",
+                    }
+              },
+            scales:{
+                    yAxes: [{
+                            display: false, //this will remove all the x-axis grid lines
+                            ticks: {
+                                    min: -1200,
+                                    max: 1200
+                            },
+                            gridLines: {
+                                    display:false
+                            }
+                    }],
+                    xAxes: [{
+                            gridLines: {
+                                    display:false
+                            }
+                    }]
+            },
+            maintainAspectRatio: false,
+      }
+    });
+
     var gameid = {{ gameid }};
 
     var stockfishbestmove = "";
     stockfishscore = 0;
     stockfishpos = -1;
     lastcp = 0;
+    lastdeepcp = 0;
     const chess = new Chess();
     var moves;
     var movescores;
     var movepos = 0;
+    var stockfishdeepscores = Array(2000).fill(0);
+    var deepworkerpos = 0;
 
     var stockfish = new Worker("{{ url_for('static', filename='stockfish/stockfish.js') }}");
+    var stockfishdeep = new Worker("{{ url_for('static', filename='stockfish/stockfish.js') }}");
+
+    function queryStockfishDeep() {
+        const chessdeep = new Chess();
+        for (var i = 0; i < deepworkerpos; i++) {
+            chessdeep.move(moves[i]);
+        }
+        stockfishdeep.postMessage("position fen " + chessdeep.fen());
+        stockfishdeep.postMessage("go depth 18");
+    }
+
+    stockfishdeep.onmessage = function (event) {
+        console.log("deep---" + event.data ? event.data : event);
+        if (event.data.indexOf("bestmove ") == 0) {
+            if (deepworkerpos > 0) {
+                stockfishdeepscores[deepworkerpos - 1] = lastdeepcp;
+            }
+            deepworkerpos = deepworkerpos + 1;
+            if (deepworkerpos < moves.length) {
+                cpg = lastdeepcp;
+                //if (cpg > 1000) { cpg = 1000; }
+                //if (cpg < -1000) { cpg = -1000; }
+                if (deepworkerpos == 1) {
+                    cpg = 0;
+                }
+                gamechart.data.datasets[0].data.push(cpg);
+                gamechart.data.labels.push("");
+                gamechart.update();
+                buildMovesTable();
+                setTimeout(queryStockfishDeep(),100);
+            }
+        }
+        if (event.data.indexOf("score cp") > 0) {
+            cp = event.data.substring(event.data.indexOf("score cp")+9,event.data.indexOf(" ",event.data.indexOf("score cp")+9));
+            cp = parseInt(cp)
+            if (deepworkerpos % 2 !== 0) {
+                cp = cp * -1;
+            }
+            lastdeepcp = cp;
+        }
+    }
 
     function queryStockfish() {
         stockfishpos = movepos;
         stockfish.postMessage("position fen " + chess.fen());
-        stockfish.postMessage("go depth 17");
+        stockfish.postMessage("go depth 15");
     }
 
     stockfish.onmessage = function (event) {
@@ -223,8 +321,22 @@
             chess.move(moves[movepos]);
             h = chess.history({ verbose: true })[movepos];
             al = h.from + "-" + h.to;
+            // For castling we need to take care of the rook for chessboardjs!
+            if (moves[movepos] == "O-O" && al == "e1-g1") {
+                board1.move("h1-f1")
+            }
+            if (moves[movepos] == "O-O" && al == "e8-g8") {
+                board1.move("h8-f8")
+            }
+            if (moves[movepos] == "O-O-O" && al == "e1-c1") {
+                board1.move("a1-d1")
+            }
+            if (moves[movepos] == "O-O-O" && al == "e8-c8") {
+                board1.move("a8-d8")
+            }
             board1.move(al);
             movepos = movepos + 1;
+            gamechart.update();
             buildMovesTable();
             queryStockfish();
         }
@@ -236,6 +348,7 @@
             chess.undo();
             board1.position(chess.fen());
             movepos = movepos - 1;
+            gamechart.update();
             buildMovesTable();
             queryStockfish();
         }
@@ -247,6 +360,7 @@
             chess.move(moves[movepos]);
             movepos = movepos + 1;
         }
+        gamechart.update();
         board1.position(chess.fen());
         buildMovesTable();
         queryStockfish();
@@ -255,6 +369,7 @@
     function showPGNFirstMove() {
         $('connection').remove();
         movepos = 0;
+        gamechart.update();
         chess.reset();
         board1.position(chess.fen());
         buildMovesTable();
@@ -274,6 +389,7 @@
         }
         board1.position(chess.fen());
         console.log(chess.ascii());
+        gamechart.update();
         queryStockfish()
     }
 
@@ -295,19 +411,12 @@
             tr.appendChild(tn);
             var td1 = document.createElement('td');
             ih = moves[t];
-//            if (movescores[t] != -1) {
-//                prevsc = -1;
-//                if (t == 0) {
-//                    prevsc = 0;
-//                } else {
-//                    prevsc = movescores[t-1];
-//                }
-//                if (prevsc != -1) {
-//                    ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t] - prevsc) + "</span>";
-//                }
-//            }
-            if (movescores[t] != -1) {
-                    ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t])/100 + "</span>";
+            if (stockfishdeepscores[t] != 0) {
+                ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (stockfishdeepscores[t])/100 + "</span>";
+            } else {
+                if (movescores[t] != -1) {
+                        ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t])/100 + "</span>";
+                }
             }
             td1.innerHTML = ih;
             td1.style.width='50%';
@@ -319,14 +428,12 @@
             td2.style.width='50%';
             if (t+1 < moves.length) {
                 ih = moves[t+1];
-//                if (movescores[t+1] != -1) {
-//                    prevsc = movescores[t];
-//                    if (prevsc != -1) {
-//                        ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t+1] - prevsc) + "</span>";
-//                    }
-//                }
-                if (movescores[t+1] != -1) {
-                        ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t+1])/100 + "</span>";
+                if (stockfishdeepscores[t-1] != 0) {
+                    ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (stockfishdeepscores[t+1])/100 + "</span>";
+                } else {
+                    if (movescores[t+1] != -1) {
+                            ih = ih + "&nbsp;&nbsp;&nbsp;<span style='font-size:10px;'>" + (movescores[t+1])/100 + "</span>";
+                    }
                 }
                 td2.innerHTML = ih;
                 if ((t + 2) == movepos) {
@@ -371,6 +478,7 @@
             sizeBoard(document.getElementById("maincolumn").offsetWidth - 80);
         }
         loadAnalysisPGN();
+        queryStockfishDeep()
     }
 </script>
 

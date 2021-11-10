@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
 from DGTCentaurMods.board import centaur
 from board import LiveBoard
@@ -46,15 +46,24 @@ def pgn():
 @app.route("/configure")
 def configure():
 	# Get the lichessapikey
-	return render_template('configure.html', lichesskey=centaur.get_lichess_api())
+	return render_template('configure.html', lichesskey=centaur.get_lichess_api(), lichessrange=centaur.get_lichess_range())
 
 @app.route("/support")
 def support():
 	return render_template('support.html')
 
+@app.route("/license")
+def license():
+	return render_template('license.html')
+
 @app.route("/lichesskey/<key>")
 def lichesskey(key):
 	centaur.set_lichess_api(key)
+	return "ok"
+
+@app.route("/lichessrange/<newrange>")
+def lichessrange(newrange):
+	centaur.set_lichess_range(newrange)
 	return "ok"
 
 @app.route("/analyse/<gameid>")
@@ -86,11 +95,14 @@ def getGames(page):
 	t = (int(page) * 10) - 10
 	games = {}
 	try:
-		for x in range(0,20):
+		for x in range(0,10):
 			gameitem = {}
 			gameitem["id"] = str(gamedata[x+t][8])
 			gameitem["created_at"] = str(gamedata[x+t][0])
-			gameitem["source"] = os.path.basename(str(gamedata[x + t][1]))
+			src = os.path.basename(str(gamedata[x + t][1]))
+			if src.endswith('.py'):
+				src = src[:-3]
+			gameitem["source"] = src
 			gameitem["event"] = str(gamedata[x + t][2])
 			gameitem["site"] = str(gamedata[x + t][3])
 			gameitem["round"] = str(gamedata[x + t][4])
@@ -103,6 +115,35 @@ def getGames(page):
 	session.close()
 	return json.dumps(games)
 
+@app.route("/engines")
+def engines():
+	# Return a list of engines and uci files. Essentially the contents our our engines folder
+	files = {}
+	enginepath = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
+	enginefiles = os.listdir(enginepath)
+	x = 0
+	for f in enginefiles:
+		fn = str(f)
+		files[x] = fn
+		x = x + 1
+	return json.dumps(files)
+
+@app.route("/uploadengine", methods=['POST'])
+def uploadengine():
+	if request.method != 'POST':
+		return
+	file = request.files['file']
+	if file.filename == '':
+		return
+	file.save(os.path.join(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/",file.filename))
+	os.chmod(os.path.join(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/",file.filename),0o777)
+	return redirect("/configure")
+
+@app.route("/delengine/<enginename>")
+def delengine(enginename):
+	os.remove(os.path.join(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/", enginename))
+	return "ok"
+
 @app.route("/getpgn/<gameid>")
 def makePGN(gameid):
 	# Export a PGN of the specified game
@@ -113,7 +154,10 @@ def makePGN(gameid):
 		select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round, models.Game.white, models.Game.black, models.Game.result).
 			where(models.Game.id == gameid)
 	).first()
-	g.headers["Source"] = os.path.basename(str(gamedata[1]))
+	src = os.path.basename(str(gamedata[1]))
+	if src.endswith('.py'):
+		src = src[:-3]
+	g.headers["Source"] = src
 	g.headers["Date"] = str(gamedata[0])
 	g.headers["Event"] = str(gamedata[2])
 	g.headers["Site"] = str(gamedata[3])

@@ -9,6 +9,7 @@ import chess.engine
 import sys
 import pathlib
 from random import randint
+import configparser
 
 curturn = 1
 computeronturn = 0
@@ -23,13 +24,28 @@ if computerarg == "black":
 if computerarg == "random":
 	computeronturn = randint(0,1)
 
-# Pass an ELO between 1000 and 2400
-eloarg = int(sys.argv[2])
+# Arg2 is going to contain the name of our engine choice. We use this for database logging and to spawn the engine
+enginename = sys.argv[2]
+
+ucioptionsdesc = "Default"
+ucioptions = {}
+if len(sys.argv) > 3:
+	# This also has an options string...but what is actually passed in 3 is the desc which is the section name
+	ucioptionsdesc = sys.argv[3]
+	# These options we should derive form the uci file
+	ucifile = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename + ".uci"
+	config = configparser.ConfigParser()
+	config.optionxform = str
+	config.read(ucifile)
+	print(config.items(ucioptionsdesc))
+	for item in config.items(ucioptionsdesc):
+		ucioptions[item[0]] = item[1]
+	print(ucioptions)
 
 if computeronturn == 0:
-	gamemanager.setGameInfo(str(eloarg) + " ELO", "", "", "Player", "CT800")
+	gamemanager.setGameInfo(ucioptionsdesc, "", "", "Player", enginename)
 else:
-	gamemanager.setGameInfo(str(eloarg) + " ELO", "", "", "CT800", "Player")
+	gamemanager.setGameInfo(ucioptionsdesc, "", "", enginename, "Player")
 
 def keyCallback(key):
 	# This function will receive any keys presses on the keys
@@ -56,9 +72,10 @@ def eventCallback(event):
 		curturn = 1
 		epaper.writeText(0,"White turn")
 		if curturn == computeronturn:
-			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/ct800")
-			options = ({"UCI_LimitStrength": True, "UCI_Elo": eloarg})
-			engine.configure(options)
+			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+			if ucioptions != {}:
+				options = (ucioptions)
+				engine.configure(options)
 			limit = chess.engine.Limit(time=5)
 			mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
 			mv = mv.move
@@ -69,15 +86,18 @@ def eventCallback(event):
 		curturn = 0
 		epaper.writeText(0,"Black turn")
 		if curturn == computeronturn:
-			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/ct800")
-			options = ({"UCI_LimitStrength": True, "UCI_Elo": eloarg})
-			engine.configure(options)
+			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+			if ucioptions != {}:
+				options = (ucioptions)
+				engine.configure(options)
 			limit = chess.engine.Limit(time=5)
 			mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
 			mv = mv.move
 			epaper.writeText(12,"Engine: " + str(mv))
 			engine.quit()
 			gamemanager.computerMove(str(mv))
+	if event == gamemanager.EVENT_RESIGN_GAME:
+		gamemanager.resignGame(computeronturn + 1)
 
 	if type(event) == str:
 		# Termination.CHECKMATE

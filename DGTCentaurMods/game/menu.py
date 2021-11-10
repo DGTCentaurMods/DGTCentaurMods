@@ -6,6 +6,7 @@ import pathlib
 import os
 import sys
 import threading
+import configparser
 
 menuitem = 1
 curmenu = None
@@ -20,6 +21,7 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
+    epaper.epapermode = 1
     board.beep(board.SOUND_GENERAL)
     if id == board.BTNDOWN:
         menuitem = menuitem + 1
@@ -93,8 +95,8 @@ def doMenu(menu):
     global selection
     global quickselect
     global event_key
-    epaper.epd.init()
-    time.sleep(0.2)
+    #epaper.epd.init()
+    #time.sleep(0.7)
     selection = ""
     curmenu = menu
     # Display the given menu
@@ -117,6 +119,7 @@ def doMenu(menu):
     draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
                   (17, (menuitem * 20) + 10)], fill=0)
     draw.line((17,0,17,295), fill=0, width=1)
+    print("drawn")
     event_key.wait()
     event_key.clear()
     return selection
@@ -150,7 +153,7 @@ while True:
             'Support': 'Get support'})
     result = doMenu(menu)
     epaper.epd.init()
-    time.sleep(0.2)
+    time.sleep(1.5)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
         #oardfunctions.shutdown()
@@ -172,20 +175,44 @@ while True:
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
     if result == "EmulateEB":
-        epaper.clearScreen()
-        epaper.writeText(0, "Loading...")
-        board.pauseEvents()
-        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
-        board.unPauseEvents()
+        boardmenu = {
+            'dgtclassic' : 'DGT REVII',
+            'millenium' : 'Millenium',
+        }
+        result = doMenu(boardmenu)
+        if result == "dgtclassic":
+            epaper.clearScreen()
+            epaper.writeText(0, "Loading...")
+            board.pauseEvents()
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
+            board.unPauseEvents()
+        if result == "millenium":
+            epaper.clearScreen()
+            epaper.writeText(0, "Loading...")
+            board.pauseEvents()
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
+            board.unPauseEvents()
     if result == "settings":
         setmenu = {
                 'WiFi': 'Wifi Setup',
-                'Pairing': 'Start BT Pair',
+                'Pairing': 'BT Pair',
+                'Sound': 'Sound',
                 'LichessAPI': 'Lichess API',
                 'Shutdown': 'Shutdown',
                 'Reboot': 'Reboot' }
         result = doMenu(setmenu)
         print(result)
+        if result == "Sound":
+            soundmenu = {'On': 'On', 'Off': 'Off'}
+            epaper.epd.init()
+            time.sleep(0.5)
+            result = doMenu(soundmenu)
+            if result == "On":
+                centaur.set_sound("on")
+            if result == "Off":
+                centaur.set_sound("off")
+            epaper.epd.init()
+            time.sleep(0.5)
         if result == "WiFi":
             if network.check_network():
                 wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup'}
@@ -270,71 +297,53 @@ while True:
             os.system("/sbin/shutdown -r now &")
             sys.exit()
     if result == "Lichess":
-        lichessmenu = {'Current': 'Current', 'New': 'New Game'}
-        result = doMenu(lichessmenu)
-        print(result)
-        # Current game will launch the screen for the current
-        if (result != "BACK"):
-            if (result == "Current"):
-                epaper.clearScreen()
-                epaper.writeText(0, "Loading...")
-                board.pauseEvents()
-                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py current")
-                board.unPauseEvents()
+        livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
+        result = doMenu(livemenu)
+        if result != "BACK":
+            if result == "Rated":
+                rated = True
             else:
-                livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
-                result = doMenu(livemenu)
+                rated = False
+            colormenu = {'random': 'Random', 'white': 'White', 'black': 'Black'}
+            result = doMenu(colormenu)
+            if result != "BACK":
+                color = result
+                timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
+                            '30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
+                result = doMenu(timemenu)
                 if result != "BACK":
-                    if result == "Rated":
-                        rated = True
-                    else:
-                        rated = False
-                    colormenu = {'white': 'White', 'random': 'Random', 'black': 'Black'}
-                    result = doMenu(colormenu)
-                    if result != "BACK":
-                        color = result
-                        timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
-                                    '30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
-                        result = doMenu(timemenu)
-                        if result != "BACK":
-                            if result == '10 , 5':
-                                gtime = '10'
-                                gincrement = '5'
-                            if result == '15 , 10':
-                                gtime = '15'
-                                gincrement = '10'
-                            if result == '30':
-                                gtime = '30'
-                                gincrement = '0'
-                            if result == '30 , 20':
-                                gtime = '30'
-                                gincrement = '20'
-                            if result == "60 , 20":
-                                gtime = '60'
-                                gincrement = '20'
-                            epaper.clearScreen()
-                            epaper.writeText(0, "Loading...")
-                            board.pauseEvents()
-                            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New {gtime} {gincrement} {rated} {color}")
-                            board.unPauseEvents()
-    if result == "Engines":
-        enginemenu = {'stockfish': 'Stockfish', 'CT800': 'CT800'}
-        result = doMenu(enginemenu)
-        print(result)
-        if result == "CT800":
-            ct800menu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
-            color = doMenu(ct800menu)
-            print(color)
-            # Current game will launch the screen for the current
-            if (color != "BACK"):
-                ratingmenu = {'1000': '1000 ELO', '1100': '1100 ELO', '1200': '1200 ELO', '1400': '1400 ELO', '1500': '1500 ELO', '1600': '1600 ELO', '1800': '1800 ELO', '2000': '2000 ELO', '2200': '2200 ELO', '2400': '2400 ELO'}
-                elo = doMenu(ratingmenu)
-                if elo != "BACK":
+                    if result == '10 , 5':
+                        gtime = '10'
+                        gincrement = '5'
+                    if result == '15 , 10':
+                        gtime = '15'
+                        gincrement = '10'
+                    if result == '30':
+                        gtime = '30'
+                        gincrement = '0'
+                    if result == '30 , 20':
+                        gtime = '30'
+                        gincrement = '20'
+                    if result == "60 , 20":
+                        gtime = '60'
+                        gincrement = '20'
                     epaper.clearScreen()
                     epaper.writeText(0, "Loading...")
                     board.pauseEvents()
-                    os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/ct800.py " + color + " " + elo)
+                    os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New " + str(gtime) + " " + str(gincrement) + " " + str(rated) + " " + str(color))
                     board.unPauseEvents()
+    if result == "Engines":
+        enginemenu = {'stockfish': 'Stockfish'}
+        # Pick up the engines from the engines folder and build the menu
+        enginepath = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
+        enginefiles = os.listdir(enginepath)
+        for f in enginefiles:
+            fn = str(f)
+            if '.uci' not in fn:
+                # If this file is not .uci then assume it is an engine
+                enginemenu[fn] = fn
+        result = doMenu(enginemenu)
+        print(result)
         if result == "stockfish":
             sfmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
             color = doMenu(sfmenu)
@@ -349,6 +358,39 @@ while True:
                     board.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
                     board.unPauseEvents()
+        else:
+            if result != "BACK":
+                # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
+                enginefile = enginepath + result
+                ucifile = enginepath + result + ".uci"
+                cmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
+                color = doMenu(cmenu)
+                # Current game will launch the screen for the current
+                if (color != "BACK"):
+                    if os.path.exists(ucifile):
+                        # Read the uci file and build a menu
+                        config = configparser.ConfigParser()
+                        config.read(ucifile)
+                        print(config.sections())
+                        smenu = {}
+                        for sect in config.sections():
+                            smenu[sect] = sect
+                        sec = doMenu(smenu)
+                        if sec != "BACK":
+                            epaper.clearScreen()
+                            epaper.writeText(0, "Loading...")
+                            board.pauseEvents()
+                            print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
+                            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
+                            board.unPauseEvents()
+                    else:
+                        # With no uci file we just call the engine
+                        epaper.clearScreen()
+                        epaper.writeText(0, "Loading...")
+                        board.pauseEvents()
+                        print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
+                        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
+                        board.unPauseEvents()
     if result == "Support" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()

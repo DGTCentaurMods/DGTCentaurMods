@@ -57,6 +57,9 @@
         <a class="navbar-item" href="/support">
           Support
         </a>
+        <a class="navbar-item" href="/license">
+          License
+        </a>
       </div>
       <div class="navbar-end">
 
@@ -277,6 +280,8 @@
       document.body.appendChild(modal);
     }
 
+    gamepgntime = 0
+
     function fillLatestGames() {
         var xmlhttp;
         xmlhttp = new XMLHttpRequest();
@@ -285,28 +290,43 @@
                 var obj = JSON.parse(xmlhttp.responseText);
                 counter = 1;
                 var x;
-                for (x = 0; x < Object.size(obj); x++) {
-                  var xmlhttp2;
-                  xmlhttp2 = new XMLHttpRequest();
-                  xmlhttp2.onreadystatechange = function() {
-                      if (xmlhttp2.readyState == 4 && xmlhttp2.status == 200){
-                          if (xmlhttp2.responseText.indexOf("1. ") > 0) {
-                            if (counter == 1) {
-                              document.getElementById("lastpgn").value = xmlhttp2.responseText;
+                var ro = [50]
+                pgntime = gamepgntime
+                var results = {}
+                for (x = 0; x < Object.size(obj) && x < 50; x++) {
+                  ro[x] = new XMLHttpRequest();
+                  ro[x].m = x
+                  ro[x].onreadystatechange = function() {
+                      if (this.readyState == 4 && this.status == 200) {
+                          if (this.responseText.indexOf("1. ") > 0) {
+                            if (obj[this.m]["created_at"] != "None" && Date.parse(obj[this.m]["created_at"]) >= pgntime) {
+                              document.getElementById("lastpgn").value = this.responseText;
+                              pgntime = Date.parse(obj[this.m]["created_at"]);
+                              gamepgntime = pgntime;
                             }
-                            if (obj[x]["created_at"] == "None") { obj[x]["created_at"] = ""; }
-                            if (obj[x]["source"] == "None") { obj[x]["source"] = ""; }
-                            document.getElementById('latest' + counter).innerHTML = obj[x]["created_at"] + "&nbsp;&nbsp;&nbsp;" + obj[x]["source"];
-                            document.getElementById('latest' + counter).href = "/analyse/" + obj[x]["id"];
+                            if (obj[this.m]["created_at"] == "None") { obj[this.m]["created_at"] = ""; }
+                            if (obj[this.m]["source"] == "None") { obj[this.m]["source"] = ""; }
+                            results[obj[this.m]["created_at"]] = obj[this.m]["id"] + "@_@_@" + obj[this.m]["created_at"] + "@_@_@" + obj[this.m]["source"];
+                            var keys = Object.keys(results);
+                            incount = 1;
+                            keys.sort(function(a, b) {
+                                return Date.parse(b) - Date.parse(a)
+                            }).forEach(function(k) {
+                               d = results[k].split("@_@_@");
+                               document.getElementById('latest' + incount).innerHTML = d[1] + "&nbsp;&nbsp;&nbsp;" + d[2];
+                               document.getElementById('latest' + incount).href = "/analyse/" + d[0];
+                               incount = incount + 1;
+                            });
                             counter = counter + 1;
-                            if (counter > 10) {
+                            if (counter > 9) {
                               return;
                             }
                           }
                       }
                   }
-                  xmlhttp2.open("GET", "/getpgn/" + obj[x]["id"], false);
-                  xmlhttp2.send();
+                  ro[x].open("GET", "/getpgn/" + obj[x]["id"], true);
+                  ro[x].send();
+                  
                 }
             }
         }

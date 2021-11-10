@@ -51,19 +51,56 @@
           </p>
             <div class="panel-block">
                 <p>
-                We use a <a href="https://lichess.org/account/oauth/token" target="_new">Lichess API key</a> to create and play games directly from the board.
+                We use this range to ask Lichess to provide opponents within a capability range. You can also leave this blank
               </p>
             </div>
-          <div class="panel-block">
+            <div class="panel-block">
             <p class="control has-icons-left">
-
-              <input class="input is-primary" id="lichesskey" type="text" placeholder="Enter Lichess API Key" value="{{ lichesskey }}" onkeydown="document.getElementById('lichesssavebutton').className='button is-info';">
+              <input class="input is-primary" id="lichessrange" type="text" placeholder="Enter Range e.g. 1000-1400" value="{{ lichessrange }}" onkeydown="document.getElementById('lichesssavebutton').className='button is-info is-pulled-right';">
               <span class="icon is-left">
                 <i class="fas fa-search" aria-hidden="true"></i>
               </span>
             </p>
-              <button class="button" id="lichesssavebutton" style="margin-left:10px;" onClick="saveLichessKey()">Save</button>
           </div>
+            <div class="panel-block">
+                <p>
+                We use a <a href="https://lichess.org/account/oauth/token" target="_new">Lichess API token</a> to create and play games directly from the board. Be sure to create a key with challenge:write and board:play permissions
+              </p>
+            </div>
+          <div class="panel-block">
+            <p class="control has-icons-left">
+              <input class="input is-primary" id="lichesskey" type="text" placeholder="Enter Lichess API token" value="{{ lichesskey }}" onkeydown="document.getElementById('lichesssavebutton').className='button is-info is-pulled-right';">
+              <span class="icon is-left">
+                <i class="fas fa-search" aria-hidden="true"></i>
+              </span>
+            </p>
+          </div>
+            <div class="panel-block">
+            <div class="is-pulled-right" style="width:100%">
+              <button class="button is-pulled-right" id="lichesssavebutton" style="margin-left:10px;" onClick="saveLichess()">Save</button>
+            </div>
+            </div>
+        </article>
+        <article class="panel is-info">
+          <p class="panel-heading">
+            Engines
+          </p>
+            <div class="panel-block">
+                <p>
+                Here you can manage any engines for the engines mode. Upload the engines and any (picochess style) uci file (please keep in mind here you don't really want more than 12/13 options). Engines should be compiled for armv6
+              </p>
+            </div>
+          <div id="filelisting">
+
+          </div>
+            <div class="panel-block">
+            <div class="is-pulled-right" style="width:100%">
+                <form method=post enctype=multipart/form-data action="/uploadengine">
+                  <input type=file name=file>
+                  <input type=submit value=Upload>
+                </form>
+            </div>
+            </div>
         </article>
     </div>
 </div>
@@ -73,14 +110,25 @@
 
     var page = 1;
 
-    function saveLichessKey() {
+    function saveLichess() {
         var newkey = document.getElementById("lichesskey").value;
         var xmlhttp;
         xmlhttp = new XMLHttpRequest();
         xmlhttp.onreadystatechange = function(){
             if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
                 if (xmlhttp.responseText == "ok") {
-                    document.getElementById('lichesssavebutton').className='button';
+                    var newrange = document.getElementById("lichessrange").value;
+                    var xmlhttp2;
+                    xmlhttp2 = new XMLHttpRequest();
+                    xmlhttp2.onreadystatechange = function(){
+                        if (xmlhttp2.readyState == 4 && xmlhttp2.status == 200){
+                            if (xmlhttp2.responseText == "ok") {
+                                document.getElementById('lichesssavebutton').className='button is-pulled-right';
+                            }
+                        }
+                    }
+                    xmlhttp2.open("GET", "/lichessrange/" + newrange, true);
+                    xmlhttp2.send();
                 }
             }
         }
@@ -88,9 +136,50 @@
         xmlhttp.send();
     }
 
+    function getEngineFiles() {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+              const obj = JSON.parse(xmlhttp.responseText);
+              var fl = document.getElementById('filelisting');
+              fl.innerHTML = '';
+              for (x = 0; x < Object.size(obj); x++) {
+                console.log(obj[x])
+                var pb = document.createElement("div");
+                pb.className = "panel-block";
+                var is = document.createElement("span");
+                is.className = "panel-icon";
+                pb.appendChild(is);
+                var ic = document.createElement("i");
+                ic.innerHTML = "<a href='#' onClick='delengine(\"" + obj[x] + "\");'><span style='color:red;display:inline-block;'>X</span></a>"
+                is.appendChild(ic);
+                var ts = document.createElement("span");
+                ts.innerHTML = obj[x];
+                pb.appendChild(ts);
+                fl.appendChild(pb);
+              }
+            }
+        }
+        xmlhttp.open("GET", "/engines", true);
+        xmlhttp.send();
+    }
+
+    function delengine(name) {
+        xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+                getEngineFiles()
+            }
+        }
+        xmlhttp.open("GET", "/delengine/" + name, true);
+        xmlhttp.send();
+    }
+
     window.onload = function () {
         hideLastPGN();
         hideLastGames();
+        getEngineFiles();
     }
 </script>
 

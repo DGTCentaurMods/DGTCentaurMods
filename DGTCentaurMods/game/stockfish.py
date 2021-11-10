@@ -78,6 +78,8 @@ def eventCallback(event):
 			mv = mv.move
 			epaper.writeText(12, "Engine: " + str(mv))
 			gamemanager.computerMove(str(mv))
+	if event == gamemanager.EVENT_RESIGN_GAME:
+		gamemanager.resignGame(computeronturn + 1)
 
 	if type(event) == str:
 		# Termination.CHECKMATE
