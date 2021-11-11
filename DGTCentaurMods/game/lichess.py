@@ -235,7 +235,7 @@ def newGameThread():
 		client.board.seek(15, 10, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
 	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "white"):
 		client.board.seek(15, 10, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "white"):
+	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "black"):
 		client.board.seek(15, 10, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
 	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "random"):
 		client.board.seek(15, 10, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
