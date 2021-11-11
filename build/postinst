@@ -10,7 +10,7 @@ CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
-CENTAUR_ENGINE="/home/pi/centaur/engine"
+CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 
 case $1 in
@@ -95,6 +95,7 @@ if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
 then
     if [[ -d $CENTAUR_ENGINE ]]
     then
+        mv ${CENTAUR_ENGINE}/stockfish_pi ${CENTAUR_ENGINE}/stockfish_pi.bak
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
     else
         mkdir -p $CENTAUR_ENGINE

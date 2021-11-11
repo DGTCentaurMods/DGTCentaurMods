@@ -58,6 +58,8 @@ function configSetup {
  
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
+    sudo chmod 777 ${STAGE}/home/pi/DGTCentaurMods/engines
+
 }
 
 
