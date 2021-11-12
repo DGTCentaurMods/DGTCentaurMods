@@ -202,7 +202,7 @@ pairThread.daemon = True
 pairThread.start()
 
 # Kill rfcomm if it is started
-os.system('service rfcomm stop')
+os.system('sudo service rfcomm stop')
 time.sleep(2)
 for p in psutil.process_iter(attrs=['pid', 'name']):
 	if str(p.info["name"]) == "rfcomm":
@@ -491,7 +491,7 @@ while kill == 0:
 				time.sleep(0.1)
 
 server_sock.close()
-os.system('service rfcomm start')
+os.system('sudo service rfcomm start')
 time.sleep(2)
 
 kill = 1
