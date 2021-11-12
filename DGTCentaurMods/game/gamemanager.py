@@ -187,36 +187,37 @@ def fieldcallback(field):
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)
-                epaper.promotionOptions(13)
-                pausekeys = 1
-                time.sleep(1)
-                buttonPress = 0
-                while buttonPress == 0:
-                    board.ser.read(1000000)
-                    tosend = bytearray(b'\x83\x06\x50\x59')
-                    board.ser.write(tosend)
-                    resp = board.ser.read(10000)
-                    resp = bytearray(resp)
-                    tosend = bytearray(b'\x94\x06\x50\x6a')
-                    board.ser.write(tosend)
-                    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
-                    resp = board.ser.read(10000)
-                    resp = bytearray(resp)
-                    if (resp.hex() == "b10011065000140a0501000000007d4700"):
-                        buttonPress = 1  # BACK
-                        pr = "n"
-                    if (resp.hex() == "b10011065000140a0510000000007d175f"):
-                        buttonPress = 2  # TICK
-                        pr = "b"
-                    if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
-                        buttonPress = 3  # UP
-                        pr = "q"
-                    if (resp.hex() == "b10010065000140a050200000000611d"):
-                        buttonPress = 4  # DOWN
-                        pr = "r"
-                    time.sleep(0.1)
-                epaper.epaperbuffer = screenback.copy()
-                pausekeys = 2
+                if forcemove == 0:
+                    epaper.promotionOptions(13)
+                    pausekeys = 1
+                    time.sleep(1)
+                    buttonPress = 0
+                    while buttonPress == 0:
+                        board.ser.read(1000000)
+                        tosend = bytearray(b'\x83\x06\x50\x59')
+                        board.ser.write(tosend)
+                        resp = board.ser.read(10000)
+                        resp = bytearray(resp)
+                        tosend = bytearray(b'\x94\x06\x50\x6a')
+                        board.ser.write(tosend)
+                        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                        resp = board.ser.read(10000)
+                        resp = bytearray(resp)
+                        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                            buttonPress = 1  # BACK
+                            pr = "n"
+                        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                            buttonPress = 2  # TICK
+                            pr = "b"
+                        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                            buttonPress = 3  # UP
+                            pr = "q"
+                        if (resp.hex() == "b10010065000140a050200000000611d"):
+                            buttonPress = 4  # DOWN
+                            pr = "r"
+                        time.sleep(0.1)
+                    epaper.epaperbuffer = screenback.copy()
+                    pausekeys = 2
             if (field // 8) == 0 and pname == "p":
                 screenback = epaper.epaperbuffer.copy()
                 tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
@@ -256,7 +257,8 @@ def fieldcallback(field):
                     pausekeys = 2
             if forcemove == 1:
                 mv = computermove
-            mv = fromname + toname + pr
+            else:
+                mv = fromname + toname + pr
             # Make the move and update fen.log
             cboard.push(chess.Move.from_uci(mv))
             fenlog = "/home/pi/centaur/fen.log"
