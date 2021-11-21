@@ -8,9 +8,15 @@ Inside the DGT Centaur is a Raspberry Pi Zero with an SD Card, by replacing that
 
 **All functionality is based on the fact that the Raspberry Pi Zero inside the board is being replaced with a Raspberry Pi Zero 2 W (or Raspberry Pi Zero W) and this breaks the product warranty. Proceed at your own risk!**
 
-## Project status
+## Project Status and a Word on Forks and Derivatives and other builds
 
-Currently everything is to be considered in alpha
+Note on forks and derivatives. As an open source project we want people to be able to take this code and work with it to improve people's experiences with electronic chess boards. You are welcome to amend the code, to use the reversed protocols, to create derivatives, and we encourage you to do so. Whilst we work with the DGT Centaur, maybe you will want to integrate it into your own DIY chessboard, and so on. Hopefully you'll feed back those great changes, fixes, improvements too. We ask only that you follow the license, be clear that your work is a modification, and you ensure that the end user understands the state of the code.
+
+This project is presented to you in an alpha state. It is one where if you modify certain aspects of the code then it is possible to permanently break your board or the boards of others. We have spent quite literally 1000s of hours reverse engineering the code to understand it. When making a fork and derivative - please be very careful if you touch and modify code related to board communication.
+
+If you have difficulties setting the code up, want to suggest features, need help, or to work a bug, let us know and we'll work with you. That's how it's worked in the past. We don't work in a directed way on any projects other than this one though. We are aware that there is a slightly modified build of this software presented in two ways that claim officialness: There is no other official build or install method other than the way we describe below. At the moment you can't simply burn an image of our software officially, which means our userbase has some specific technical skills to get it installed. They know what to expect, and have the skills to work with us if there is a problem. As time goes on, things will get easier and easier and that will be expanded out. If a retailer installs the code for you onto your board - whether it is called "final release" or not, they are installing a slightly modified version of alpha code. If you are downloading an image elsewhere that makes it easy to install and put it on your board, then regardless of how that image is presented, you are installing a slightly modified version of this alpha code. We'd like your experience with our software to be a positive one, which means that it should be clear what you should expect. In alpha, you will experience problems and bugs. Some of them could be signficant. Please be exceptionally carefully if you choose to install anything or have anything installed that claims to be anything else than alpha code and be sure you know what you are installing.
+
+In other words we want people to be able to do everything open source provides the opportunity for, that's cool. We encourage that wholehearedly. But be sure to follow the license and be clear with the end user what they're getting.
 
 ## Current features
 
