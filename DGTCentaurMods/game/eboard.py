@@ -1,6 +1,27 @@
 # Emulate the DGT e-board protocol
 #
 # Ed Nekebno
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
+#
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+#
 #
 # Pair first
 # Connect when the display tells you to! Do not connect before.
@@ -192,7 +213,7 @@ if bytearray(board.getBoardState()) != startstate:
 	# squares to help people out
 	while bytearray(board.getBoardState()) != startstate:
 		rstate = board.getBoardState()
-		tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x12\x00\x05')
+		tosend = bytearray(b'\xb0\x00\x0c' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x05\x12\x00\x05')
 		# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
 		for x in range(0, 64):
 			if x < 16 or x > 47:
@@ -450,9 +471,8 @@ def pieceMoveDetectionThread():
 		if sendupdates == 1:
 			boardtoscreen = 1
 			board.ser.read(10000)
-			tosend = bytearray(b'\x83\x06\x50\x59')
-			board.ser.write(tosend)
-			expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+			board.sendPacket(b'\x83', b'')
+			expect = board.buildPacket(b'\x85\x00\x06', b'')
 			resp = board.ser.read(1000)
 			resp = bytearray(resp)
 			if (bytearray(resp) != expect):
@@ -556,7 +576,7 @@ def pieceMoveDetectionThread():
 								if liftedthisturn == 0:
 									if lastlift == WPAWN and field > 55:
 										# This is a pawn promotion. So beep and ask what to promote to
-										tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00');
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = board.checksum(tosend)
 										board.ser.write(tosend)
@@ -566,34 +586,32 @@ def pieceMoveDetectionThread():
 										boardtoscreen = 2
 										# Wait for a button press and set last lift according to the choice
 										buttonPress = 0
+										board.ser.read(1000000)
 										while buttonPress == 0:
-											board.ser.read(1000000)
-											tosend = bytearray(b'\x83\x06\x50\x59')
-											board.ser.write(tosend)
+											board.sendPacket(b'\x83', b'')
 											resp = board.ser.read(10000)
 											resp = bytearray(resp)
-											tosend = bytearray(b'\x94\x06\x50\x6a')
-											board.ser.write(tosend)
-											expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+											board.sendPacket(b'\x94', b'')
+											expect = board.buildPacket(b'\xb1\x00\x06', b'')
 											resp = board.ser.read(10000)
 											resp = bytearray(resp)
-											if (resp.hex() == "b10011065000140a0501000000007d4700"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
 												buttonPress = 1  # BACK
 												lastlift = WKNIGHT
-											if (resp.hex() == "b10011065000140a0510000000007d175f"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
 												buttonPress = 2  # TICK
 												lastlift = WBISHOP
-											if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
 												buttonPress = 3  # UP
 												lastlift = WQUEEN
-											if (resp.hex() == "b10010065000140a050200000000611d"):
+											if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
 												buttonPress = 4  # DOWN
 												lastlift = WROOK
 											time.sleep(0.2)
 										epaper.writeText(9,"              ")
 										promoted = 1
 									if lastlift == BPAWN and field < 8:
-										tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+										tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00');
 										tosend[2] = len(tosend)
 										tosend[len(tosend) - 1] = board.checksum(tosend)
 										board.ser.write(tosend)
@@ -603,27 +621,25 @@ def pieceMoveDetectionThread():
 										boardtoscreen = 2
 										# Wait for a button press and set last lift according to the choice
 										buttonPress = 0
+										board.ser.read(1000000)
 										while buttonPress == 0:
-											board.ser.read(1000000)
-											tosend = bytearray(b'\x83\x06\x50\x59')
-											board.ser.write(tosend)
+											board.sendPacket(b'\x83', b'')
 											resp = board.ser.read(10000)
 											resp = bytearray(resp)
-											tosend = bytearray(b'\x94\x06\x50\x6a')
-											board.ser.write(tosend)
-											expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+											board.sendPacket(b'\x94', b'')
+											expect = board.buildPacket(b'\xb1\x00\x06', b'')
 											resp = board.ser.read(10000)
 											resp = bytearray(resp)
-											if (resp.hex() == "b10011065000140a0501000000007d4700"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
 												buttonPress = 1  # BACK
 												lastlift = BKNIGHT
-											if (resp.hex() == "b10011065000140a0510000000007d175f"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
 												buttonPress = 2  # TICK
 												lastlift = BBISHOP
-											if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+											if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
 												buttonPress = 3  # UP
 												lastlift = BQUEEN
-											if (resp.hex() == "b10010065000140a050200000000611d"):
+											if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
 												buttonPress = 4  # DOWN
 												lastlift = BROOK
 											time.sleep(0.2)
@@ -768,9 +784,8 @@ def pieceMoveDetectionThread():
 												turnhistory.pop()
 												breakout = 0
 												while breakout == 0:
-													tosend = bytearray(b'\x83\x06\x50\x59')
-													board.ser.write(tosend)
-													expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+													board.sendPacket(b'\x83', b'')
+													expect = board.buildPacket(b'\x85\x00\x06', b'')
 													resp = board.ser.read(1000)
 													resp = bytearray(resp)
 													if (bytearray(resp) != expect):
@@ -854,7 +869,7 @@ def pieceMoveDetectionThread():
 					f.write("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 					f.close()
 					tosend = bytearray(
-						b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x50\x08\x00\x08\x59\x08\x00\x08\x50\x08\x00\x08\x00');
+						b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x50\x08\x00\x08\x59\x08\x00\x08\x50\x08\x00\x08\x00');
 					tosend[2] = len(tosend)
 					tosend[len(tosend) - 1] = board.checksum(tosend)
 					board.ser.write(tosend)
@@ -1006,11 +1021,10 @@ def pieceMoveDetectionThread():
 						startstateflag = 0
 				timer = 0
 		try:
-			tosend = bytearray(b'\x94\x06\x50\x6a')
-			board.ser.write(tosend)
+			board.sendPacket(b'\x94', b'')
 			resp = board.ser.read(1000)
 			resp = bytearray(resp)
-			if (resp.hex() == "b10011065000140a0501000000007d4700"):
+			if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
 				# BACK
 				tosend = bytearray(b'')
 				tosend.append(DGT_BWTIME | MESSAGE_BIT)
@@ -1031,7 +1045,7 @@ def pieceMoveDetectionThread():
 				bt.write(tosend)
 				bt.flush()
 				board.beep(board.SOUND_GENERAL)
-			if (resp.hex() == "b10011065000140a0510000000007d175f"):
+			if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
 				# TICK
 				tosend = bytearray(b'')
 				tosend.append(DGT_BWTIME | MESSAGE_BIT)
@@ -1052,7 +1066,7 @@ def pieceMoveDetectionThread():
 				bt.write(tosend)
 				bt.flush()
 				board.beep(board.SOUND_GENERAL)
-			if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+			if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
 				# UP = MINUS
 				tosend = bytearray(b'')
 				tosend.append(DGT_BWTIME | MESSAGE_BIT)
@@ -1073,7 +1087,7 @@ def pieceMoveDetectionThread():
 				bt.write(tosend)
 				bt.flush()
 				board.beep(board.SOUND_GENERAL)
-			if (resp.hex() == "b10010065000140a050200000000611d"):
+			if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
 				# DOWN = PLUS
 				tosend = bytearray(b'')
 				tosend.append(DGT_BWTIME | MESSAGE_BIT)
@@ -1094,11 +1108,11 @@ def pieceMoveDetectionThread():
 				bt.write(tosend)
 				bt.flush()
 				board.beep(board.SOUND_GENERAL)
-			if (resp.hex() == "b10010065000140a0540000000006d67"):
+			if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0540000000006d"):
 				# HELP button - quits
 				dodie = 1
 				board.beep(board.SOUND_GENERAL)
-			if (resp.hex() == "b10010065000140a0504000000002a68"):
+			if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0504000000002a"):
 				# PLAY = RUN
 				tosend = bytearray(b'')
 				tosend.append(DGT_BWTIME | MESSAGE_BIT)
@@ -1795,7 +1809,7 @@ while True and dodie == 0:
 					#print(len(litsquares))
 					if len(litsquares) > 0:
 						board.ledsOff()
-						tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x05\x00\x05')
+						tosend = bytearray(b'\xb0\x00\x0b' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x05\x05\x00\x05')
 						# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
 						for x in range(0, len(litsquares)):
 							tosend.append(litsquares[x])
@@ -1821,7 +1835,7 @@ while True and dodie == 0:
 						tos = dd[3]
 					litsquares.append(froms)
 					litsquares.append(tos)
-					tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x08\x00\x05')
+					tosend = bytearray(b'\xb0\x00\x0b' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x05\x08\x00\x05')
 					# '\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x37\x36\x35\x34\x33\x32\x31\x30\x0d')
 					for x in range(0, len(litsquares)):
 						tosend.append(litsquares[x])

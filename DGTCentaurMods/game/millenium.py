@@ -1,5 +1,26 @@
 # Emulate the Millenium Chesslink protocol
 #
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
+#
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+
 from DGTCentaurMods.game import gamemanager
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import board
@@ -237,13 +258,12 @@ while connected == 0 and kill == 0:
 		client_sock, client_info = server_sock.accept()
 		connected = 1
 	except:
-		tosend = bytearray(b'\x94\x06\x50\x6a')
-		board.ser.write(tosend)
-		expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+		board.sendPacket(b'\x94', b'')
+		expect = bytearray(b'\xb1\x00\x06' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big'))
 		resp = board.ser.read(10000)
 		resp = bytearray(resp)
 		if (resp != expect):
-			if (resp.hex() == "b10011065000140a0501000000007d4700"):
+			if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
 				# BACK BUTTON PRESSED
 				kill = 1
 		time.sleep(0.1)
@@ -397,9 +417,9 @@ while kill == 0:
 				client_sock.recv(2) # Checksum
 				centaurpattern = bytearray([0] * 64)
 				ledmap = [
-					[7, 8, 16, 17], [16, 17, 25, 26], [26, 27, 34, 35], [34, 35, 43, 44], [43, 44, 52, 53], [52, 53, 61, 62],
+					[7, 8, 16, 17], [16, 17, 25, 26], [25, 26, 34, 35], [34, 35, 43, 44], [43, 44, 52, 53], [52, 53, 61, 62],
 					[61, 62, 70, 71], [70, 71, 79, 80],
-					[6, 7, 15, 16], [15, 16, 24, 25], [24, 25, 33, 34], [34, 35, 42, 43], [42, 43, 51, 52], [51, 52, 60, 61],
+					[6, 7, 15, 16], [15, 16, 24, 25], [24, 25, 33, 34], [33, 34, 42, 43], [42, 43, 51, 52], [51, 52, 60, 61],
 					[60, 61, 69, 70], [69, 70, 78, 79],
 					[5, 6, 14, 15], [14, 15, 23, 24], [23, 24, 32, 33], [32, 33, 41, 42], [41, 42, 50, 51], [50, 51, 59, 60],
 					[59, 60, 68, 69], [68, 69, 77, 78],
@@ -441,7 +461,7 @@ while kill == 0:
 							centaurpattern[((r + 1) * 8) + t] = 0
 				board.ledsOff()
 				trigger = 0
-				tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x05\x00\x05')
+				board.sendPacket(b'\xb0\x00\x0c',b'\x05\x05\x00')
 				for x in range(0, 64):
 					if centaurpattern[x] > 0:
 						trigger = 1
@@ -477,9 +497,9 @@ while kill == 0:
 				connected = 1
 			except:
 				try:
-					tosend = bytearray(b'\x94\x06\x50\x6a')
-					board.ser.write(tosend)
-					expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+					board.sendPacket(b'\x94', b'')
+					expect = bytearray(
+						b'\xb1\x00\x06' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1,byteorder='big'))
 					resp = board.ser.read(10000)
 					resp = bytearray(resp)
 					if (resp != expect):

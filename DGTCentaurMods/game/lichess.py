@@ -3,11 +3,27 @@
 # This is the second version of this script, it uses gamemanager to ensure that the system
 # gets all the benefits + any future upgrades.
 #
-# TODO
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
 #
-# Rating range in web interface
-# Test Live Games
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
 #
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+
 from DGTCentaurMods.game import gamemanager
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import centaur
@@ -287,11 +303,10 @@ def backTest():
 	global gameid
 	while checkback == 0:
 		try:
-			tosend = bytearray(b'\x94\x06\x50\x6a')
-			board.ser.write(tosend)
+			board.sendPacket(b'\x94', b'')
 			resp = board.ser.read(10000)
 			resp = bytearray(resp)
-			if (resp.hex() == "b10011065000140a0501000000007d4700"):
+			if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
 				print("back button pressed")
 				kill = 1  # BACK
 				checkback = 1

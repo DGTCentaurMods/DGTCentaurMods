@@ -5,6 +5,27 @@
 # moveCallback feeds back the chess moves made on the board
 # keyCallback feeds back key presses from keys under the display
 
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
+#
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+
 # TODO
 
 from DGTCentaurMods.board import *
@@ -183,7 +204,7 @@ def fieldcallback(field):
             pr = ""
             if (field // 8) == 7 and pname == "P":
                 screenback = epaper.epaperbuffer.copy()
-                tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+                tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00')
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)
@@ -192,27 +213,25 @@ def fieldcallback(field):
                     pausekeys = 1
                     time.sleep(1)
                     buttonPress = 0
+                    board.ser.read(1000000)
                     while buttonPress == 0:
-                        board.ser.read(1000000)
-                        tosend = bytearray(b'\x83\x06\x50\x59')
-                        board.ser.write(tosend)
+                        board.sendPacket(b'\x83', b'')
                         resp = board.ser.read(10000)
                         resp = bytearray(resp)
-                        tosend = bytearray(b'\x94\x06\x50\x6a')
-                        board.ser.write(tosend)
-                        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                        board.sendPacket(b'\x94', b'')
+                        expect = board.buildPacket(b'\xb1\x00', b'')
                         resp = board.ser.read(10000)
                         resp = bytearray(resp)
-                        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
                             buttonPress = 1  # BACK
                             pr = "n"
-                        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
                             buttonPress = 2  # TICK
                             pr = "b"
-                        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
                             buttonPress = 3  # UP
                             pr = "q"
-                        if (resp.hex() == "b10010065000140a050200000000611d"):
+                        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
                             buttonPress = 4  # DOWN
                             pr = "r"
                         time.sleep(0.1)
@@ -220,7 +239,7 @@ def fieldcallback(field):
                     pausekeys = 2
             if (field // 8) == 0 and pname == "p":
                 screenback = epaper.epaperbuffer.copy()
-                tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+                tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00')
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)
@@ -229,27 +248,25 @@ def fieldcallback(field):
                     pausekeys = 1
                     time.sleep(1)
                     buttonPress = 0
+                    board.ser.read(1000000)
                     while buttonPress == 0:
-                        board.ser.read(1000000)
-                        tosend = bytearray(b'\x83\x06\x50\x59')
-                        board.ser.write(tosend)
+                        board.sendPacket(b'\x83', b'')
                         resp = board.ser.read(10000)
                         resp = bytearray(resp)
-                        tosend = bytearray(b'\x94\x06\x50\x6a')
-                        board.ser.write(tosend)
-                        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                        board.sendPacket(b'\x94', b'')
+                        expect = board.buildPacket(b'\xb1\x00', b'')
                         resp = board.ser.read(10000)
                         resp = bytearray(resp)
-                        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
                             buttonPress = 1  # BACK
                             pr = "n"
-                        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
                             buttonPress = 2  # TICK
                             pr = "b"
-                        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
                             buttonPress = 3  # UP
                             pr = "q"
-                        if (resp.hex() == "b10010065000140a050200000000611d"):
+                        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
                             buttonPress = 4  # DOWN
                             pr = "r"
                         time.sleep(0.1)
@@ -294,7 +311,7 @@ def fieldcallback(field):
                     if eventcallbackfunction != None:
                         eventcallbackfunction(EVENT_BLACK_TURN)
             else:
-                tosend = bytearray(b'\xb1\x00\x08\x06\x50\x50\x08\x00\x08\x59\x08\x00');
+                tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00');
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)

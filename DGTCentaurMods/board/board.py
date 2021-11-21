@@ -1,9 +1,25 @@
 # DGT Centaur board control functions
 #
-# I am not really a python programmer, but the language choice here
-# made sense!
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
 #
-# Ed Nekebno
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
 
 import serial
 import sys
@@ -36,6 +52,56 @@ BTNPLAY = 6
 # Various setup
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+
+# This is the most common address of the board
+addr1 = 0x06
+addr2 = 0x50
+
+def checksum(barr):
+    csum = 0
+    for c in bytes(barr):
+        csum += c
+    barr_csum = (csum % 128)
+    return barr_csum
+
+def buildPacket(command, data):
+    # pass command and data as bytes
+    tosend = bytearray(command + addr1.to_bytes(1,byteorder='big') + addr2.to_bytes(1,byteorder='big') + data)
+    tosend.append(checksum(tosend))
+    return tosend
+
+def sendPacket(command, data):
+    # pass command and data as bytes
+    tosend = buildPacket(command, data)
+    ser.write(tosend)
+
+# But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
+ser.read(10000)
+print("attempt address discovery")
+tosend = bytearray(b'\x4d')
+ser.write(tosend)
+ser.read(10000)
+tosend = bytearray(b'\x4e')
+ser.write(tosend)
+ser.read(10000)
+resp = ""
+while len(resp) < 4:
+    tosend = bytearray(b'\x87\x00\x00\x07')
+    ser.write(tosend)
+    resp = ser.read(10000)
+    if len(resp) > 3:
+        addr1 = resp[3]
+        addr2 = resp[4]
+        print("Discovered new address")
+        print(addr1)
+        print(addr2)
+        print(hex(addr1))
+        print(hex(addr2))
+        sendPacket(b'\xf4\x00\x07', b'\x7f')
+        resp = ser.read(10000)
+        sendPacket(b'\xf0\x00\x07', b'\x7f')
+        ser.read(100000)
+        resp = "         "
 
 #
 # Screen functions - deprecated, use epaper.py if possible
@@ -237,23 +303,21 @@ def doMenu(items, fast = 0):
         timeout = time.time() + 60 * 15
         while buttonPress == 0:
             ser.read(1000000)
-            tosend = bytearray(b'\x83\x06\x50\x59')
-            ser.write(tosend)
-            expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+            sendPacket(b'\x83', b'')
+            expect = buildPacket(b'\x85\x00', b'')
             resp = ser.read(10000)
             resp = bytearray(resp)
-            tosend = bytearray(b'\x94\x06\x50\x6a')
-            ser.write(tosend)
-            expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+            sendPacket(b'\x94', b'')
+            expect = buildPacket(b'\xb1\x00', b'')
             resp = ser.read(10000)
             resp = bytearray(resp)
-            if (resp.hex() == "b10011065000140a0501000000007d4700"):
+            if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
                 buttonPress = 1
-            if (resp.hex() == "b10011065000140a0510000000007d175f"):
+            if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
                 buttonPress = 2
-            if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+            if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
                 buttonPress = 3
-            if (resp.hex() == "b10010065000140a050200000000611d"):
+            if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
                 buttonPress = 4
             # check for quickselect
             if quickselect == 1 and quickselectpossible < 1:
@@ -290,17 +354,14 @@ def doMenu(items, fast = 0):
                             return k
                         c = c + 1
 
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
+        sendPacket(b'\xb1\x00\x08', b'\x4c\x08')
         if (buttonPress == 2):
             # Tick, so return the key for this menu item
             c = 1
             r = ""
             for k, v in items.items():
                 if (c == selected):
-                    #epd.unsetRegion()
-                    #epd.Clear(0xff)
                     selected = 99999
-                    #epd.display(epd.getbuffer(image))
                     return k
                 c = c + 1
         if (buttonPress == 4 and selected < len(items)):
@@ -321,21 +382,18 @@ def doMenu(items, fast = 0):
 
 def clearSerial():
     ser.read(1000000)
-    tosend = bytearray(b'\x83\x06\x50\x59')
-    ser.write(tosend)
-    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    sendPacket(b'\x83', b'')
+    expect = buildPacket(b'\x85\x00\x06', b'')
     resp = ser.read(10000)
     resp = bytearray(resp)
-    tosend = bytearray(b'\x94\x06\x50\x6a')
-    ser.write(tosend)
-    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+    sendPacket(b'\x94', b'')
+    expect = buildPacket(b'\xb1\x00\x06', b'')
     resp = ser.read(10000)
 
 def clearBoardData():
     ser.read(100000)
-    tosend = bytearray(b'\x83\x06\x50\x59')
-    ser.write(tosend)
-    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    sendPacket(b'\x83', b'')
+    expect = buildPacket(b'\x85\x00\x06', b'')
     ser.read(1000000)
 
 def beep(beeptype):
@@ -343,27 +401,29 @@ def beep(beeptype):
     if centaur.get_sound() == "off":
         return
     if (beeptype == SOUND_GENERAL):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x08\x63'))
+        sendPacket(b'\xb1\x00\x08',b'\x4c\x08')
     if (beeptype == SOUND_FACTORY):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x4c\x40\x1b'))
+        sendPacket(b'\xb1\x00\x08', b'\x4c\x40')
     if (beeptype == SOUND_POWER_OFF):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4c\x08\x48\x08\x35'))
+        sendPacket(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
     if (beeptype == SOUND_POWER_ON):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x48\x08\x4c\x08\x35'))
+        sendPacket(b'\xb1\x00\x0a', b'\x48\x08\x4c\x08')
     if (beeptype == SOUND_WRONG):
-        ser.write(bytearray(b'\xb1\x00\x0a\x06\x50\x4e\x0c\x48\x10\x43'))
+        sendPacket(b'\xb1\x00\x0a', b'\x4e\x0c\x48\x10')
     if (beeptype == SOUND_WRONG_MOVE):
-        ser.write(bytearray(b'\xb1\x00\x08\x06\x50\x48\x08\x5f'))
+        sendPacket(b'\xb1\x00\x08', b'\x48\x08')
 
 def ledsOff():
     # Switch the LEDs off on the centaur
-    ser.write(bytearray(b'\xb0\x00\x07\x06\x50\x00\x0d'))
+    print("switching off leds")
+    sendPacket(b'\xb0\x00\x07', b'\x00')
+
 
 def ledFromTo(lfrom, lto, intensity=5):
     # Light up a from and to LED for move indication
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
-    tosend = bytearray(b'\xb0\x00\x0c\x06\x50\x05\x03\x00\x05\x3d\x31\x0d')
+    tosend = bytearray(b'\xb0\x00\x0c' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big') + b'\x05\x03\x00\x05\x3d\x31\x0d')
     # Recalculate lfrom to the different indexing system
     tosend[8] = intensity
     tosend[9] = rotateField(lfrom)
@@ -374,36 +434,42 @@ def ledFromTo(lfrom, lto, intensity=5):
     tosend.append(checksum(tosend))
     ser.write(tosend)
     # Read off any data
-    ser.read(100000)
+    #ser.read(100000)
 
 def led(num, intensity=5):
     # Flashes a specific led
     # Note the call to this function is 0 for a1 and runs to 63 for h8
     # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
-    tosend = bytearray(b'\xb0\x00\x0b\x06\x50\x05\x0a\x01\x01\x3d\x5f')
-    # Recalculate num to the different indexing system
-    # Last bit is the checksum
-    tosend[8] = intensity
-    tosend[9] = rotateField(num)
-    # Wipe checksum byte and append the new checksum.
-    tosend.pop()
-    tosend.append(checksum(tosend))
-    ser.write(tosend)
-    # Read off any data
-    ser.read(100000)
+    tcount = 0
+    success = 0
+    while tcount < 5 and success == 0:
+        try:
+            tosend = bytearray(b'\xb0\x00\x0b' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big') + b'\x05\x0a\x01\x01\x3d\x5f')
+            # Recalculate num to the different indexing system
+            # Last bit is the checksum
+            tosend[8] = intensity
+            tosend[9] = rotateField(num)
+            # Wipe checksum byte and append the new checksum.
+            tosend.pop()
+            tosend.append(checksum(tosend))
+            ser.write(tosend)
+            success = 1
+            # Read off any data
+            #ser.read(100000)
+        except:
+            time.sleep(0.1)
+            tcount = tcount + 1
 
 def ledFlash():
     # Flashes the last led lit by led(num) above
-    tosend = bytearray(b'\xb0\x00\x0a\x06\x50\x05\x0a\x00\x01\x20')
-    ser.write(tosend)
-    ser.read(100000)
+    sendPacket(b'\xb0\x00\x0a', b'\x05\x0a\x00\x01')
+    #ser.read(100000)
 
 def shutdown():
     """
     Initiate shutdown sequence.
     """
-    tosend = bytearray(b'\xb2\x00\x07\x06\x50\x0a\x19')
-    ser.write(tosend)
+    sendPacket(b'\xb2\x00\x07', b'\x0a')
 
 
 #
@@ -417,9 +483,8 @@ def waitMove():
     moves = []
     while placed == -1:
         ser.read(100000)
-        tosend = bytearray(b'\x83\x06\x50\x59')
-        ser.write(tosend)
-        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+        sendPacket(b'\x83', b'')
+        expect = buildPacket(b'\x85\x00\x06', b'')
         resp = ser.read(10000)
         resp = bytearray(resp)
         if (bytearray(resp) != expect):
@@ -441,9 +506,8 @@ def waitMove():
                         placed = newsquare
                         moves.append(newsquare + 1)
                         print(placed)
-        tosend = bytearray(b'\x94\x06\x50\x6a')
-        ser.write(tosend)
-        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+        sendPacket(b'\x94', b'')
+        expect = buildPacket(b'\xb1\x00\x06', b'')
         resp = ser.read(10000)
         resp = bytearray(resp)
     print(moves)
@@ -455,9 +519,8 @@ def poll():
     # I haven't noticed it yet, therefore we need to process
     # the data as it comes
     ser.read(100000)
-    tosend = bytearray(b'\x83\x06\x50\x59')
-    ser.write(tosend)
-    expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+    sendPacket(b'\x83', b'')
+    expect = buildPacket(b'\x85\x00\x06', b'')
     resp = ser.read(10000)
     resp = bytearray(resp)
     if (bytearray(resp) != expect):
@@ -477,23 +540,22 @@ def poll():
                     fieldHex = resp[x + 1]
                     newsquare = rotateFieldHex(fieldHex)
                     print(newsquare)
-    tosend = bytearray(b'\x94\x06\x50\x6a')
-    ser.write(tosend)
-    expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+    sendPacket(b'\x94', b'')
+    expect = buildPacket(b'\xb1\x00\x06', b'')
     resp = ser.read(10000)
     resp = bytearray(resp)
     if (resp != expect):
-        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
             print("BACK BUTTON")
-        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
             print("TICK BUTTON")
-        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
             print("UP BUTTON")
-        if (resp.hex() == "b10010065000140a050200000000611d"):
+        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
             print("DOWN BUTTON")
-        if (resp.hex() == "b10010065000140a0540000000006d67"):
+        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
             print("HELP BUTTON")
-        if (resp.hex() == "b10010065000140a0504000000002a68"):
+        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
             print("PLAY BUTTON")
 
 def getText(title):
@@ -547,9 +609,8 @@ def getText(title):
             changed = 0
         buttonPress = 0
         ser.read(1000000)
-        tosend = bytearray(b'\x83\x06\x50\x59')
-        ser.write(tosend)
-        expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+        sendPacket(b'\x83', b'')
+        expect = buildPacket(b'\x85\x00\x06', b'')
         resp = ser.read(10000)
         resp = bytearray(resp)
         # If a piece is placed it will type a character!
@@ -563,18 +624,17 @@ def getText(title):
                         typed = typed + lchars[fieldHex]
                         beep(SOUND_GENERAL)
                         changed = 1
-        tosend = bytearray(b'\x94\x06\x50\x6a')
-        ser.write(tosend)
-        expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+        sendPacket(b'\x94', b'')
+        expect = buildPacket(b'\xb1\x00\x06', b'')
         resp = ser.read(10000)
         resp = bytearray(resp)
-        if (resp.hex() == "b10011065000140a0501000000007d4700"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
             buttonPress = 1 # BACK
-        if (resp.hex() == "b10011065000140a0510000000007d175f"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
             buttonPress = 2 # TICK
-        if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
             buttonPress = 3 # UP
-        if (resp.hex() == "b10010065000140a050200000000611d"):
+        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
             buttonPress = 4 # DOWN
         if buttonPress == 1 and len(typed) > 0:
             typed = typed[:-1]
@@ -600,13 +660,12 @@ def getBoardState(field=None):
     # Consider this function experimental
     # lowerlimit/upperlimit may need adjusting
     # Get the board data
-    tosend = bytearray(b'\xf0\x00\x07\x06\x50\x7f\x4c')
-    ser.write(tosend)
+    sendPacket(b'\xf0\x00\x07', b'\x7f')
     resp = ser.read(10000)
     resp = resp = resp[6:(64 * 2) + 6]
     boarddata = [None] * 64
     for x in range(0, 127, 2):
-        tval = (resp[x] * 256) + resp[x+1];
+        tval = (resp[x] * 256) + resp[x+1]
         boarddata[(int)(x/2)] = tval
     # Any square lower than 400 is empty
     # Any square higher than upper limit is also empty
@@ -649,13 +708,6 @@ def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
 # Helper functions - used by other functions or useful in manipulating board data
 #
 
-def checksum(barr):
-    csum = 0
-    for c in bytes(barr):
-        csum += c
-    barr_csum = (csum % 128)
-    return barr_csum
-
 def rotateField(field):
     lrow = (field // 8)
     lcol = (field % 8)
@@ -689,9 +741,9 @@ def eventsThread(keycallback, fieldcallback):
         if eventsrunning == 1:
             buttonPress = 0
             try:
-                tosend = bytearray(b'\x83\x06\x50\x59')
-                ser.write(tosend)
-                expect = bytearray(b'\x85\x00\x06\x06\x50\x61')
+                sendPacket(b'\x83', b'')
+                expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                expect.append(checksum(expect))
                 resp = ser.read(10000)
                 resp = bytearray(resp)
                 if (bytearray(resp) != expect):
@@ -713,22 +765,23 @@ def eventsThread(keycallback, fieldcallback):
             except:
                 pass
             try:
-                tosend = bytearray(b'\x94\x06\x50\x6a')
-                ser.write(tosend)
-                expect = bytearray(b'\xb1\x00\x06\x06\x50\x0d')
+                sendPacket(b'\x94', b'')
+                expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                expect.append(checksum(expect))
                 resp = ser.read(10000)
                 resp = bytearray(resp)
-                if (resp.hex() == "b10011065000140a0501000000007d4700"):
+                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
                     buttonPress = BTNBACK  # BACK
-                if (resp.hex() == "b10011065000140a0510000000007d175f"):
+                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
                     buttonPress = BTNTICK  # TICK
-                if (resp.hex() == "b10011065000140a0508000000007d3c7c"):
+                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
                     buttonPress = BTNUP  # UP
-                if (resp.hex() == "b10010065000140a050200000000611d"):
+                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
+                    print("down")
                     buttonPress = BTNDOWN  # DOWN
-                if (resp.hex() == "b10010065000140a0540000000006d67"):
+                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
                     buttonPress = BTNHELP   # HELP
-                if (resp.hex() == "b10010065000140a0504000000002a68"):
+                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
                     buttonPress = BTNPLAY   # PLAY
             except:
                 pass
@@ -754,10 +807,4 @@ def unPauseEvents():
     global eventsrunning
     eventsrunning = 1
 
-# poll()
-# beep(SOUND_GENERAL)
-# ledsOff()
-# ledFromTo(0,63)
-# while True:
-#	poll()
-# sys.exit()
+
