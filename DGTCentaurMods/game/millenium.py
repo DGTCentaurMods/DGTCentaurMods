@@ -461,7 +461,7 @@ while kill == 0:
 							centaurpattern[((r + 1) * 8) + t] = 0
 				board.ledsOff()
 				trigger = 0
-				board.sendPacket(b'\xb0\x00\x0c',b'\x05\x05\x00')
+				tosend = bytearray(b'\xb0\x00\x0c' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1,byteorder='big') + b'\x05\x05\x00\x05')
 				for x in range(0, 64):
 					if centaurpattern[x] > 0:
 						trigger = 1
