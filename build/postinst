@@ -166,6 +166,15 @@ function insertRodentIV {
     fi
 }
 
+function insertZahak {
+    cp ${SETUP_DIR}/defaults/zahak ${SETUP_DIR}/engines/
+    chmod 755 ${SETUP_DIR}/engines/zahak
+    if [ ! -f ${SETUP_DIR}/engines/zahak.uci ]
+    then
+        cp ${SETUP_DIR}/defaults/zahak.uci ${SETUP_DIR}/engines/
+    fi
+
+}
 
 function add_lichess_key {
 CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
@@ -175,15 +184,21 @@ sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
 
 
 
-read -p "DO you want to integrate Maia for this build? (y/n):"
+read -p "DO you want to integrate Maia to this installation? (y/n):"
 case $REPLY in
     [Yy]* ) insertMaia;;
     Nn]* ) echo "::: Move on";;
 esac
 
-read -p "DO you want to integrate RodentIV for this build? (y/n):"
+read -p "DO you want to integrate RodentIV to this installation? (y/n):"
 case $REPLY in
     [Yy]* ) insertRodentIV;;
+    Nn]* ) echo "::: Move on";;
+esac
+
+read -p "DO you want to integrate Zahak to this installation? (y/n):"
+case $REPLY in
+    [Yy]* ) insertZahak;;
     Nn]* ) echo "::: Move on";;
 esac
 
