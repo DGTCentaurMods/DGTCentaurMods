@@ -1,5 +1,5 @@
 Package: dgtcentaurmods
-Version: 0
+Version: 0.0.1
 Architecture: armhf
 Maintainer: wormstein<email@gmail.com>
 Depends: ntp, ssmtp, libopenjp2-7-dev, libtiff5, python3-pip, git, libopenjp2-7
