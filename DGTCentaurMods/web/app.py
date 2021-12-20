@@ -61,12 +61,12 @@ def fen():
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	return fen
 
-@app.route("/tuner")
+@app.route("/rodentivtuner")
 def tuner():
 
-        return render_template('tuner.html')
+        return render_template('rodentivtuner.html')
 
-@app.route("/tuner" , methods=["POST"])
+@app.route("/rodentivtuner" , methods=["POST"])
 def tuner_upload_file():
 	uploaded_file = request.files['file']
 	if uploaded_file.filename != '':
