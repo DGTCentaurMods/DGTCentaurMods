@@ -133,11 +133,10 @@ function insertMaia {
         fi
     fi
     cp -r ${SETUP_DIR}/tmp/maia-chess/maia_weights ${SETUP_DIR}/engines/
-    cp ${SETUP_DIR}/setup/maia ${SETUP_DIR}/engines/
     chmod 755 ${SETUP_DIR}/engines/maia
     if [ ! -f ${SETUP_DIR}/engines/maia.uci ]
     then
-        cp ${SETUP_DIR}/setup/maia.uci ${SETUP_DIR}/engines/
+        cp ${SETUP_DIR}/setup/engines/maia.uci ${SETUP_DIR}/engines/
     fi
 
 }
@@ -160,20 +159,18 @@ function insertRodentIV {
     fi
     cp -r ${SETUP_DIR}/tmp/rodent-iv/personalities ${SETUP_DIR}/engines/
     cp -r ${SETUP_DIR}/tmp/rodent-iv/books ${SETUP_DIR}/engines/
-    cp ${SETUP_DIR}/setup/rodentIV ${SETUP_DIR}/engines/
     chmod 744 ${SETUP_DIR}/engines/rodentIV
     if [ ! -f ${SETUP_DIR}/engines/rodentIV.uci ] 
     then
-        cp ${SETUP_DIR}/setup/rodentIV.uci ${SETUP_DIR}/engines/
+        cp ${SETUP_DIR}/setup/engines/rodentIV.uci ${SETUP_DIR}/engines/
     fi
     if [ ! -f ${SETUP_DIR}/engines/personalities/basic.ini ]
     then
-        cp ${SETUP_DIR}/setup/basic.ini ${SETUP_DIR}/engines/personalities/
+        cp ${SETUP_DIR}/setup/engines/basic.ini ${SETUP_DIR}/engines/personalities/
     fi
 }
 
 function insertZahak {
-    cp ${SETUP_DIR}/setup/zahak ${SETUP_DIR}/engines/
     chmod 755 ${SETUP_DIR}/engines/zahak
     if [ ! -f ${SETUP_DIR}/engines/zahak.uci ]
     then
