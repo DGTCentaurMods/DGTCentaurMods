@@ -1,0 +1,31 @@
+#option name Ponder type check default false
+#option name Hash type spin default 128 min 1 max 120000
+#option name OwnBook type check default false
+#option name Threads type spin default 1 min 1 max 4
+#option name EvalFile type string default <empty>
+#option name BookFile type string default <empty>
+#option name SyzygyPath type string default <empty>
+#option name SyzygyProbeDepth type spin default 0 min 0 max 128
+#option name MultiPV type spin default 1 min 1 max 120
+#option name Skill Level type spin default 7 min 1 max 7
+
+[Level 1: 1270]
+Skill Level = 1
+
+[Level 2: 1440]
+Skill Level = 2
+
+[Level 3: 1630]
+Skill Level = 3
+
+[Level 4: 1856]
+Skill Level = 4
+
+[Level 5: 2004]
+Skill Level = 5
+
+[Level 6: 2074]
+Skill Level = 6
+
+[Level 7: open]
+Skill Level = 7
