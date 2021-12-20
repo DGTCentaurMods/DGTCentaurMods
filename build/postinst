@@ -128,8 +128,8 @@ function insertMaia {
     if [ ! -d ${SETUP_DIR}/tmp/maia-chess ]
     then
         git clone --depth 1 $MAIA_REPO ${SETUP_DIR}/tmp/maia-chess;
-        if (($ret > 0))
-            then echo "git clone maia chess failed with $ret"
+        if (($? > 0))
+            then echo "git clone maia chess failed with $?"
         fi
     fi
     cp -r ${SETUP_DIR}/tmp/maia-chess/maia_weights ${SETUP_DIR}/engines/
@@ -150,8 +150,8 @@ function insertRodentIV {
     if [ ! -d ${SETUP_DIR}/tmp/rodent-iv ]
     then
         git clone --depth 1 $RODENT_REPO ${SETUP_DIR}/tmp/rodent-iv;
-        if (($ret > 0))
-            then echo "git clone rodentiv failed with $ret"
+        if (($? > 0))
+            then echo "git clone rodentiv failed with $?"
         fi
     fi
     if [ -f ${SETUP_DIR}/tmp/rodent-iv/personalities/basic.ini ]
