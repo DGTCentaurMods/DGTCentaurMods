@@ -174,7 +174,7 @@ function insertZahak {
     chmod 755 ${SETUP_DIR}/engines/zahak
     if [ ! -f ${SETUP_DIR}/engines/zahak.uci ]
     then
-        cp ${SETUP_DIR}/setup/zahak.uci ${SETUP_DIR}/engines/
+        cp ${SETUP_DIR}/setup/engines/zahak.uci ${SETUP_DIR}/engines/
     fi
 
 }
