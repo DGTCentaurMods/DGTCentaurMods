@@ -5,8 +5,7 @@ set -e
 ##### VARIABLES
 BASE=`pwd`
 REPO_NAME="DGTCentaur"
-#REPO_URL="https://github.com/EdNekebno/DGTCentaur"
-REPO_URL="-b engine_feature https://github.com/marcb1309/DGTCentaur"
+REPO_URL="https://github.com/EdNekebno/DGTCentaur"
 PCK_NAME="DGTCentaurMods"
 SETUP_DIR="/home/pi"
 STOCKFISH_REPO="https://github.com/wormstein/Stockfish"
