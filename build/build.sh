@@ -44,7 +44,7 @@ function insertStockfish {
 
 
 function configSetup {
-    sed -i "s/Version:.*/Version: $TAG/g" control
+    sed -i "s/Version:.*/Version: $VERSION/g" control
     
     cd ${STAGE}/etc/systemd/system
         local SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
@@ -77,7 +77,7 @@ function configSetup {
 
 
 function stage {
-    STAGE="${PCK_NAME}_${TAG}_armhf"
+    STAGE="${PCK_NAME}_${VERSION}_armhf"
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
     
@@ -100,7 +100,7 @@ function stage {
 function gitCheckout {
 if [ -x $1 ]
 then
-    TAG="0"
+    VERSION="0"
     # Clean any existing data
     if [ -d ${STAGE} ]
     then
@@ -109,7 +109,15 @@ then
     git clone --depth 1 $REPO_URL && stage || exit 1
 
 else
-    TAG=$1
+    if [ $2 = branch ]
+    then
+        VERSION=0-$1
+        TAG=$1
+    else
+        TAG=$1
+        VERSION=$1
+        echo $TAG $VERSION
+    fi
     git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
 fi
 }
@@ -124,20 +132,17 @@ case $1 in
         rm -rf Stockfish
         exit 0
         ;;
-esac
-    if [[ -z $1 ]]
-    then
-        read -p "Is this a release from master (Y/N(: "
-        case $REPLY in
-            [Yy]* ) gitCheckout;;
-            [Nn]* ) 
-                read -p "Please input release number: "
-                gitCheckout $REPLY
-                ;;
-            * ) echo "Please answer a tag number"; exit 1;;
-        esac
-    fi
-       
+    * )
+        if [[ -z $1 ]]
+        then
+            read -p "Please enter a tag number: "
+            gitCheckout $REPLY
+        else
+            gitCheckout $1 branch
+        fi
+        ;;
+    esac
+
 configSetup
 
 read -p "DO you want to integrate Stockfish for this build? (y/n):"
