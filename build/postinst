@@ -11,7 +11,10 @@ BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
-
+RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
+MAIA_REPO="https://github.com/CSSLab/maia-chess.git"
+RODENTIV="rodentIV"
+MAIA="maia"
 
 echo -e "Hardware configuration"
 echo -e "Backup first"
@@ -103,7 +106,6 @@ else
     # TODO: find a way to download.
 fi
 chown -R pi.pi $CENTAUR_ENGINE
-
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
 then
@@ -117,11 +119,80 @@ echo -e "::: Installing python packages.\n"
     cd $SETUP_DIR
     pip3 install -r $SETUP_DIR/requirements.txt
 
+
+function insertMaia {
+    if [ ! -d  ${SETUP_DIR}/tmp ]
+    then
+        mkdir ${SETUP_DIR}/tmp
+    fi
+    if [ ! -d ${SETUP_DIR}/tmp/maia-chess ]
+    then
+        git clone --depth 1 $MAIA_REPO ${SETUP_DIR}/tmp/maia-chess;
+        if (($? > 0))
+            then echo "git clone maia chess failed with $?"
+        fi
+    fi
+    cp -r ${SETUP_DIR}/tmp/maia-chess/maia_weights ${SETUP_DIR}/engines/
+    chmod 755 ${SETUP_DIR}/engines/maia
+    if [ ! -f ${SETUP_DIR}/engines/maia.uci ]
+    then
+        cp ${SETUP_DIR}/setup/engines/maia.uci ${SETUP_DIR}/engines/
+    fi
+
+}
+
+function insertRodentIV {
+    if [ ! -d  ${SETUP_DIR}/tmp ]
+    then
+        mkdir ${SETUP_DIR}/tmp
+    fi
+    if [ ! -d ${SETUP_DIR}/tmp/rodent-iv ]
+    then
+        git clone --depth 1 $RODENT_REPO ${SETUP_DIR}/tmp/rodent-iv;
+        if (($? > 0))
+            then echo "git clone rodentiv failed with $?"
+        fi
+    fi
+    if [ -f ${SETUP_DIR}/tmp/rodent-iv/personalities/basic.ini ]
+    then
+        rm ${SETUP_DIR}/tmp/rodent-iv/personalities/basic.ini
+    fi
+    cp -r ${SETUP_DIR}/tmp/rodent-iv/personalities ${SETUP_DIR}/engines/
+    cp -r ${SETUP_DIR}/tmp/rodent-iv/books ${SETUP_DIR}/engines/
+    chmod 744 ${SETUP_DIR}/engines/rodentIV
+    if [ ! -f ${SETUP_DIR}/engines/rodentIV.uci ] 
+    then
+        cp ${SETUP_DIR}/setup/engines/rodentIV.uci ${SETUP_DIR}/engines/
+    fi
+    if [ ! -f ${SETUP_DIR}/engines/personalities/basic.ini ]
+    then
+        cp ${SETUP_DIR}/setup/engines/basic.ini ${SETUP_DIR}/engines/personalities/
+    fi
+}
+
+function insertZahak {
+    chmod 755 ${SETUP_DIR}/engines/zahak
+    if [ ! -f ${SETUP_DIR}/engines/zahak.uci ]
+    then
+        cp ${SETUP_DIR}/setup/engines/zahak.uci ${SETUP_DIR}/engines/
+    fi
+
+}
+
 function add_lichess_key {
 CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
 read -p "Lichess API token: "
 sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
 }
+
+
+
+insertMaia
+insertRodentIV
+insertZahak
+
+chown -R pi.pi ${SETUP_DIR}
+
 
 # Setting up lichess key
 echo -e "\n\n"

@@ -1,0 +1,10 @@
+[DEFAULT]
+Hash = 16
+Threads = 2
+UCI_LimitStrength = true
+UCI_Elo = 1800
+# Change the above Elo value to your required grade between 800 & 2800 and all personalities will play at this grade.
+# If the Elo is below 2800 then alter the line above to UCI_LimitStrength = true, for 2800 only this should be false.
+# I have written a Bash file (Rod4Elo.sh in the pi home folder) that asks for your preferred grade and automatically 
+# applies the changes required. These changes only apply to personalities, they are ignored by the Elo levels as they
+# have their own settings 

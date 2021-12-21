@@ -2,32 +2,46 @@
 set -e
 # Script to produce deb pacjage
 
-##### VARIABLESi
+##### VARIABLES
 BASE=`pwd`
 REPO_NAME="DGTCentaur"
-REPO_URL="https://github.com/EdNekebno/DGTCentaur"
+#REPO_URL="https://github.com/EdNekebno/DGTCentaur"
+REPO_URL="-b engine_feature https://github.com/marcb1309/DGTCentaur"
 PCK_NAME="DGTCentaurMods"
 SETUP_DIR="/home/pi"
 STOCKFISH_REPO="https://github.com/wormstein/Stockfish"
+
 
 function build {
     dpkg-deb --build ${STAGE}
 }
 
 function insertStockfish {
-    git clone $STOCKFISH_REPO
+    if [ ! -d Stockfish ] 
+    then
 
-    cd Stockfish/src
-        make clean
-        make map
-        make build ARCH=armv7
+        git clone $STOCKFISH_REPO
 
-        mv stockfish stockfish_pi
-        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
+        cd Stockfish/src
+            make clean
+            #make map
+            make -j$(nproc) build ARCH=armv7
+
+            mv stockfish stockfish_pi
+            cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
         
-    cd $BASE
-        rm -rf Stockfish
+        cd $BASE
+    else 
+        read -p "DO you want to rebuild Stockfish (y/n):"
+        case $REPLY in
+        [Yy]* ) rm -rf Stockfish && insertStockfish;;
+        Nn]* )  cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
+        esac  
+        
+    fi
 }
+
+
 
 
 function configSetup {
@@ -38,7 +52,7 @@ function configSetup {
         
         # Setup DGT Centaur Mods service
         echo "::: Configuring service:  DGTCentaurMods.service"
-            sed -i "s/ExecStart.*/ExecStart=python3.7 game\/menu.py/g" DGTCentaurMods.service
+            sed -i "s/ExecStart.*/ExecStart=python3 game\/menu.py/g" DGTCentaurMods.service
             sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
             sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
         
@@ -130,8 +144,9 @@ configSetup
 read -p "DO you want to integrate Stockfish for this build? (y/n):"
 case $REPLY in
     [Yy]* ) insertStockfish;;
-    Nn]* ) echo "::: Build starting";;
+    Nn]* ) echo "::: Move on";;
 esac
+
 
 echo "::: Build starting"
 build
