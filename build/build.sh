@@ -16,25 +16,29 @@ function build {
 }
 
 function insertStockfish {
-    if [ ! -d Stockfish ] 
+    if [ ! -f ./Stockfish/src/stockfish_pi ] 
     then
-
-        git clone $STOCKFISH_REPO
-
+        if [ ! -d Stockfish ]
+        then
+            git clone $STOCKFISH_REPO
+        fi
+        if [ $(dpkg-query -W -f='${Status}' libsqlite3-dev 2>/dev/null | grep -c "ok installed") -eq 0 ];
+        then
+            sudo apt-get install libsqlite3-dev;
+        fi
         cd Stockfish/src
-            make clean
-            #make map
-            make -j$(nproc) build ARCH=armv7
+        make clean
+        #make map
+        make -j$(nproc) build ARCH=armv7
 
-            mv stockfish stockfish_pi
-            cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
-        
+        mv stockfish stockfish_pi
+        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
         cd $BASE
     else 
         read -p "DO you want to rebuild Stockfish (y/n):"
         case $REPLY in
         [Yy]* ) rm -rf Stockfish && insertStockfish;;
-        Nn]* )  cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
+        Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
         esac  
         
     fi
