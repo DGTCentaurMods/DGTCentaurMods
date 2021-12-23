@@ -1,7 +1,7 @@
 Package: dgtcentaurmods
-Version: 0
+Version: 0-local-build
 Architecture: armhf
 Maintainer: wormstein<email@gmail.com>
-Depends: ntp, ssmtp, libopenjp2-7-dev, libtiff5, python3-pip, git, libopenjp2-7
+Depends: ntp, ssmtp, libopenjp2-7-dev, libtiff5, python3-pip, git, libopenjp2-7, libbluetooth-dev, bluez-tools
 Homepage: https://github.com/EdNekebno/DGTCentaur
 Description: DGT Centaur Mods is a set of new features to the DGT Centaur computer chess board.
