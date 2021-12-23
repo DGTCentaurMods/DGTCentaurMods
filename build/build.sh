@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-set -e
 # Script to produce deb pacjage
 
 ##### VARIABLES
@@ -97,6 +96,16 @@ function stage {
 }
 
 
+
+function buildLocal {
+    VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
+    cp -r ../../$REPO_NAME .
+    
+    stage
+}
+
+
+
 function gitCheckout {
 if [ -x $1 ]
 then
@@ -132,6 +141,7 @@ case $1 in
         rm -rf Stockfish
         exit 0
         ;;
+    local* ) buildLocal;;
     * )
         if [[ -z $1 ]]
         then
