@@ -106,8 +106,9 @@ if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
 then
     if [[ -d $CENTAUR_ENGINE ]]
     then
-#        mv ${CENTAUR_ENGINE}/stockfish_pi ${CENTAUR_ENGINE}/stockfish_pi.bak
-        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/stockfish_$STOCKFISH_VERSION
+        mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
+        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
+        # mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/stockfish_$STOCKFISH_VERSION
     else
         mkdir -p $CENTAUR_ENGINE
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
