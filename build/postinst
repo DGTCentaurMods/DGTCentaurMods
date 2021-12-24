@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 
 #### HARDWARE CONFIGURATION
-STOCKFISH_VERSION="14"
 CURRHOSTNAME=`hostname`
 HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
@@ -108,7 +107,6 @@ then
     then
         mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
-        # mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/stockfish_$STOCKFISH_VERSION
     else
         mkdir -p $CENTAUR_ENGINE
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
