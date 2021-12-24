@@ -105,8 +105,8 @@ if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
 then
     if [[ -d $CENTAUR_ENGINE ]]
     then
-        mv ${CENTAUR_ENGINE}/stockfish_pi ${CENTAUR_ENGINE}/stockfish_pi.bak
-        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
+        mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
+        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
     else
         mkdir -p $CENTAUR_ENGINE
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
@@ -214,15 +214,15 @@ chown -R pi.pi ${SETUP_DIR}
 
 
 # Setting up lichess key
-echo -e "\n\n"
-read -p "Do you have a Lichess API token? (y/n): "
-case $REPLY in
-    [Yy]* ) add_lichess_key;;
-    [Nn]* )
-        exit
-        ;;
-    * ) ;;
-esac
+#echo -e "\n\n"
+#read -p "Do you have a Lichess API token? (y/n): "
+#case $REPLY in
+#    [Yy]* ) add_lichess_key;;
+#    [Nn]* )
+#        exit
+#        ;;
+#    * ) ;;
+#esac
 
 update_hostname
 
