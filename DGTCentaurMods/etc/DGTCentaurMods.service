@@ -3,7 +3,7 @@ Description=DGTCentaurMods software.
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3.7 /home/pi/DGTCentaurMods/game/menu.py
+ExecStart=/usr/bin/python3 /home/pi/DGTCentaurMods/game/menu.py
 WorkingDirectory=/home/pi/DGTCentaurMods
 Environment="PYTHONPATH=/home/pi/DGTCentaurMods"
 StandardOutput=inherit
