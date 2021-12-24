@@ -37,7 +37,7 @@ function insertStockfish {
         read -p "DO you want to rebuild Stockfish (y/n):"
         case $REPLY in
         [Yy]* ) rm -rf Stockfish && insertStockfish;;
-        Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
+        [Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
         esac  
         
     fi
@@ -162,7 +162,7 @@ configSetup
 read -p "DO you want to integrate Stockfish for this build? (y/n):"
 case $REPLY in
     [Yy]* ) insertStockfish;;
-    Nn]* ) echo "::: Move on";;
+    [Nn]* ) echo "::: Move on";;
 esac
 
 
