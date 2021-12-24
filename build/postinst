@@ -10,12 +10,15 @@ CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
+BTMAIN="/etc/bluetooth/main.conf"
+DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
 MAIA_REPO="https://github.com/CSSLab/maia-chess.git"
 RODENTIV="rodentIV"
 MAIA="maia"
+FENLOG="/home/pi/centaur/fen.log"
 
 echo -e "Hardware configuration"
 echo -e "Backup first"
@@ -68,11 +71,18 @@ echo -e "Services setup\n"
 
 # Update bluetooth service
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery\nExecStartPost=/usr/bin/sdptool add SP"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+# Update bluez service with same string
+    sed -i "s/^ExecStart.*/$REPLACE/g" $DBUSSERVICE    
 
-   systemctl daemon-reload
+# Update main.conf in /etc/bluetooth
+    sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
+    sed -i "/PairableTimeout/s/^# *//" $BTMAIN
+    sed -i "$ a JustWorksRepairing=always" $BTMAIN
+
+systemctl daemon-reload
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
@@ -106,7 +116,16 @@ else
     echo -e "Downloading Stockfish..."
     # TODO: find a way to download.
 fi
-chown -R pi.pi $CENTAUR_ENGINE
+chown -R pi.root $CENTAUR_ENGINE
+
+#Check if fen.log is there
+if [ ! -e $FENLOG ]
+then
+    touch $FENLOG
+    chown -R pi.root $FENLOG
+fi
+
+
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
 then
