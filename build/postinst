@@ -118,7 +118,7 @@ fi
 chown -R pi.root $CENTAUR_ENGINE
 
 #Check if fen.log is there
-if [ ! -f $FENLOG ]
+if [ ! -e $FENLOG ]
 then
     touch $FENLOG
     chown -R pi.root $FENLOG
