@@ -1,0 +1,11 @@
+cp /boot/centaur.tar.gz /home/pi/
+cd /home/pi/
+tar xvzf centaur.tar.gz
+cp /boot/firstboot.service /etc/systemd/system/firstboot.service
+cp /boot/firstboot.sh /home/pi/firstboot.sh
+chmod +x /home/pi/firstboot.sh
+systemctl enable firstboot.service
+rm -rf /boot/centaur.tar.gz
+rm -rf /boot/firstboot.service
+rm -rf /boot/firstboot.sh
+reboot

@@ -1,0 +1,7 @@
+[Unit]
+Description=One time boot script
+[Service]
+Type=simple
+ExecStart=/home/pi/firstboot.sh
+[Install]
+WantedBy=multi-user.target
