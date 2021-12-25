@@ -14,11 +14,15 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
         "Path $OutPutFolder exists!"
     }
     else {
-        $output = "$PSScriptRoot\$fileName"
         $start_time = Get-Date
-        Start-BitsTransfer -Source $url -Destination $output
-        Start-Sleep -s 5
-        Write-host "Get 7zip from $URL"
+        if (Test-Path -Path "$PSScriptRoot\$fileName") {
+            "Path $PSScriptRoot\$fileName exists!"
+        } else {
+            $output = "$PSScriptRoot\$fileName"
+
+            Start-BitsTransfer -Source $url -Destination $output
+            Start-Sleep -s 5
+        }
         if ($fileName -eq "7z2106-x64.msi") {
             "retrieve 7zip and extract"
             $file = Get-ChildItem "$PSScriptRoot\7z2106-x64.msi"
@@ -40,8 +44,8 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
         }
         else {
 
-            Write-host Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $fileName -o$OutPutFolder"
-            Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $fileName -o$OutPutFolder"
+            Write-host Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\$fileName -o$OutPutFolder"
+            Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\$fileName -o$OutPutFolder"
                
         }
 
@@ -70,15 +74,22 @@ else {
         Start-Sleep -s $SleepTime
         Start-Process "$PSScriptRoot\Win32DiskImager\Win32DiskImager.exe"  -Wait -ArgumentList  "$PSScriptRoot\centaur.img"
     }
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList 'x centaur.img 1.img'
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList 'x centaur.img 2.img'
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList 'x 1.img home\pi\centaur'
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList 'x 2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -ohome\pi\centaur\settings'
-    Remove-Item  "1.img"
-    Remove-Item  "2.img"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  'a centaur.tar  -ttar .\home\pi\centaur'
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  'a centaur.tar.gz  -tgzip .\centaur.tar'
-    Remove-Item  "centaur.tar"
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
+
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
+    Remove-Item  "$PSScriptRoot\1.img"
+    Remove-Item  "$PSScriptRoot\2.img"
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
+    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
+    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
+    Remove-Item  "$PSScriptRoot\centaur.tar"
 }
 Write-host " "
 Write-host " Do you need to write a new SDCard with Raspbian"
@@ -145,6 +156,7 @@ else {
 }
 WRITE-HOST ReleaseName =  $releaseFileName
 WRITE-HOST ReleasePath = $releaseFilePath
+Start-Sleep -s $SleepTime
 do {
     Write-host " "
     Write-host " "
