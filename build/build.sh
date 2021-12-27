@@ -95,15 +95,13 @@ function stage {
     mv $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
     mv $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
-    # Remove files from Git
-    rm -rf $REPO_NAME
 }
 
 
 
 function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
-    cp -r ../../$REPO_NAME .
+    REPO_NAME="/$(pwd)/../"
     
     stage
 }
