@@ -11,6 +11,7 @@ BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 BTMAIN="/etc/bluetooth/main.conf"
 DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
+CENTAUR="/home/pi/centaur/"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
@@ -121,7 +122,6 @@ chown -R pi.root $CENTAUR_ENGINE
 if [ ! -e $FENLOG ]
 then
     touch $FENLOG
-    chown -R pi.root $FENLOG
 fi
 
 
@@ -210,8 +210,9 @@ insertMaia
 insertRodentIV
 insertZahak
 
+# Setting final permissions
 chown -R pi.pi ${SETUP_DIR}
-
+chown -R pi.root $CENTAUR
 
 # Setting up lichess key
 #echo -e "\n\n"
