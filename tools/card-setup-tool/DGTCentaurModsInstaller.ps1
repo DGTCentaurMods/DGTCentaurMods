@@ -107,7 +107,7 @@ if ($answer -eq 6) {
     Write-host " Please write the raspbian image to a new SDCard "
     Write-host " - DO NOT use your original Centaur card !!!"
     Write-host " "
-    Write-host " - Use CNTRL + SHIFT + ""x"" in the Tool to allow ssh AND configure your WIFI !!!"
+    Write-host " - Use CNTRL + SHIFT + ""x"" in the ""Raspberry Pi Imager"" to allow ssh AND configure your WIFI !!!"
     Write-host " "
     Start-Sleep -s $SleepTime
     Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
