@@ -1,9 +1,9 @@
 #!/bin/bash 
-echo $(date +"%T") "apt get update" >>/boot/centaur_install.log
+echo $(date +"%T") "apt update" >>/boot/centaur_install.log
 apt update
-echo $(date +"%T")  "apt get upgrade" >>/boot/centaur_install.log
+echo $(date +"%T")  "apt -y upgrade" >>/boot/centaur_install.log
 apt -y upgrade
-echo $(date +"%T")  "apt get full-upgrade" >>/boot/centaur_install.log
+echo $(date +"%T")  "apt -y full-upgrade" >>/boot/centaur_install.log
 apt -y full-upgrade
 echo $(date +"%T")  "apt -y install /boot/DGTCentaurMods" >>/boot/centaur_install.log
 apt -y install /boot/DGTCentaurMods_0-build_armhf.deb
