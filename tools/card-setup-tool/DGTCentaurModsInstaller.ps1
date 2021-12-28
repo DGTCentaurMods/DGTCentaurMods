@@ -26,7 +26,7 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
             Start-Sleep -s 5
         }
         if ($fileName -eq "7z2106-x64.msi") {
-            "retrieve 7zip and extract"
+            Write-Host "retrieve 7zip and extract`r`n"
             $file = Get-ChildItem "$PSScriptRoot\7z2106-x64.msi"
             $DataStamp = get-date -Format yyyyMMddTHHmmss
             $logFile = '{0}-{1}.log' -f $file.fullname, $DataStamp
@@ -45,7 +45,7 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
             Remove-Item -Recurse  "$PSScriptRoot\7z"
         }
         else {
-
+            Write-Host "Extract $fileName to $OutPutFolder`r`n"
             Write-host Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\$fileName -o$OutPutFolder"
             Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\$fileName -o$OutPutFolder"
                
@@ -60,15 +60,15 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
 
 function ExtractCentaur {
     if (Test-Path -Path $PSScriptRoot\centaur.tar.gz) {
-        Write-host "Nothing to do file centaur.tar.gz is already there"
+        Write-host "Nothing to do file centaur.tar.gz is already there`r`n"
     }
     else {
 
         if (Test-Path -Path $PSScriptRoot\centaur.img) {
-            Write-host "Nothing to do file centaur.img is already there"
+            Write-host "Nothing to do file centaur.img is already there`r`n"
         }
         else {
-            Write-Host "We need to extract centaur from your sdcard"
+            Write-Host "We need to extract centaur from your sdcard`r`n"
             Write-Host "- please place original SDCard in your Card Reader"
             Write-Host "And use Win32DiskImager to create an Image file called centaur.img !"
             Start-Sleep -s $SleepTime
@@ -142,8 +142,9 @@ function GetReleaseFile {
  
         [void]$FileBrowser.ShowDialog()
 
-        $releaseFilePath = $FileBrowser.FileName;
-        $releaseFileName = (Get-ChildItem $releaseFilePath).Name
+        $FilePath = $FileBrowser.FileName;
+        #$FileName = (Get-ChildItem $FilePath).Name
+        #$FilePath = (Get-ChildItem $FilePath).FullName
 
         If ($FileBrowser.FileNames -like "*\*") {
 
@@ -165,11 +166,12 @@ function GetReleaseFile {
             Start-BitsTransfer -Source $releaseUrl -Destination "$PSScriptRoot\$releaseFileName"
 
         }
-        $releaseFilePath = "$PSScriptRoot\$releaseFileName"
+        $FilePath = (Get-ChildItem "$PSScriptRoot\$releaseFileName").FullName
     }
-    WRITE-HOST ReleaseName =  $releaseFileName
-    WRITE-HOST ReleasePath = $releaseFilePath
-    Start-Sleep -s $SleepTime
+    #WRITE-HOST "ReleaseName = $FileName"
+    WRITE-HOST "ReleasePath = $FilePath"
+    #Start-Sleep -s $SleepTime
+    return $FilePath
 }
 
 function PickSDCardDriveName {
@@ -189,6 +191,7 @@ function PickSDCardDriveName {
         write-host $BootDrive
 
     } until ( Test-Path -Path $BootDrive\config.txt )
+    return  $BootDrive
 }
 
 function ModifyBootDrive {
@@ -293,8 +296,17 @@ retrieveFiles -URL "https://downloads.raspberrypi.org/imager/imager_latest.exe" 
 
 ExtractCentaur
 RaspiosImager
-GetReleaseFile
-PickSDCardDriveName
+$FilePathAll = GetReleaseFile 
+If ( $FilePathAll[0].length -eq 1) {
+$releaseFilePath = $FilePathAll
+} else {
+$releaseFilePath = $FilePathAll[0]
+}
+write-host "releaseFilePath $releaseFilePath"
+$releaseFileName = (Get-ChildItem $releaseFilePath).Name
+Write-Host "releaseFileName $releaseFileName"
+$BootDrive = PickSDCardDriveName 
+Write-Host "DriveName $BootDrive"
 ModifyBootDrive
 
 exit 0
