@@ -71,7 +71,7 @@ echo -e "Services setup\n"
 
 # Update bluetooth service
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery\nExecStartPost=/usr/bin/sdptool add SP"
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery\n\ExecStartPost=/usr/bin/sdptool add SP"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
 # Update bluez service with same string
@@ -86,6 +86,7 @@ systemctl daemon-reload
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
+    if grep -q "^exit 0" rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
@@ -94,6 +95,7 @@ agent on \n\
 discoverable on \n\
 pairable on \n\
 EOF" /etc/rc.local
+    sed -i "$ a exit 0" /etc/rc.local
     
 function update_hostname {
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
