@@ -7,6 +7,7 @@ $SleepTime = 3
 $releaseFileName = -join ("DGTCentaurMods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/", $releaseVersion , "/" , $releaseFileName )
 
+
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
     $OutPutFolder = "$PSScriptRoot\$OutPutFolder"
     #   "Test to see if folder [$OutPutFolder]  exists"
@@ -17,7 +18,8 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
         $start_time = Get-Date
         if (Test-Path -Path "$PSScriptRoot\$fileName") {
             "Path $PSScriptRoot\$fileName exists!"
-        } else {
+        }
+        else {
             $output = "$PSScriptRoot\$fileName"
 
             Start-BitsTransfer -Source $url -Destination $output
@@ -107,11 +109,12 @@ if ($answer -eq 6) {
     Write-host " Please write the raspbian image to a new SDCard "
     Write-host " - DO NOT use your original Centaur card !!!"
     Write-host " "
-    Write-host " - Use CNTRL + SHIFT + ""x"" in the ""Raspberry Pi Imager"" to allow ssh AND configure your WIFI !!!"
+    Write-host " - Use CNTRL + SHIFT + ""x"" in the Tool to allow ssh AND configure your WIFI !!!"
     Write-host " "
     Start-Sleep -s $SleepTime
     Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
-} else {
+}
+else {
     Write-host " "
     Write-host "  Centaur is extracted from your SDCard as centaur.tar.gz "
     Write-host "  The Program is finished"
@@ -122,7 +125,8 @@ if ($answer -eq 6) {
 if ($dev -eq 1) {
     $wshell = New-Object -ComObject Wscript.Shell
     $answer = $wshell.Popup("Do you want to use the release version $releaseFileName", 0, "Alert", 64 + 4)
-} else {
+}
+else {
     $answer = 6
 }
 if ($answer -eq 7) {
@@ -197,6 +201,63 @@ Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"
 Write-host "Write firstrun.sh to $BootDrive"
 (Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
 Remove-Item  "$BootDrive\firstrun_new.sh"
+# modify cmdline.txt and config.txt for CentaurMods to work AND gain accees to the Display during installation
+
+# Enabke SPI bus if not enbaled
+$BootDrive = "H:\"
+$CONFIG = "$BootDrive\config.txt"
+$CMDLINEFILE = "$BootDrive\cmdline.txt"
+
+Copy-Item "$CMDLINEFILE" -Destination ("$CMDLINEFILE" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
+Copy-Item "$CONFIG" -Destination ("$CONFIG" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
+
+Write-Host "::: Checking SPI"
+$SPIOFF = (Select-String -Path $CONFIG -Pattern "^#dtparam=spi=on"  -Quiet)
+Write-Host "SPIOFF $SPIOFF"
+
+if ($SPIOFF) {
+    ((Get-Content -path $CONFIG -Raw) -replace '#dtparam=spi=on', 'dtparam=spi=on') | Set-Content -Path $CONFIG
+}
+else {
+    if (Select-String -Path $CONFIG -Pattern "^dtparam=spi=on"  -Quiet) {
+        Write-Host "$CONFIG is already changed to SPION"
+    }
+    else {
+        Add-Content -Path $CONFIG -Value 'dtparam=spi=on'
+    }
+} 
+
+Write-Host ":::::: Checking SPI 1.0 bus.\n"
+$SPI10 = (Select-String -Path $CONFIG -Pattern "^dtoverlay=spi1-3cs"  -Quiet)
+Write-Host "SPI10 $SPI10"
+if ( ! $SPI10 ) {
+    Write-Host "We add dtoverlay=spi1-3cs"
+    Add-Content -Path $CONFIG -Value 'dtoverlay=spi1-3cs'
+}
+else {
+    Write-Host "$CONFIG is already changed for dtoverlay=spi1-3cs"
+}
+  
+    
+Write-Host "::: Checking serial port. "
+$UARTOFF = (Select-String -Path $CONFIG -Pattern "^#enable_uart=1"  -Quiet)
+Write-Host "UARTOFF $UARTOFF"
+if ($UARTOFF) {
+    Write-Host "::: Enabling serial port..."
+    ((Get-Content -path $CONFIG -Raw) -replace '#enable_uart=1', 'enable_uart=1') | Set-Content -Path $CONFIG
+}
+else {
+    if (Select-String -Path $CONFIG -Pattern "^enable_uart=1"  -Quiet) {
+        Write-Host "$CONFIG is already changed to UARTON"
+    }
+    else {
+        Add-Content -Path $CONFIG -Value 'enable_uart=1'
+    }
+}
+
+Write-host "::: Disable console on ttyS0\n"
+((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path ($CMDLINEFILE +"_test")
+
 Write-host " "
 Write-host "  The SDCard is ready for the Centaur"
 Write-host "  Plug into your Pi Zero w 2 and power on"
