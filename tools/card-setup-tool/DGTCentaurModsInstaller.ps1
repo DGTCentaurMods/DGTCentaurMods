@@ -111,16 +111,21 @@ if ($answer -eq 6) {
     Write-host " "
     Start-Sleep -s $SleepTime
     Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
+} else {
+    Write-host " "
+    Write-host "  Centaur is extracted from your SDCard as centaur.tar.gz "
+    Write-host "  The Program is finished"
+    Write-host " "
+    Start-Sleep -s 15
+    exit 0
 }
 if ($dev -eq 1) {
     $wshell = New-Object -ComObject Wscript.Shell
     $answer = $wshell.Popup("Do you want to use the release version $releaseFileName", 0, "Alert", 64 + 4)
-}
-else {
+} else {
     $answer = 6
 }
 if ($answer -eq 7) {
-
     Add-Type -AssemblyName System.Windows.Forms
     $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
         Multiselect = $false # Multiple files can be chosen
