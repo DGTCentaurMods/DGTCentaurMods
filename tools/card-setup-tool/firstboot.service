@@ -1,5 +1,6 @@
 [Unit]
 Description=One time boot script
+After=network.target
 [Service]
 Type=simple
 ExecStart=/home/pi/firstboot.sh
