@@ -57,214 +57,244 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
 }
 
 
+
+function ExtractCentaur {
+    if (Test-Path -Path $PSScriptRoot\centaur.tar.gz) {
+        Write-host "Nothing to do file centaur.tar.gz is already there"
+    }
+    else {
+
+        if (Test-Path -Path $PSScriptRoot\centaur.img) {
+            Write-host "Nothing to do file centaur.img is already there"
+        }
+        else {
+            Write-Host "We need to extract centaur from your sdcard"
+            Write-Host "- please place original SDCard in your Card Reader"
+            Write-Host "And use Win32DiskImager to create an Image file called centaur.img !"
+            Start-Sleep -s $SleepTime
+            Start-Process "$PSScriptRoot\Win32DiskImager\Win32DiskImager.exe"  -Wait -ArgumentList  "$PSScriptRoot\centaur.img"
+        }
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
+
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
+        Remove-Item  "$PSScriptRoot\1.img"
+        Remove-Item  "$PSScriptRoot\2.img"
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
+        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
+        Remove-Item  "$PSScriptRoot\centaur.tar"
+    }
+    Write-host " "
+    Write-host " Do you need to write a new SDCard with Raspbian"
+    Write-host " using Raspberry PI imager?"
+    Write-host " "
+    Write-host " - DO NOT use your original Centaur card !!!"
+    Write-host " "
+    Start-Sleep -s $SleepTime
+}
+
+function RaspiosImager {
+    
+    $wshell = New-Object -ComObject Wscript.Shell
+    $answer = $wshell.Popup("Do you need to write a new SDCard with Raspbian?", 0, "Alert", 64 + 4)
+    if ($answer -eq 6) {
+
+        Write-host " "
+        Write-host " Please write the raspbian image to a new SDCard "
+        Write-host " - DO NOT use your original Centaur card !!!"
+        Write-host " "
+        Write-host " - Use CNTRL + SHIFT + ""x"" in the Tofr!!!"
+        Write-host " "
+        Start-Sleep -s $SleepTime
+        Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
+    }
+    else {
+        Write-host " "
+        Write-host "  Centaur is extracted from your SDCard as centaur.tar.gz "
+        Write-host "  The Program is finished"
+        Write-host " "
+        Start-Sleep -s 15
+        exit 0
+    }
+}
+
+function GetReleaseFile {
+    if ($dev -eq 1) {
+        $wshell = New-Object -ComObject Wscript.Shell
+        $answer = $wshell.Popup("Do you want to use the release version $releaseFileName", 0, "Alert", 64 + 4)
+    }
+    else {
+        $answer = 6
+    }
+    if ($answer -eq 7) {
+        Add-Type -AssemblyName System.Windows.Forms
+        $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
+            Multiselect = $false # Multiple files can be chosen
+            Filter      = 'debian Package (*.deb)|*.deb' # Specified file types
+        }
+ 
+        [void]$FileBrowser.ShowDialog()
+
+        $releaseFilePath = $FileBrowser.FileName;
+        $releaseFileName = (Get-ChildItem $releaseFilePath).Name
+
+        If ($FileBrowser.FileNames -like "*\*") {
+
+            # Do something 
+            $FileBrowser.FileName #Lists selected files (optional)
+	
+        }
+        else {
+            Write-Host "Cancelled by user"
+        }
+
+    }
+    else {
+        if (Test-Path -Path $PSScriptRoot\$releaseFileName) {
+            Write-host file $releaseFileName is ready downloaded
+       
+        }
+        else {
+            Start-BitsTransfer -Source $releaseUrl -Destination "$PSScriptRoot\$releaseFileName"
+
+        }
+        $releaseFilePath = "$PSScriptRoot\$releaseFileName"
+    }
+    WRITE-HOST ReleaseName =  $releaseFileName
+    WRITE-HOST ReleasePath = $releaseFilePath
+    Start-Sleep -s $SleepTime
+}
+
+function PickSDCardDriveName {
+    do {
+        Write-host " "
+        Write-host " "
+        write-host Select the Drive with the Raspbian Boot drive
+        Write-host " "
+        Write-host The drive should contain files config.txt and cmdline.txt
+        Write-host " "
+        Start-Sleep -s $SleepTime
+        Add-Type -AssemblyName System.Windows.Forms
+        $browser = New-Object System.Windows.Forms.FolderBrowserDialog
+        $null = $browser.ShowDialog()
+        $BootDrive = $browser.SelectedPath
+
+        write-host $BootDrive
+
+    } until ( Test-Path -Path $BootDrive\config.txt )
+}
+
+function ModifyBootDrive {
+    Write-host "Write firstrun.sh to $BootDrive"
+    Copy-Item "$BootDrive\firstrun.sh" -Destination ("$BootDrive\firstrun.sh" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
+    (Get-Content "$BootDrive\firstrun.sh") -notmatch "exit 0" | Set-Content "$BootDrive\firstrun_new.sh"
+    $From = Get-Content -Path "$PSScriptRoot\add2firstrun.txt"
+    Add-Content -Path  "$BootDrive\firstrun_new.sh" -Value $From
+    #Get-Content -Path  "$BootDrive\firstrun_new.sh"
+    (Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
+    Remove-Item  "$BootDrive\firstrun_new.sh"
+
+    Write-host "Write firstboot.sh to $BootDrive"
+    (Get-Content "$PSScriptRoot\firstboot.sh") `
+        -replace 'DGT.*?\.deb', $releaseFileName | `
+        Out-File "$BootDrive\firstboot.sh"
+    (Get-Content "$BootDrive\firstboot.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstboot.sh" -Force
+
+    Write-host "Write firstboot.service to $BootDrive"
+    Copy-Item "$PSScriptRoot\firstboot.service" -Destination "$BootDrive\firstboot.service"
+
+    Write-host "Write centaur.tar.gz to $BootDrive"
+    Copy-Item "$PSScriptRoot\centaur.tar.gz" -Destination "$BootDrive\centaur.tar.gz"
+    
+    Write-host "Write $releaseFileName to $BootDrive"
+    Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"
+
+
+
+    # modify cmdline.txt and config.txt for CentaurMods to work AND gain accees to the Display during installation
+
+    # Enabke SPI bus if not enbaled
+    # $BootDrive = "H:\"
+
+    $CONFIG = "$BootDrive\config.txt"
+    $CMDLINEFILE = "$BootDrive\cmdline.txt"
+    Write-host "Modify  $CONFIG and $CMDLINEFILE"
+    Copy-Item "$CMDLINEFILE" -Destination ("$CMDLINEFILE" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
+    Copy-Item "$CONFIG" -Destination ("$CONFIG" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
+
+    Write-Host "::: Checking SPI"
+    $SPIOFF = (Select-String -Path $CONFIG -Pattern "^#dtparam=spi=on"  -Quiet)
+    Write-Host "SPIOFF $SPIOFF"
+
+    if ($SPIOFF) {
+    ((Get-Content -path $CONFIG -Raw) -replace '#dtparam=spi=on', 'dtparam=spi=on') | Set-Content -Path $CONFIG
+    }
+    else {
+        if (Select-String -Path $CONFIG -Pattern "^dtparam=spi=on"  -Quiet) {
+            Write-Host "$CONFIG is already changed to SPION"
+        }
+        else {
+            Add-Content -Path $CONFIG -Value 'dtparam=spi=on'
+        }
+    } 
+
+    Write-Host ":::::: Checking SPI 1.0 bus."
+    $SPI10 = (Select-String -Path $CONFIG -Pattern "^dtoverlay=spi1-3cs"  -Quiet)
+    Write-Host "SPI10 $SPI10"
+    if ( ! $SPI10 ) {
+        Write-Host "We add dtoverlay=spi1-3cs"
+        Add-Content -Path $CONFIG -Value 'dtoverlay=spi1-3cs'
+    }
+    else {
+        Write-Host "$CONFIG is already changed for dtoverlay=spi1-3cs"
+    }
+  
+    
+    Write-Host "::: Checking serial port. "
+    $UARTOFF = (Select-String -Path $CONFIG -Pattern "^#enable_uart=1"  -Quiet)
+    Write-Host "UARTOFF $UARTOFF"
+    if ($UARTOFF) {
+        Write-Host "::: Enabling serial port..."
+    ((Get-Content -path $CONFIG -Raw) -replace '#enable_uart=1', 'enable_uart=1') | Set-Content -Path $CONFIG
+    }
+    else {
+        if (Select-String -Path $CONFIG -Pattern "^enable_uart=1"  -Quiet) {
+            Write-Host "$CONFIG is already changed to UARTON"
+        }
+        else {
+            Add-Content -Path $CONFIG -Value 'enable_uart=1'
+        }
+    }
+
+    Write-host "::: Disable console on ttyS0"
+((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path $CMDLINEFILE
+
+    Write-host " "
+    Write-host "  The SDCard is ready for the Centaur"
+    Write-host "  Plug into your Pi Zero w 2 and power on"
+    Write-host " "
+    Write-host "  Be careful with the epaper display - it is very fragile!"
+    Write-host " "
+    Write-host "  Be patient on the first boot - it takes time while it upgrades "
+    Write-host "  all the software already installed on the raspios!"
+    Start-Sleep -s 15
+}
+
 retrieveFiles -URL "https://7-zip.org/a/7z2106-x64.msi" -fileName "7z2106-x64.msi" -OutPutFolder "7-Zip"
 retrieveFiles -URL "https://sourceforge.net/projects/win32diskimager/files/Archive/Win32DiskImager-1.0.0-binary.zip/download" -fileName "Win32DiskImager-1.0.0-binary.zip" -OutPutFolder "Win32DiskImager"
 retrieveFiles -URL "https://downloads.raspberrypi.org/imager/imager_latest.exe" -fileName "raspberryPi_imager_latest.exe" -OutPutFolder "RaspberryPi_imager"
 
-if (Test-Path -Path $PSScriptRoot\centaur.tar.gz) {
-    Write-host "Nothing to do file centaur.tar.gz is already there"
-}
-else {
+ExtractCentaur
+RaspiosImager
+GetReleaseFile
+PickSDCardDriveName
+ModifyBootDrive
 
-    if (Test-Path -Path $PSScriptRoot\centaur.img) {
-        Write-host "Nothing to do file centaur.img is already there"
-    }
-    else {
-        Write-Host "We need to extract centaur from your sdcard"
-        Write-Host "- please place original SDCard in your Card Reader"
-        Write-Host "And use Win32DiskImager to create an Image file called centaur.img !"
-        Start-Sleep -s $SleepTime
-        Start-Process "$PSScriptRoot\Win32DiskImager\Win32DiskImager.exe"  -Wait -ArgumentList  "$PSScriptRoot\centaur.img"
-    }
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 1.img"
-
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
-    Remove-Item  "$PSScriptRoot\1.img"
-    Remove-Item  "$PSScriptRoot\2.img"
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
-    Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
-    Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
-    Remove-Item  "$PSScriptRoot\centaur.tar"
-}
-Write-host " "
-Write-host " Do you need to write a new SDCard with Raspbian"
-Write-host " using Raspberry PI imager?"
-Write-host " "
-Write-host " - DO NOT use your original Centaur card !!!"
-Write-host " "
-Start-Sleep -s $SleepTime
-
-$wshell = New-Object -ComObject Wscript.Shell
-$answer = $wshell.Popup("Do you need to write a new SDCard with Raspbian?", 0, "Alert", 64 + 4)
-if ($answer -eq 6) {
-
-    Write-host " "
-    Write-host " Please write the raspbian image to a new SDCard "
-    Write-host " - DO NOT use your original Centaur card !!!"
-    Write-host " "
-    Write-host " - Use CNTRL + SHIFT + ""x"" in the Tool to allow ssh AND configure your WIFI !!!"
-    Write-host " "
-    Start-Sleep -s $SleepTime
-    Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
-}
-else {
-    Write-host " "
-    Write-host "  Centaur is extracted from your SDCard as centaur.tar.gz "
-    Write-host "  The Program is finished"
-    Write-host " "
-    Start-Sleep -s 15
-    exit 0
-}
-if ($dev -eq 1) {
-    $wshell = New-Object -ComObject Wscript.Shell
-    $answer = $wshell.Popup("Do you want to use the release version $releaseFileName", 0, "Alert", 64 + 4)
-}
-else {
-    $answer = 6
-}
-if ($answer -eq 7) {
-    Add-Type -AssemblyName System.Windows.Forms
-    $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
-        Multiselect = $false # Multiple files can be chosen
-        Filter      = 'debian Package (*.deb)|*.deb' # Specified file types
-    }
- 
-    [void]$FileBrowser.ShowDialog()
-
-    $releaseFilePath = $FileBrowser.FileName;
-    $releaseFileName = (Get-ChildItem $releaseFilePath).Name
-
-    If ($FileBrowser.FileNames -like "*\*") {
-
-        # Do something 
-        $FileBrowser.FileName #Lists selected files (optional)
-	
-    }
-    else {
-        Write-Host "Cancelled by user"
-    }
-
-}
-else {
-    if (Test-Path -Path $PSScriptRoot\$releaseFileName) {
-        Write-host file $releaseFileName is ready downloaded
-       
-    }
-    else {
-        Start-BitsTransfer -Source $releaseUrl -Destination "$PSScriptRoot\$releaseFileName"
-
-    }
-    $releaseFilePath = "$PSScriptRoot\$releaseFileName"
-}
-WRITE-HOST ReleaseName =  $releaseFileName
-WRITE-HOST ReleasePath = $releaseFilePath
-Start-Sleep -s $SleepTime
-do {
-    Write-host " "
-    Write-host " "
-    write-host Select the Drive with the Raspbian Boot drive
-    Write-host " "
-    Write-host The drive should contain files config.txt and cmdline.txt
-    Write-host " "
-    Start-Sleep -s $SleepTime
-    Add-Type -AssemblyName System.Windows.Forms
-    $browser = New-Object System.Windows.Forms.FolderBrowserDialog
-    $null = $browser.ShowDialog()
-    $BootDrive = $browser.SelectedPath
-
-    write-host $BootDrive
-
-} until ( Test-Path -Path $BootDrive\config.txt )
-
-(Get-Content "$BootDrive\firstrun.sh") -notmatch "exit 0" | Set-Content "$BootDrive\firstrun_new.sh"
-$From = Get-Content -Path "$PSScriptRoot\add2firstrun.txt"
-Add-Content -Path  "$BootDrive\firstrun_new.sh" -Value $From
-#Get-Content -Path  "$BootDrive\firstrun_new.sh"
-Write-host "Write firstboot.sh to $BootDrive"
-(Get-Content "$PSScriptRoot\firstboot.sh") `
-    -replace 'DGT.*?\.deb', $releaseFileName | `
-    Out-File "$BootDrive\firstboot.sh"
-Write-host "Write firstboot.service to $BootDrive"
-Copy-Item "$PSScriptRoot\firstboot.service" -Destination "$BootDrive\firstboot.service"
-Write-host "Write centaur.tar.gz to $BootDrive"
-Copy-Item "$PSScriptRoot\centaur.tar.gz" -Destination "$BootDrive\centaur.tar.gz"
-Write-host "Write $releaseFileName to $BootDrive"
-Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"
-(Get-Content "$BootDrive\firstboot.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstboot.sh" -Force
-Write-host "Write firstrun.sh to $BootDrive"
-(Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
-Remove-Item  "$BootDrive\firstrun_new.sh"
-# modify cmdline.txt and config.txt for CentaurMods to work AND gain accees to the Display during installation
-
-# Enabke SPI bus if not enbaled
-# $BootDrive = "H:\"
-$CONFIG = "$BootDrive\config.txt"
-$CMDLINEFILE = "$BootDrive\cmdline.txt"
-
-Copy-Item "$CMDLINEFILE" -Destination ("$CMDLINEFILE" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
-Copy-Item "$CONFIG" -Destination ("$CONFIG" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
-
-Write-Host "::: Checking SPI"
-$SPIOFF = (Select-String -Path $CONFIG -Pattern "^#dtparam=spi=on"  -Quiet)
-Write-Host "SPIOFF $SPIOFF"
-
-if ($SPIOFF) {
-    ((Get-Content -path $CONFIG -Raw) -replace '#dtparam=spi=on', 'dtparam=spi=on') | Set-Content -Path $CONFIG
-}
-else {
-    if (Select-String -Path $CONFIG -Pattern "^dtparam=spi=on"  -Quiet) {
-        Write-Host "$CONFIG is already changed to SPION"
-    }
-    else {
-        Add-Content -Path $CONFIG -Value 'dtparam=spi=on'
-    }
-} 
-
-Write-Host ":::::: Checking SPI 1.0 bus."
-$SPI10 = (Select-String -Path $CONFIG -Pattern "^dtoverlay=spi1-3cs"  -Quiet)
-Write-Host "SPI10 $SPI10"
-if ( ! $SPI10 ) {
-    Write-Host "We add dtoverlay=spi1-3cs"
-    Add-Content -Path $CONFIG -Value 'dtoverlay=spi1-3cs'
-}
-else {
-    Write-Host "$CONFIG is already changed for dtoverlay=spi1-3cs"
-}
-  
-    
-Write-Host "::: Checking serial port. "
-$UARTOFF = (Select-String -Path $CONFIG -Pattern "^#enable_uart=1"  -Quiet)
-Write-Host "UARTOFF $UARTOFF"
-if ($UARTOFF) {
-    Write-Host "::: Enabling serial port..."
-    ((Get-Content -path $CONFIG -Raw) -replace '#enable_uart=1', 'enable_uart=1') | Set-Content -Path $CONFIG
-}
-else {
-    if (Select-String -Path $CONFIG -Pattern "^enable_uart=1"  -Quiet) {
-        Write-Host "$CONFIG is already changed to UARTON"
-    }
-    else {
-        Add-Content -Path $CONFIG -Value 'enable_uart=1'
-    }
-}
-
-Write-host "::: Disable console on ttyS0"
-((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path $CMDLINEFILE
-
-Write-host " "
-Write-host "  The SDCard is ready for the Centaur"
-Write-host "  Plug into your Pi Zero w 2 and power on"
-Write-host " "
-Write-host "  Be careful with the epaper display - it is very fragile!"
-Write-host " "
-Write-host "  Be patient on the first boot - it takes time while it upgrades "
-Write-host "  all the software already installed on the raspios!"
-Start-Sleep -s 15
 exit 0
