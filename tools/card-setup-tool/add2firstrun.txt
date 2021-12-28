@@ -1,11 +1,27 @@
-cp /boot/centaur.tar.gz /home/pi/
-cd /home/pi/
-tar xvzf centaur.tar.gz
-cp /boot/firstboot.service /etc/systemd/system/firstboot.service
-cp /boot/firstboot.sh /home/pi/firstboot.sh
-chmod +x /home/pi/firstboot.sh
-systemctl enable firstboot.service
-rm -rf /boot/centaur.tar.gz
-rm -rf /boot/firstboot.service
-rm -rf /boot/firstboot.sh
-reboot
+echo $(date +"%T")  "copy centaur to /home/pi/\n\n" >/boot/centaur_install.log
+cp /boot/centaur.tar.gz /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "cd to /home/pi/\n\n" >>/boot/centaur_install.log
+cd /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "untar centaur\n\n" >>/boot/centaur_install.log
+tar xvzf centaur.tar.gz | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "copy firstboot service\n\n" >>/boot/centaur_install.log
+cp /boot/firstboot.service /etc/systemd/system/firstboot.service | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "copy firstboot.sh to /home/pi\n\n" >>/boot/centaur_install.log
+cp /boot/firstboot.sh /home/pi/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }' >>/boot/centaur_install.log
+echo $(date +"%T")  "chmod +x firstboot.sh in /home/pi\n\n" >>/boot/centaur_install.log
+chmod +x /home/pi/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "enable firstboot.service\n\n" >>/boot/centaur_install.log
+systemctl enable firstboot.service | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "remove centaur.tar.gz from /boot/ \n\n" >>/boot/centaur_install.log
+rm -rfv /boot/centaur.tar.gz | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "remove firstboot.service from /boot/ \n\n" >>/boot/centaur_install.log
+rm -rfv /boot/firstboot.service | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "remove firstboot.sh from /boot/ \n\n" >>/boot/centaur_install.log
+rm -rfv /boot/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+echo $(date +"%T")  "reboot 1\n\n" >>/boot/centaur_install.log
+exit 0
+
+
+
+
+

@@ -80,7 +80,7 @@ function configSetup {
 
 
 function stage {
-    STAGE="${PCK_NAME}_${VERSION}_armhf"
+    STAGE="${PCK_NAME}_${FILEVERSION}_armhf"
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
     
@@ -95,23 +95,27 @@ function stage {
     mv $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
     mv $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
+    # Remove files from Git
+    rm -rf $REPO_NAME
 }
 
 
 
 function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
-    REPO_NAME="/$(pwd)/../"
-    
+    FILEVERSION=local-$(git branch | grep "*" | cut -f2 -d' ')
+    cp -r $(pwd)/../../${REPO_NAME} /tmp//${REPO_NAME}
+    REPO_NAME="/tmp/${REPO_NAME}"
     stage
 }
 
 
 
 function gitCheckout {
-if [ -x $1 ]
+if [ $1 = master ]
 then
     VERSION="0"
+    FILEVERSION="master"
     # Clean any existing data
     if [ -d ${STAGE} ]
     then
@@ -123,10 +127,12 @@ else
     if [ $2 = branch ]
     then
         VERSION=0-$1
+        FILEVERSION=$1
         TAG=$1
     else
         TAG=$1
         VERSION=$1
+	FILEVERSION=$1
         echo $TAG $VERSION
     fi
     git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
@@ -136,9 +142,9 @@ fi
 ##### START ###
 
 case $1 in
-    master* )  gitCheckout;;
+    master* )  gitCheckout master;;
     clean* ) 
-        sudo rm -rf ${REPO_NAME}
+        #sudo rm -rf ${REPO_NAME}
         sudo rm -rf  ${PCK_NAME}*
         rm -rf Stockfish
         exit 0
