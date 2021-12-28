@@ -110,7 +110,7 @@ function RaspiosImager {
         Write-host " Please write the raspbian image to a new SDCard "
         Write-host " - DO NOT use your original Centaur card !!!"
         Write-host " "
-        Write-host " - Use CNTRL + SHIFT + ""x"" in the Tofr!!!"
+        Write-host " - Use CNTRL + SHIFT + ""x"" in the ""Raspberry PI Imager"" tool!!!"
         Write-host " "
         Start-Sleep -s $SleepTime
         Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
