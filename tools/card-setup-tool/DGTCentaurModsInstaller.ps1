@@ -2,7 +2,7 @@
 
 $releaseVersion = '0.1.0'
 $dev = '1'
-$SleepTime = 1
+$SleepTime = 3
 
 $releaseFileName = -join ("DGTCentaurMods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/", $releaseVersion , "/" , $releaseFileName )
@@ -111,16 +111,21 @@ if ($answer -eq 6) {
     Write-host " "
     Start-Sleep -s $SleepTime
     Start-Process "$PSScriptRoot\RaspberryPi_imager\rpi-imager.exe" -Wait
+} else {
+    Write-host " "
+    Write-host "  Centaur is extracted from your SDCard as centaur.tar.gz "
+    Write-host "  The Program is finished"
+    Write-host " "
+    Start-Sleep -s 15
+    exit 0
 }
 if ($dev -eq 1) {
     $wshell = New-Object -ComObject Wscript.Shell
     $answer = $wshell.Popup("Do you want to use the release version $releaseFileName", 0, "Alert", 64 + 4)
-}
-else {
+} else {
     $answer = 6
 }
 if ($answer -eq 7) {
-
     Add-Type -AssemblyName System.Windows.Forms
     $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
         Multiselect = $false # Multiple files can be chosen
@@ -192,4 +197,13 @@ Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"
 Write-host "Write firstrun.sh to $BootDrive"
 (Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
 Remove-Item  "$BootDrive\firstrun_new.sh"
-
+Write-host " "
+Write-host "  The SDCard is ready for the Centaur"
+Write-host "  Plug into your Pi Zero w 2 and power on"
+Write-host " "
+Write-host "  Be careful with the epaper display - it is very fragile!"
+Write-host " "
+Write-host "  Be patient on the first boot - it takes time while it upgrades "
+Write-host "  all the software already installed on the raspios!"
+Start-Sleep -s 15
+exit 0
