@@ -71,11 +71,12 @@ echo -e "Services setup\n"
 
 # Update bluetooth service
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery\n\ExecStartPost=/usr/bin/sdptool add SP"
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
 # Update bluez service with same string
-    sed -i "s/^ExecStart.*/$REPLACE/g" $DBUSSERVICE    
+    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
 
 # Update main.conf in /etc/bluetooth
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
