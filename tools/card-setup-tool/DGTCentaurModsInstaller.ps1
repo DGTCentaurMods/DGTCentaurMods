@@ -256,7 +256,7 @@ else {
 }
 
 Write-host "::: Disable console on ttyS0\n"
-((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path ($CMDLINEFILE +"_test")
+((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path $CMDLINEFILE
 
 Write-host " "
 Write-host "  The SDCard is ready for the Centaur"
