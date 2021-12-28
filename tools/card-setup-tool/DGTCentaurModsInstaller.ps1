@@ -91,6 +91,10 @@ function ExtractCentaur {
         Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
         Remove-Item  "$PSScriptRoot\centaur.tar"
     }
+
+}
+
+function RaspiosImager {
     Write-host " "
     Write-host " Do you need to write a new SDCard with Raspbian"
     Write-host " using Raspberry PI imager?"
@@ -98,9 +102,6 @@ function ExtractCentaur {
     Write-host " - DO NOT use your original Centaur card !!!"
     Write-host " "
     Start-Sleep -s $SleepTime
-}
-
-function RaspiosImager {
     
     $wshell = New-Object -ComObject Wscript.Shell
     $answer = $wshell.Popup("Do you need to write a new SDCard with Raspbian?", 0, "Alert", 64 + 4)
