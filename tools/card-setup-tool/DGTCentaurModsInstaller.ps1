@@ -204,7 +204,7 @@ Remove-Item  "$BootDrive\firstrun_new.sh"
 # modify cmdline.txt and config.txt for CentaurMods to work AND gain accees to the Display during installation
 
 # Enabke SPI bus if not enbaled
-$BootDrive = "H:\"
+# $BootDrive = "H:\"
 $CONFIG = "$BootDrive\config.txt"
 $CMDLINEFILE = "$BootDrive\cmdline.txt"
 
@@ -227,7 +227,7 @@ else {
     }
 } 
 
-Write-Host ":::::: Checking SPI 1.0 bus.\n"
+Write-Host ":::::: Checking SPI 1.0 bus."
 $SPI10 = (Select-String -Path $CONFIG -Pattern "^dtoverlay=spi1-3cs"  -Quiet)
 Write-Host "SPI10 $SPI10"
 if ( ! $SPI10 ) {
@@ -255,7 +255,7 @@ else {
     }
 }
 
-Write-host "::: Disable console on ttyS0\n"
+Write-host "::: Disable console on ttyS0"
 ((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path $CMDLINEFILE
 
 Write-host " "
