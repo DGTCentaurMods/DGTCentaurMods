@@ -2,7 +2,7 @@
 
 $releaseVersion = '0.1.0'
 $dev = '1'
-$SleepTime = 1
+$SleepTime = 3
 
 $releaseFileName = -join ("DGTCentaurMods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/", $releaseVersion , "/" , $releaseFileName )
@@ -197,4 +197,13 @@ Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"
 Write-host "Write firstrun.sh to $BootDrive"
 (Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
 Remove-Item  "$BootDrive\firstrun_new.sh"
-
+Write-host " "
+Write-host "  The SDCard is ready for the Centaur"
+Write-host "  Plug into your Pi Zero w 2 and power on"
+Write-host " "
+Write-host "  Be careful with the epaper display - it is very fragile!"
+Write-host " "
+Write-host "  Be patient on the first boot - it takes time while it upgrades "
+Write-host "  all the software already installed on the raspios!"
+Start-Sleep -s 15
+exit 0
