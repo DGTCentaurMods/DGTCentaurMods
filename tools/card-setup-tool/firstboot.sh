@@ -1,4 +1,6 @@
 #!/bin/bash 
+echo $(date +"%T") "sleep 60seconds" >>/boot/centaur_install.log
+sleep 60
 echo $(date +"%T") "apt update" >>/boot/centaur_install.log
 apt update
 echo $(date +"%T")  "apt -y upgrade" >>/boot/centaur_install.log
