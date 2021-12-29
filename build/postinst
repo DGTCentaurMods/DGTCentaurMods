@@ -11,6 +11,7 @@ BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 BTMAIN="/etc/bluetooth/main.conf"
 DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
+CENTAUR="/home/pi/centaur/"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
@@ -70,11 +71,12 @@ echo -e "Services setup\n"
 
 # Update bluetooth service
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery\nExecStartPost=/usr/bin/sdptool add SP"
+    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
 # Update bluez service with same string
-    sed -i "s/^ExecStart.*/$REPLACE/g" $DBUSSERVICE    
+    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
 
 # Update main.conf in /etc/bluetooth
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
@@ -85,6 +87,7 @@ systemctl daemon-reload
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
+    if grep -q "^exit 0" rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
@@ -93,6 +96,7 @@ agent on \n\
 discoverable on \n\
 pairable on \n\
 EOF" /etc/rc.local
+    sed -i "$ a exit 0" /etc/rc.local
     
 function update_hostname {
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
@@ -121,7 +125,6 @@ chown -R pi.root $CENTAUR_ENGINE
 if [ ! -e $FENLOG ]
 then
     touch $FENLOG
-    chown -R pi.root $FENLOG
 fi
 
 
@@ -210,8 +213,9 @@ insertMaia
 insertRodentIV
 insertZahak
 
+# Setting final permissions
 chown -R pi.pi ${SETUP_DIR}
-
+chown -R pi.root $CENTAUR
 
 # Setting up lichess key
 #echo -e "\n\n"

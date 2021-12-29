@@ -1,5 +1,28 @@
 #!/usr/bin/bash
-# Script to produce deb pacjage
+#
+#This is a tool to build deb packages.
+#
+#This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/EdNekebno/DGTCentaur )
+#
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+
 
 ##### VARIABLES
 BASE=`pwd`
@@ -80,7 +103,7 @@ function configSetup {
 
 
 function stage {
-    STAGE="${PCK_NAME}_${VERSION}_armhf"
+    STAGE="${PCK_NAME}_${FILEVERSION}_armhf"
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
     
@@ -103,17 +126,19 @@ function stage {
 
 function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
-    cp -r ../../$REPO_NAME .
-    
+    FILEVERSION=local-$(git branch | grep "*" | cut -f2 -d' ')
+    cp -r $(pwd)/../../${REPO_NAME} /tmp//${REPO_NAME}
+    REPO_NAME="/tmp/${REPO_NAME}"
     stage
 }
 
 
 
 function gitCheckout {
-if [ -x $1 ]
+if [ $1 = master ]
 then
     VERSION="0"
+    FILEVERSION="master"
     # Clean any existing data
     if [ -d ${STAGE} ]
     then
@@ -125,10 +150,12 @@ else
     if [ $2 = branch ]
     then
         VERSION=0-$1
+        FILEVERSION=$1
         TAG=$1
     else
         TAG=$1
         VERSION=$1
+	FILEVERSION=$1
         echo $TAG $VERSION
     fi
     git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
@@ -138,9 +165,9 @@ fi
 ##### START ###
 
 case $1 in
-    master* )  gitCheckout;;
+    master* )  gitCheckout master;;
     clean* ) 
-        sudo rm -rf ${REPO_NAME}
+        #sudo rm -rf ${REPO_NAME}
         sudo rm -rf  ${PCK_NAME}*
         rm -rf Stockfish
         exit 0
