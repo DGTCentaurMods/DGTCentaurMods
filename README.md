@@ -51,23 +51,26 @@ Currently we are working on...
 6. Instructions
 7. Admiring the fact that the DGT centaur is now the most awesome electronic chess board available :)
 
-## Installation notes
+## Manual installation
 
 In order to run the project on a Raspberry Pi Zero W, these are some steps to be completed:
 
-1. Root the Raspberry Pi Zero that comes with the board and backup the `/home/pi/centaur` folder somewhere
-2. Get a Raspberry Pi Zero W and flash the Rasberry Pi OS Lite image on its SD card
+1. Get a Raspberry Pi Zero W and flash the Rasberry Pi OS Lite image on its SD card
 3. Configure access to your wi-fi network and enable SSH access to the Pi (please refer to the official docs)
-4. Add `dtparam-spi=on`, `enable_uart=1`, and `dtoverlay=spi1-3cs` to /boot/config.txt of the Pi Zero W in order to enable the serial interface
-5. Copy the `centaur` folder in `/home/pi`
-6. Copy the project files in home dir
-7. Edit `/etc/rc.local` to launch `menu.py` at startup
-8. Install `libtiff5` via apt
-9. Ensure pip3 is available on the system or install it via apt
-10. Install the required libraries in requirements.txt `pip3 install -r requirements.txt`
-11. Reboot
+4. Update the OS: `sudo apt -y update` `sudo apt -y upgrade` `sudo apt -y full-upgrade`
+5. Install git tool: `apt -y install git`
+6. Clone this repo: `git clone https://github.com/EdNekebno/DGTCentaur`
+7. Build a deb package: `cd DGTCentaur/build` `./build.sh master` to build from master or `./build.sh` alone and input desired tag number of a release. Usually releases will already contain the deb package as asset for direct download.
+8. When previous step is done you should have the deb file in current folder. Go ahead and install it: `sudo apt -y install ./<deb_file>`
+Installation process takes some time, so sit back and have a beer. Once done, reboot your Raspberry Pi. If all went well, board should power on and the new DGTCentaurMods will start. You'll notice the menu on the display.
 
-You should then be ready to connect to the board via SSH and tinker with it!
+## Automatic setup of SD card
+Use the tool in tools/card-setup-tol. Follow this wiki page. (to be filled)
+
+## Original centaur software
+
+You might ask, what about my original centaur software. For copyrights purposes, we don't integrate that software togheter with ours. It is up to end user to move it on the new Raspberry Pi. Also the tool from tools/card-setup-tool is able to extract the centaur software from original card.
+Use ssh connection to copy the software over. Pay attention that the the `/home/pi/centaur` already exists. Do not overwrite the files inside of it. Set the correct permissions: `chown -R pi.root /home/pi/centaur`
 
 ## Support
 
