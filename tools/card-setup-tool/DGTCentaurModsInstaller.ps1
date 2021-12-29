@@ -254,6 +254,12 @@ function ModifyBootDrive {
 
     $CONFIG = "$BootDrive\config.txt"
     $CMDLINEFILE = "$BootDrive\cmdline.txt"
+    
+    if ( ! (Select-String -Path $CONFIG -Pattern "#dgtcentaurmod"  -Quiet) ) {
+        Add-Content -Path $CONFIG -Value ''
+        Add-Content -Path $CONFIG -Value '#dgtcentaurmod'
+        Add-Content -Path $CONFIG -Value ''
+    }
     Write-host "Modify  $CONFIG and $CMDLINEFILE"
     Copy-Item "$CMDLINEFILE" -Destination ("$CMDLINEFILE" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
     Copy-Item "$CONFIG" -Destination ("$CONFIG" + "_" + $(get-date -f yyyy-MM-dd-HH-mm-ss) + "_bak")
@@ -321,12 +327,13 @@ retrieveFiles -URL "https://sourceforge.net/projects/win32diskimager/files/Archi
 retrieveFiles -URL "https://downloads.raspberrypi.org/imager/imager_latest.exe" -fileName "raspberryPi_imager_latest.exe" -OutPutFolder "RaspberryPi_imager"
 
 ExtractCentaur
-RaspiosImager
+#RaspiosImager
 $FilePathAll = GetReleaseFile 
 If ( $FilePathAll[0].length -eq 1) {
-$releaseFilePath = $FilePathAll
-} else {
-$releaseFilePath = $FilePathAll[0]
+    $releaseFilePath = $FilePathAll
+}
+else {
+    $releaseFilePath = $FilePathAll[0]
 }
 write-host "releaseFilePath $releaseFilePath"
 $releaseFileName = (Get-ChildItem $releaseFilePath).Name
