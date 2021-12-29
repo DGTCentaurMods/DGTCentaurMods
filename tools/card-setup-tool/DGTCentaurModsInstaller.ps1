@@ -327,7 +327,7 @@ retrieveFiles -URL "https://sourceforge.net/projects/win32diskimager/files/Archi
 retrieveFiles -URL "https://downloads.raspberrypi.org/imager/imager_latest.exe" -fileName "raspberryPi_imager_latest.exe" -OutPutFolder "RaspberryPi_imager"
 
 ExtractCentaur
-#RaspiosImager
+RaspiosImager
 $FilePathAll = GetReleaseFile 
 If ( $FilePathAll[0].length -eq 1) {
     $releaseFilePath = $FilePathAll
