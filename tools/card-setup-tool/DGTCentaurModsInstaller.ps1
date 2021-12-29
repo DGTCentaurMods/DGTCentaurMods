@@ -32,7 +32,6 @@ $SleepTime = 3
 $releaseFileName = -join ("DGTCentaurMods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/", $releaseVersion , "/" , $releaseFileName )
 
-
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
     $OutPutFolder = "$PSScriptRoot\$OutPutFolder"
     #   "Test to see if folder [$OutPutFolder]  exists"
@@ -307,10 +306,10 @@ function ModifyBootDrive {
             Add-Content -Path $CONFIG -Value 'enable_uart=1'
         }
     }
-
+    (Get-Content "$CONFIG" -Raw).Replace("`r`n", "`n") | Set-Content "$CONFIG" -Force
     Write-host "::: Disable console on ttyS0"
 ((Get-Content -path $CMDLINEFILE -Raw) -replace 'console=serial0,115200 ', '') | Set-Content -Path $CMDLINEFILE
-
+(Get-Content "$CMDLINEFILE" -Raw).Replace("`r`n", "`n") | Set-Content "$CMDLINEFILE" -Force
     Write-host " "
     Write-host "  The SDCard is ready for the Centaur"
     Write-host "  Plug into your Pi Zero w 2 and power on"
