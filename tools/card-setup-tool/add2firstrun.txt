@@ -1,13 +1,13 @@
 echo $(date +"%T")  "copy centaur to /home/pi/\n\n" >/boot/centaur_install.log
-cp /boot/centaur.tar.gz /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+cp -v /boot/centaur.tar.gz /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
 echo $(date +"%T")  "cd to /home/pi/\n\n" >>/boot/centaur_install.log
-cd /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+cd /home/pi/
 echo $(date +"%T")  "untar centaur\n\n" >>/boot/centaur_install.log
-tar xvzf centaur.tar.gz | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+tar -xvzf centaur.tar.gz | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
 echo $(date +"%T")  "copy firstboot service\n\n" >>/boot/centaur_install.log
-cp /boot/firstboot.service /etc/systemd/system/firstboot.service | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
+cp -v /boot/firstboot.service /etc/systemd/system/firstboot.service | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
 echo $(date +"%T")  "copy firstboot.sh to /home/pi\n\n" >>/boot/centaur_install.log
-cp /boot/firstboot.sh /home/pi/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }' >>/boot/centaur_install.log
+cp -v /boot/firstboot.sh /home/pi/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }' >>/boot/centaur_install.log
 echo $(date +"%T")  "chmod +x firstboot.sh in /home/pi\n\n" >>/boot/centaur_install.log
 chmod +x /home/pi/firstboot.sh | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
 echo $(date +"%T")  "enable firstboot.service\n\n" >>/boot/centaur_install.log
