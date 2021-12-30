@@ -20,15 +20,17 @@ RODENTIV="rodentIV"
 MAIA="maia"
 FENLOG="/home/pi/centaur/fen.log"
 
-echo -e "Hardware configuration"
-echo -e "Backup first"
-cp $CONFIG $CONFIG.bak
-cp $CMDLINEFILE $CMDLINEFILE.bak
+if ! cat $CONFIG | grep -q "#dgtcentaurmods"
+then
+    echo -e "Hardware configuration"
+    echo -e "Backup first"
+    cp $CONFIG $CONFIG.bak
+    cp $CMDLINEFILE $CMDLINEFILE.bak
 
-# Enabke SPI bus if not enbaled
-echo "::: Checking SPI"
-    SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
-    SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
+    # Enabke SPI bus if not enbaled
+    echo "::: Checking SPI"
+        SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
+        SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
     if [ ! -z $SPION ]
     then
         sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" $CONFIG
@@ -51,10 +53,16 @@ echo "::: Checking serial port. "
     else
         sed -i "$ a enable_uart=1" $CONFIG
     fi
+    # Mark file as modified
+    sed -i "$ a #dgtcentaurmods" $CONFIG
+fi
 
+if cat $CMDLINEFILE | grep -q "console=tty1"
+then
     echo -e "::: Disable console on ttyS0\n"
         REPLY=$(sed 's/[^ ]* *//' $CMDLINEFILE)
         echo -e "$REPLY" > $CMDLINEFILE
+fi
 
     # Setting up Bluetooth
     echo -e "::: Setting up bluetooth."
@@ -70,24 +78,40 @@ echo -e "Services setup\n"
     systemctl enable ntp
 
 # Update bluetooth service
-    echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
-    REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
-    sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
-    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
+    if ! cat $BTSERVICE | grep -q "#dgtcentaurmods"
+    then
+        echo -e "Updating bluetooth service."
+        REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+        REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
+        sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
+        #Mark file as changed
+        sed -i "$ a #dgtcentaurmods"  $BTSERVICE
+    fi
 # Update bluez service with same string
-    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
-
+    if ! cat $DBUSSERVICE | grep -q "#dgtcentaurmods"
+    then
+        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
+        #Mark file as changed
+        sed -i "$ a #dgtcentaurmods" $DBUSSERVICE
+    fi
 # Update main.conf in /etc/bluetooth
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
     sed -i "/PairableTimeout/s/^# *//" $BTMAIN
-    sed -i "$ a JustWorksRepairing=always" $BTMAIN
+    if ! cat $BTMAIN | grep -q "#dgtcentaurmods"
+    then
+        sed -i "$ a JustWorksRepairing=always" $BTMAIN
+    fi
+    #Mark file as changed
+    sed -i "$ a #dgtcentaurmods" $BTMAIN
 
 systemctl daemon-reload
 
 # Update rc.local
+if ! cat /etc/rc.local | grep -q "#dgtcentaurmods" /etc/rc.local
+then
     cp /etc/rc.local /etc/rc.local.bak
-    if grep -q "^exit 0" rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
+    if cat /etc/rc.local | grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
@@ -97,10 +121,17 @@ discoverable on \n\
 pairable on \n\
 EOF" /etc/rc.local
     sed -i "$ a exit 0" /etc/rc.local
-    
+    # Mark rc.local as changed.
+    sed -i "$ a #dgtcentaurmods" /etc/rc.local
+fi
+
+
 function update_hostname {
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
+if [ ! $(hostname) = $HOSTNAME ]
+then
+    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/host
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
+fi
 }
 
 # Install Stockfish if in build
