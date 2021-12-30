@@ -9,6 +9,7 @@ CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
+BTLIBSERVICE="/lib/systemd/system/bluetooth.service"
 BTMAIN="/etc/bluetooth/main.conf"
 DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
 CENTAUR="/home/pi/centaur/"
@@ -27,33 +28,42 @@ cp $CMDLINEFILE $CMDLINEFILE.bak
 
 # Enabke SPI bus if not enbaled
 echo "::: Checking SPI"
-    SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
-    SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
-    if [ ! -z $SPION ]
+    SPIOFF=`cat $CONFIG | grep  "^#dtparam=spi=on"`
+    SPION=`cat $CONFIG | grep  "^dtparam=spi=on"`
+    SPI10=`cat $CONFIG | grep  "^dtoverlay=spi1-3cs"`
+    if [ -z $SPIOFF ]
     then
         sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" $CONFIG
     else
-        sed -i "$ a dtparam=spi=on" $CONFIG
+        if [ ! -z $SPION ]
+        then
+            sed -i "$ a dtparam=spi=on" $CONFIG
+        fi 
     fi    
+ 
     
     echo -e ":::::: Checking SPI 1.0 bus.\n"
-    if [ -z $SPI10 ]
+    if [  -z $SPI10 ]
     then
         sed -i "$ a dtoverlay=spi1-3cs" $CONFIG
     fi
 
 echo "::: Checking serial port. "
-    UARTON=`cat $CONFIG | grep "^#enable_uart=1"`
-    if [ ! -z $UARTON ]
+    UARTOFF=`cat $CONFIG | grep  "^#enable_uart=1"`
+    UARTON=`cat $CONFIG | grep  "^enable_uart=1"`
+    if [ ! -z $UARTOFF ]
     then
         echo "::: Enabling serial port..."
         sed -i "s/#enable_uart=1.*/enable_uart=1/g" $CONFIG
     else
-        sed -i "$ a enable_uart=1" $CONFIG
+        if [ -z $UARTON ]
+        then
+            sed -i "$ a enable_uart=1" $CONFIG
+        fi
     fi
 
     echo -e "::: Disable console on ttyS0\n"
-        REPLY=$(sed 's/[^ ]* *//' $CMDLINEFILE)
+        REPLY=$(sed -r 's/console=serial.*,[0-9]+ //' $CMDLINEFILE)
         echo -e "$REPLY" > $CMDLINEFILE
 
     # Setting up Bluetooth
@@ -70,24 +80,108 @@ echo -e "Services setup\n"
     systemctl enable ntp
 
 # Update bluetooth service
+    if ! grep -q "^#dgtcentaurmod" $BTSERVICE
+    then
     echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+    REPLACE="ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap,battery"
     REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
     sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
     sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
+    sed -i "$ a #dgtcentaurmod" $BTSERVICE
+fi
 # Update bluez service with same string
+    if ! grep -q "^#dgtcentaurmod" $DBUSSERVICE
+    then
+    echo -e "Updating $DBUSSERVICE."
+    REPLACE="ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+    REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
+    sed -i "s/^ExecStart.*/$REPLACE/g" $DBUSSERVICE
     sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
+    sed -i "$ a #dgtcentaurmod" $DBUSSERVICE
+fi
+
+# Update bluetooth service in /lib/systemd/system/bluetooth.service with same string
+    if ! grep -q "^#dgtcentaurmod" $BTLIBSERVICE
+    then
+    echo -e "Updating $BTLIBSERVICE."
+    REPLACE="ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+    REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
+    sed -i "s/^ExecStart.*/$REPLACE/g" $BTLIBSERVICE
+    sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTLIBSERVICE    
+    sed -i "$ a #dgtcentaurmod" $BTLIBSERVICE
+fi
+
 
 # Update main.conf in /etc/bluetooth
+    if ! grep -q "^#dgtcentaurmod" $BTMAIN
+    then
+    echo -e "Updating $BTMAIN."
+    sed -i "$ a #dgtcentaurmod" $BTMAIN
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
     sed -i "/PairableTimeout/s/^# *//" $BTMAIN
     sed -i "$ a JustWorksRepairing=always" $BTMAIN
+
+fi
+# add pi to group bluetooth
+if [ -z  $(cat /etc/group | grep bluetooth | grep pi) ]
+then 
+    echo -e "Add pi to group bluetooth"
+    usermod -G bluetooth -a pi
+fi
+
+# add pi to group lp
+if [ -z  $(cat /etc/group | grep lp | grep pi) ]
+then 
+    echo -e "Add pi to group lp"
+    usermod -G lp -a pi
+fi
+
+# add two files in systemd to trigger chgroup on bluetooth start
+if [ ! -f "/etc/systemd/system/var-run-sdp.path" ]
+then
+echo -e "Creating  /etc/systemd/system/var-run-sdp.path ."
+cat <<EOT > /etc/systemd/system/var-run-sdp.path
+[Unit]
+Descrption=Monitor /var/run/sdp
+
+[Install]
+WantedBy=bluetooth.service
+
+[Path]
+PathExists=/var/run/sdp
+Unit=var-run-sdp.service
+EOT
+fi
+
+if [ ! -f "/etc/systemd/system/var-run-sdp.service" ]
+then
+echo -e "Creating  /etc/systemd/system/var-run-sdp.service ."
+cat <<EOT > /etc/systemd/system/var-run-sdp.service
+[Unit]
+Description=Set permission of /var/run/sdp
+
+[Install]
+RequiredBy=var-run-sdp.path
+
+[Service]
+Type=simple
+ExecStart=sudo /bin/chgrp bluetooth /var/run/sdp
+EOT
+fi
+
+
+
+systemctl enable var-run-sdp.path
+systemctl enable var-run-sdp.service
+systemctl start var-run-sdp.path
 
 systemctl daemon-reload
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
     if grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
+    if ! grep -q "^#dgtcentaurmod" /etc/rc.local 
+    then
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
@@ -96,6 +190,9 @@ agent on \n\
 discoverable on \n\
 pairable on \n\
 EOF" /etc/rc.local
+    sed -i "$ a #dgtcentaurmod" /etc/rc.local
+    fi
+
     sed -i "$ a exit 0" /etc/rc.local
     
 function update_hostname {
