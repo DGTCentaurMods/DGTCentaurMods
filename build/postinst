@@ -87,7 +87,7 @@ systemctl daemon-reload
 
 # Update rc.local
     cp /etc/rc.local /etc/rc.local.bak
-    if grep -q "^exit 0" rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
+    if grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
