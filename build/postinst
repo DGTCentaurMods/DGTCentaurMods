@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
 #### HARDWARE CONFIGURATION
-CURRHOSTNAME=`hostname`
-HOSTNAME="dgtcentaur"
+DEFAULT_HOSTNAME="raspberrypi"
+NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
 SETUP_DIR="/home/pi/DGTCentaurMods"
 CMDLINEFILE="/boot/cmdline.txt"
@@ -128,17 +128,17 @@ fi
 
 function update_hostname {
 #Do not update unless hostname is still the default one.
-if [ ! $(hostname) = $HOSTNAME ]
+if [ ! $(hostname) = $DEFAULT_HOSTNAME ]
 then
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
+    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hosts
+    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hostname
 fi
 }
 
 # Install Stockfish if in build
-echo -e "::: Installing Stockfish engine"
 if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
 then
+    echo -e "::: Installing Stockfish engine"
     if [[ -d $CENTAUR_ENGINE ]]
     then
         mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
@@ -147,8 +147,8 @@ then
         mkdir -p $CENTAUR_ENGINE
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
     fi
-else
-    echo -e "Downloading Stockfish..."
+#else
+#    echo -e "Downloading Stockfish..."
     # TODO: find a way to download.
 fi
 chown -R pi.root $CENTAUR_ENGINE
