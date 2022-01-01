@@ -57,7 +57,7 @@ echo "::: Checking serial port. "
     sed -i "$ a #dgtcentaurmods" $CONFIG
 fi
 
-if cat $CMDLINEFILE | grep -q "console=tty1"
+if cat $CMDLINEFILE | grep -q "console=serial0"
 then
     echo -e "::: Disable console on ttyS0\n"
         REPLY=$(sed 's/[^ ]* *//' $CMDLINEFILE)
@@ -127,9 +127,10 @@ fi
 
 
 function update_hostname {
+#Do not update unless hostname is still the default one.
 if [ ! $(hostname) = $HOSTNAME ]
 then
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/host
+    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
     sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
 fi
 }
