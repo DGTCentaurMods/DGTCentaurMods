@@ -128,7 +128,7 @@ fi
 
 function update_hostname {
 #Do not update unless hostname is still the default one.
-if [ ! $(hostname) = $DEFAULT_HOSTNAME ]
+if [ $(hostname) = $DEFAULT_HOSTNAME ]
 then
     sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hosts
     sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hostname
