@@ -105,21 +105,21 @@ function configSetup {
 function stage {
     STAGE="${PCK_NAME}_${FILEVERSION}_armhf"
     mkdir ${STAGE}
-    mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
+    mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
     
     # Move system services
     mv -v $REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
     #rm -rf $REPO_NAME/${PCK_NAME}/etc
-    rm $REPO_NAME/*.md
+    rm  $REPO_NAME/*.md
 
     # Move main software in /home/pi
-    mv $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
-    mv $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
+    mv  $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
+    mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
-    rm -rf $REPO_NAME
+    rm -rfv $REPO_NAME
 }
 
 
