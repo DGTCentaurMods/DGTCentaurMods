@@ -65,9 +65,9 @@ then
 fi
 
     # Setting up Bluetooth
-    echo -e "::: Setting up bluetooth."
-        echo -e "$BTPIN" > /etc/bluetooth/pin.conf
-        echo -e "$BTMACHINEINFO" > /etc/machine-info
+    #echo -e "::: Setting up bluetooth."
+    #    echo -e "$BTPIN" > /etc/bluetooth/pin.conf
+    #    echo -e "$BTMACHINEINFO" > /etc/machine-info
 
 ##### Enable systemd services.
 echo -e "Services setup\n"
@@ -76,32 +76,16 @@ echo -e "Services setup\n"
     systemctl enable centaurmods-web.service
     systemctl enable DGTCentaurMods.service
     systemctl enable ntp
+    systemctl enable var-run-sdp.path
+    systemctl enable var-run-sdp.service
+    systemctl start var-run-sdp.path
 
-# Update bluetooth service
-    if ! cat $BTSERVICE | grep -q "#dgtcentaurmods"
-    then
-        echo -e "Updating bluetooth service."
-        REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
-        REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
-        sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
-        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
-        #Mark file as changed
-        sed -i "$ a #dgtcentaurmods"  $BTSERVICE
-    fi
-# Update bluez service with same string
-    if ! cat $DBUSSERVICE | grep -q "#dgtcentaurmods"
-    then
-        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
-        #Mark file as changed
-        sed -i "$ a #dgtcentaurmods" $DBUSSERVICE
-    fi
+
 # Update main.conf in /etc/bluetooth
+    cp $BTMAIN $BTMAIN.bak
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
     sed -i "/PairableTimeout/s/^# *//" $BTMAIN
-    if ! cat $BTMAIN | grep -q "#dgtcentaurmods"
-    then
-        sed -i "$ a JustWorksRepairing=always" $BTMAIN
-    fi
+    sed -i "s/#JustWorksRepairing = never/JustWorksRepairing = allways/g" $BTMAIN
     #Mark file as changed
     sed -i "$ a #dgtcentaurmods" $BTMAIN
 

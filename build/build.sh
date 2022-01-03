@@ -108,10 +108,10 @@ function stage {
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
     
     # Move system services
-    mv $REPO_NAME/${PCK_NAME}/etc/* ${STAGE}/etc/systemd/system
+    mv -v $REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
-    rm -rf $REPO_NAME/${PCK_NAME}/etc
+    #rm -rf $REPO_NAME/${PCK_NAME}/etc
     rm $REPO_NAME/*.md
 
     # Move main software in /home/pi
@@ -163,7 +163,10 @@ fi
 }
 
 ##### START ###
-
+if [ ! -z $2 ] 
+then
+REPO_URL="https://github.com/$2/DGTCentaur"
+fi
 case $1 in
     master* )  gitCheckout master;;
     clean* ) 
