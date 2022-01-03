@@ -144,6 +144,7 @@ then
     then
         sudo rm -rf ${STAGE}
     fi
+    echo clone --depth 1 $REPO_URL
     git clone --depth 1 $REPO_URL && stage || exit 1
 
 else
@@ -158,6 +159,7 @@ else
 	FILEVERSION=$1
         echo $TAG $VERSION
     fi
+    echo clone --depth 1 --branch $TAG $REPO_URL --single-branch
     git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
 fi
 }
