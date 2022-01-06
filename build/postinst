@@ -53,6 +53,10 @@ echo "::: Checking serial port. "
     else
         sed -i "$ a enable_uart=1" $CONFIG
     fi
+    
+    #Enable gadget mode support
+    sed -i "$ a dtoverlay=dwc2" $CONFIG
+
     # Mark file as modified
     sed -i "$ a #dgtcentaurmods" $CONFIG
 fi
@@ -107,8 +111,15 @@ echo -e "Services setup\n"
 
 systemctl daemon-reload
 
+#Update modules for gadget support
+if ! cat /etc/modules | grep -q "^dwc2"
+then
+    echo -e "::: Enabling gadget mode."
+    echo "dwc2" >> /etc/modules
+fi
+
 # Update rc.local
-if ! cat /etc/rc.local | grep -q "#dgtcentaurmods" /etc/rc.local
+if ! cat /etc/rc.local | grep -q "#dgtcentaurmods"
 then
     cp /etc/rc.local /etc/rc.local.bak
     if cat /etc/rc.local | grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
