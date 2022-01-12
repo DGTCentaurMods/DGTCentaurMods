@@ -37,7 +37,8 @@ import chess.pgn
 import json
 
 app = Flask(__name__)
-
+app.config['UCI_UPLOAD_EXTENSIONS'] = ['.txt']
+app.config['UCI_UPLOAD_PATH'] = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
 @app.route("/")
 def index():
 	fenlog = "/home/pi/centaur/fen.log"
@@ -60,6 +61,37 @@ def fen():
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	return fen
 
+@app.route("/rodentivtuner")
+def tuner():
+
+        return render_template('rodentivtuner.html')
+
+@app.route("/rodentivtuner" , methods=["POST"])
+def tuner_upload_file():
+	uploaded_file = request.files['file']
+	if uploaded_file.filename != '':
+		file_ext = os.path.splitext(uploaded_file.filename)[1]
+		file_name = os.path.splitext(uploaded_file.filename)[0]
+		if file_ext not in app.config['UCI_UPLOAD_EXTENSIONS']:
+			abort(400)
+		uploaded_file.save(os.path.join(app.config['UCI_UPLOAD_PATH'] + "personalities/",uploaded_file.filename))
+		with open(app.config['UCI_UPLOAD_PATH'] + "personalities/basic.ini", "r+") as file:
+			for line in file:
+				if file_name in line:
+					break
+			else: # not found, we are at the eof
+				file.write(file_name + '=' + file_name + '.txt\n') # append missing data
+		with open(app.config['UCI_UPLOAD_PATH'] + "rodentIV.uci", "r+") as file:
+			for line in file:
+				if file_name in line:
+					break
+			else: # not found, we are at the eof  
+				file.write('\n') # append missing data
+				file.write('[' + file_name + ']\n') # append missing data
+				file.write('Personality = ' + file_name + '\n') # append missing data
+				file.write('UCI_LimitStrength = true\n') # append missing data
+				file.write('UCI_Elo = 1200\n') # append missing data
+	return render_template('index.html')
 @app.route("/pgn")
 def pgn():
 	return render_template('pgn.html')

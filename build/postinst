@@ -1,27 +1,36 @@
 #!/usr/bin/bash
 
 #### HARDWARE CONFIGURATION
-CURRHOSTNAME=`hostname`
-HOSTNAME="dgtcentaur"
+DEFAULT_HOSTNAME="raspberrypi"
+NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
 SETUP_DIR="/home/pi/DGTCentaurMods"
 CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
 BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
+BTMAIN="/etc/bluetooth/main.conf"
+DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
+CENTAUR="/home/pi/centaur/"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
+RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
+MAIA_REPO="https://github.com/CSSLab/maia-chess.git"
+RODENTIV="rodentIV"
+MAIA="maia"
+FENLOG="/home/pi/centaur/fen.log"
 
+if ! cat $CONFIG | grep -q "#dgtcentaurmods"
+then
+    echo -e "Hardware configuration"
+    echo -e "Backup first"
+    cp $CONFIG $CONFIG.bak
+    cp $CMDLINEFILE $CMDLINEFILE.bak
 
-echo -e "Hardware configuration"
-echo -e "Backup first"
-cp $CONFIG $CONFIG.bak
-cp $CMDLINEFILE $CMDLINEFILE.bak
-
-# Enabke SPI bus if not enbaled
-echo "::: Checking SPI"
-    SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
-    SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
+    # Enabke SPI bus if not enbaled
+    echo "::: Checking SPI"
+        SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
+        SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
     if [ ! -z $SPION ]
     then
         sed -i "s/#dtparam=spi=on/dtparam=spi=on/g" $CONFIG
@@ -44,10 +53,16 @@ echo "::: Checking serial port. "
     else
         sed -i "$ a enable_uart=1" $CONFIG
     fi
+    # Mark file as modified
+    sed -i "$ a #dgtcentaurmods" $CONFIG
+fi
 
+if cat $CMDLINEFILE | grep -q "console=serial0"
+then
     echo -e "::: Disable console on ttyS0\n"
         REPLY=$(sed 's/[^ ]* *//' $CMDLINEFILE)
         echo -e "$REPLY" > $CMDLINEFILE
+fi
 
     # Setting up Bluetooth
     echo -e "::: Setting up bluetooth."
@@ -63,15 +78,41 @@ echo -e "Services setup\n"
     systemctl enable ntp
 
 # Update bluetooth service
-    echo -e "Updating bluetooth service."
-    REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
-    REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
-    sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+    if ! cat $BTSERVICE | grep -q "#dgtcentaurmods"
+    then
+        echo -e "Updating bluetooth service."
+        REPLACE="ExecStart=/usr/lib/bluetooth/bluetoothd --compat --noplugin=sap,battery"
+        REPLACE=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$REPLACE")
+        sed -i "s/^ExecStart.*/$REPLACE/g" $BTSERVICE
+        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $BTSERVICE
+        #Mark file as changed
+        sed -i "$ a #dgtcentaurmods"  $BTSERVICE
+    fi
+# Update bluez service with same string
+    if ! cat $DBUSSERVICE | grep -q "#dgtcentaurmods"
+    then
+        sed -i "/^ExecStart.*/a ExecStartPost=\/usr\/bin\/sdptool add SP" $DBUSSERVICE    
+        #Mark file as changed
+        sed -i "$ a #dgtcentaurmods" $DBUSSERVICE
+    fi
+# Update main.conf in /etc/bluetooth
+    sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
+    sed -i "/PairableTimeout/s/^# *//" $BTMAIN
+    if ! cat $BTMAIN | grep -q "#dgtcentaurmods"
+    then
+        sed -i "$ a JustWorksRepairing=always" $BTMAIN
+    fi
+    #Mark file as changed
+    sed -i "$ a #dgtcentaurmods" $BTMAIN
 
-   systemctl daemon-reload
+systemctl daemon-reload
+
 
 # Update rc.local
+if ! cat /etc/rc.local | grep -q "#dgtcentaurmods"
+then
     cp /etc/rc.local /etc/rc.local.bak
+    if cat /etc/rc.local | grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
     sed -i "$ a	sudo sdptool add SP & \n\
 \n\
 sudo bluetoothctl <<EOF \n\
@@ -80,29 +121,45 @@ agent on \n\
 discoverable on \n\
 pairable on \n\
 EOF" /etc/rc.local
-    
+    sed -i "$ a exit 0" /etc/rc.local
+    # Mark rc.local as changed.
+    sed -i "$ a #dgtcentaurmods" /etc/rc.local
+fi
+
+
 function update_hostname {
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hosts
-    sed -i "s/$CURRHOSTNAME/$HOSTNAME/g" /etc/hostname
+#Do not update unless hostname is still the default one.
+if [ $(hostname) = $DEFAULT_HOSTNAME ]
+then
+    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hosts
+    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hostname
+fi
 }
 
 # Install Stockfish if in build
-echo -e "::: Installing Stockfish engine"
 if [[ -e ${SETUP_DIR}/engines/$STOCKFISH ]]
 then
+    echo -e "::: Installing Stockfish engine"
     if [[ -d $CENTAUR_ENGINE ]]
     then
-        mv ${CENTAUR_ENGINE}/stockfish_pi ${CENTAUR_ENGINE}/stockfish_pi.bak
-        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
+        mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
+        mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
     else
         mkdir -p $CENTAUR_ENGINE
         mv ${SETUP_DIR}/engines/$STOCKFISH $CENTAUR_ENGINE
     fi
-else
-    echo -e "Downloading Stockfish..."
+#else
+#    echo -e "Downloading Stockfish..."
     # TODO: find a way to download.
 fi
-chown -R pi.pi $CENTAUR_ENGINE
+chown -R pi.root $CENTAUR_ENGINE
+
+#Check if fen.log is there
+if [ ! -e $FENLOG ]
+then
+    touch $FENLOG
+fi
+
 
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
@@ -117,22 +174,92 @@ echo -e "::: Installing python packages.\n"
     cd $SETUP_DIR
     pip3 install -r $SETUP_DIR/requirements.txt
 
+
+function insertMaia {
+    if [ ! -d  ${SETUP_DIR}/tmp ]
+    then
+        mkdir ${SETUP_DIR}/tmp
+    fi
+    if [ ! -d ${SETUP_DIR}/tmp/maia-chess ]
+    then
+        git clone --depth 1 $MAIA_REPO ${SETUP_DIR}/tmp/maia-chess;
+        if (($? > 0))
+            then echo "git clone maia chess failed with $?"
+        fi
+    fi
+    cp -r ${SETUP_DIR}/tmp/maia-chess/maia_weights ${SETUP_DIR}/engines/
+    chmod 755 ${SETUP_DIR}/engines/maia
+    if [ ! -f ${SETUP_DIR}/engines/maia.uci ]
+    then
+        cp ${SETUP_DIR}/setup/engines/maia.uci ${SETUP_DIR}/engines/
+    fi
+
+}
+
+function insertRodentIV {
+    if [ ! -d  ${SETUP_DIR}/tmp ]
+    then
+        mkdir ${SETUP_DIR}/tmp
+    fi
+    if [ ! -d ${SETUP_DIR}/tmp/rodent-iv ]
+    then
+        git clone --depth 1 $RODENT_REPO ${SETUP_DIR}/tmp/rodent-iv;
+        if (($? > 0))
+            then echo "git clone rodentiv failed with $?"
+        fi
+    fi
+    if [ -f ${SETUP_DIR}/tmp/rodent-iv/personalities/basic.ini ]
+    then
+        rm ${SETUP_DIR}/tmp/rodent-iv/personalities/basic.ini
+    fi
+    cp -r ${SETUP_DIR}/tmp/rodent-iv/personalities ${SETUP_DIR}/engines/
+    cp -r ${SETUP_DIR}/tmp/rodent-iv/books ${SETUP_DIR}/engines/
+    chmod 744 ${SETUP_DIR}/engines/rodentIV
+    if [ ! -f ${SETUP_DIR}/engines/rodentIV.uci ] 
+    then
+        cp ${SETUP_DIR}/setup/engines/rodentIV.uci ${SETUP_DIR}/engines/
+    fi
+    if [ ! -f ${SETUP_DIR}/engines/personalities/basic.ini ]
+    then
+        cp ${SETUP_DIR}/setup/engines/basic.ini ${SETUP_DIR}/engines/personalities/
+    fi
+}
+
+function insertZahak {
+    chmod 755 ${SETUP_DIR}/engines/zahak
+    if [ ! -f ${SETUP_DIR}/engines/zahak.uci ]
+    then
+        cp ${SETUP_DIR}/setup/engines/zahak.uci ${SETUP_DIR}/engines/
+    fi
+
+}
+
 function add_lichess_key {
 CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
 read -p "Lichess API token: "
 sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
 }
 
+
+
+insertMaia
+insertRodentIV
+insertZahak
+
+# Setting final permissions
+chown -R pi.pi ${SETUP_DIR}
+chown -R pi.root $CENTAUR
+
 # Setting up lichess key
-echo -e "\n\n"
-read -p "Do you have a Lichess API token? (y/n): "
-case $REPLY in
-    [Yy]* ) add_lichess_key;;
-    [Nn]* )
-        exit
-        ;;
-    * ) ;;
-esac
+#echo -e "\n\n"
+#read -p "Do you have a Lichess API token? (y/n): "
+#case $REPLY in
+#    [Yy]* ) add_lichess_key;;
+#    [Nn]* )
+#        exit
+#        ;;
+#    * ) ;;
+#esac
 
 update_hostname
 

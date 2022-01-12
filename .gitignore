@@ -14,3 +14,14 @@ centaur.db
 web/static/epaper.jpg
 DGTCentaurMods/web/static/epaper.jpg
 /DGTCentaurMods/web/static/epaper.jpg
+**/7-Zip
+**/*.msi
+**/*.msi*.log
+**/DGTCentaurMods*.deb
+**/centaur.tar.gz
+**/Win32DiskImager-1.0.0-binary.zip
+**/raspberryPi_imager_latest.exe
+**/RaspberryPi_imager
+**/Win32DiskImager
+**/centaur.img
+**/home/pi/centaur
