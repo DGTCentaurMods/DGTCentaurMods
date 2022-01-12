@@ -105,21 +105,21 @@ function configSetup {
 function stage {
     STAGE="${PCK_NAME}_${FILEVERSION}_armhf"
     mkdir ${STAGE}
-    mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} ${STAGE}/etc/systemd/system
+    mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
     
     # Move system services
-    mv $REPO_NAME/${PCK_NAME}/etc/* ${STAGE}/etc/systemd/system
+    mv -v $REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
-    rm -rf $REPO_NAME/${PCK_NAME}/etc
-    rm $REPO_NAME/*.md
+    #rm -rf $REPO_NAME/${PCK_NAME}/etc
+    rm  $REPO_NAME/*.md
 
     # Move main software in /home/pi
-    mv $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
-    mv $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
+    mv  $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
+    mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
-    rm -rf $REPO_NAME
+    rm -rfv $REPO_NAME
 }
 
 
@@ -144,6 +144,7 @@ then
     then
         sudo rm -rf ${STAGE}
     fi
+    echo clone --depth 1 $REPO_URL
     git clone --depth 1 $REPO_URL && stage || exit 1
 
 else
@@ -158,12 +159,16 @@ else
 	FILEVERSION=$1
         echo $TAG $VERSION
     fi
+    echo clone --depth 1 --branch $TAG $REPO_URL --single-branch
     git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
 fi
 }
 
 ##### START ###
-
+if [ ! -z $2 ] 
+then
+REPO_URL="https://github.com/$2/DGTCentaur"
+fi
 case $1 in
     master* )  gitCheckout master;;
     clean* ) 

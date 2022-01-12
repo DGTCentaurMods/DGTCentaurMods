@@ -25,3 +25,5 @@ DGTCentaurMods/web/static/epaper.jpg
 **/Win32DiskImager
 **/centaur.img
 **/home/pi/centaur
+**/build/DGTCentaurMods*
+**/build/Stockfish*
