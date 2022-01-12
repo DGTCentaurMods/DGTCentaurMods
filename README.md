@@ -59,9 +59,9 @@ In order to run the project on a Raspberry Pi Zero W, these are some steps to be
 3. Configure access to your wi-fi network and enable SSH access to the Pi (please refer to the official docs)
 4. Update the OS: `sudo apt -y update` `sudo apt -y upgrade` `sudo apt -y full-upgrade`
 5. Install git tool: `apt -y install git`
-6. Clone this repo: `git clone -b build https://github.com/EdNekebno/DGTCentaur`
-7. Build a deb package: `cd DGTCentaur/build` `./build.sh build` to build from build branch.
-8. When previous step is done you should have the deb file in current folder. Go ahead and install it: `sudo apt -y install ./<deb_file>`
+6. Clone this repo: `git clone https://github.com/EdNekebno/DGTCentaur`
+7. Build a deb package: `cd DGTCentaur/build` `./build.sh master` to build from master branch. Make syre to INCLUDE Stockfish into the build.
+9. When previous step is done you should have the deb file in current folder. Go ahead and install it: `sudo apt -y install ./<deb_file>`
 Installation process takes some time, so sit back and have a beer. Once done, reboot your Raspberry Pi. If all went well, board should power on and the new DGTCentaurMods will start. You'll notice the menu on the display.
 
 ## Automatic setup of SD card
