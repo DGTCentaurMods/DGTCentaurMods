@@ -77,14 +77,14 @@ function configSetup {
         
         # Setup DGT Centaur Mods service
         echo "::: Configuring service:  DGTCentaurMods.service"
-            sed -i "s/ExecStart.*/ExecStart=python3 game\/menu.py/g" DGTCentaurMods.service
-            sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
-            sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
+            sed -i "s/ExecStart=.*/ExecStart=python3 game\/menu.py/g" DGTCentaurMods.service
+            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
+            sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
         
         # Setup web service
         echo "::: Configuring service: centaurmods-web.service"
-            sed -i "s/WorkingDirectory.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
-            sed -i "s/Environment.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
+            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
+            sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
         
     cd $BASE
     # Setup postinst file
@@ -119,7 +119,7 @@ function stage {
     mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
-    rm -rfv $REPO_NAME
+    rm -rf $REPO_NAME
 }
 
 

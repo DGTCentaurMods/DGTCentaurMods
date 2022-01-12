@@ -189,8 +189,11 @@ while True:
         epaper.writeText(0, "Loading...")
         time.sleep(1)
         board.pauseEvents()
+        board.ser.close()
+        time.sleep(1)
         os.chdir("/home/pi/centaur")
-        os.system("sudo systemctl start centaur.service")
+        #os.system("sudo systemctl start centaur.service")
+        os.system("sudo ./centaur")
         # Once started we cannot return to DGTCentaurMods, we can kill that
         time.sleep(3)
         os.system("sudo systemctl stop DGTCentaurMods.service")

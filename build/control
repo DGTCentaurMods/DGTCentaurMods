@@ -1,5 +1,5 @@
 Package: dgtcentaurmods
-Version: 0-bluetooth
+Version: 0-local-build
 Architecture: armhf
 Maintainer: wormstein<email@gmail.com>
 Depends: ntp, ssmtp, libopenjp2-7-dev, libtiff5, python3-pip, git, libopenjp2-7, libbluetooth-dev, bluez-tools, libopenblas-dev

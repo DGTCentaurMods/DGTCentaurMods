@@ -145,6 +145,10 @@ def stopEpaper():
     lg = Image.open(filename)
     lgs = Image.new('1', (128, 296), 255)
     lgs.paste(lg,(0,0))
+    qrfile = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qr-support.png"
+    qr = Image.open(qrfile)
+    qr = qr.resize((128,128))
+    lgs.paste(qr,(0,160))
     epaperbuffer = lgs.copy()
     time.sleep(3)
     kill = 1
