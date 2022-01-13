@@ -24,7 +24,7 @@ echo "::: Deploying python env..."
 virtualenv .venv
 
 echo "::: Installing packages inside the environment..."
-./.venv/bin/pip3 install -r requirements.txt
+CFLAGS="-fcommon" .venv/bin/pip3 install -r requirements.txt
 
 echo "::: All done."
 echo ":: Activate environment using \"source .venv/bin/activate\""

@@ -156,7 +156,7 @@ fi
 
 echo -e "::: Installing python packages.\n"
     cd $SETUP_DIR
-    pip3 install -r $SETUP_DIR/requirements.txt
+    CFLAGS="-fcommon" pip3 install -r $SETUP_DIR/requirements.txt
 
 
 function insertMaia {
