@@ -1,7 +1,0 @@
-sudo sdptool add SP &
-
-sudo bluetoothctl <<EOF
-power on
-agent on
-discoverable on
-pairable on

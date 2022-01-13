@@ -70,7 +70,7 @@ function insertStockfish {
 
 
 function configSetup {
-    sed -i "s/Version:.*/Version: $VERSION/g" control
+    sed -i "s/Version:.*/Version: $VERSION/g" DEBIAN/control
     
     cd ${STAGE}/etc/systemd/system
         local SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
@@ -89,11 +89,10 @@ function configSetup {
     cd $BASE
     # Setup postinst file
         echo "::: Configuring postinst."
-        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" postinst
-        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" postinst
-
-    cp control ${STAGE}/DEBIAN
-    cp postinst ${STAGE}/DEBIAN
+        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" DEBIAN/postinst
+        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" DEBIAN/postinst
+    
+    cp -r DEBIAN ${STAGE}/
  
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
