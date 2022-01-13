@@ -19,7 +19,7 @@ else
 fi
 
 # Deploy python environment
-cd ../..
+cd ../../..
 echo "::: Deploying python env..."
 virtualenv .venv
 
