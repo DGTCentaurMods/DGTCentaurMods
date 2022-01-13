@@ -22,7 +22,6 @@ PyChromecast==9.2.1
 pyserial==3.5
 python-dotenv==0.19.1
 requests==2.26.0
-RPi.GPIO==0.7.0
 spidev==3.5
 SQLAlchemy==1.4.26
 typing-extensions==3.10.0.2
