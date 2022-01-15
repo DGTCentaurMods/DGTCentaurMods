@@ -78,6 +78,7 @@ echo -e "Services setup\n"
     systemctl enable ntp
     systemctl enable var-run-sdp.path
     systemctl enable var-run-sdp.service
+    systemctl enable stopDGTController.service
     systemctl start var-run-sdp.path
 
 

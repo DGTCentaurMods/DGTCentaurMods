@@ -1,0 +1,13 @@
+[Unit]
+Description=Power off DGT controller.
+DefaultDependencies=no
+Before=shutdown.target reboot.target halt.target
+
+[Service]
+ExecStart=shutdown.py
+Environment=
+WorkingDirectory=
+Type=oneshot
+
+[Install]
+WantedBy=shutdown.target

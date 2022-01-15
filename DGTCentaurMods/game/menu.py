@@ -177,7 +177,6 @@ while True:
     time.sleep(1.5)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
-        #oardfunctions.shutdown()
     if result == "Cast":
         epaper.clearScreen()
         epaper.writeText(0,"Loading...")
@@ -307,9 +306,9 @@ while True:
             epaper.epd.HalfClear()
             time.sleep(5)
             epaper.stopEpaper()
-            time.sleep(2)
+            os.system("sudo poweroff")
+            time.sleep(3)
             board.pauseEvents()
-            board.shutdown()
         if result == "Reboot":
             board.beep(board.SOUND_POWER_OFF)
             epaper.epd.init()
