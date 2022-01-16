@@ -204,20 +204,20 @@ while True:
     if result == "EmulateEB":
         boardmenu = {
             'dgtclassic' : 'DGT REVII',
-            'millenium' : 'Millenium',
+            'millennium' : 'Millennium',
         }
         result = doMenu(boardmenu)
         if result == "dgtclassic":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
+            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
         if result == "millenium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
+            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
             board.unPauseEvents()
     if result == "settings":
         setmenu = {
