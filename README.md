@@ -43,7 +43,7 @@ General Settings - Connect Wifi, Pair bluetooth, sound, lichess api token
 ## Roadmap
 
 Currently we are working on...
-1. Builds/Releases
+1. Releasing out first stable version.
 2. Squashing bugs
 3. BLE boards emulation
 4. Improving Gamemanager features (gamemanager is the central system that handles chess games)
@@ -65,7 +65,7 @@ In order to run the project on a Raspberry Pi Zero W, these are some steps to be
 Installation process takes some time, so sit back and have a beer. Once done, reboot your Raspberry Pi. If all went well, board should power on and the new DGTCentaurMods will start. You'll notice the menu on the display.
 
 ## Automatic setup of SD card
-Use the tool in tools/card-setup-tol. Follow this wiki page. (to be filled)
+Use the tool in tools/card-setup-tol. Follow the README section on tool's page.
 
 ## Original centaur software
 
