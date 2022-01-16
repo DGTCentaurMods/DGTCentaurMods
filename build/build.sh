@@ -127,7 +127,8 @@ function stage {
 function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
     FILEVERSION=local-$(git branch | grep "*" | cut -f2 -d' ')
-    cp -r $(pwd)/../../${REPO_NAME} /tmp//${REPO_NAME}
+    LOCAL_REPO=`pwd | cut -d/ -f5`
+    cp -r $(pwd)/../../${LOCAL_REPO} /tmp//${REPO_NAME}
     REPO_NAME="/tmp/${REPO_NAME}"
     stage
 }
