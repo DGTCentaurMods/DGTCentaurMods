@@ -42,7 +42,7 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
-    epaper.epapermode = 1
+    epaper.epapermode = 0
     board.beep(board.SOUND_GENERAL)
     if id == board.BTNDOWN:
         menuitem = menuitem + 1
@@ -60,19 +60,18 @@ def keyPressed(id):
             if (c == menuitem):
                 selection = k
                 print(selection)
-                epaper.epd.HalfClear()
                 event_key.set()
                 menuitem = 1
                 return
             c = c + 1
     if id == board.BTNBACK:
         selection = "BACK"
-        epaper.epd.HalfClear()
+        #epaper.epd.Clear(0xff)
+        #time.sleep(2)
         event_key.set()
         return
     if id == board.BTNHELP:
         selection = "BTNHELP"
-        epaper.epd.HalfClear()
         event_key.set()
         return
     if menuitem < 1:
@@ -116,17 +115,16 @@ def doMenu(menu):
     global selection
     global quickselect
     global event_key
-    #epaper.epd.init()
-    #time.sleep(0.7)
+    epaper.epapermode = 0
     selection = ""
     curmenu = menu
     # Display the given menu
-    epaper.clearScreen()
     menuitem = 1
     quickselect = 0
     board.pauseEvents()
     res = board.getBoardState()
     board.unPauseEvents()
+    epaper.pauseEpaper()
     # If 3rd and 4th ranks are empty then enable quick select by placing and releasing a piece
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
@@ -135,12 +133,16 @@ def doMenu(menu):
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
         row = row + 1
+    for x in range(1,16):
+        epaper.writeText(row,"                         ")
+        row = row + 1
     epaper.clearArea(0,0,17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
                   (17, (menuitem * 20) + 10)], fill=0)
     draw.line((17,0,17,295), fill=0, width=1)
     print("drawn")
+    epaper.unPauseEpaper()
     event_key.wait()
     event_key.clear()
     return selection
@@ -173,8 +175,10 @@ while True:
             'settings': 'Settings',
             'Support': 'Get support'})
     result = doMenu(menu)
-    epaper.epd.init()
-    time.sleep(1.5)
+    #epaper.epd.init()
+    #time.sleep(0.7)
+    #epaper.clearArea(0,0,128,295)
+    #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
     if result == "Cast":
