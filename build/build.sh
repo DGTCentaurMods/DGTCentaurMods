@@ -69,9 +69,7 @@ function insertStockfish {
 
 
 
-function configSetup {
-    sed -i "s/Version:.*/Version: $VERSION/g" DEBIAN/control
-    
+function configSetup {  
     cd ${STAGE}/etc/systemd/system
         local SETUP_DIR=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$SETUP_DIR")
         
@@ -86,13 +84,20 @@ function configSetup {
             sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
             sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
         
+        echo "::: Configuring service: stopDGTController.service"
+	    sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" stopDGTController.service
+	    sed -i "s/ExecStart=.*/ExecStart=python3 board\/shutdown.py/g" stopDGTController.service
+            sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g"	stopDGTController.service
+
     cd $BASE
-    # Setup postinst file
+    echo "Entrying folder $BASE"
+        cp -r DEBIAN ${STAGE}/
+    # Setup postinst and control file
+        sed -i "s/Version:.*/Version: $VERSION/g" ${STAGE}/DEBIAN/control
         echo "::: Configuring postinst."
-        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" DEBIAN/postinst
-        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" DEBIAN/postinst
+        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" ${STAGE}/DEBIAN/postinst
+        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" ${STAGE}/DEBIAN/postinst
     
-    cp -r DEBIAN ${STAGE}/
  
     # Set permissions
     sudo chown -R root.root ${STAGE}/etc
