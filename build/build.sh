@@ -112,7 +112,7 @@ function stage {
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
     
     # Move system services
-    mv -v $REPO_NAME/build/system/* ${STAGE}/
+    mv $REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
     #rm -rf $REPO_NAME/${PCK_NAME}/etc
@@ -123,7 +123,7 @@ function stage {
     mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
-    rm -rfv $REPO_NAME
+    rm -rf $REPO_NAME
 }
 
 

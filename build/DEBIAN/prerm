@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+
+INSTALL_DIR="/home/pi/DGTCentaurMods"
+
+function removePycache {    
+    find ${INSTALL_DIR} | grep -E "(__pycache__|\.pyc|\.pyo$|epaper.jpg|tmp)" | xargs rm -rf
+}
+
+
+case $1 in
+    remove* )
+        removePycache
+        exit 0
+        ;;
+esac
