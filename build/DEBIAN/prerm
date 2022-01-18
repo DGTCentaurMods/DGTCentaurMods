@@ -7,9 +7,18 @@ function removePycache {
 }
 
 
+function stopServices {
+    systemctl stop var-run-sdp.path
+    systemctl stop var-run-sdp.service
+    systemctl stop stopDGTController.service
+    systemctl stop var-run-sdp.path
+}
+
+
 case $1 in
     remove* )
         removePycache
+        stopServices
         exit 0
         ;;
 esac

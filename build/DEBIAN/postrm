@@ -1,11 +1,14 @@
 #!/usr/bin/bash
-set -e
+
+
+function reloadSystemd {
+    systemctl daemon-reload
+}
+
 
 case $1 in
-remove* )
-    ;;
-
-purge* )
-    ;;
-
+    remove* )
+        reloadSystemd
+        exit 0
+        ;;
 esac
