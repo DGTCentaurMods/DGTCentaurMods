@@ -8,6 +8,9 @@ function removePycache {
 
 
 function stopServices {
+    systemctl stop rfcomm.service
+    systemctl stop centaurmods-web.service
+    systemctl stop DGTCentaurMods.service
     systemctl stop var-run-sdp.path
     systemctl stop var-run-sdp.service
     systemctl stop stopDGTController.service

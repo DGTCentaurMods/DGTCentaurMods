@@ -1,14 +1,24 @@
 #!/usr/bin/bash
 
+INSTALL_DIR="/home/pi/DGTCentaurMods"
 
 function reloadSystemd {
     systemctl daemon-reload
 }
 
 
+function completeDGTCMremove {
+    rm -rf ${INSTALL_DIR}
+}
+
+
+#Default actions on postrm
+reloadSystemd
+
+
 case $1 in
-    remove* )
-        reloadSystemd
+    purge* )
+        completeDGTCMremove
         exit 0
         ;;
 esac
