@@ -114,22 +114,13 @@ def license():
 @app.route("/return2dgtcentaurmods")
 def return2dgtcentaurmods():
 	os.system("pkill centaur")
-	time.sleep(3)
+	time.sleep(1)
 	os.system("sudo systemctl restart DGTCentaurMods.service")
 	return "ok"
 
 @app.route("/shutdownboard")
 def shutdownboard():
 	os.system("pkill centaur")
-	os.system("sudo systemctl stop DGTCentaurMods.service")
-	time.sleep(1)
-	epaper.initEpaper(1)
-	epaper.epd.init()
-	#epaper.epd.HalfClear()
-	time.sleep(5)
-	epaper.stopEpaper()
-	#os.system("sudo systemctl start stopDGTController.service")
-	#time.sleep(1)
 	os.system("sudo poweroff")
 	return "ok"
 
