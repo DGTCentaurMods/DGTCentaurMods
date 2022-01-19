@@ -45,6 +45,34 @@
 
 <div style="width:100%">
     <div id="settings">
+      <article class="panel is-info">
+        <p class="panel-heading">
+          Shutdown/Restart DGTCentaurMods
+        </p>
+          <div class="panel-block">
+              <p>
+              Here you can return to DGTCentaurMods when playing the original Centaur
+              by pressing "Quit orig Centaur" 
+              </p>
+          </div>
+ 
+          <div class="panel-block">
+            <div class="is-pulled-right" style="width:100%">
+              <button class="button is-pulled-right" id="return2DGTMods" style="margin-left:10px;" onClick="returnToDGTCentaurMods()">Quit orig Centaur</button>
+            </div>
+            </div>
+
+            <div class="panel-block">
+              <p >
+  Poweroff the board by pressing "Shutdown"
+              </p>
+          </div>
+          <div class="panel-block">       
+            <div class="is-pulled-right" style="width:100%">
+            <button class="button is-pulled-right" id="shutDownBoard" style="margin-left:10px;" onClick="shutDownBoard()">Shutdown</button>
+            </div>
+          </div>
+      </article>
         <article class="panel is-info">
           <p class="panel-heading">
             Lichess
@@ -109,6 +137,22 @@
 <script>
 
     var page = 1;
+    function shutDownBoard() {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+
+        xmlhttp.open("GET", "/shutdownboard", true);
+        xmlhttp.send();
+    }
+
+
+    function returnToDGTCentaurMods() {
+        var xmlhttp;
+        xmlhttp = new XMLHttpRequest();
+
+        xmlhttp.open("GET", "/return2dgtcentaurmods", true);
+        xmlhttp.send();
+    }
 
     function saveLichess() {
         var newkey = document.getElementById("lichesskey").value;
