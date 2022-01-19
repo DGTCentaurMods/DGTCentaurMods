@@ -130,6 +130,7 @@ def doMenu(menu):
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
     row = 1
+    epaper.writeText(0,"                      ")
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
         row = row + 1
@@ -213,7 +214,7 @@ while True:
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
-        if result == "millenium":
+        if result == "millenmium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
