@@ -205,6 +205,7 @@ while True:
         boardmenu = {
             'dgtclassic' : 'DGT REVII',
             'millennium' : 'Millennium',
+            'pegasus' : 'Pegasus',
         }
         result = doMenu(boardmenu)
         if result == "dgtclassic":
@@ -218,6 +219,12 @@ while True:
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
+            board.unPauseEvents()
+        if result == "pegasus":
+            epaper.clearScreen()
+            epaper.writeText(0, "Loading...")
+            board.pauseEvents()
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
             board.unPauseEvents()
     if result == "settings":
         setmenu = {
