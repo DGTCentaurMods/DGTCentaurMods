@@ -28,8 +28,10 @@ from DGTCentaurMods.board import *
 import time
 import threading
 import os
+import pathlib
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
+from PIL import Image, ImageDraw
 
 kill = 0
 
@@ -45,11 +47,18 @@ for x in range(0,10):
     resp = board.ser.read(10000)
     resp = bytearray(resp)
 
-epaper.writeText(1,"PEGASUS MODE")
-epaper.writeText(2,"PCS-REVII-081500")
-epaper.writeText(3,"Use back button")
-epaper.writeText(4,"to exit mode")
-epaper.writeText(5,"Await Connect")
+def displayLogo():
+    display = epaper.epd
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    lg = Image.open(filename)
+    epaper.epaperbuffer.paste(lg,(0,0))
+
+displayLogo()
+epaper.writeText(9,"PEGASUS MODE")
+epaper.writeText(10,"PCS-REVII-081500")
+epaper.writeText(11,"Use back button")
+epaper.writeText(12,"to exit mode")
+epaper.writeText(13,"Await Connect")
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
@@ -291,7 +300,8 @@ class UARTTXCharacteristic(Characteristic):
 
     def StartNotify(self):
         print("started notifying")
-        epaper.writeText(5, "Connected")
+        epaper.writeText(13, "              ")
+        epaper.writeText(13, "Connected")
         board.clearSerial()
         board.clearBoardData()
         board.beep(board.SOUND_GENERAL)
