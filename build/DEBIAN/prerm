@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+
+INSTALL_DIR="/home/pi/DGTCentaurMods"
+
+function removePycache {    
+    find ${INSTALL_DIR} | grep -E "(__pycache__|\.pyc|\.pyo$|epaper.jpg)" | xargs rm -rf
+}
+
+
+function stopServices {
+    systemctl stop rfcomm.service
+    systemctl stop centaurmods-web.service
+    systemctl stop DGTCentaurMods.service
+    systemctl stop var-run-sdp.path
+    systemctl stop var-run-sdp.service
+    systemctl stop stopDGTController.service
+    systemctl stop var-run-sdp.path
+}
+
+
+case $1 in
+    remove* )
+        removePycache
+        stopServices
+        exit 0
+        ;;
+esac

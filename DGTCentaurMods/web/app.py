@@ -22,6 +22,7 @@
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
 from DGTCentaurMods.board import centaur
+from DGTCentaurMods.display import epaper
 from board import LiveBoard
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
@@ -30,6 +31,7 @@ from sqlalchemy.sql import func
 from sqlalchemy import select
 from sqlalchemy import delete
 import os
+import time
 import pathlib
 import io
 import chess
@@ -108,6 +110,19 @@ def support():
 @app.route("/license")
 def license():
 	return render_template('license.html')
+
+@app.route("/return2dgtcentaurmods")
+def return2dgtcentaurmods():
+	os.system("pkill centaur")
+	time.sleep(1)
+	os.system("sudo systemctl restart DGTCentaurMods.service")
+	return "ok"
+
+@app.route("/shutdownboard")
+def shutdownboard():
+	os.system("pkill centaur")
+	os.system("sudo poweroff")
+	return "ok"
 
 @app.route("/lichesskey/<key>")
 def lichesskey(key):

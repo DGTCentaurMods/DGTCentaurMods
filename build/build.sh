@@ -57,7 +57,7 @@ function insertStockfish {
         cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
         cd $BASE
     else 
-        read -p "DO you want to rebuild Stockfish (y/n):"
+        read -p "Do you want to rebuild Stockfish (y/n):"
         case $REPLY in
         [Yy]* ) rm -rf Stockfish && insertStockfish;;
         [Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
@@ -112,7 +112,7 @@ function stage {
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
     
     # Move system services
-    mv -v $REPO_NAME/build/system/* ${STAGE}/
+    mv $REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
     #rm -rf $REPO_NAME/${PCK_NAME}/etc
@@ -123,7 +123,7 @@ function stage {
     mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
 
     # Remove files from Git
-    rm -rfv $REPO_NAME
+    rm -rf $REPO_NAME
 }
 
 
@@ -131,8 +131,8 @@ function stage {
 function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
     FILEVERSION=local-$(git branch | grep "*" | cut -f2 -d' ')
-    LOCAL_REPO=`pwd | cut -d/ -f5`
-    cp -r $(pwd)/../../${LOCAL_REPO} /tmp//${REPO_NAME}
+    LOCAL_REPO=$(pwd)/..
+        cp -r ${LOCAL_REPO} /tmp//${REPO_NAME}
     REPO_NAME="/tmp/${REPO_NAME}"
     stage
 }
