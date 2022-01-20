@@ -221,7 +221,7 @@ while True:
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
-        if result == "millenmium":
+        if result == "millennium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
