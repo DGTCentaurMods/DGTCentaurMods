@@ -130,6 +130,7 @@ def doMenu(menu):
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
     row = 1
+    epaper.writeText(0,"                      ")
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
         row = row + 1
@@ -169,6 +170,7 @@ while True:
         lichess_item = {'Lichess': 'Lichess'}
         menu.update(lichess_item)
     menu.update({
+            'pegasus' : 'DGT Pegasus',
             'Engines' : 'Engines',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
@@ -201,11 +203,16 @@ while True:
         time.sleep(3)
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
+    if result == "pegasus":
+        epaper.clearScreen()
+        epaper.writeText(0, "Loading...")
+        board.pauseEvents()
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
+        board.unPauseEvents()
     if result == "EmulateEB":
         boardmenu = {
             'dgtclassic' : 'DGT REVII',
             'millennium' : 'Millennium',
-            'pegasus' : 'Pegasus',
         }
         result = doMenu(boardmenu)
         if result == "dgtclassic":
@@ -214,17 +221,11 @@ while True:
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
-        if result == "millenium":
+        if result == "millennium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
-            board.unPauseEvents()
-        if result == "pegasus":
-            epaper.clearScreen()
-            epaper.writeText(0, "Loading...")
-            board.pauseEvents()
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
             board.unPauseEvents()
     if result == "settings":
         setmenu = {
