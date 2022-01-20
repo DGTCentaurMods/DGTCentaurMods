@@ -170,6 +170,7 @@ while True:
         lichess_item = {'Lichess': 'Lichess'}
         menu.update(lichess_item)
     menu.update({
+            'pegasus' : 'DGT Pegasus',
             'Engines' : 'Engines',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
@@ -202,6 +203,12 @@ while True:
         time.sleep(3)
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
+    if result == "pegasus":
+        epaper.clearScreen()
+        epaper.writeText(0, "Loading...")
+        board.pauseEvents()
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
+        board.unPauseEvents()
     if result == "EmulateEB":
         boardmenu = {
             'dgtclassic' : 'DGT REVII',
@@ -214,7 +221,7 @@ while True:
             board.pauseEvents()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
-        if result == "millenmium":
+        if result == "millennium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
