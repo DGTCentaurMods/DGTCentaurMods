@@ -23,15 +23,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-
-##### VARIABLES
-BASE=`pwd`
-REPO_NAME="DGTCentaur"
-REPO_URL="https://github.com/EdNekebno/DGTCentaur"
-PCK_NAME="DGTCentaurMods"
-SETUP_DIR="/home/pi"
-STOCKFISH_REPO="https://github.com/wormstein/Stockfish"
-
+source config/build.config
 
 function build {
     dpkg-deb --build ${STAGE}
@@ -54,13 +46,13 @@ function insertStockfish {
         make -j$(nproc) build ARCH=armv7
 
         mv stockfish stockfish_pi
-        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines
+        cp stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}/engines
         cd $BASE
     else 
         read -p "Do you want to rebuild Stockfish (y/n):"
         case $REPLY in
         [Yy]* ) rm -rf Stockfish && insertStockfish;;
-        [Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${PCK_NAME}/engines && echo "::: Move on";;
+        [Nn]* )  cp ./Stockfish/src/stockfish_pi ${BASE}/${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}/engines && echo "::: Move on";;
         esac  
         
     fi
@@ -76,16 +68,16 @@ function configSetup {
         # Setup DGT Centaur Mods service
         echo "::: Configuring service:  DGTCentaurMods.service"
             sed -i "s/ExecStart=.*/ExecStart=python3 game\/menu.py/g" DGTCentaurMods.service
-            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" DGTCentaurMods.service
+            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${DGTCM_PCK_NAME}/g" DGTCentaurMods.service
             sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" DGTCentaurMods.service
         
         # Setup web service
         echo "::: Configuring service: centaurmods-web.service"
-            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}\/web/g" centaurmods-web.service
+            sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${DGTCM_PCK_NAME}\/web/g" centaurmods-web.service
             sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g" centaurmods-web.service
         
         echo "::: Configuring service: stopDGTController.service"
-	    sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${PCK_NAME}/g" stopDGTController.service
+	    sed -i "s/WorkingDirectory=.*/WorkingDirectory=${SETUP_DIR}\/${DGTCM_PCK_NAME}/g" stopDGTController.service
 	    sed -i "s/ExecStart=.*/ExecStart=python3 board\/shutdown.py/g" stopDGTController.service
             sed -i "s/Environment=.*/Environment=\"PYTHONPATH=${SETUP_DIR}\"/g"	stopDGTController.service
 
@@ -94,9 +86,11 @@ function configSetup {
         cp -r DEBIAN ${STAGE}/
     # Setup postinst and control file
         sed -i "s/Version:.*/Version: $VERSION/g" ${STAGE}/DEBIAN/control
-        echo "::: Configuring postinst."
-        sed -i "s/^SETUP_DIR.*/SETUP_DIR=\"${SETUP_DIR}\/${PCK_NAME}\"/g" ${STAGE}/DEBIAN/postinst
-        sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${PCK_NAME}\/config\/centaur.ini/g" ${STAGE}/DEBIAN/postinst
+        #echo "::: Configuring package maint scripts."
+            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/postinst
+            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/postrm
+            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/prerm
+            sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${DGTCM_PCK_NAME}\/config\/centaur.ini/g" ${STAGE}/DEBIAN/postinst
     
  
     # Set permissions
@@ -107,23 +101,23 @@ function configSetup {
 
 
 function stage {
-    STAGE="${PCK_NAME}_${FILEVERSION}_armhf"
+    STAGE="${DGTCM_PCK_NAME}_${FILEVERSION}_armhf"
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
     
     # Move system services
-    mv $REPO_NAME/build/system/* ${STAGE}/
+    mv $DGTCM_REPO_NAME/build/system/* ${STAGE}/
     
     # Removed unnecessary stuff
-    #rm -rf $REPO_NAME/${PCK_NAME}/etc
-    rm  $REPO_NAME/*.md
+    #rm -rf $DGTCM_REPO_NAME/${DGTCM_PCK_NAME}/etc
+    rm  $DGTCM_REPO_NAME/*.md
 
     # Move main software in /home/pi
-    mv  $REPO_NAME/${PCK_NAME} ${STAGE}/${SETUP_DIR}
-    mv  $REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${PCK_NAME}
+    mv  $DGTCM_REPO_NAME/${DGTCM_PCK_NAME} ${STAGE}/${SETUP_DIR}
+    mv  $DGTCM_REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}
 
     # Remove files from Git
-    rm -rf $REPO_NAME
+    rm -rf $DGTCM_REPO_NAME
 }
 
 
@@ -132,8 +126,8 @@ function buildLocal {
     VERSION=0-local-$(git branch | grep "*" | cut -f2 -d' ')
     FILEVERSION=local-$(git branch | grep "*" | cut -f2 -d' ')
     LOCAL_REPO=$(pwd)/..
-        cp -r ${LOCAL_REPO} /tmp//${REPO_NAME}
-    REPO_NAME="/tmp/${REPO_NAME}"
+        cp -r ${LOCAL_REPO} /tmp//${DGTCM_REPO_NAME}
+    DGTCM_REPO_NAME="/tmp/${DGTCM_REPO_NAME}"
     stage
 }
 
@@ -149,36 +143,34 @@ then
     then
         sudo rm -rf ${STAGE}
     fi
-    echo clone --depth 1 $REPO_URL
-    git clone --depth 1 $REPO_URL && stage || exit 1
+    git clone --depth 1 $DGTCM_REPO_URL && stage || exit 1
 
 else
-    if [ $2 = branch ]
-    then
-        VERSION=0-$1
-        FILEVERSION=$1
-        TAG=$1
-    else
+    #if [ $2 = branch ]
+    #then
+    #    VERSION=0-$1
+    #    FILEVERSION=$1
+    #    TAG=$1
+    #else
         TAG=$1
         VERSION=$1
 	FILEVERSION=$1
         echo $TAG $VERSION
-    fi
-    echo clone --depth 1 --branch $TAG $REPO_URL --single-branch
-    git clone --depth 1 --branch $TAG $REPO_URL --single-branch && stage || exit 1
+    #fi
+    git clone --depth 1 --branch $TAG $DGTCM_REPO_URL --single-branch && stage || exit 1
 fi
 }
 
 ##### START ###
 if [ ! -z $2 ] 
 then
-REPO_URL="https://github.com/$2/DGTCentaur"
+    DGTCM_REPO_URL="https://github.com/$2/$DGTCM_REPO_NAME"
 fi
 case $1 in
     master* )  gitCheckout master;;
     clean* ) 
-        #sudo rm -rf ${REPO_NAME}
-        sudo rm -rf  ${PCK_NAME}*
+        #sudo rm -rf ${DGTCM_REPO_NAME}
+        sudo rm -rf  ${DGTCM_PCK_NAME}*
         rm -rf Stockfish
         exit 0
         ;;
@@ -196,7 +188,7 @@ case $1 in
 
 configSetup
 
-read -p "DO you want to integrate Stockfish for this build? (y/n):"
+read -p "Do you want to integrate Stockfish for this build? (y/n):"
 case $REPLY in
     [Yy]* ) insertStockfish;;
     [Nn]* ) echo "::: Move on";;

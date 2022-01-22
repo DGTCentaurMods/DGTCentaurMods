@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-INSTALL_DIR="/home/pi/DGTCentaurMods"
+DGTCM_PATH=""
 
 function reloadSystemd {
     systemctl daemon-reload
@@ -8,7 +8,7 @@ function reloadSystemd {
 
 
 function completeDGTCMremove {
-    rm -rf ${INSTALL_DIR}
+    rm -rf ${DGTCM_PATH}
 }
 
 
