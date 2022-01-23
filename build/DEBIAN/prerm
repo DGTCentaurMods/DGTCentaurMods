@@ -3,7 +3,7 @@
 DGTCM_PATH=""
 
 function removePycache {    
-    find ${}DGTCM_PATH | grep -E "(__pycache__|\.pyc|\.pyo$|epaper.jpg)" | xargs rm -rf
+    find ${DGTCM_PATH} | grep -E "(__pycache__|\.pyc|\.pyo$|epaper.jpg)" | xargs rm -rf
 }
 
 
