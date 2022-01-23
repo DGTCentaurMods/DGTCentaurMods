@@ -104,9 +104,8 @@ function ExtractCentaur {
         Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
         Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\centaur.img 2.img"
         Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
-        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur"
-	Remove-Item "$PSScriptRoot\home\pi\centaur\settings" –recurse
-        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
+        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\1.img home\pi\centaur -xr!settings"
+	Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img  settings_1_2.dat running.info playscreendata_1_2.dat factory.info epaper_vcom.info clockdata_1_2.dat chesstime_1_2.dat chessgame_1_2.dat -o.\home\pi\centaur\settings"
         Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img epaper* *.dat *.info -o.\home\pi\centaur\settings"
         Remove-Item  "$PSScriptRoot\1.img"
         Remove-Item  "$PSScriptRoot\2.img"
