@@ -26,11 +26,11 @@
 
 
 $releaseVersion = '0.1.0'
-$dev = '1'
+$dev = '0'
 $SleepTime = 3
 
 $releaseFileName = -join ("DGTCentaurMods_" , $releaseVersion , "_armhf.deb" )
-$releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/", $releaseVersion , "/" , $releaseFileName )
+$releaseURL = "https://github.com/EdNekebno/DGTCentaurMods//releases/latest/download/DGTCentaurMods_armhf.deb"
 
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
     $OutPutFolder = "$PSScriptRoot\$OutPutFolder"
