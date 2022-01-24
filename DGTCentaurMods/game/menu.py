@@ -166,11 +166,11 @@ while True:
     if os.path.exists(centaur_software):
         centaur_item = {'Centaur': 'DGT Centaur'}
         menu.update(centaur_item)
+    menu.update({'pegasus' : 'DGT Pegasus'})
     if centaur.lichess_api:
         lichess_item = {'Lichess': 'Lichess'}
         menu.update(lichess_item)
     menu.update({
-            'pegasus' : 'DGT Pegasus',
             'Engines' : 'Engines',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
