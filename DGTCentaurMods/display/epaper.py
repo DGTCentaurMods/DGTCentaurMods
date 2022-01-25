@@ -25,6 +25,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -275,3 +276,9 @@ def resignDrawMenu(row):
     draw.text((0, offset + 0), "    DRW    RESI", font=font18, fill=0)
     draw.polygon([(2, offset + 18), (18, offset + 18), (10, offset + 3)], fill=0)
     draw.polygon([(35+25, offset + 3), (51+25, offset + 3), (43+25, offset + 18)], fill=0)
+  
+def drawTopHeader():
+    while True:
+        topHeader = "        "+centaur.current_time
+        writeText(0,topHeader)
+        time.sleep(10)

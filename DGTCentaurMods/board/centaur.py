@@ -22,6 +22,8 @@
 
 from subprocess import PIPE, Popen, check_output
 import subprocess
+import threading
+import time
 import shlex
 import configparser
 import pathlib
@@ -81,6 +83,12 @@ def shell_run(rcmd):
     else:
         print(response_stdout)
         return response_stdout
+
+
+def update_time():
+    while True:
+        current_time = time.strftime("%H:%M")
+        time.sleep(30)
 
 config_file = rel_path() + "/config/centaur.ini"
 config = configparser.ConfigParser()
