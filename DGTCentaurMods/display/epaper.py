@@ -25,6 +25,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epd2in9d
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -275,3 +276,28 @@ def resignDrawMenu(row):
     draw.text((0, offset + 0), "    DRW    RESI", font=font18, fill=0)
     draw.polygon([(2, offset + 18), (18, offset + 18), (10, offset + 3)], fill=0)
     draw.polygon([(35+25, offset + 3), (51+25, offset + 3), (43+25, offset + 18)], fill=0)
+
+class statusBar():
+    def __init__(self):
+        print("Starting Status bar update thread")
+        self.statusbar = threading.Thread(target=self.display, args=())
+        self.statusbar.daemon = True
+        self.statusbar.start()
+
+    def build(self):
+    # This currently onlt shows the time but we can prepare it as an Image to
+    # put it on top of the screen
+        self.clock = time.strftime("%H:%M")
+        self.bar = "        "+self.clock
+        return self.bar
+
+    def display(self):
+        while True:
+            bar = self.build()
+            writeText(0,bar)
+            time.sleep(5)
+
+    def print(self):
+    # Get the latest status bar.
+        writeText(0,self.bar)
+        return
