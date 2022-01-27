@@ -3,10 +3,14 @@
 BASE="$(pwd)/../.."
 PCK_NAME="DGTCentaurMods"
 INSTALL_DIR=/home/pi
+SERVICES=(DGTCentaurMods.service centaurmods-web.service)
 
-function stopServices {
-    sudo systemctl stop DGTCentaurMods.service
-    sudo systemctl stop centaurmods-web.service
+function restartServices {
+    echo -e "Restarting services"
+    for service in ${SERVICES[@]}; do
+        echo -e "--> Restarting $service"
+        sudo systemctl restart $service
+    done
 }
 
 
@@ -22,6 +26,7 @@ function toggle {
             then
                 mv .${PCK_NAME} ${PCK_NAME} && rm $BASE/.toggled
             fi
+            restartServices
         echo -e "Done. Have a nice day!"
     else
         echo -e "Installing in ${INSTALL_DIR}"
@@ -31,6 +36,7 @@ function toggle {
             mv ${PCK_NAME} .${PCK_NAME}
         fi
         ln -s ${BASE}/${PCK_NAME} && touch ${BASE}/.toggled
+        restartServices
         echo -e "Done. Bye."
     fi
 }
