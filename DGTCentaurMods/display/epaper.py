@@ -301,7 +301,7 @@ class statusBar():
             writeText(0,self.bar)
             return
 
-    def _init(self):
+    def init(self):
         print("Starting status bar update thread")
         self.statusbar = threading.Thread(target=self.display, args=())
         self.statusbar.daemon = True
@@ -309,7 +309,7 @@ class statusBar():
 
     def start(self):
         self.is_running = True
-        self._init()
+        self.init()
 
     def stop(self):
         print("Kill status bar thread")
