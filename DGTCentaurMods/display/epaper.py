@@ -27,7 +27,7 @@
 
 from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epd2in9d
-import time
+import time, sched
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import threading
@@ -279,10 +279,8 @@ def resignDrawMenu(row):
 
 class statusBar():
     def __init__(self):
-        print("Starting Status bar update thread")
-        self.statusbar = threading.Thread(target=self.display, args=())
-        self.statusbar.daemon = True
-        self.statusbar.start()
+        #Build a status bar on obhect creation.
+        self.bar = self.build()
 
     def build(self):
     # This currently onlt shows the time but we can prepare it as an Image to
@@ -292,12 +290,28 @@ class statusBar():
         return self.bar
 
     def display(self):
-        while True:
+        while self.is_running:
             bar = self.build()
             writeText(0,bar)
-            time.sleep(5)
+            time.sleep(30)
 
     def print(self):
-    # Get the latest status bar.
-        writeText(0,self.bar)
-        return
+    #Get the latest status bar if needed.
+        if self.is_running:
+            writeText(0,self.bar)
+            return
+
+    def _init(self):
+        print("Starting status bar update thread")
+        self.statusbar = threading.Thread(target=self.display, args=())
+        self.statusbar.daemon = True
+        self.statusbar.start()
+
+    def start(self):
+        self.is_running = True
+        self._init()
+
+    def stop(self):
+        print("Kill status bar thread")
+        self.is_running = False
+    

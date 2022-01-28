@@ -36,7 +36,6 @@ from PIL import Image, ImageDraw
 kill = 0
 
 epaper.initEpaper()
-statusbar = epaper.statusBar()
 
 for x in range(0,10):
     board.sendPacket(b'\x83', b'')
@@ -48,8 +47,10 @@ for x in range(0,10):
     resp = board.ser.read(10000)
     resp = bytearray(resp)
 
+statusbar = epaper.statusBar()
+statusbar.start()
+
 def displayLogo():
-    display = epaper.epd
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
     lg = Image.open(filename)
     lg = lg.resize((48,112))

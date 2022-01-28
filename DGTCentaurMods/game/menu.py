@@ -130,6 +130,7 @@ def doMenu(menu):
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
     row = 1
+    #Print a fresh status bar.
     statusbar.print()
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
@@ -156,6 +157,7 @@ board.beep(board.SOUND_POWER_ON)
 board.clearSerial()
 epaper.initEpaper(1)
 statusbar = epaper.statusBar()
+statusbar.start()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
@@ -205,10 +207,12 @@ while True:
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
     if result == "pegasus":
+        statusbar.stop()
         epaper.clearScreen()
         epaper.writeText(0, "Loading...")
         board.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
+        statusbar.start()
         board.unPauseEvents()
     if result == "EmulateEB":
         boardmenu = {
