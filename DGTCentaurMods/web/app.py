@@ -126,8 +126,9 @@ def shutdownboard():
 
 @app.route("/lichesskey/<key>")
 def lichesskey(key):
-	centaur.set_lichess_api(key)
-	return "ok"
+    centaur.set_lichess_api(key)
+    os.system("sudo systemctl restart DGTCentaurMods.service")
+    return "ok"
 
 @app.route("/lichessrange/<newrange>")
 def lichessrange(newrange):
