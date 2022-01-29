@@ -6,6 +6,7 @@ import time
 
 #Beep
 board.beep(board.SOUND_POWER_OFF)
+board.ledFromTo(7,7)
 
 #Make sure DGTM is stopped in case board is powered off by ssh
 os.system("sudo systemctl stop DGTCentaurMods")

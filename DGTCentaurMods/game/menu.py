@@ -200,7 +200,6 @@ while True:
         board.ser.close()
         time.sleep(1)
         os.chdir("/home/pi/centaur")
-        #os.system("sudo systemctl start centaur.service")
         os.system("sudo ./centaur")
         # Once started we cannot return to DGTCentaurMods, we can kill that
         time.sleep(3)
@@ -318,14 +317,13 @@ while True:
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
             board.unPauseEvents()
         if result == "Shutdown":
-            board.beep(board.SOUND_POWER_OFF)
-            epaper.epd.init()
-            epaper.epd.HalfClear()
-            time.sleep(5)
-            epaper.stopEpaper()
+            epaper.clearScreen()
+            epaper.writeText(0, "Shutting down...")
             os.system("sudo poweroff")
-            time.sleep(3)
-            board.pauseEvents()
+            #Dont kill DGTCM but don't let him exit the condition block.
+            #Flash field 7
+            board.ledFromTo(7,7)
+            time.sleep(25)
         if result == "Reboot":
             board.beep(board.SOUND_POWER_OFF)
             epaper.epd.init()
