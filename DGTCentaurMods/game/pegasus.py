@@ -47,18 +47,23 @@ for x in range(0,10):
     resp = board.ser.read(10000)
     resp = bytearray(resp)
 
+statusbar = epaper.statusBar()
+statusbar.start()
+
 def displayLogo():
-    display = epaper.epd
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
     lg = Image.open(filename)
-    epaper.epaperbuffer.paste(lg,(0,0))
+    lg = lg.resize((48,112))
+    return epaper.epaperbuffer.paste(lg,(0,20))
 
-displayLogo()
-epaper.writeText(9,"PEGASUS MODE")
+statusbar.print()
+epaper.writeText(1,"           PEGASUS")
+epaper.writeText(2,"              MODE")
 epaper.writeText(10,"PCS-REVII-081500")
 epaper.writeText(11,"Use back button")
 epaper.writeText(12,"to exit mode")
 epaper.writeText(13,"Await Connect")
+displayLogo()
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000

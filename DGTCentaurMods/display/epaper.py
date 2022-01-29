@@ -25,8 +25,9 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.board import centaur
 from DGTCentaurMods.display import epd2in9d
-import time
+import time, sched
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import threading
@@ -275,3 +276,42 @@ def resignDrawMenu(row):
     draw.text((0, offset + 0), "    DRW    RESI", font=font18, fill=0)
     draw.polygon([(2, offset + 18), (18, offset + 18), (10, offset + 3)], fill=0)
     draw.polygon([(35+25, offset + 3), (51+25, offset + 3), (43+25, offset + 18)], fill=0)
+
+class statusBar():
+    def __init__(self):
+        #Build a status bar on obhect creation.
+        self.bar = self.build()
+
+    def build(self):
+    # This currently onlt shows the time but we can prepare it as an Image to
+    # put it on top of the screen
+        self.clock = time.strftime("%H:%M")
+        self.bar = "        "+self.clock
+        return self.bar
+
+    def display(self):
+        while self.is_running:
+            bar = self.build()
+            writeText(0,bar)
+            time.sleep(30)
+
+    def print(self):
+    #Get the latest status bar if needed.
+        if self.is_running:
+            writeText(0,self.bar)
+            return
+
+    def init(self):
+        print("Starting status bar update thread")
+        self.statusbar = threading.Thread(target=self.display, args=())
+        self.statusbar.daemon = True
+        self.statusbar.start()
+
+    def start(self):
+        self.is_running = True
+        self.init()
+
+    def stop(self):
+        print("Kill status bar thread")
+        self.is_running = False
+    
