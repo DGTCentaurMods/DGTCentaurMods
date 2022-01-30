@@ -642,8 +642,8 @@ def getText(title):
             changed = 1
         if buttonPress == 2:
             beep(SOUND_GENERAL)
-            initScreen()
-            time.sleep(2)
+            clearScreen()
+            time.sleep(1)
             return typed
         if buttonPress == 3:
             beep(SOUND_GENERAL)

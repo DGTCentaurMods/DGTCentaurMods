@@ -22,6 +22,7 @@
 
 from DGTCentaurMods.board import board
 from DGTCentaurMods.board import centaur
+from DGTCentaurMods.display import epaper
 import os
 import time
 import sys
@@ -33,4 +34,6 @@ board.initScreen()
 # Get the token
 token = board.getText("API Token")
 
+#Set key in config and restart the menu.
 centaur.set_lichess_api(token)
+os.system("sudo systemctl restart DGTCentaurMods.service")
