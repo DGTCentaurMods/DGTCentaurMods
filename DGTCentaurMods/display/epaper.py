@@ -279,8 +279,7 @@ def resignDrawMenu(row):
 
 class statusBar():
     def __init__(self):
-        #Build a status bar on obhect creation.
-        self.bar = self.build()
+        return
 
     def build(self):
     # This currently onlt shows the time but we can prepare it as an Image to
@@ -298,7 +297,8 @@ class statusBar():
     def print(self):
     #Get the latest status bar if needed.
         if self.is_running:
-            writeText(0,self.bar)
+            bar = self.build()
+            writeText(0,bar)
             return
 
     def init(self):

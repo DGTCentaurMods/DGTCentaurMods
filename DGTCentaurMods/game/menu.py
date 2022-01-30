@@ -190,13 +190,16 @@ while True:
         epaper.clearScreen()
         epaper.writeText(0,"Loading...")
         board.pauseEvents()
+        statusbar.stop()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
         board.unPauseEvents()
+        statusbar.start()
     if result == "Centaur":
         epaper.clearScreen()
         epaper.writeText(0, "Loading...")
         time.sleep(1)
         board.pauseEvents()
+        statusbar.stop()
         board.ser.close()
         time.sleep(1)
         os.chdir("/home/pi/centaur")
@@ -223,14 +226,18 @@ while True:
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
+            statusbar.stop()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
+            statusbar.start()
         if result == "millennium":
             epaper.clearScreen()
             epaper.writeText(0, "Loading...")
             board.pauseEvents()
+            statusbar.stop()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
             board.unPauseEvents()
+            statusbar.start()
     if result == "settings":
         setmenu = {
                 'WiFi': 'Wifi Setup',
@@ -308,14 +315,18 @@ while True:
 
         if result == "Pairing":
             board.pauseEvents()
+            statusbar.stop()
             epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
             board.unPauseEvents()
+            statusbar.start()
         if result == "LichessAPI":
             board.pauseEvents()
+            statusbar.stop()
             epaper.writeText(0, "Loading...")
             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
             board.unPauseEvents()
+            statusbar.start()
         if result == "Shutdown":
             epaper.clearScreen()
             epaper.writeText(0, "Shutting down...")
@@ -396,8 +407,10 @@ while True:
                     epaper.clearScreen()
                     epaper.writeText(0, "Loading...")
                     board.pauseEvents()
+                    statusbar.stop()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
                     board.unPauseEvents()
+                    statusbar.start()
         else:
             if result != "BACK":
                 # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
@@ -420,17 +433,23 @@ while True:
                             epaper.clearScreen()
                             epaper.writeText(0, "Loading...")
                             board.pauseEvents()
+                            statusbar.stop()
                             print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             board.unPauseEvents()
+                            statusbar.start()
                     else:
                         # With no uci file we just call the engine
                         epaper.clearScreen()
                         epaper.writeText(0, "Loading...")
                         board.pauseEvents()
+                        statusbar.stop()
+                        statusbar.stop()
                         print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         board.unPauseEvents()
+                        statusbar.start()
+                        statusbar.start()
     if result == "Support" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()
