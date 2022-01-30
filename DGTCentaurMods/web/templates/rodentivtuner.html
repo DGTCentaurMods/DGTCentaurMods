@@ -1,43 +1,7 @@
-﻿{% extends "base.html" %}
+﻿{% extends "base-three-column.html" %}
+
 
 {% block mainpage %}
-
-<style>
-  body {
-    font-size: 90%;
-  }
-
-  .window {
-    float: right;
-    width: 7em;
-
-  }
-
-  .description {
-    float: right;
-    word-wrap: break-word;
-    word-break: break-all;
-
-  }
-
-
-  .tab {
-    min-width: 11em;
-    float: left;
-    margin: 1em;
-    margin-right: 1.5em;
-    margin-top: 0.5em;
-  }
-
-  .light {
-    background-color: #ffffcc;
-  }
-
-  .super {
-    background-color: #ffff99;
-  }
-</style>
-
 <script>
 
   function setAttacker() {
@@ -846,38 +810,37 @@
   }
 
 </script>
+<article class="panel is-info">
+  <p class="panel-heading">
+    Rodent IV personality creator
+  </p>
+  <div class="panel-block">
+    <p>
+      Use one of the default character presets below by pressing one the the buttons like "Ampere" or modify any of the
+      below
+      setting to your like.<br>
+      Once finished click "Save Personality" which will download your individual character setting file to your PC.<br>
+      In a final step you have to upload this file again to this page so that changes add to the
+      configurations. <br>See File upload at the bottom of the page
+    </p>
+  </div>
 
-<div style="width:100%">
-  <div id="settings">
-
-    <article class="panel is-info">
-      <p class="panel-heading">
-        Rodent IV personality creator
-      </p>
-      <div class="panel-block">
-        <p>
-          Use one of the default options below by pressing one the the buttons like "Ampere" or modify any of the below
-          setting to your like.
-          Once finished click "Save Personality" wich will download your indiviual Character Setting file to your PC.
-          In a final step you have to upload this file again to the Centaur so that you changes added to the
-          configurations
-        </p>
-        <p>
-          Be aware that you cannot upload any characters found in Rodentiv Character folder since the file format is
-          slightly different!
-        </p>
-
-      </div>
-      <div class="panel-block">
-        <div class="is-pulled-right" style="width:100%">
-          <button class="button is-pulled-right" onclick="savePersonality()">Save personality</button>
-        </div>
-      </div>
-      <div class="panel-block"></div>
-      <p>
-        You can always revert to the default settings on this page by clicking "Reset to default" if you are unsure of
-        your changes.
-      </p>
+  <div class="panel-block">
+    <p>
+      Be aware that you cannot upload any characters found in Rodentiv Character folder since the file format is
+      slightly different!
+    </p>
+  </div>
+  <div class="panel-block">
+    <div class="is-pulled-right" style="width:100%">
+      <button class="button is-pulled-right" onclick="savePersonality()">Save personality</button>
+    </div>
+  </div>
+  <div class="panel-block"></div>
+  <p>
+    You can always revert to the default settings on this page by clicking "Reset to default" if you are unsure of
+    your changes.
+  </p>
 
 
   <div class="panel-block">
@@ -922,298 +885,325 @@
       <button class="button is-pulled-right" onclick="setEscapist()">Escapist</button>
     </div>
   </div>
-  </article>
+</article>
 
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Character Name and Description
+<article class="panel is-info">
+  <p class="panel-heading">
+    Character Name and Description
+  </p>
+  <div class="panel-block">
+    <p> <span class="tag is-danger is-light" title="Name of the playing Character">Name</span> <input class="input"
+        type="text" id="CharacterName" value="RodenIVTuner"> </p>
+    <p> <span class="tag is-danger is-light" title="Name of the Author">Author</span> <input class="input" type="text"
+        id="Author" value="RodenIVTuner"> </p>
+    <p> <span class="tag is-danger is-light" title="Name of One Converting">Converted by</span> <input class="input"
+        type="text" id="Converter" value="RodenIVTuner"> </p>
+
+  </div>
+  <div class="panel-block">
+    <p> <span class="tag is-danger is-light" title="Brief Description of the Character">Description</span> <textarea
+        placeholder="Give your Character a Playing Style description ..." class="textarea" name="text" wrap="soft"
+        maxlength="120" id="Description" value="agressive, pawn Mover" style="overflow:hidden; resize:none;"></textarea>
+
+  </div>
+</article>
+
+
+
+
+{% endblock %}
+
+
+{% block second %}
+<article class="panel is-info">
+  <p class="panel-heading">
+    Elo
+  </p>
+  <div class="panel-block">
+    <p> <span class="tag is-warning is-light" title="Limit Engine Playing Strength">LimitStrength</span>
+
+      <select class="select" id="UCI_LimitStrength">
+        <option value="true" selected="selected">true</option>
+        <option value="false">false</option>
+      </select>
     </p>
-    <div class="panel-block">
-      <p> <span class="tag is-danger is-light" title="Name of the playing Character">Name</span> <input class="input" type="text"
-          id="CharacterName" value="RodenIVTuner"> </p>
-      <p> <span class="tag is-danger is-light" title="Name of the Author">Author</span> <input class="input" type="text" id="Author"
-          value="RodenIVTuner"> </p>
-      <p> <span class="tag is-danger is-light" title="Name of One Converting">Converted by</span> <input class="input" type="text"
-          id="Converter" value="RodenIVTuner"> </p>
+    <p> <span class="tag is-warning is-light" title="Engine Playing Strength">Elo</span> <input class="input"
+        type="bolean" id="UCI_Elo" value="2800" min="0" max="2800"> </p>
+  </div>
+</article>
+<article class="panel is-info">
+  <p class="panel-heading">
+    Weights & Piece Positioning
+  </p>
+  <div class="panel-block">
 
+    <div>
+      <p><b>Weights 1 </b></p>
+      <p> <span class="tag is-warning"
+          title="Influence of material advantage on evaluation, expressed as a percentage. Default is 100. Values around 90 lead to frequent pawn sacrifices, smaller values results in weaker, riskier and more fun game.">Material</span><input
+          class="input" type="number" id="Material" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning" title="Program's threats against enemy king, expressed as percentage">Own
+          attack</span><input class="input" type="number" id="OwnAttack" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning"
+          title="Opponent's threats against program's king, expressed as percentage">Opp
+          attack</span><input class="input" type="number" id="OppAttack" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning"
+          title="Own mobility, expressed as percentage; after increasing it above opponent's mobility, the engine will pursue active play">Own
+          mobility</span><input class="input" type="number" id="OwnMobility" value="50" min="0" max="500"> </p>
+      <p> <span class="tag is-warning"
+          title="Opponent's mobility, expressed as percentage; after increasing it above own mobility, the engine will try to restrict its opponent">Opp
+          mobility</span><input class="input" type="number" id="OppMobility" value="50" min="0" max="500"> </p>
+      <p> <span class="tag is-warning" title="Symmetric component of mobility evaluation">Flat mobility</span><input
+          class="input" type="number" id="FlatMobility" value="50" min="0" max="500"> </p>
     </div>
-    <div class="panel-block">
-      <p> <span class="tag is-danger is-light" title="Brief Description of the Character">Description</span> <textarea
-          placeholder="Give your Character a Playing Style description ..." class="textarea" name="text" wrap="soft"
-          maxlength="120" id="Description" value="agressive, pawn Mover"
-          style="overflow:hidden; resize:none;"></textarea>
 
+
+    <div>
+      <p><b>Weights 2</b></p>
+      <p> <span class="tag is-warning"
+          title="Bonus for pieces near to enemy king, applied to both sides, expressed as percentage; small values increase playing strength, 100% decreases it slightly; default is 20">King
+          tropism</span><input class="input" type="number" id="KingTropism" value="20" min="-50" max="500"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Weight of attacking and defending pieces, expressed as percentage">Piece
+          pressure</span><input class="input" type="number" id="PiecePressure" value="109" min="0" max="500"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Weight of semi-open and open files, as well as 7th rank evaluation, expressed as percentage">Lines</span><input
+          class="input" type="number" id="Lines" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Weight of good squares for minor pieces, expressed as percentage">Outposts</span><input
+          class="input" type="number" id="Outposts" value="78" min="0" max="500"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Space weight - known to be a stylistic embellishment">Space</span><input class="input"
+          type="number" id="Space" value="0" min="0" max="500"> </p>
     </div>
-  </article>
 
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Elo
-    </p>
-    <div class="panel-block">
-      <p> <span class="tag is-warning is-light" title="Limit Engine Playing Strength">LimitStrength</span>
-
-        <select class="select" id="UCI_LimitStrength">
-          <option value="true" selected="selected">true</option>
-          <option value="false">false</option>
+    <div>
+      <p><b>Piece positioning</b></p>
+      <p> <span class="tag is-warning is-light"
+          title="Influence of primary piece/square tables on the final score, expressed as percentage">Primary
+          style</span>
+        <select class="select" id="PrimaryPstStyle" style="float:right" ;>
+          <option value="quirky" selected="selected">quirky</option>
+          <option value="classic">classic</option>
+          <option value="normal">normal</option>
+          <option value="blunt">blunt</option>
+          <option value="forward">forward</option>
         </select>
       </p>
-      <p> <span class="tag is-warning is-light" title="Engine Playing Strength">Elo</span> <input class="input" type="bolean" id="UCI_Elo"
-          value="2800" min="0" max="2800"> </p>
-    </div>
-  </article>
-
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Playing Style settings
-    </p>
-    <div class="panel-block">
-      <div>
-        <p><b>Midgame material</b></p>
-        <p> <span class="tag is-warning is-light" title="Midgame pawn value">Pawn (mg)</span> <input class="input" type="number"
-            id="PawnValueMg" value="90" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Midgame knight value">Knight (mg)</span><input class="input" type="number"
-            id="KnightValueMg" value="380" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Midgame bishop value">Bishop (mg)</span><input class="input" type="number"
-            id="BishopValueMg" value="390" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Midgame rook value">Rook (mg)</span><input class="input" type="number"
-            id="RookValueMg" value="530" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Midgame queen value">Queen (mg)</span><input class="input" type="number"
-            id="QueenValueMg" value="1160" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Bishop pair value in middlegame, default 51">Bishop Pair (mg)</span><input
-            class="input" type="number" id="BishopPairMg" value="51" min="-100" max="100"> </p>
-      </div>
-
-      <div>
-        <p><b>Endgame material</b></p>
-        <p> <span class="tag is-warning is-light" title="Endgame pawn value">Pawn (eg)</span><input class="input" type="number"
-            id="PawnValueEg" value="110" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Endgame knight value">Knight (eg)</span><input class="input" type="number"
-            id="KnightValueEg" value="360" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Endgame bishop value">Bishop (eg)</span><input class="input" type="number"
-            id="BishopValueEg" value="370" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Endgame rook value">Rook (eg)</span><input class="input" type="number"
-            id="RookValueEg" value="650" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Endgame queen value">Queen (eg)</span><input class="input" type="number"
-            id="QueenValueEg" value="1190" min="0" max="1200"> </p>
-        <p> <span class="tag is-warning is-light" title="Bishop pair value in endgame, default 51">Bishop Pair (eg)</span><input
-            class="input" type="number" id="BishopPairEg" value="51" min="-100" max="100"> </p>
-      </div>
-
-      <div>
-        <p><b>Contempt</b></p>
-        <p> <span class="tag is-warning is-light" title="In how much worse position engine is inclined to play on">Contempt</span><input
-            class="input" type="number" id="Contempt" value="0" min="-250" max="250"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Modification of own pawn value, positive numbers mean that the engine prefers to keep pawns, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for positional personalities">Keep
-            pawn</span><input class="input" type="number" id="KeepPawn" value="0" min="-200" max="200"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Modification of own knight value, positive numbers mean that the engine prefers to keep knights, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for some attacking personalities or for personalities following precepts of Nimzowitsch">Keep
-            knight</span><input class="input" type="number" id="KeepKnight" value="0" min="-200" max="200"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Modification of own bishop value, positive numbers mean that the engine prefers to keep bishops, negative that it prefers to exchange them; non-zero values weaken the engine">Keep
-            bishop</span><input class="input" type="number" id="KeepBishop" value="0" min="-200" max="200"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Modification of own rook value, positive numbers mean that the engine prefers to keep rooks, negative that it prefers to exchange them; non-zero values weaken the engine">Keep
-            rook<input class="input" type="number" id="KeepRook" value="0" min="-200" max="200"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Modification of own queen value, positive numbers mean that the engine prefers to keep queens, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for attacking personalities">Keep
-            queen<input class="input" type="number" id="KeepQueen" value="0" min="-200" max="200"> </p>
-      </div>
-    </div>
-  </article>
-
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Weights & Piece Positioning
-    </p>
-    <div class="panel-block">
-
-      <div>
-        <p><b>Weights 1 </b></p>
-        <p> <span class="tag is-warning"
-            title="Influence of material advantage on evaluation, expressed as a percentage. Default is 100. Values around 90 lead to frequent pawn sacrifices, smaller values results in weaker, riskier and more fun game.">Material</span><input
-            class="input" type="number" id="Material" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning" title="Program's threats against enemy king, expressed as percentage">Own
-            attack</span><input class="input" type="number" id="OwnAttack" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning" title="Opponent's threats against program's king, expressed as percentage">Opp
-            attack</span><input class="input" type="number" id="OppAttack" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning"
-            title="Own mobility, expressed as percentage; after increasing it above opponent's mobility, the engine will pursue active play">Own
-            mobility</span><input class="input" type="number" id="OwnMobility" value="50" min="0" max="500"> </p>
-        <p> <span class="tag is-warning"
-            title="Opponent's mobility, expressed as percentage; after increasing it above own mobility, the engine will try to restrict its opponent">Opp
-            mobility</span><input class="input" type="number" id="OppMobility" value="50" min="0" max="500"> </p>
-        <p> <span class="tag is-warning" title="Symmetric component of mobility evaluation">Flat mobility</span><input
-            class="input" type="number" id="FlatMobility" value="50" min="0" max="500"> </p>
-      </div>
-
-
-      <div>
-        <p><b>Weights 2</b></p>
-        <p> <span class="tag is-warning"
-            title="Bonus for pieces near to enemy king, applied to both sides, expressed as percentage; small values increase playing strength, 100% decreases it slightly; default is 20">King
-            tropism</span><input class="input" type="number" id="KingTropism" value="20" min="-50" max="500"> </p>
-        <p> <span class="tag is-warning is-light" title="Weight of attacking and defending pieces, expressed as percentage">Piece
-            pressure</span><input class="input" type="number" id="PiecePressure" value="109" min="0" max="500"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Weight of semi-open and open files, as well as 7th rank evaluation, expressed as percentage">Lines</span><input
-            class="input" type="number" id="Lines" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Weight of good squares for minor pieces, expressed as percentage">Outposts</span><input class="input"
-            type="number" id="Outposts" value="78" min="0" max="500"> </p>
-        <p> <span class="tag is-warning is-light" title="Space weight - known to be a stylistic embellishment">Space</span><input
-            class="input" type="number" id="Space" value="0" min="0" max="500"> </p>
-      </div>
-
-      <div>
-        <p><b>Piece positioning</b></p>
-        <p> <span class="tag is-warning is-light"
-          title="Influence of primary piece/square tables on the final score, expressed as percentage">Primary style</span>
-          <select class="select" id="PrimaryPstStyle" style="float:right" ;>
-            <option value="quirky" selected="selected">quirky</option>
-            <option value="classic">classic</option>
-            <option value="normal">normal</option>
-            <option value="blunt">blunt</option>
-            <option value="forward">forward</option>
-          </select>
-        </p>
-        <p> <span class="tag is-warning is-light"
+      <p> <span class="tag is-warning is-light"
           title="Influence of primary piece/square tables on the final score, expressed as percentage">Primary
           weight</span><input class="input" type="number" id="PrimaryPstWeight" value="75" min="0" max="500"> </p>
 
-        <p> <span class="tag is-warning is-light"
-          title="Influence of secondary piece/square tables on the final score, expressed as percentage">Secondary style</span>
-          <select class="select" id="SecondaryPstStyle" style="float:right" ;>
-            <option value="quirky" selected="selected">quirky</option>
-            <option value="classic">classic</option>
-            <option value="normal">normal</option>
-            <option value="blunt">blunt</option>
-            <option value="forward">forward</option>
-          </select>
-        </p>
+      <p> <span class="tag is-warning is-light"
+          title="Influence of secondary piece/square tables on the final score, expressed as percentage">Secondary
+          style</span>
+        <select class="select" id="SecondaryPstStyle" style="float:right" ;>
+          <option value="quirky" selected="selected">quirky</option>
+          <option value="classic">classic</option>
+          <option value="normal">normal</option>
+          <option value="blunt">blunt</option>
+          <option value="forward">forward</option>
+        </select>
+      </p>
 
-        <p> <span class="tag is-warning is-light"
-            title="Influence of secondary piece/square tables on the final score, expressed as percentage">Secondary
-            weight</span><input class="input" type="number" id="SecondaryPstWeight" value="75" min="0" max="500"> </p>
-
-
-      </div>
-  </article>
-
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Pawn Structure
-    </p>
-    <div class="panel-block">
+      <p> <span class="tag is-warning is-light"
+          title="Influence of secondary piece/square tables on the final score, expressed as percentage">Secondary
+          weight</span><input class="input" type="number" id="SecondaryPstWeight" value="75" min="0" max="500"> </p>
 
 
-      <div>
-        <p> <span class="tag is-warning" title="Weight of passed pawn evaluation, expressed as percentage">Passed
-            pawns</span><input class="input" type="number" id="PassedPawns" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning" title="Weight of pawn structure evaluation, expressed as percentage">Pawn
-            structure</span><input class="input" type="number" id="PawnStructure" value="100" min="0" max="500"> </p>
-        <p> <span class="tag is-warning is-light" title="Weight of support given by pawns to each other, expressed as percentage">Pawn
-            mass</span><input class="input" type="number" id="PawnMass" value="100" min="0" max="500"
-            style="float:right" ;> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Weight of evaluation of pawn chains, expressed as percentage; it is only meaningful in a handful of positions, arising from King's Indian Defence, French Defence, King's Indian Attack etc.">
-            Pawn chains</span><input class="input" type="number" id="PawnChains" value="100" min="0" max="500"
-            style="float:right" ;> </p>
-        <p> <span class="tag is-warning is-light" title="Value of pawns in front of own king, expressed as percentage">Pawn
-            shield</span><input class="input" type="number" id="PawnShield" value="119" min="0" max="500"> </p>
+    </div>
+</article>
+<article class="panel is-info">
+  <p class="panel-heading">
+    Playing Style settings
+  </p>
+  <div class="panel-block">
+    <div>
+      <p><b>Midgame</b></p>
+      <p> <span class="tag is-warning is-light" title="Midgame pawn value">Pawn (mg)</span> <input class="input"
+          type="number" id="PawnValueMg" value="90" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Midgame knight value">Knight (mg)</span><input class="input"
+          type="number" id="KnightValueMg" value="380" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Midgame bishop value">Bishop (mg)</span><input class="input"
+          type="number" id="BishopValueMg" value="390" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Midgame rook value">Rook (mg)</span><input class="input"
+          type="number" id="RookValueMg" value="530" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Midgame queen value">Queen (mg)</span><input class="input"
+          type="number" id="QueenValueMg" value="1160" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Bishop pair value in middlegame, default 51">Bishop Pair
+          (mg)</span><input class="input" type="number" id="BishopPairMg" value="51" min="-100" max="100"> </p>
+    </div>
 
-      </div>
+    <div>
+      <p><b>Endgame</b></p>
+      <p> <span class="tag is-warning is-light" title="Endgame pawn value">Pawn (eg)</span><input class="input"
+          type="number" id="PawnValueEg" value="110" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Endgame knight value">Knight (eg)</span><input class="input"
+          type="number" id="KnightValueEg" value="360" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Endgame bishop value">Bishop (eg)</span><input class="input"
+          type="number" id="BishopValueEg" value="370" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Endgame rook value">Rook (eg)</span><input class="input"
+          type="number" id="RookValueEg" value="650" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Endgame queen value">Queen (eg)</span><input class="input"
+          type="number" id="QueenValueEg" value="1190" min="0" max="1200"> </p>
+      <p> <span class="tag is-warning is-light" title="Bishop pair value in endgame, default 51">Bishop Pair
+          (eg)</span><input class="input" type="number" id="BishopPairEg" value="51" min="-100" max="100"> </p>
+    </div>
 
-      <div>
-        <p> <span class="tag is-warning is-light" title="Value of pawns approaching enemy king, expressed as percentage">Pawn
-          storm</span><input class="input" type="number" id="PawnStorm" value="99" min="0" max="500"> </p>
-        <p> <span class="tag" title="Modidy Value of pawns if doubled in middlegame">Doubled (mg)</span><input class="input" type="number" id="DoubledPawnMg" value="-12" min="-100" max="0"
-            style="float:right" ;> </p>
-        <p> <span class="tag" title="Modidy Value of pawns if doubled in endgame">Doubled (eg)</span><input class="input" type="number" id="DoubledPawnEg" value="-23" min="-100" max="0"
-            style="float:right" ;> </p>
-        <p> <span class="tag" title="Modidy Value of pawns if isolated in middlegame">Isolated (mg)</span><input class="input" type="number" id="IsolatedPawnMg" value="-10" min="-100" max="0"
-            style="float:right" ;> </p>
-        <p> <span class="tag" title="Modidy Value of pawns if isolated in endgame">Isolated (eg)</span><input class="input" type="number" id="IsolatedPawnEg" value="-8" min="-100" max="0"
-            style="float:right" ;> </p>
-
-      </div>
-
-
-      <div>
-        <p> <span class="tag" title="Modidy Value of pawns if isolated in open game">Isolated (open)</span><input class="input" type="number" id="IsolatedOnOpenMg" value="-10" min="-100" max="0"
-          style="float:right" ;> </p>
-      <p> <span class="tag" title="Modidy Value of pawns if blocked in C">Blocked on C</span><input class="input" type="number" id="blockedcpawn" value="-17" min="-100" max="0"
-          style="float:right" ;> </p>
-        <p><span class="tag" title="Modidy Value of pawns if backward in middlegame"> Backward (mg)</span><input class="input" type="number" id="BackwardPawnMg" value="-8" min="-100" max="0"
-            style="float:right" ;> </p>
-        <p><span class="tag" title="Modidy Value of pawns if backward in middlegame"> Backward (eg)</span><input class="input" type="number" id="BackwardPawnEg" value="-10" min="-100" max="0"
-            style="float:right" ;> </p>
-        <p> <span class="tag" title="Modidy Value of pawns if backward in  open game">Backward (open)</span><input class="input" type="number" id="BackwardOnOpenMg" value="-8" min="-100" max="0"
-            style="float:right" ;> </p>
-
-
-      </div>
-
-
-      </div>
-  </article>
-  <article class="panel is-info">
-    <p class="panel-heading">
-      Material, Pattern and Others
-    </p>
-    <div class="panel-block">
-
-      <div >
-        <p><b>Material</b></p>
-        <p> <span class="tag is-warning is-light"
-            title="Penalty for having two knights, helps to differentiate between BN and NN mateiral configurations. Default -9">Knight
-            Pair</span><input class="input" type="number" id="KnightPair" value="-9" min="-100" max="100"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Penalty for having two rooks. It is meaningful for the side with exchange advantage, and makes it want to simplify by exchanging rooks. Default -9">Rook
-            Pair</span><input class="input" type="number" id="RookPair" value="-9" min="-100" max="100"> </p>
-        <p> <span class="tag is-warning"
-            title="Bonus for each pawn when having a knight; increasing typically means that the engine will favour closed positions; default value is 6, personalities preferring closed position typically use 8">N
-            likes closed</span><input class="input" type="number" id="KnightLikesClosed" value="6" min="0" max="10">
-        </p>
-        <p> <span class="tag is-warning is-light" title="Penalty for each pawn when having a rook">R likes open</span><input class="input"
-            type="number" id="RookLikesOpen" value="3" min="0" max="10"> </p>
-        <p> <span class="tag is-warning"
-            title="Bonus for exchange advantage; decreasing makes the engine more likely to play exchange sacrifices">Exchange
-            Adv</span><input class="input" type="number" id="ExchangeImbalance" value="30" min="-100" max="100"> </p>
-        <p> <span class="tag is-warning is-light"
-            title="Bonus each minor piece gets for confronting enemy queen; increasing will weaken the play, but engine will seek imbalances">Minor
-            vs Queen</span><input class="input" type="number" id="MinorVsQueen" value="4" min="-100" max="100"> </p>
-
-      </div>
-
-      <div >
-
-        <p><b>Patterns</b></p>
-        <p> <span class="tag" title="FianchBase">FianchBase</span><input class="input" type="number" id="FianchBase" value="4" min="0" max="100" style="float:right"
-            ;> </p>
-        <p> <span class="tag" title="FianchKing"> FianchKing</span><input class="input" type="number" id="FianchKing" value="6" min="0" max="100" style="float:right"
-            ;> </p>
-        <p> <span class="tag" title="Returning Bish"> Returning Bish</span><input class="input" type="number" id="ReturningB" value="10" min="0" max="100"
-            style="float:right" ;> </p>
-
-      </div>
-      <div >
-        <p><b>Others</b></p>
-        <p> <span class="tag" title="SlowMover"> SlowMover</span><input class="input" type="number" id="SlowMover" value="100" min="10" max="500"> </p>
-        <p> <span class="tag" title="Selectivity"> Selectivity</span><input class="input" type="number" id="Selectivity" value="175" min="0" max="200"> </p>
-        <p> <span class="tag" title="SearchSkill"> SearchSkill</span><input class="input" type="number" id="SearchSkill" value="10" min="0" max="10"> </p>
-        <p> <span class="tag" title="Book filter"> Book filter</span><input class="input" type="number" id="BookFilter" value="20" min="0" max="100"> </p>
-      </div>
-</div>
+    <div>
+      <p><b>Contempt</b></p>
+      <p> <span class="tag is-warning is-light"
+          title="In how much worse position engine is inclined to play on">Contempt</span><input class="input"
+          type="number" id="Contempt" value="0" min="-250" max="250"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Modification of own pawn value, positive numbers mean that the engine prefers to keep pawns, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for positional personalities">Keep
+          pawn</span><input class="input" type="number" id="KeepPawn" value="0" min="-200" max="200"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Modification of own knight value, positive numbers mean that the engine prefers to keep knights, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for some attacking personalities or for personalities following precepts of Nimzowitsch">Keep
+          knight</span><input class="input" type="number" id="KeepKnight" value="0" min="-200" max="200"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Modification of own bishop value, positive numbers mean that the engine prefers to keep bishops, negative that it prefers to exchange them; non-zero values weaken the engine">Keep
+          bishop</span><input class="input" type="number" id="KeepBishop" value="0" min="-200" max="200"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Modification of own rook value, positive numbers mean that the engine prefers to keep rooks, negative that it prefers to exchange them; non-zero values weaken the engine">Keep
+          rook</span><input class="input" type="number" id="KeepRook" value="0" min="-200" max="200"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Modification of own queen value, positive numbers mean that the engine prefers to keep queens, negative that it prefers to exchange them; non-zero values weaken the engine, but positive value may be good for attacking personalities">Keep
+          queen</span><input class="input" type="number" id="KeepQueen" value="0" min="-200" max="200"> </p>
+    </div>
+  </div>
 </article>
 
-  <article class="panel is-info">
-    <p class="panel-heading">
-      File Upload
-    </p>
-    <div class="panel-block">
-      <form method="POST" action="" enctype="multipart/form-data">
+
+
+
+
+{% endblock %}
+
+{% block third %}
+
+<article class="panel is-info">
+  <p class="panel-heading">
+    Pawn Structure
+  </p>
+  <div class="panel-block">
+
+
+    <div>
+      <p> <span class="tag is-warning" title="Weight of passed pawn evaluation, expressed as percentage">Passed
+          pawns</span><input class="input" type="number" id="PassedPawns" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning" title="Weight of pawn structure evaluation, expressed as percentage">Pawn
+          structure</span><input class="input" type="number" id="PawnStructure" value="100" min="0" max="500"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Weight of support given by pawns to each other, expressed as percentage">Pawn
+          mass</span><input class="input" type="number" id="PawnMass" value="100" min="0" max="500"
+          style="float:right" ;> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Weight of evaluation of pawn chains, expressed as percentage; it is only meaningful in a handful of positions, arising from King's Indian Defence, French Defence, King's Indian Attack etc.">
+          Pawn chains</span><input class="input" type="number" id="PawnChains" value="100" min="0" max="500"
+          style="float:right" ;> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Value of pawns in front of own king, expressed as percentage">Pawn
+          shield</span><input class="input" type="number" id="PawnShield" value="119" min="0" max="500"> </p>
+
+    </div>
+
+    <div>
+      <p> <span class="tag is-warning is-light"
+          title="Value of pawns approaching enemy king, expressed as percentage">Pawn
+          storm</span><input class="input" type="number" id="PawnStorm" value="99" min="0" max="500"> </p>
+      <p> <span class="tag" title="Modidy Value of pawns if doubled in middlegame">Doubled (mg)</span><input
+          class="input" type="number" id="DoubledPawnMg" value="-12" min="-100" max="0" style="float:right" ;> </p>
+      <p> <span class="tag" title="Modidy Value of pawns if doubled in endgame">Doubled (eg)</span><input
+          class="input" type="number" id="DoubledPawnEg" value="-23" min="-100" max="0" style="float:right" ;> </p>
+      <p> <span class="tag" title="Modidy Value of pawns if isolated in middlegame">Isolated (mg)</span><input
+          class="input" type="number" id="IsolatedPawnMg" value="-10" min="-100" max="0" style="float:right" ;> </p>
+      <p> <span class="tag" title="Modidy Value of pawns if isolated in endgame">Isolated (eg)</span><input
+          class="input" type="number" id="IsolatedPawnEg" value="-8" min="-100" max="0" style="float:right" ;> </p>
+
+    </div>
+
+
+    <div>
+      <p> <span class="tag" title="Modidy Value of pawns if isolated in open game">Isolated (open)</span><input
+          class="input" type="number" id="IsolatedOnOpenMg" value="-10" min="-100" max="0" style="float:right" ;>
+      </p>
+      <p> <span class="tag" title="Modidy Value of pawns if blocked in C">Blocked on C</span><input class="input"
+          type="number" id="blockedcpawn" value="-17" min="-100" max="0" style="float:right" ;> </p>
+      <p><span class="tag" title="Modidy Value of pawns if backward in middlegame"> Backward (mg)</span><input
+          class="input" type="number" id="BackwardPawnMg" value="-8" min="-100" max="0" style="float:right" ;> </p>
+      <p><span class="tag" title="Modidy Value of pawns if backward in middlegame"> Backward (eg)</span><input
+          class="input" type="number" id="BackwardPawnEg" value="-10" min="-100" max="0" style="float:right" ;> </p>
+      <p> <span class="tag" title="Modidy Value of pawns if backward in  open game">Backward (open)</span><input
+          class="input" type="number" id="BackwardOnOpenMg" value="-8" min="-100" max="0" style="float:right" ;>
+      </p>
+
+
+    </div>
+
+
+  </div>
+</article>
+<article class="panel is-info">
+  <p class="panel-heading">
+    Material, Pattern and Others
+  </p>
+  <div class="panel-block">
+
+    <div>
+      <p><b>Material</b></p>
+      <p> <span class="tag is-warning is-light"
+          title="Penalty for having two knights, helps to differentiate between BN and NN mateiral configurations. Default -9">Knight
+          Pair</span><input class="input" type="number" id="KnightPair" value="-9" min="-100" max="100"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Penalty for having two rooks. It is meaningful for the side with exchange advantage, and makes it want to simplify by exchanging rooks. Default -9">Rook
+          Pair</span><input class="input" type="number" id="RookPair" value="-9" min="-100" max="100"> </p>
+      <p> <span class="tag is-warning"
+          title="Bonus for each pawn when having a knight; increasing typically means that the engine will favour closed positions; default value is 6, personalities preferring closed position typically use 8">N
+          likes closed</span><input class="input" type="number" id="KnightLikesClosed" value="6" min="0" max="10">
+      </p>
+      <p> <span class="tag is-warning is-light" title="Penalty for each pawn when having a rook">R likes
+          open</span><input class="input" type="number" id="RookLikesOpen" value="3" min="0" max="10"> </p>
+      <p> <span class="tag is-warning"
+          title="Bonus for exchange advantage; decreasing makes the engine more likely to play exchange sacrifices">Exchange
+          Adv</span><input class="input" type="number" id="ExchangeImbalance" value="30" min="-100" max="100"> </p>
+      <p> <span class="tag is-warning is-light"
+          title="Bonus each minor piece gets for confronting enemy queen; increasing will weaken the play, but engine will seek imbalances">Minor
+          vs Queen</span><input class="input" type="number" id="MinorVsQueen" value="4" min="-100" max="100"> </p>
+
+    </div>
+
+    <div>
+
+      <p><b>Patterns</b></p>
+      <p> <span class="tag" title="FianchBase">FianchBase</span><input class="input" type="number" id="FianchBase"
+          value="4" min="0" max="100" style="float:right" ;> </p>
+      <p> <span class="tag" title="FianchKing"> FianchKing</span><input class="input" type="number" id="FianchKing"
+          value="6" min="0" max="100" style="float:right" ;> </p>
+      <p> <span class="tag" title="Returning Bish"> Returning Bish</span><input class="input" type="number"
+          id="ReturningB" value="10" min="0" max="100" style="float:right" ;> </p>
+
+    </div>
+    <div>
+      <p><b>Others</b></p>
+      <p> <span class="tag" title="SlowMover"> SlowMover</span><input class="input" type="number" id="SlowMover"
+          value="100" min="10" max="500"> </p>
+      <p> <span class="tag" title="Selectivity"> Selectivity</span><input class="input" type="number"
+          id="Selectivity" value="175" min="0" max="200"> </p>
+      <p> <span class="tag" title="SearchSkill"> SearchSkill</span><input class="input" type="number"
+          id="SearchSkill" value="10" min="0" max="10"> </p>
+      <p> <span class="tag" title="Book filter"> Book filter</span><input class="input" type="number"
+          id="BookFilter" value="20" min="0" max="100"> </p>
+    </div>
+  </div>
+</article>
+
+<article class="panel is-info">
+  <p class="panel-heading">
+    File Upload
+  </p>
+  <div class="panel-block">
+    <form method="POST" action="" enctype="multipart/form-data">
       <div id="file-js-example" class="file has-name">
         <label class="file-label">
           <input class="file-input" type="file" name="file">
@@ -1243,33 +1233,33 @@
         }
       }
     </script>
-    </div>
-    <div class="panel-block">
-      <p>As you can see, the tool highlights certain options. If you hover a cursor over the highlighted option, a
-        short description of its meaning should appear. Some options are highlited more strongly – this is an
-        indication that I consider them more important for shaping program's style. Of course as a user you are
-        free to disagree and experiment (but please remember that increasing "N likes closed" leads to preferring
-        closed positions).
-      </p>
+  </div>
+  <div class="panel-block">
+    <p>As you can see, the tool highlights certain options. If you hover a cursor over the highlighted option, a
+      short description of its meaning should appear. Some options are highlited more strongly – this is an
+      indication that I consider them more important for shaping program's style. Of course as a user you are
+      free to disagree and experiment (but please remember that increasing "N likes closed" leads to preferring
+      closed positions).
+    </p>
 
-    </div>
-    <div class="panel-block">
-      <p>
-        Explanations of all the options can be found in the section Evaluation parameters. General ideas about
-        personalities creation are described in the document about_personalities.pdf
-        <a href="https://github.com/nescitus/Rodent_III/blob/master/docs/about_personalities.pdf">https://github.com/nescitus/Rodent_III/blob/master/docs/about_personalities.pdf</a>
-
-      </p>
-    </div>
-    <div class="panel-block">
-      <p>
-        Here you can fine the official Manual to RodentIV 
-        <a href="https://github.com/nescitus/rodent-iv/blob/master/docs/FinalRodent.pdf">https://github.com/nescitus/rodent-iv/blob/master/docs/FinalRodent.pdf</a>
+  </div>
+  <div class="panel-block">
+    <p>
+      Explanations of all the options can be found in the section Evaluation parameters. General ideas about
+      personalities creation are described in the document about_personalities.pdf
+      <a
+        href="https://github.com/nescitus/Rodent_III/blob/master/docs/about_personalities.pdf">https://github.com/nescitus/Rodent_III/blob/master/docs/about_personalities.pdf</a>
 
     </p>
   </div>
-  </article>
-</div>
-</div>
+  <div class="panel-block">
+    <p>
+      Here you can fine the official Manual to RodentIV
+      <a
+        href="https://github.com/nescitus/rodent-iv/blob/master/docs/FinalRodent.pdf">https://github.com/nescitus/rodent-iv/blob/master/docs/FinalRodent.pdf</a>
+
+    </p>
+  </div>
+</article>
 
 {% endblock %}
