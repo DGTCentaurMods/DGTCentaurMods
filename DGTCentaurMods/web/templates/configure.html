@@ -58,7 +58,7 @@
  
           <div class="panel-block">
             <div class="is-pulled-right" style="width:100%">
-              <button class="button is-pulled-right" id="return2DGTMods" style="margin-left:10px;" onClick="returnToDGTCentaurMods()">Quit orig Centaur</button>
+              <button class="button is-success is-pulled-right" id="return2DGTMods" style="margin-left:10px;" onClick="returnToDGTCentaurMods()">Quit orig Centaur</button>
             </div>
             </div>
 
@@ -69,7 +69,7 @@
           </div>
           <div class="panel-block">       
             <div class="is-pulled-right" style="width:100%">
-            <button class="button is-pulled-right" id="shutDownBoard" style="margin-left:10px;" onClick="shutDownBoard()">Shutdown</button>
+            <button class="button is-danger is-pulled-right" id="shutDownBoard" style="margin-left:10px;" onClick="shutDownBoard()">Shutdown</button>
             </div>
           </div>
       </article>
@@ -122,12 +122,36 @@
 
           </div>
             <div class="panel-block">
-            <div class="is-pulled-right" style="width:100%">
-                <form method=post enctype=multipart/form-data action="/uploadengine">
-                  <input type=file name=file>
-                  <input type=submit value=Upload>
-                </form>
-            </div>
+              <form method="POST" action="/uploadengine" enctype="multipart/form-data">
+                <div id="file-js-example" class="file has-name">
+                  <label class="file-label">
+                    <input class="file-input" type="file" name="file">
+                    <span class="file-cta">
+                      <span class="file-icon">
+                        <i class="fas fa-upload"></i>
+                      </span>
+                      <span class="file-label">
+                        Choose a engine or uci file…
+                      </span>
+                    </span>
+                    <span class="file-name">
+                      No file uploaded
+                    </span>
+                  </label>
+                </div>
+            
+            
+                <p><input class="button" type="submit" value="Upload"></p>
+              </form>
+              <script>
+                const fileInput = document.querySelector('#file-js-example input[type=file]');
+                fileInput.onchange = () => {
+                  if (fileInput.files.length > 0) {
+                    const fileName = document.querySelector('#file-js-example .file-name');
+                    fileName.textContent = fileInput.files[0].name;
+                  }
+                }
+              </script>
             </div>
         </article>
     </div>
