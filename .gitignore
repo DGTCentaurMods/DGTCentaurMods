@@ -9,8 +9,8 @@ __pycache__
 **/tests
 epaper.jpg
 **/epaper.jpg
-centaur.db
-**/centaur.db
+**/db/centaur.db
+**/config/centaur.ini
 web/static/epaper.jpg
 DGTCentaurMods/web/static/epaper.jpg
 /DGTCentaurMods/web/static/epaper.jpg
@@ -25,6 +25,6 @@ DGTCentaurMods/web/static/epaper.jpg
 **/Win32DiskImager
 **/centaur.img
 **/home/pi/centaur
-**/build/DGTCentaurMods*
+**/build/dgtcentaurmods*
 **/build/Stockfish*
 **/.toggled
