@@ -418,6 +418,17 @@ def ledsOff():
     print("switching off leds")
     sendPacket(b'\xb0\x00\x07', b'\x00')
 
+def ledArray(inarray, speed = 3, intensity=5):
+    # Lights all the leds in the given inarray with the given speed and intensity
+    tosend = bytearray(b'\xb0\x00\x0c' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big') + b'\x05')
+    tosend.append(speed)
+    tosend.append(0)
+    tosend.append(intensity)
+    for i in range(0, len(inarray)):
+        tosend.append(rotateField(inarray[i]))
+    tosend[2] = len(tosend) + 1
+    tosend.append(checksum(tosend))
+    ser.write(tosend)
 
 def ledFromTo(lfrom, lto, intensity=5):
     # Light up a from and to LED for move indication
