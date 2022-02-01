@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+
+DGTCM_PATH=""
+DATABASE="${DGTCM_PATH}/db/centaur.db"
+
+
+
+function backupOld10beta {
+    echo "::: Version 1.0-beta detected: backing up database."
+    if [ -d /tmp/db ]; then rm -rf /tmp/db; fi
+        mv ${DGTCM_PATH}/db /tmp
+    echo "::: Version 1.0-beta detected: backing up configuration."    
+    if [ -d /tmp/config ]; then rm -rf /tmp/config; fi
+        mv ${DGTCM_PATH}/config /tmp
+}
+
+
+case $1 in
+    upgrade* )
+        case $2 in
+            1.0-beta* )
+                backupOld10beta
+                ;;
+        esac
+        ;;
+    esac
+

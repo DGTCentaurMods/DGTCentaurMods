@@ -84,13 +84,15 @@ function configSetup {
     cd $BASE
     echo "Entrying folder $BASE"
         cp -r DEBIAN ${STAGE}/
-    # Setup postinst and control file
+    # Setup control file
         sed -i "s/Version:.*/Version: $VERSION/g" ${STAGE}/DEBIAN/control
-        #echo "::: Configuring package maint scripts."
-            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/postinst
-            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/postrm
-            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/prerm
-            sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${DGTCM_PCK_NAME}\/config\/centaur.ini/g" ${STAGE}/DEBIAN/postinst
+        echo "::: Configuring package maint scripts."
+        for file in ${STAGE}/DEBIAN/*; do
+            sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" $file
+        done
+            #sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/postrm
+            #sed -i "s/^DGTCM_PATH.*/DGTCM_PATH=\"${SETUP_DIR}\/${DGTCM_PCK_NAME}\"/g" ${STAGE}/DEBIAN/prerm
+            #sed -i "s/^CENTAURINI.*/CENTAURINI=${SETUP_DIR}\/${DGTCM_PCK_NAME}\/config\/centaur.ini/g" ${STAGE}/DEBIAN/postinst
     
  
     # Set permissions
@@ -101,10 +103,10 @@ function configSetup {
 
 
 function stage {
-    STAGE="${DGTCM_PCK_NAME}_${FILEVERSION}_armhf"
+    STAGE="dgtcentaurmods_${FILEVERSION}_armhf"
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
-    
+
     # Move system services
     mv $DGTCM_REPO_NAME/build/system/* ${STAGE}/
     
@@ -115,6 +117,10 @@ function stage {
     # Move main software in /home/pi
     mv  $DGTCM_REPO_NAME/${DGTCM_PCK_NAME} ${STAGE}/${SETUP_DIR}
     mv  $DGTCM_REPO_NAME/requirements.txt ${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}
+
+    #Remove the development databas and confige
+    rm -r ${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}/db/centaur.db
+    rm -r ${STAGE}/${SETUP_DIR}/${DGTCM_PCK_NAME}/config/centaur.ini
 
     # Remove files from Git
     rm -rf $DGTCM_REPO_NAME
@@ -146,14 +152,8 @@ then
     git clone --depth 1 $DGTCM_REPO_URL && stage || exit 1
 
 else
-    #if [ $2 = branch ]
-    #then
-    #    VERSION=0-$1
-    #    FILEVERSION=$1
-    #    TAG=$1
-    #else
-        TAG=$1
-        VERSION=$1
+    TAG=$1
+    VERSION=$1
 	FILEVERSION=$1
         echo $TAG $VERSION
     #fi
@@ -169,8 +169,7 @@ fi
 case $1 in
     master* )  gitCheckout master;;
     clean* ) 
-        #sudo rm -rf ${DGTCM_REPO_NAME}
-        sudo rm -rf  ${DGTCM_PCK_NAME}*
+        sudo rm -rf  dgtcentaurmods*
         rm -rf Stockfish
         exit 0
         ;;

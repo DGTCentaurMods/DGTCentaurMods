@@ -1,9 +1,11 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 DEFAULT_HOSTNAME="raspberrypi"
 NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
 DGTCM_PATH=""
+DATABASE="${DGTCM_PATH}/db/centaur.db"
+CONFIGINI="${DGTCM_PATH}/config/centaur.ini"
 CMDLINEFILE="/boot/cmdline.txt"
 BTPIN="* *"
 BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
@@ -129,15 +131,16 @@ then
     then
         mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
         mv ${DGTCM_PATH}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
+        chown -R pi.root $CENTAUR_ENGINE
     else
         mkdir -p $CENTAUR_ENGINE
         mv ${DGTCM_PATH}/engines/$STOCKFISH $CENTAUR_ENGINE
+        chown -R pi.root $CENTAUR_ENGINE
     fi
 #else
 #    echo -e "Downloading Stockfish..."
     # TODO: find a way to download.
 fi
-chown -R pi.root $CENTAUR_ENGINE
 
 #Check if fen.log is there
 if [ ! -e $FENLOG ]
@@ -219,11 +222,11 @@ function insertZahak {
 
 }
 
-function add_lichess_key {
-CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
-read -p "Lichess API token: "
-sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
-}
+#function add_lichess_key {
+#CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
+#read -p "Lichess API token: "
+#sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
+#}
 
 
 
@@ -232,8 +235,62 @@ insertRodentIV
 insertZahak
 
 # Setting final permissions
-chown -R pi.pi ${DGTCM_PATH}
-chown -R pi.root $CENTAUR
+function setPermissions {
+    chown -R pi.pi ${DGTCM_PATH}
+    chown -R pi.root $CENTAUR
+
+}
+
+update_hostname
+
+#Database handling
+function installDatabase {
+    cp -r ${DGTCM_PATH}/defaults/db/* ${DGTCM_PATH}/db
+}
+
+function installConfig {
+    cp -r ${DGTCM_PATH}/defaults/config/* ${DGTCM_PATH}/config
+    if [ -f /tmp/config/centaur.ini ]; then
+        cp /tmp/config/centaur.ini $CONFIGINI
+    fi
+
+}
+
+
+function restoreDatabase {
+    echo -e "::: Restoring database"
+    cp /tmp/db/centaur.db ${DGTCM_PATH}/db && rm -r /tmp/db
+}
+
+
+case $1 in
+    configure* )
+        echo -e "Configuring package..."
+        case $2 in
+            1.0-beta* )
+                echo -e "::: Previous 1.0-beta version detected:"
+                if [ -d /tmp/db ]; then 
+                    restoreDatabase
+                fi
+                echo "::: Restoring config file"
+                installConfig
+                setPermissions
+                exit 0
+                ;;
+        esac
+        if [ ! -f $DATABASE ]; then
+            echo -e "Installing database"
+            installDatabase
+        fi
+        if [ ! -f $CONFIGINI ]; then
+            echo -e "Installing default configuration"
+            installConfig
+        fi
+        setPermissions
+        exit 0
+        ;;
+esac
+
 
 # Setting up lichess key
 #echo -e "\n\n"
@@ -245,8 +302,5 @@ chown -R pi.root $CENTAUR
 #        ;;
 #    * ) ;;
 #esac
-
-update_hostname
-
 exit 0
 
