@@ -122,13 +122,16 @@ class updateSystem:
         
         #Get latest release ID and version
         self.id,self.version = self.last_release.id, self.last_release.tag_name
+        self.prerelease = self.last_release.prerelease
         print("Latest release ID: ",self.id)
         print("Latest release version: ",self.version)
+        if self.prerelease:
+            print('This is a pre-release')
+
 
 
     def getInstalledVersion(self):
         version = self.cache['dgtcentaurmods'].versions.keys()
-        print(version[0])
         return version[0]
 
 
@@ -136,7 +139,7 @@ class updateSystem:
         local = self.getInstalledVersion()
         latest = self.version
         if local != latest:
-            print('Update is available. Downloading')
+            print('Possible update available')
             return True
         else:
             print('System is up to date')
@@ -158,17 +161,20 @@ class updateSystem:
 
     def decideUpdate(self):
         if self.getUpdateOption() == "always":
-            package = '/tmp/dgtcentaurmods_armhf.deb'
-            if not os.path.exists(package):
-                downloadUpdate()
+            # Don't install pre-releases
+            if not self.prerelease:
+                self.downloadUpdate()
                 print('Update package downloaded')
 
         if self.getUpdateOption() == "revision":
+            # TODO
+            # See if the update is on user's selected update channel.
+            #
             local = self.getInstalledVersion().split('.')
             latest = self.version.split('.')
             if local[2] != latest[2]:
                 print('Downloading the update.')
-                downloadUpdate()
+                self.downloadUpdate()
             else:
                 print('Revision is the same')
                 return
@@ -214,5 +220,5 @@ class updateSystem:
         if not self.getUpdateOption() == "disabled" and self.checkForUpdate():
             self.decideUpdate()
             return
-        print('Update not needed.')
+        print('Update not needed or disabled')
         return
