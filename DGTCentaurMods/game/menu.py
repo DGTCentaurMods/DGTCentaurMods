@@ -175,6 +175,7 @@ while True:
         menu.update(lichess_item)
     menu.update({
             'Engines' : 'Engines',
+            'HandBrain' : 'Hand + Brain',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
@@ -450,6 +451,57 @@ while True:
                         board.unPauseEvents()
                         statusbar.start()
                         statusbar.start()
+    if result == "HandBrain":
+        # Pick up the engines from the engines folder and build the menu
+        enginepath = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
+        enginefiles = os.listdir(enginepath)
+        enginefiles = list(filter(lambda x: os.path.isfile(enginepath + x), os.listdir(enginepath)))
+        print(enginefiles)
+        for f in enginefiles:
+            fn = str(f)
+            if '.uci' not in fn:
+                # If this file is not .uci then assume it is an engine
+                enginemenu[fn] = fn
+        result = doMenu(enginemenu)
+        print(result)
+        if result != "BACK":
+            # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
+            enginefile = enginepath + result
+            ucifile = enginepath + result + ".uci"
+            cmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
+            color = doMenu(cmenu)
+            # Current game will launch the screen for the current
+            if (color != "BACK"):
+                if os.path.exists(ucifile):
+                    # Read the uci file and build a menu
+                    config = configparser.ConfigParser()
+                    config.read(ucifile)
+                    print(config.sections())
+                    smenu = {}
+                    for sect in config.sections():
+                        smenu[sect] = sect
+                    sec = doMenu(smenu)
+                    if sec != "BACK":
+                        epaper.clearScreen()
+                        epaper.writeText(0, "Loading...")
+                        board.pauseEvents()
+                        statusbar.stop()
+                        print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
+                        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/handbrain.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
+                        board.unPauseEvents()
+                        statusbar.start()
+                else:
+                    # With no uci file we just call the engine
+                    epaper.clearScreen()
+                    epaper.writeText(0, "Loading...")
+                    board.pauseEvents()
+                    statusbar.stop()
+                    statusbar.stop()
+                    print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
+                    os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/handbrain.py " + color + " \"" + result + "\"")
+                    board.unPauseEvents()
+                    statusbar.start()
+                    statusbar.start()
     if result == "Support" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()
