@@ -158,6 +158,7 @@ board.clearSerial()
 epaper.initEpaper(1)
 statusbar = epaper.statusBar()
 statusbar.start()
+update = centaur.updateSystem()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
@@ -329,6 +330,9 @@ while True:
             statusbar.start()
         if result == "Shutdown":
             epaper.clearScreen()
+            package = '/tmp/dgtcentaurmods_armhf.deb'
+            if os.path.exists(package):
+                update.updateInstall()
             epaper.writeText(0, "Shutting down...")
             os.system("sudo poweroff")
             #Dont kill DGTCM but don't let him exit the condition block.

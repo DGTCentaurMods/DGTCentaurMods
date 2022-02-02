@@ -25,7 +25,8 @@ import subprocess
 import shlex
 import configparser
 import pathlib
-import os
+import os, sys
+import time
 import urllib.request
 
 def get_lichess_api():
@@ -190,6 +191,22 @@ class updateSystem:
     def getUpdateOption(self):
         return config['update']['autoupdate']
 
+
+    def updateInstall(self):
+        # Check for available update
+        package = '/tmp/dgtcentaurmods_armhf.deb'
+        update_helper = 'scripts/update.sh'
+        print('Put the board in update mode')
+        import shutil
+        from DGTCentaurMods.display import epaper
+        epaper.writeText(0, 'System is')
+        epaper.writeText(1, 'updating...')
+        shutil.copy(update_helper,'/tmp')
+        print('About to execute the installer')
+        os.system('./tmp/update.sh)
+        print('Stop DGTCM for update')
+        time.sleep(6) # Wait for eink
+        sys.exit()
 
     def main(self):
         # This function will run as a thread once, sometime after boot if updting is enabled.
