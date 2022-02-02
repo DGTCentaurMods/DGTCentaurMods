@@ -179,7 +179,7 @@ while True:
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
-            'Support': 'Get support'})
+            'About': 'About'})
     result = doMenu(menu)
     #epaper.epd.init()
     #time.sleep(0.7)
@@ -454,12 +454,16 @@ while True:
                         board.unPauseEvents()
                         statusbar.start()
                         statusbar.start()
-    if result == "Support" or result == "BTNHELP":
+    if result == "About" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()
+        epaper.writeText(0,'Get support:')
+        epaper.writeText(8,'DGTCentaur')
+        epaper.writeText(9,'        Mods')
+        epaper.writeText(10,update.getInstalledVersion())
         qr = Image.open(str(pathlib.Path(__file__).parent.resolve()) +"/../resources/qr-support.png")
         qr = qr.resize((128,128))
-        epaper.epaperbuffer.paste(qr,(0,0))
+        epaper.epaperbuffer.paste(qr,(0,22))
         timeout = time.time() + 15
         while selection == "" and time.time() < timeout:
             if selection == "BTNTICK":

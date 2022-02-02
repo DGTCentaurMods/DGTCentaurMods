@@ -203,7 +203,7 @@ class updateSystem:
         epaper.writeText(1, 'updating...')
         shutil.copy(update_helper,'/tmp')
         print('About to execute the installer')
-        os.system('./tmp/update.sh)
+        os.system('./tmp/update.sh')
         print('Stop DGTCM for update')
         time.sleep(6) # Wait for eink
         sys.exit()
