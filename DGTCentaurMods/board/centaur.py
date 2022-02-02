@@ -107,6 +107,7 @@ except:
 class updateSystem:
     def __init__(self):
         self.status = self.getUpdateOption()
+        self.channel = config['update']['channel'] 
         import apt
         import github
         self.cache = apt.Cache()
