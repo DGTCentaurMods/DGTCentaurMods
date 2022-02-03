@@ -25,6 +25,7 @@ import subprocess
 import shlex
 import configparser
 import pathlib
+import os
 
 def get_lichess_api():
     global config
@@ -82,6 +83,7 @@ def shell_run(rcmd):
         print(response_stdout)
         return response_stdout
 
+
 config_file = rel_path() + "/config/centaur.ini"
 config = configparser.ConfigParser()
 config.read(config_file)
@@ -99,3 +101,66 @@ try:
     centaur_sound = config["sound"]["sound"]
 except:
     centaur_sound = "on"
+
+class updateSystem:
+    def __init__(self):
+        import apt
+        import github
+        self.cache = apt.Cache()
+        gh = github.Github()
+        
+        #Get repo information and latest release object
+        update_location = config["update"]["source"]
+        print("Update location: ",update_location)
+        repo = gh.get_repo(update_location)
+        self.releases = repo.get_releases()
+        self.last_release = self.releases[0]
+        
+        #Get latest release ID and version
+        self.id,self.version = self.last_release.id, self.last_release.tag_name
+        print("Latest release ID: ",self.id)
+        print("Latest release version: ",self.version)
+
+
+    def getInstalledVersion(self):
+        version = self.cache['dgtcentaurmods'].versions.keys()
+        print(version[0])
+        return version[0]
+
+
+    def checkForUpdate(self):
+        local = self.getInstalledVersion()
+        latest = self.version
+        if local != latest:
+            # TODO:
+            # Compare version by major, minor and revicion numbers. On revisions we just check if name differs while major and minor is the same. Maybe we can compare release dates.
+            # Check user settings and decide if he wants just a revicion update.
+            #If normal update is enabled, get the package downloaded in the background
+            print('Update is available.')
+            self.downloadUpdate()
+            return True
+        else:
+            print('System is up to date')
+            return False
+
+
+    def downloadUpdate(self):
+        last_release_assets = self.last_release.get_assets()
+        for asset in last_release_assets:
+            if asset.name == 'dgtcentaurmods_armhf.deb':
+                download_url = asset.browser_download_url
+                print(download_url)
+        # TODO:
+        # Download in the background and set installating at shutdown
+
+
+    def enable(self):
+        config.set('update','autoupdate','1')
+        return
+        
+
+    def disable(self):
+        config.set('update','autoupdate','0')
+        return
+
+
