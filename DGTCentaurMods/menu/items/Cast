@@ -1,0 +1,7 @@
+epaper.clearScreen()
+epaper.writeText(0,"Loading...")
+board.pauseEvents()
+statusbar.stop()
+os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
+board.unPauseEvents()
+statusbar.start()

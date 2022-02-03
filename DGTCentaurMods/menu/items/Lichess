@@ -1,0 +1,36 @@
+if result == "Lichess":
+	livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
+	result = doMenu(livemenu)
+	if result != "BACK":
+		if result == "Rated":
+			rated = True
+		else:
+			rated = False
+		colormenu = {'random': 'Random', 'white': 'White', 'black': 'Black'}
+		result = doMenu(colormenu)
+		if result != "BACK":
+			color = result
+			timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
+						'30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
+			result = doMenu(timemenu)
+			if result != "BACK":
+				if result == '10 , 5':
+					gtime = '10'
+					gincrement = '5'
+				if result == '15 , 10':
+					gtime = '15'
+					gincrement = '10'
+				if result == '30':
+					gtime = '30'
+					gincrement = '0'
+				if result == '30 , 20':
+					gtime = '30'
+					gincrement = '20'
+				if result == "60 , 20":
+					gtime = '60'
+					gincrement = '20'
+				epaper.clearScreen()
+				epaper.writeText(0, "Loading...")
+				board.pauseEvents()
+				os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New " + str(gtime) + " " + str(gincrement) + " " + str(rated) + " " + str(color))
+				board.unPauseEvents()

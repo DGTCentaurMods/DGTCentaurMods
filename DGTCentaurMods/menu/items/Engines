@@ -1,0 +1,73 @@
+enginemenu = {'stockfish': 'Stockfish'}
+# Pick up the engines from the engines folder and build the menu
+enginepath = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
+enginefiles = os.listdir(enginepath)
+enginefiles = list(filter(lambda x: os.path.isfile(enginepath + x), os.listdir(enginepath)))
+print(enginefiles)
+for f in enginefiles:
+    fn = str(f)
+    if '.uci' not in fn:
+        # If this file is not .uci then assume it is an engine
+        enginemenu[fn] = fn
+result = doMenu(enginemenu)
+print(result)
+if result == "stockfish":
+    sfmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
+    color = doMenu(sfmenu)
+    print(color)
+    # Current game will launch the screen for the current
+    if (color != "BACK"):
+        ratingmenu = {'2850': 'Pure', '1350': '1350 ELO', '1500': '1500 ELO', '1700': '1700 ELO', '1800': '1800 ELO',
+                      '2000': '2000 ELO', '2200': '2200 ELO', '2400': '2400 ELO', '2600': '2600 ELO'}
+        elo = doMenu(ratingmenu)
+        if elo != "BACK":
+            epaper.clearScreen()
+            epaper.writeText(0, "Loading...")
+            board.pauseEvents()
+            statusbar.stop()
+            os.system(str(sys.executable) + " " + str(
+                pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
+            board.unPauseEvents()
+            statusbar.start()
+else:
+    if result != "BACK":
+        # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
+        enginefile = enginepath + result
+        ucifile = enginepath + result + ".uci"
+        cmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
+        color = doMenu(cmenu)
+        # Current game will launch the screen for the current
+        if (color != "BACK"):
+            if os.path.exists(ucifile):
+                # Read the uci file and build a menu
+                config = configparser.ConfigParser()
+                config.read(ucifile)
+                print(config.sections())
+                smenu = {}
+                for sect in config.sections():
+                    smenu[sect] = sect
+                sec = doMenu(smenu)
+                if sec != "BACK":
+                    epaper.clearScreen()
+                    epaper.writeText(0, "Loading...")
+                    board.pauseEvents()
+                    statusbar.stop()
+                    print(str(pathlib.Path(
+                        __file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec + "\"")
+                    os.system(str(sys.executable) + " " + str(pathlib.Path(
+                        __file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec + "\"")
+                    board.unPauseEvents()
+                    statusbar.start()
+            else:
+                # With no uci file we just call the engine
+                epaper.clearScreen()
+                epaper.writeText(0, "Loading...")
+                board.pauseEvents()
+                statusbar.stop()
+                statusbar.stop()
+                print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
+                os.system(str(sys.executable) + " " + str(
+                    pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
+                board.unPauseEvents()
+                statusbar.start()
+                statusbar.start()

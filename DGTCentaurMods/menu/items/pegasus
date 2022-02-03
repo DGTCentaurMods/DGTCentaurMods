@@ -1,0 +1,7 @@
+statusbar.stop()
+epaper.clearScreen()
+epaper.writeText(0, "Loading...")
+board.pauseEvents()
+os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
+statusbar.start()
+board.unPauseEvents()

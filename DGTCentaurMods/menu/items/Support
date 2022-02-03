@@ -1,0 +1,11 @@
+selection = ""
+epaper.clearScreen()
+qr = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qr-support.png")
+qr = qr.resize((128, 128))
+epaper.epaperbuffer.paste(qr, (0, 0))
+timeout = time.time() + 15
+while selection == "" and time.time() < timeout:
+    if selection == "BTNTICK":
+        break
+epaper.epd.init()
+time.sleep(0.5)

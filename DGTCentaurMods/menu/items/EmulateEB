@@ -1,0 +1,22 @@
+boardmenu = {
+    'dgtclassic' : 'DGT REVII',
+    'millennium' : 'Millennium',
+    }
+result = doMenu(boardmenu)
+if result == "dgtclassic":
+    epaper.clearScreen()
+    epaper.writeText(0, "Loading...")
+    board.pauseEvents()
+    statusbar.stop()
+    os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
+    board.unPauseEvents()
+    statusbar.start()
+if result == "millennium":
+    epaper.clearScreen()
+    epaper.writeText(0, "Loading...")
+    board.pauseEvents()
+    statusbar.stop()
+    os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
+    board.unPauseEvents()
+    statusbar.start()
+
