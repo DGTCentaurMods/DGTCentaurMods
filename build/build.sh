@@ -104,6 +104,8 @@ function configSetup {
 
 function stage {
     STAGE="dgtcentaurmods_${FILEVERSION}_armhf"
+    echo -e "Creating stage in: $STAGE"
+
     mkdir ${STAGE}
     mkdir -p ${STAGE}/DEBIAN ${STAGE}/${SETUP_DIR} 
 
@@ -154,9 +156,12 @@ then
 else
     TAG=$1
     VERSION=$1
+    if [ ${VERSION:0:1} = v ]; then
+        echo -e "Stripping leading v"
+        VERSION=`echo $1 | cut -c 2-`
+    fi
 	FILEVERSION=$1
-        echo $TAG $VERSION
-    #fi
+        echo -e "Github tag/branch: $TAG \nPackage version: $VERSION"
     git clone --depth 1 --branch $TAG $DGTCM_REPO_URL --single-branch && stage || exit 1
 fi
 }
@@ -170,17 +175,17 @@ case $1 in
     master* )  gitCheckout master;;
     clean* ) 
         sudo rm -rf  dgtcentaurmods*
+        sudo rm -rf DGTCentaurMods*
         rm -rf Stockfish
         exit 0
         ;;
     local* ) buildLocal;;
     * )
-        if [[ -z $1 ]]
-        then
-            read -p "Please enter a tag number: "
+        if [ -z $1 ]; then
+            read -p "Please enter a branch/tag: "
             gitCheckout $REPLY
         else
-            gitCheckout $1 branch
+            gitCheckout $1
         fi
         ;;
     esac
@@ -195,4 +200,5 @@ esac
 
 
 echo "::: Build starting"
+echo -e "Creating package: ${STAGE}.deb"
 build
