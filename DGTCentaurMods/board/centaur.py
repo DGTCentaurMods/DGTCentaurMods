@@ -148,7 +148,7 @@ class updateSystem:
                 download_url = asset.browser_download_url
                 print(download_url)
         try:
-            urllib.request.urlretrieve(download_url,'update/dgtcentaurmods_armhf.deb')
+            urllib.request.urlretrieve(download_url,'/tmp/dgtcentaurmods_armhf.deb')
         except:
             return False
         return True
@@ -156,7 +156,7 @@ class updateSystem:
 
     def decideUpdate(self):
         if self.getUpdateOption() == "always":
-            package = '/update/dgtcentaurmods_armhf.deb'
+            package = '/tmp/dgtcentaurmods_armhf.deb'
             if not os.path.exists(package):
                 downloadUpdate()
                 print('Update package downloaded')
