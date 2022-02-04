@@ -26,6 +26,7 @@ import shlex
 import configparser
 import pathlib
 import os
+import urllib.request
 
 def get_lichess_api():
     global config
@@ -104,6 +105,7 @@ except:
 
 class updateSystem:
     def __init__(self):
+        self.status = self.getUpdateOption()
         import apt
         import github
         self.cache = apt.Cache()
@@ -132,12 +134,7 @@ class updateSystem:
         local = self.getInstalledVersion()
         latest = self.version
         if local != latest:
-            # TODO:
-            # Compare version by major, minor and revicion numbers. On revisions we just check if name differs while major and minor is the same. Maybe we can compare release dates.
-            # Check user settings and decide if he wants just a revicion update.
-            #If normal update is enabled, get the package downloaded in the background
-            print('Update is available.')
-            self.downloadUpdate()
+            print('Update is available. Downloading')
             return True
         else:
             print('System is up to date')
@@ -150,17 +147,54 @@ class updateSystem:
             if asset.name == 'dgtcentaurmods_armhf.deb':
                 download_url = asset.browser_download_url
                 print(download_url)
-        # TODO:
-        # Download in the background and set installating at shutdown
+        try:
+            urllib.request.urlretrieve(download_url,'update/dgtcentaurmods_armhf.deb')
+        except:
+            return False
+        return True
 
 
-    def enable(self):
-        config.set('update','autoupdate','1')
+    def decideUpdate(self):
+        if self.getUpdateOption() == "always":
+            package = '/update/dgtcentaurmods_armhf.deb'
+            if not os.path.exists(package):
+                downloadUpdate()
+                print('Update package downloaded')
+
+        if self.getUpdateOption() == "revision":
+            local = self.getInstalledVersion().split('.')
+            latest = self.version.split('.')
+            if local[2] != latest[2]:
+                print('Downloading the update.')
+                downloadUpdate()
+            else:
+                print('Revision is the same')
+                return
+
+    def enable(self,mode):
+        config.set('update','autoupdate',mode)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+        print('Autoupdate has been enabled as ',mode)
         return
         
 
     def disable(self):
-        config.set('update','autoupdate','0')
+        config.set('update','autoupdate','disabled')
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+        print('Autoupdate has beed disabled.')
         return
 
 
+    def getUpdateOption(self):
+        return config['update']['autoupdate']
+
+
+    def main(self):
+        # This function will run as a thread once, sometime after boot if updting is enabled.
+        if not self.getUpdateOption() == "disabled" and self.checkForUpdate():
+            self.decideUpdate()
+            return
+        print('Update not needed.')
+        return
