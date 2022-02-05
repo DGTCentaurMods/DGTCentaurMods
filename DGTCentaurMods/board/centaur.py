@@ -106,29 +106,28 @@ except:
 
 class updateSystem:
     def __init__(self):
-        self.status = self.getUpdateOption()
+        self.status = self.getStatus()
         self.channel = config['update']['channel'] 
+        token = config['update']['token']
         import apt
         import github
         self.cache = apt.Cache()
-        gh = github.Github()
+        gh = github.Github(token)
         
         #Get repo information and latest release object
         update_location = config["update"]["source"]
-        print("Update location: ",update_location)
-        repo = gh.get_repo(update_location)
-        self.releases = repo.get_releases()
-        self.last_release = self.releases[0]
-        
-        #Get latest release ID and version
-        self.id,self.version = self.last_release.id, self.last_release.tag_name
-        self.prerelease = self.last_release.prerelease
-        print("Latest release ID: ",self.id)
-        print("Latest release version: ",self.version)
-        if self.prerelease:
-            print('This is a pre-release')
+        try:
+            self.repo = gh.get_repo(update_location)
+        except:
+            print('Cannot connect to update source.')
+            return False
 
-
+        print('Update system status:')
+        print('Status: ' + self.getStatus())
+        print("Update source: ",update_location)
+        print('Update channel: ' + self.getChannel())
+        print('Policy: ' + self.getPolicy())
+        print('Installed version on the board: ' + self.getInstalledVersion())
 
     def getInstalledVersion(self):
         version = self.cache['dgtcentaurmods'].versions.keys()
@@ -136,19 +135,35 @@ class updateSystem:
 
 
     def checkForUpdate(self):
-        local = self.getInstalledVersion()
-        latest = self.version
-        if local != latest:
-            print('Possible update available')
-            return True
-        else:
-            print('System is up to date')
+        # Check if there is an update for user selected channel
+        local_version = self.getInstalledVersion()
+        channel = self.getChannel() 
+        
+        # Get and itterate releases in the repo
+        releases = self.repo.get_releases()
+        # Return if no releases
+        if releases.totalCount == 0:
             return False
+        r = 0
+        for item in releases:
+            release_channel = ''
+            if channel == 'stable' and not item.prerelease:
+                print('Last release on ' + channel + ' channel is: ', item.title)
+                self.latest_release = releases[r]
+                return True
+            for char in item.tag_name[1:]:
+                if char.isalpha():
+                    release_channel += char
+            if release_channel == channel:
+                print('Last release on ' + channel + ' channel is: ', item.title)
+                self.latest_release = releases[r]
+                return True
+            r +=1
 
 
     def downloadUpdate(self):
-        last_release_assets = self.last_release.get_assets()
-        for asset in last_release_assets:
+        release_assets = self.latest_release.get_assets()
+        for asset in release_assets:
             if asset.name == 'dgtcentaurmods_armhf.deb':
                 download_url = asset.browser_download_url
                 print(download_url)
@@ -159,44 +174,61 @@ class updateSystem:
         return True
 
 
-    def decideUpdate(self):
-        if self.getUpdateOption() == "always":
-            # Don't install pre-releases
-            if not self.prerelease:
-                self.downloadUpdate()
-                print('Update package downloaded')
-
-        if self.getUpdateOption() == "revision":
-            # TODO
-            # See if the update is on user's selected update channel.
-            #
-            local = self.getInstalledVersion().split('.')
-            latest = self.version.split('.')
-            if local[2] != latest[2]:
-                print('Downloading the update.')
-                self.downloadUpdate()
-            else:
-                print('Revision is the same')
+    def checkPolicy(self):
+        # Don't install major and minor updates.
+        print('Checking update policy')
+        if self.getPolicy() == "revision":
+            local_majotminor = self.getInstalledVersion().rsplit('.',1)
+            latest_majotminor = self.latest_release.tag_name.rsplit('.',1)
+            if local_majotminor != latest_majotminor:
+                print('This is a major update')
+                print('Update not allowed. Policy is: ' + self.getPolicy())
                 return
+        else:
+            self.downloadUpdate()
 
-    def enable(self,mode):
-        config.set('update','autoupdate',mode)
+
+    def enable(self):
+        config.set('update','status','enabled')
         with open(config_file, 'w') as configfile:
             config.write(configfile)
-        print('Autoupdate has been enabled as ',mode)
+        print('Autoupdate has been enabled')
         return
         
 
     def disable(self):
-        config.set('update','autoupdate','disabled')
+        config.set('update','status','disabled')
         with open(config_file, 'w') as configfile:
             config.write(configfile)
         print('Autoupdate has beed disabled.')
         return
 
 
-    def getUpdateOption(self):
-        return config['update']['autoupdate']
+    def setPolicy(self,policy):
+        config.set('update','policy',policy)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+        print('Policy set to: ' + policy)
+        return
+
+
+    def setChannel(self,channel):
+        config.set('update','channel',channel)
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+        print('Update channel  has beed set to ',channel)
+        return
+
+
+    def getChannel(self):
+        return config['update']['channel']
+
+    def getStatus(self):
+        return config['update']['status']
+
+
+    def getPolicy(self):
+        return config['update']['policy']
 
 
     def updateInstall(self):
@@ -217,8 +249,8 @@ class updateSystem:
 
     def main(self):
         # This function will run as a thread once, sometime after boot if updting is enabled.
-        if not self.getUpdateOption() == "disabled" and self.checkForUpdate():
-            self.decideUpdate()
+        if not self.getStatus() == "disabled" and self.checkForUpdate():
+            self.checkPolicy()
             return
         print('Update not needed or disabled')
         return
