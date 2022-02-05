@@ -120,7 +120,7 @@ class updateSystem:
             self.repo = gh.get_repo(update_location)
         except:
             print('Cannot connect to update source.')
-            return False
+            return
 
         print('Update system status:')
         print('Status: ' + self.getStatus())
@@ -178,8 +178,9 @@ class updateSystem:
         # Don't install major and minor updates.
         print('Checking update policy')
         if self.getPolicy() == "revision":
-            local_majotminor = self.getInstalledVersion().rsplit('.',1)
-            latest_majotminor = self.latest_release.tag_name.rsplit('.',1)
+            local_majotminor = self.getInstalledVersion().rsplit('.',1)[0]
+            latest_majotminor = self.latest_release.tag_name.rsplit('.',1)[0][1:]
+            print(local_majotminor, latest_majotminor)
             if local_majotminor != latest_majotminor:
                 print('This is a major update')
                 print('Update not allowed. Policy is: ' + self.getPolicy())
