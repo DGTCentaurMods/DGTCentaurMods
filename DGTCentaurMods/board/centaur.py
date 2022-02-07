@@ -107,42 +107,33 @@ except:
 class updateSystem:
     def __init__(self):
         self.status = self.getStatus()
-        self.channel = config['update']['channel'] 
-        token = config['update']['token']
-        import apt
-        import github
-        self.cache = apt.Cache()
-        if token != '':
-            gh = github.Github(token)
-        else:
-            gh = github.Github()
         
-        #Get repo information and latest release object
-        update_location = config["update"]["source"]
-        try:
-            self.repo = gh.get_repo(update_location)
-        except:
-            print('Cannot connect to update source.')
-            return
-
         print('Update system status: ' + self.getStatus())
-        print("Update source: ",update_location)
+        print("Update source: ",config['update']['source'])
         print('Update channel: ' + self.getChannel())
         print('Policy: ' + self.getPolicy())
-        print('Installed version on the board: ' + self.getInstalledVersion())
+        #print('Installed version on the board: ' + self.getInstalledVersion())
 
     def getInstalledVersion(self):
-        version = self.cache['dgtcentaurmods'].versions.keys()
+        import apt
+        cache = apt.Cache()
+        version = cache['dgtcentaurmods'].versions.keys()
         return version[0]
 
 
     def checkForUpdate(self):
+        update_location = config['update']['source']
+        try:
+            repo = self.gh.get_repo(update_location)
+        except:
+            print('Cannot connect to update source.')
+            return
         # Check if there is an update for user selected channel
         local_version = self.getInstalledVersion()
         channel = self.getChannel() 
         
         # Get and itterate releases in the repo
-        releases = self.repo.get_releases()
+        releases = repo.get_releases()
         # Return if no releases
         if releases.totalCount == 0:
             return False
@@ -152,16 +143,21 @@ class updateSystem:
             if channel == 'stable' and not item.prerelease:
                 print('Last release on ' + channel + ' channel is: ', item.title)
                 self.latest_release = releases[r]
-                return True
+                #return True
+                break
             for char in item.tag_name[1:]:
                 if char.isalpha():
                     release_channel += char
             if release_channel == channel:
                 print('Last release on ' + channel + ' channel is: ', item.title)
                 self.latest_release = releases[r]
-                return True
+                #return True
+                break
             r +=1
-
+        if self.getInstalledVersion() == self.latest_release.tag_name[1:]:
+            print('Versions are the same')
+            return False
+        return True
 
     def downloadUpdate(self):
         release_assets = self.latest_release.get_assets()
@@ -226,6 +222,7 @@ class updateSystem:
     def getChannel(self):
         return config['update']['channel']
 
+
     def getStatus(self):
         return config['update']['status']
 
@@ -252,9 +249,27 @@ class updateSystem:
         sys.exit()
 
     def main(self):
+        token = config['update']['token']
+        import github
+        if token != '':
+            self.gh = github.Github(token)
+        else:
+            self.gh = github.Github()
+
         # This function will run as a thread once, sometime after boot if updting is enabled.
         if not self.getStatus() == "disabled" and self.checkForUpdate():
             self.checkPolicy()
             return
         print('Update not needed or disabled')
         return
+
+    def init(self):
+        # UNUSED: Function to initiate the object without running main(). Used
+        # in dev testing
+        token = config['update']['token']
+        import github
+        if token != '':
+            self.gh = github.Github(token)
+        else:
+            self.gh = github.Github()
+
