@@ -112,7 +112,10 @@ class updateSystem:
         import apt
         import github
         self.cache = apt.Cache()
-        gh = github.Github(token)
+        if token != '':
+            gh = github.Github(token)
+        else:
+            gh = github.Github()
         
         #Get repo information and latest release object
         update_location = config["update"]["source"]
@@ -122,8 +125,7 @@ class updateSystem:
             print('Cannot connect to update source.')
             return
 
-        print('Update system status:')
-        print('Status: ' + self.getStatus())
+        print('Update system status: ' + self.getStatus())
         print("Update source: ",update_location)
         print('Update channel: ' + self.getChannel())
         print('Policy: ' + self.getPolicy())
@@ -243,7 +245,8 @@ class updateSystem:
         epaper.writeText(1, 'updating...')
         shutil.copy(update_helper,'/tmp')
         print('About to execute the installer')
-        os.system('./tmp/update.sh')
+        time.sleep(3)
+        os.system('. /tmp/update.sh')
         print('Stop DGTCM for update')
         time.sleep(6) # Wait for eink
         sys.exit()
