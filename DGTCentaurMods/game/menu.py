@@ -458,18 +458,20 @@ while True:
     if result == "About" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()
-        epaper.writeText(0,'Get support:')
-        epaper.writeText(8,'DGTCentaur')
-        epaper.writeText(9,'        Mods')
-        epaper.writeText(10,update.getInstalledVersion())
+        statusbar.print()
+        version = os.popen("dpkg -l | grep dgtcentaurmods | tr -s ' ' | cut -d' ' -f3").read()
+        epaper.writeText(1,'Get support:')
+        epaper.writeText(9,'DGTCentaur')
+        epaper.writeText(10,'      Mods')
+        epaper.writeText(11,'Ver:' + version)
         qr = Image.open(str(pathlib.Path(__file__).parent.resolve()) +"/../resources/qr-support.png")
         qr = qr.resize((128,128))
-        epaper.epaperbuffer.paste(qr,(0,22))
+        epaper.epaperbuffer.paste(qr,(0,42))
         timeout = time.time() + 15
         while selection == "" and time.time() < timeout:
-            if selection == "BTNTICK":
+            if selection == "BTNTICK" or selection == "BTNBACK":
                 break
-        epaper.epd.init()
+        epaper.clearScreen()
         time.sleep(0.5)
 
 
