@@ -330,6 +330,7 @@ while True:
             statusbar.start()
         if result == "Shutdown":
             epaper.clearScreen()
+            statusbar.stop()
             package = '/tmp/dgtcentaurmods_armhf.deb'
             if os.path.exists(package):
                 update.updateInstall()
