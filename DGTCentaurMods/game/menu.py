@@ -37,7 +37,8 @@ centaur_software="/home/pi/centaur/centaur"
 event_key = threading.Event()
 
 def keyPressed(id):
-    # This function receives key presses
+    # This functiion receives key presses
+    global shift
     global menuitem
     global curmenu
     global selection
@@ -78,11 +79,11 @@ def keyPressed(id):
         menuitem = 1
     if menuitem > len(curmenu):
         menuitem = len(curmenu)
-    epaper.clearArea(0,0,17,295)
+    epaper.clearArea(0,0 + (shift * 2),17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
-    draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
-                  (17, (menuitem * 20) + 10)], fill=0)
-    draw.line((17, 0, 17, 295), fill=0, width=1)
+    draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
+                  (17, (menuitem * 20) + 10 + shift)], fill=0)
+    draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
 
 quickselect = 0
 
@@ -108,8 +109,9 @@ def fieldActivity(id):
                 return
             c = c + 1
 
-def doMenu(menu):
+def doMenu(menu, title=None):
     # Draws a menu and waits for the response in the global variable 'selection'
+    global shift
     global menuitem
     global curmenu
     global selection
@@ -129,7 +131,13 @@ def doMenu(menu):
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
-    row = 1
+    if title:
+        row = 2
+        shift = 20
+        epaper.writeText(1,'[ '+  title + ' ]')
+    else:
+        shift = 0
+        row = 1
     #Print a fresh status bar.
     statusbar.print()
     for k, v in menu.items():
@@ -138,11 +146,11 @@ def doMenu(menu):
     for x in range(1,16):
         epaper.writeText(row,"                         ")
         row = row + 1
-    epaper.clearArea(0,0,17,295)
+    epaper.clearArea(0,0 + (shift * 2),17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
-    draw.polygon([(2, (menuitem * 20) + 2), (2, (menuitem * 20) + 18),
-                  (17, (menuitem * 20) + 10)], fill=0)
-    draw.line((17,20,17,295), fill=0, width=1)
+    draw.polygon([(2, (menuitem * 20) + 2 + shift), (2, (menuitem * 20) + 18 + shift),
+                  (17, (menuitem * 20) + 10 + shift)], fill=0)
+    draw.line((17,20 + shift,17,295), fill=0, width=1)
     print("drawn")
     epaper.unPauseEpaper()
     event_key.wait()
@@ -180,10 +188,10 @@ while True:
             'Cast' : 'Chromecast',
             'settings': 'Settings',
             'About': 'About'})
-    result = doMenu(menu)
+    result = doMenu(menu, 'Main menu')
     #epaper.epd.init()
     #time.sleep(0.7)
-    #epaper.clearArea(0,0,128,295)
+    #epaper.clearArea(0,0 + shift,128,295)
     #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
