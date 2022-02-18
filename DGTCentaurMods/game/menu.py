@@ -245,111 +245,153 @@ while True:
                 'Pairing': 'BT Pair',
                 'Sound': 'Sound',
                 'LichessAPI': 'Lichess API',
+                'update': 'Update opts',
                 'Shutdown': 'Shutdown',
                 'Reboot': 'Reboot' }
-        result = doMenu(setmenu)
-        print(result)
-        if result == "Sound":
-            soundmenu = {'On': 'On', 'Off': 'Off'}
-            epaper.epd.init()
-            time.sleep(0.5)
-            result = doMenu(soundmenu)
-            if result == "On":
-                centaur.set_sound("on")
-            if result == "Off":
-                centaur.set_sound("off")
-            epaper.epd.init()
-            time.sleep(0.5)
-        if result == "WiFi":
-            if network.check_network():
-                wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup'}
-            else:
-                wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
-            if network.check_network():
-                cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh backup\""
-                print(cmd)
-                centaur.shell_run(cmd)
-            result = doMenu(wifimenu)
-            if (result != "BACK"):
-                if (result == 'wpa2'):
-                    board.pauseEvents()
-                    epaper.writeText(0, "Loading...")
-                    os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
-                    board.unPauseEvents()
-                if (result == 'wps'):
-                    if network.check_network():
-                        selection = ""
-                        curmenu = None
-                        IP = network.check_network()
-                        epaper.clearScreen()
-                        epaper.writeText(0, 'Network is up.')
-                        epaper.writeText(1, 'Press OK to')
-                        epaper.writeText(2, 'disconnect')
-                        epaper.writeText(4, IP)
-                        timeout = time.time() + 15
-                        while time.time() < timeout:
-                            if selection == "BTNTICK":
-                                network.wps_disconnect_all()
-                                break
-                            time.sleep(2)
-                    else:
-                        wpsMenu = {'connect': 'Connect wifi'}
-                        result = doMenu(wpsMenu)
-                        if (result == 'connect'):
-                            epaper.clearScreen()
-                            epaper.writeText(0, 'Press WPS button')
-                            network.wps_connect()
-                if (result == 'recover'):
-                    selection=""
-                    cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh restore\""
-                    centaur.shell_run(cmd)
-                    print(cmd)
-                    timeout = time.time() + 20
-                    epaper.clearScreen()
-                    epaper.writeText(0, 'Waiting for')
-                    epaper.writeText(1, 'network...')
-                    while not network.check_network() and time.time() < timeout:
-                        time.sleep(1)
-                    if not network.check_network():
-                        epaper.writeText(1, 'Failed to restore...')
-                        time.sleep(4)
+        topmenu = False
+        while topmenu == False:
+            result = doMenu(setmenu)
+            print(result)
+            if result == 'update':
+                topmenu = False
+                while topmenu == False:
+                    updatemenu = {'status': 'State: '+update.getStatus()}
+                    if update.getStatus() == 'enabled':
+                        updatemenu.update({'channel': 'Chnl: '+update.getChannel(),
+                            'policy': 'Plcy: '+update.getPolicy()})
+                    selection = ''
+                    result = doMenu(updatemenu)
+                    if result == 'status':
+                        result = doMenu({'enable': 'Enable', 'disable': 'Disable'})
+                        print(result)
+                        if result == 'enable':
+                            update.enable()
+                        if result == 'disable':
+                            #Make sure no update will be installed at shutdown
+                            package = '/tmp/dgtcentaurmods_armhf.deb'
+                            try:
+                                os.remove(package)
+                            except:
+                                pass
+                            update.disable()
 
-        if result == "Pairing":
-            board.pauseEvents()
-            statusbar.stop()
-            epaper.writeText(0, "Loading...")
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
-            board.unPauseEvents()
-            statusbar.start()
-        if result == "LichessAPI":
-            board.pauseEvents()
-            statusbar.stop()
-            epaper.writeText(0, "Loading...")
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
-            board.unPauseEvents()
-            statusbar.start()
-        if result == "Shutdown":
-            epaper.clearScreen()
-            statusbar.stop()
-            package = '/tmp/dgtcentaurmods_armhf.deb'
-            if os.path.exists(package):
-                update.updateInstall()
-            epaper.writeText(0, "Shutting down...")
-            os.system("sudo poweroff")
-            #Dont kill DGTCM but don't let him exit the condition block.
-            #Flash field 7
-            board.ledFromTo(7,7)
-            time.sleep(25)
-        if result == "Reboot":
-            board.beep(board.SOUND_POWER_OFF)
-            epaper.epd.init()
-            epaper.epd.HalfClear()
-            time.sleep(5)
-            epaper.stopEpaper()
-            time.sleep(2)
-            board.pauseEvents()
-            os.system("/sbin/shutdown -r now &")
-            sys.exit()
+                    if result == 'channel':
+                        result = doMenu({'stable': 'Stable', 'beta': 'Beta'})
+                        update.setChannel(result)
+                    if result == 'policy':
+                        result = doMenu({'always': 'Always', 'revision': 'Revisions'})
+                        update.setPolicy(result)
+                    if selection == 'BACK':
+                        topmenu = True
+                        print('Return to settings')
+                        selection = ''
+            topmenu = False
+            if selection == 'BACK':
+                topmenu = True
+                result = ''
+                epaper.clearScreen()
+
+            if result == "Sound":
+                soundmenu = {'On': 'On', 'Off': 'Off'}
+                epaper.epd.init()
+                time.sleep(0.5)
+                result = doMenu(soundmenu)
+                if result == "On":
+                    centaur.set_sound("on")
+                if result == "Off":
+                    centaur.set_sound("off")
+                epaper.epd.init()
+                time.sleep(0.5)
+            if result == "WiFi":
+                if network.check_network():
+                    wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup'}
+                else:
+                    wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup', 'recover': 'Recover wifi'}
+                if network.check_network():
+                    cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh backup\""
+                    print(cmd)
+                    centaur.shell_run(cmd)
+                result = doMenu(wifimenu)
+                if (result != "BACK"):
+                    if (result == 'wpa2'):
+                        board.pauseEvents()
+                        epaper.writeText(0, "Loading...")
+                        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
+                        board.unPauseEvents()
+                    if (result == 'wps'):
+                        if network.check_network():
+                            selection = ""
+                            curmenu = None
+                            IP = network.check_network()
+                            epaper.clearScreen()
+                            epaper.writeText(0, 'Network is up.')
+                            epaper.writeText(1, 'Press OK to')
+                            epaper.writeText(2, 'disconnect')
+                            epaper.writeText(4, IP)
+                            timeout = time.time() + 15
+                            while time.time() < timeout:
+                                if selection == "BTNTICK":
+                                    network.wps_disconnect_all()
+                                    break
+                                time.sleep(2)
+                        else:
+                            wpsMenu = {'connect': 'Connect wifi'}
+                            result = doMenu(wpsMenu)
+                            if (result == 'connect'):
+                                epaper.clearScreen()
+                                epaper.writeText(0, 'Press WPS button')
+                                network.wps_connect()
+                    if (result == 'recover'):
+                        selection=""
+                        cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh restore\""
+                        centaur.shell_run(cmd)
+                        print(cmd)
+                        timeout = time.time() + 20
+                        epaper.clearScreen()
+                        epaper.writeText(0, 'Waiting for')
+                        epaper.writeText(1, 'network...')
+                        while not network.check_network() and time.time() < timeout:
+                            time.sleep(1)
+                        if not network.check_network():
+                            epaper.writeText(1, 'Failed to restore...')
+                            time.sleep(4)
+
+            if result == "Pairing":
+                board.pauseEvents()
+                statusbar.stop()
+                epaper.writeText(0, "Loading...")
+                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
+                board.unPauseEvents()
+                statusbar.start()
+            if result == "LichessAPI":
+                board.pauseEvents()
+                statusbar.stop()
+                epaper.writeText(0, "Loading...")
+                os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
+                board.unPauseEvents()
+                statusbar.start()
+            if result == "Shutdown":
+                epaper.clearScreen()
+                statusbar.stop()
+                package = '/tmp/dgtcentaurmods_armhf.deb'
+                if os.path.exists(package) and update.getStatus() == 'enabled':
+                    update.updateInstall()
+                epaper.writeText(0, "Shutting down...")
+                os.system("sudo poweroff")
+                #Dont kill DGTCM but don't let him exit the condition block.
+                #Flash field 7
+                board.ledFromTo(7,7)
+                time.sleep(25)
+            if result == "Reboot":
+                board.beep(board.SOUND_POWER_OFF)
+                epaper.epd.init()
+                epaper.epd.HalfClear()
+                time.sleep(5)
+                epaper.stopEpaper()
+                time.sleep(2)
+                board.pauseEvents()
+                os.system("/sbin/shutdown -r now &")
+                sys.exit()
     if result == "Lichess":
         livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
         result = doMenu(livemenu)
