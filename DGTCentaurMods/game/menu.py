@@ -134,7 +134,7 @@ def doMenu(menu, title=None):
     if title:
         row = 2
         shift = 20
-        epaper.writeText(1,'[ '+  title + ' ]')
+        epaper.writeMenuTitle('[ '+  title + ' ]')
     else:
         shift = 0
         row = 1
@@ -142,9 +142,6 @@ def doMenu(menu, title=None):
     statusbar.print()
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
-        row = row + 1
-    for x in range(1,16):
-        epaper.writeText(row,"                         ")
         row = row + 1
     epaper.clearArea(0,0 + (shift * 2),17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)

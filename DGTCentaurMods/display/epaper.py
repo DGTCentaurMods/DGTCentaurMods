@@ -170,6 +170,16 @@ def writeText(row,txt):
     nimage.paste(image, (0, (row * 20)))
     epaperbuffer = nimage.copy()
 
+def writeMenuTitle(title):
+    # Write Text on a give line number
+    global epaperbuffer
+    nimage = epaperbuffer.copy()
+    image = Image.new('1', (128, 20), 0)
+    draw = ImageDraw.Draw(image)
+    draw.text((0, 0), title, font=font18, fill=255)
+    nimage.paste(image, (0, 20))
+    epaperbuffer = nimage.copy()
+
 def drawRectangle(x1, y1, x2, y2, fill, outline):
     # Draw a rectangle
     global epaperbuffer
