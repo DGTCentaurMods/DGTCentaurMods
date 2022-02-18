@@ -131,6 +131,7 @@ def doMenu(menu, title=None):
     if res[32] == 0 and res[33] == 0 and res[34] == 0 and res[35] == 0 and res[36] == 0 and res[37] == 0 and res[38] == 0 and res[39] == 0:
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
+    epaper.clearScreen()
     if title:
         row = 2
         shift = 20
@@ -294,7 +295,6 @@ while True:
             if selection == 'BACK':
                 topmenu = True
                 result = ''
-                epaper.clearScreen()
 
             if result == "Sound":
                 soundmenu = {'On': 'On', 'Off': 'Off'}
