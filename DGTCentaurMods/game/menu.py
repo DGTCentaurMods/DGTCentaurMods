@@ -256,12 +256,13 @@ while True:
                 'Reboot': 'Reboot' }
         topmenu = False
         while topmenu == False:
-            result = doMenu(setmenu)
+            result = doMenu(setmenu, 'Settings')
             print(result)
             if result == 'update':
                 topmenu = False
                 while topmenu == False:
                     updatemenu = {'status': 'State: '+update.getStatus()}
+                    package = '/tmp/dgtcentaurmods_armhf.deb'
                     if update.getStatus() == 'enabled':
                         updatemenu.update({'channel': 'Chnl: '+update.getChannel(),
                             'policy': 'Plcy: '+update.getPolicy()})
@@ -273,12 +274,6 @@ while True:
                         if result == 'enable':
                             update.enable()
                         if result == 'disable':
-                            #Make sure no update will be installed at shutdown
-                            package = '/tmp/dgtcentaurmods_armhf.deb'
-                            try:
-                                os.remove(package)
-                            except:
-                                pass
                             update.disable()
 
                     if result == 'channel':
@@ -288,6 +283,13 @@ while True:
                         result = doMenu({'always': 'Always', 'revision': 'Revisions'})
                         update.setPolicy(result)
                     if selection == 'BACK':
+                        #Trigger the update system to appply new settings
+                        try:
+                            os.remove(package)
+                        except:
+                            pass
+                        finally:
+                            update.main()
                         topmenu = True
                         print('Return to settings')
                         selection = ''
@@ -380,6 +382,7 @@ while True:
                 statusbar.stop()
                 package = '/tmp/dgtcentaurmods_armhf.deb'
                 if os.path.exists(package) and update.getStatus() == 'enabled':
+                    board.ledFromTo(7,7)
                     update.updateInstall()
                 epaper.writeText(0, "Shutting down...")
                 os.system("sudo poweroff")
