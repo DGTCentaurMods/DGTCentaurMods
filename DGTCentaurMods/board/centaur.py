@@ -27,6 +27,7 @@ import configparser
 import pathlib
 import os, sys
 import time
+import json
 import urllib.request
 
 def get_lichess_api():
@@ -114,77 +115,90 @@ class updateSystem:
         print('Policy: ' + self.getPolicy())
         #print('Installed version on the board: ' + self.getInstalledVersion())
 
-    def getInstalledVersion(self):
-        import apt
-        cache = apt.Cache()
-        version = cache['dgtcentaurmods'].versions.keys()
-        return version[0]
+        #Download update ingormation file
+        self.update_source = config['update']['source']
+        self.versions_file = '/tmp/versions.json'
+        url = 'https://raw.githubusercontent.com/{}/master/build/config/versions.json'.format(self.update_source)
+        try:
+            print('Downloading update information...')
+            urllib.request.urlretrieve(url,self.versions_file)
+        except Exception as e:
+            print('Cannot download update info: ', e)
 
+        self.ver = json.load(open(self.versions_file))
+
+            
+    def getInstalledVersion(self):
+        version = os.popen("dpkg -l | grep dgtcentaurmods | tr -s ' ' | cut -d' ' -f3").read().strip()
+        return version
 
     def checkForUpdate(self):
-        update_location = config['update']['source']
+        channel = self.getChannel()
+        policy = self.getPolicy()
+        print('Settings channel: '+channel)
+        print('Settings policy: '+policy)
         try:
-            repo = self.gh.get_repo(update_location)
+            curr_channel = self.getInstalledVersion().rsplit('.',1)[1].rsplit('-',1)[1]
         except:
-            print('Cannot connect to update source.')
-            return
-        # Check if there is an update for user selected channel
-        local_version = self.getInstalledVersion()
-        channel = self.getChannel() 
+            curr_channel = 'stable'
+        print('Current channel: '+curr_channel)
         
-        # Get and itterate releases in the repo
-        releases = repo.get_releases()
-        # Return if no releases
-        if releases.totalCount == 0:
+        local_version = self.getInstalledVersion()
+        local_major = self.getInstalledVersion().split('.')[0]
+        local_minor = self.getInstalledVersion().split('.')[1]
+        if curr_channel == 'stable':
+            local_revision = self.getInstalledVersion().rsplit('.',1)[1]
+        else:
+            local_revision = self.getInstalledVersion().rsplit('.',1)[1].rsplit('-',1)[0]
+        print('Local ver: '+local_version+'\nLocal major: '+local_major+'\nLocal minor: '+local_minor+'\nLocal revision: '+local_revision)
+        
+        self.update = self.ver[channel]['ota']
+        update_major = self.update.split('.')[0]
+        update_minor = self.update.rsplit('.')[1]
+        if channel == 'stable':
+            update_revision = self.update.rsplit('.',1)[1] 
+        else:
+            update_revision = self.update.rsplit('.',1)[1].rsplit('-',1)[0]
+        print('Update ver: '+self.update+'\nUpdate major: '+update_major+'\nUpdate minor: '+update_minor+'\nUpdate revision: '+update_revision)
+        
+        #If local version is the same as update candidate, break
+        if local_version == self.update:
+            print('Versions are the same. No updates')
             return False
-        r = 0
-        for item in releases:
-            release_channel = ''
-            if channel == 'stable' and not item.prerelease:
-                print('Last release on ' + channel + ' channel is: ', item.title)
-                self.latest_release = releases[r]
-                #return True
-                break
-            for char in item.tag_name[1:]:
-                if char.isalpha():
-                    release_channel += char
-            if release_channel == channel:
-                print('Last release on ' + channel + ' channel is: ', item.title)
-                self.latest_release = releases[r]
-                #return True
-                break
-            r +=1
-        if self.getInstalledVersion() == self.latest_release.tag_name[1:]:
-            print('Versions are the same')
-            return False
-        return True
+        
+        if curr_channel != channel:
+            print('Channel changed. Installing varsion {} at shutdown'.format(self.update))
+        
+        #Evaluate policies
+        #On 'revision' install only if revision is newer
+        if policy == 'revision':
+            if local_major == update_major and local_minor == update_minor:
+                if local_revision < update_revision:
+                    return True
+            else:
+                print('Policy don\'t allow major updates.')
+                return False
 
-    def downloadUpdate(self):
-        release_assets = self.latest_release.get_assets()
-        for asset in release_assets:
-            if asset.name == 'dgtcentaurmods_armhf.deb':
-                download_url = asset.browser_download_url
-                print(download_url)
+        #On 'always' just make sure this is an update to current installed version
+        if policy == 'always':
+            if local_major < update_major:
+                return True 
+            elif local_minor < update_minor:
+                return True
+            elif local_revision < update_revision:
+                return True
+            else:
+                return False
+
+
+    def downloadUpdate(self,update):
+        download_url = 'https://github.com/{}/releases/download/v{}/dgtcentaurmods_armhf.deb'.format(self.update_source,update)
+        print(download_url)
         try:
             urllib.request.urlretrieve(download_url,'/tmp/dgtcentaurmods_armhf.deb')
         except:
             return False
-        return True
-
-
-    def checkPolicy(self):
-        # Don't install major and minor updates.
-        print('Checking update policy')
-        if self.getPolicy() == "revision":
-            local_majotminor = self.getInstalledVersion().rsplit('.',1)[0]
-            latest_majotminor = self.latest_release.tag_name.rsplit('.',1)[0][1:]
-            print(local_majotminor, latest_majotminor)
-            if local_majotminor != latest_majotminor:
-                print('This is a major update')
-                print('Update not allowed. Policy is: ' + self.getPolicy())
-                return
-        else:
-            self.downloadUpdate()
+        return
 
 
     def enable(self):
@@ -249,27 +263,10 @@ class updateSystem:
         sys.exit()
 
     def main(self):
-        token = config['update']['token']
-        import github
-        if token != '':
-            self.gh = github.Github(token)
-        else:
-            self.gh = github.Github()
-
         # This function will run as a thread once, sometime after boot if updting is enabled.
         if not self.getStatus() == "disabled" and self.checkForUpdate():
-            self.checkPolicy()
+            self.downloadUpdate(self.update)
             return
         print('Update not needed or disabled')
         return
-
-    def init(self):
-        # UNUSED: Function to initiate the object without running main(). Used
-        # in dev testing
-        token = config['update']['token']
-        import github
-        if token != '':
-            self.gh = github.Github(token)
-        else:
-            self.gh = github.Github()
 
