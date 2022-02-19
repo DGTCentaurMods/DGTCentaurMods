@@ -145,10 +145,21 @@ class updateSystem:
         local_version = self.getInstalledVersion()
         local_major = self.getInstalledVersion().split('.')[0]
         local_minor = self.getInstalledVersion().split('.')[1]
+        try:
+            local_minor = self.getInstalledVersion().split('.')[1]
+        except:
+            local_minor = '0'
+
         if curr_channel == 'stable':
-            local_revision = self.getInstalledVersion().rsplit('.',1)[1]
+            try:
+                local_revision = self.getInstalledVersion().split('.')[2]
+            except:
+                local_revision = '0'
         else:
             local_revision = self.getInstalledVersion().rsplit('.',1)[1].rsplit('-',1)[0]
+        #Dpkg is skipping 0 if last in version number. e.g: 1.1.0 will be 1.1
+        #We need to rebuild the version
+        local_version = '{}.{}.{}'.format(local_major,local_minor,local_revision)
         print('Local ver: '+local_version+'\nLocal major: '+local_major+'\nLocal minor: '+local_minor+'\nLocal revision: '+local_revision)
         
         self.update = self.ver[channel]['ota']
