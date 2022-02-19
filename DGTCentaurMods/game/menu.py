@@ -165,6 +165,8 @@ epaper.initEpaper(1)
 statusbar = epaper.statusBar()
 statusbar.start()
 update = centaur.updateSystem()
+print('Setting checking for updates in 5 mins...')
+threading.Timer(300,update.main).start()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
