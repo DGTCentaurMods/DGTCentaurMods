@@ -168,6 +168,7 @@ class updateSystem:
         
         if curr_channel != channel:
             print('Channel changed. Installing varsion {} at shutdown'.format(self.update))
+            return True
         
         #Evaluate policies
         #On 'revision' install only if revision is newer
