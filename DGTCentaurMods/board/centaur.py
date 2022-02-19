@@ -122,10 +122,9 @@ class updateSystem:
         try:
             print('Downloading update information...')
             urllib.request.urlretrieve(url,self.versions_file)
+            self.ver = json.load(open(self.versions_file))
         except Exception as e:
             print('Cannot download update info: ', e)
-
-        self.ver = json.load(open(self.versions_file))
 
             
     def getInstalledVersion(self):
