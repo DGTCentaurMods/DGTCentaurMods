@@ -274,6 +274,8 @@ case $1 in
                 fi
                 echo "::: Restoring config file"
                 installConfig
+                #Patching new config
+                    patch $CONFIGINI ${DGTCM_PATH}/update/settings.patch
                 setPermissions
                 exit 0
                 ;;
@@ -285,6 +287,8 @@ case $1 in
         if [ ! -f $CONFIGINI ]; then
             echo -e "Installing default configuration"
             installConfig
+        else
+            patch $CONFIGINI ${DGTCM_PATH}/update/settings.patch
         fi
         setPermissions
         exit 0
