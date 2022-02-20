@@ -163,6 +163,9 @@ class updateSystem:
         print('Local ver: '+local_version+'\nLocal major: '+local_major+'\nLocal minor: '+local_minor+'\nLocal revision: '+local_revision)
         
         self.update = self.ver[channel]['ota']
+        #No OTA, no update
+        if self.update == 'None':
+            return False
         update_major = self.update.split('.')[0]
         update_minor = self.update.rsplit('.')[1]
         if channel == 'stable':
@@ -176,6 +179,7 @@ class updateSystem:
             print('Versions are the same. No updates')
             return False
         
+        #If user decides to switch channel, he will trigger a full reinstall
         if curr_channel != channel:
             print('Channel changed. Installing varsion {} at shutdown'.format(self.update))
             return True
