@@ -176,7 +176,7 @@ def writeMenuTitle(title):
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 0)
     draw = ImageDraw.Draw(image)
-    draw.text((0, 0), title, font=font18, fill=255)
+    draw.text((4, -2), title, font=font18, fill=255)
     nimage.paste(image, (0, 20))
     epaperbuffer = nimage.copy()
 
