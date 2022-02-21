@@ -275,7 +275,7 @@ case $1 in
                 echo "::: Restoring config file"
                 installConfig
                 #Patching new config
-                    patch $CONFIGINI ${DGTCM_PATH}/update/settings.patch
+                    patch $CONFIGINI ${DGTCM_PATH}/update/centaur.ini.patch
                 setPermissions
                 exit 0
                 ;;
@@ -288,7 +288,7 @@ case $1 in
             echo -e "Installing default configuration"
             installConfig
         else
-            patch $CONFIGINI ${DGTCM_PATH}/update/settings.patch
+            patch $CONFIGINI ${DGTCM_PATH}/update/centaur.ini.patch
         fi
         setPermissions
         exit 0
