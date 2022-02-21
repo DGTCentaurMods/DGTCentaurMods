@@ -24,7 +24,7 @@
 import serial
 import sys
 import os
-from DGTCentaurMods.display import epd2in9d
+from DGTCentaurMods.display import epd2in9d, epaper
 from DGTCentaurMods.board import centaur
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -476,9 +476,21 @@ def ledFlash():
     sendPacket(b'\xb0\x00\x0a', b'\x05\x0a\x00\x01')
     #ser.read(100000)
 
+
 def shutdown():
+    package = '/tmp/dgtcentaurmods_armhf.deb'
+    if os.path.exists(package) and update.getStatus() == 'enabled':
+        update.updateInstall()
+    epaper.clearScreen()
+    epaper.writeText(0, "Shutting down...")
+    time.sleep(3)
+    epaper.stopEpaper()
+    os.system("sudo poweroff")
+
+
+def sleep():
     """
-    Initiate shutdown sequence.
+    Sleep the controller.
     """
     sendPacket(b'\xb2\x00\x07', b'\x0a')
 

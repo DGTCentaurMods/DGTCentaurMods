@@ -381,18 +381,10 @@ while True:
                 board.unPauseEvents()
                 statusbar.start()
             if result == "Shutdown":
-                epaper.clearScreen()
                 statusbar.stop()
-                package = '/tmp/dgtcentaurmods_armhf.deb'
-                if os.path.exists(package) and update.getStatus() == 'enabled':
-                    board.ledFromTo(7,7)
-                    update.updateInstall()
-                epaper.writeText(0, "Shutting down...")
-                os.system("sudo poweroff")
-                #Dont kill DGTCM but don't let him exit the condition block.
-                #Flash field 7
                 board.ledFromTo(7,7)
-                time.sleep(25)
+                board.shutdown()
+                input()
             if result == "Reboot":
                 board.beep(board.SOUND_POWER_OFF)
                 epaper.epd.init()
