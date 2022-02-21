@@ -71,6 +71,11 @@ fi
     #    echo -e "$BTPIN" > /etc/bluetooth/pin.conf
     #    echo -e "$BTMACHINEINFO" > /etc/machine-info
 
+
+#Make DGTCM available to all users
+cd /usr/lib/python3/dist-packages; sudo ln -s ${DGTCM_PATH} DGTCentaurMods
+
+
 ##### Enable systemd services.
 echo -e "Services setup\n"
     systemctl daemon-reload
