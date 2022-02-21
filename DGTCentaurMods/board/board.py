@@ -47,7 +47,7 @@ BTNUP = 3
 BTNDOWN = 4
 BTNHELP = 5
 BTNPLAY = 6
-
+BTNLONGPLAY = 7
 
 # Various setup
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
@@ -478,6 +478,8 @@ def ledFlash():
 
 
 def shutdown():
+    beep(SOUND_POWER_OFF)
+    ledFromTo(7,7)
     package = '/tmp/dgtcentaurmods_armhf.deb'
     if os.path.exists(package) and update.getStatus() == 'enabled':
         update.updateInstall()
@@ -803,9 +805,25 @@ def eventsThread(keycallback, fieldcallback):
                     print("down")
                     buttonPress = BTNDOWN  # DOWN
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
+                    print('Help pressed')
                     buttonPress = BTNHELP   # HELP
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
-                    buttonPress = BTNPLAY   # PLAY
+                    print(resp.hex()[:-2])
+                    breaktime = time.time() + 3
+                    print('Set timeout to 3')
+                    while time.time() < breaktime:
+                        sendPacket(b'\x94', b'')
+                        expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                        expect.append(checksum(expect))
+                        resp = ser.read(10000)
+                        resp = bytearray(resp)
+                        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0500040000017d7a"):
+                            print('SHORT play press')
+                            buttonPress = BTNPLAY
+                            break
+                    else:
+                        print('LONG play pressed')
+                        buttonPress = BTNLONGPLAY
             except:
                 pass
             time.sleep(0.05)

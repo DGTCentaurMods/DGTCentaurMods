@@ -45,6 +45,8 @@ def keyPressed(id):
     global event_key
     epaper.epapermode = 0
     board.beep(board.SOUND_GENERAL)
+    if id == board.BTNLONGPLAY:
+        board.shutdown()
     if id == board.BTNDOWN:
         menuitem = menuitem + 1
     if id == board.BTNUP:
@@ -382,7 +384,6 @@ while True:
                 statusbar.start()
             if result == "Shutdown":
                 statusbar.stop()
-                board.ledFromTo(7,7)
                 board.shutdown()
                 input()
             if result == "Reboot":
