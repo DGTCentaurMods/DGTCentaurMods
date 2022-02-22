@@ -8,3 +8,10 @@ UCI_Elo = 1800
 # I have written a Bash file (Rod4Elo.sh in the pi home folder) that asks for your preferred grade and automatically 
 # applies the changes required. These changes only apply to personalities, they are ignored by the Elo levels as they
 # have their own settings 
+
+[1200 ELO]
+Hash = 16
+Threads = 2
+UCI_LimitStrength = true
+UCI_Elo = 1200
+
