@@ -1,10 +1,10 @@
 {
   "stable": {
     "latest": "1.1.0",
-    "ota": "1.1.0"
+    "ota": "None"
   },
   "beta": {
     "latest": "1.0.1-beta",
-    "ota": "1.0.1-beta"
+    "ota": "None"
   }
 }
