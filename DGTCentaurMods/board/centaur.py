@@ -207,7 +207,7 @@ class updateSystem:
 
 
     def downloadUpdate(self,update):
-        download_url = 'https://github.com/{}/releases/download/v{}/dgtcentaurmods_armhf.deb'.format(self.update_source,update)
+        download_url = 'https://github.com/{}/releases/download/v{}/dgtcentaurmods_{}_armhf.deb'.format(self.update_source,update,update)
         print(download_url)
         try:
             urllib.request.urlretrieve(download_url,'/tmp/dgtcentaurmods_armhf.deb')
