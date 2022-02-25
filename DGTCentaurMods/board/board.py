@@ -767,7 +767,12 @@ import threading
 eventsthreadpointer = ""
 eventsrunning = 1
 
-
+def temp():
+    '''
+    Get CPU temperature
+    '''
+    temp = os.popen("vcgencmd measure_temp | cut -d'=' -f2").read().strip()
+    return temp
 
 def eventsThread(keycallback, fieldcallback):
     # This monitors the board for events

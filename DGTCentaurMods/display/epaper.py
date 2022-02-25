@@ -25,7 +25,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.board import centaur
+from DGTCentaurMods.board import centaur,board
 from DGTCentaurMods.display import epd2in9d
 import time, sched
 from PIL import Image, ImageDraw, ImageFont
@@ -295,7 +295,7 @@ class statusBar():
     # This currently onlt shows the time but we can prepare it as an Image to
     # put it on top of the screen
         self.clock = time.strftime("%H:%M")
-        self.bar = "        "+self.clock
+        self.bar = self.clock+"      "+board.temp()
         return self.bar
 
     def display(self):
