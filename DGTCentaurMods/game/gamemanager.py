@@ -204,6 +204,7 @@ def fieldcallback(field):
             pr = ""
             if (field // 8) == 7 and pname == "P":
                 screenback = epaper.epaperbuffer.copy()
+                #Beep
                 tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00')
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
@@ -213,14 +214,18 @@ def fieldcallback(field):
                     pausekeys = 1
                     time.sleep(1)
                     buttonPress = 0
-                    board.ser.read(1000000)
                     while buttonPress == 0:
                         board.sendPacket(b'\x83', b'')
-                        resp = board.ser.read(10000)
+                        try:
+                            resp = board.ser.read(1000)
+                        except:
+                            board.sendPacket(b'\xb1', b'')
                         resp = bytearray(resp)
                         board.sendPacket(b'\x94', b'')
-                        expect = board.buildPacket(b'\xb1\x00', b'')
-                        resp = board.ser.read(10000)
+                        try:
+                            resp = board.ser.read(1000)
+                        except:
+                            board.sendPacket(b'\x94', b'')
                         resp = bytearray(resp)
                         if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
                             buttonPress = 1  # BACK
@@ -239,6 +244,7 @@ def fieldcallback(field):
                     pausekeys = 2
             if (field // 8) == 0 and pname == "p":
                 screenback = epaper.epaperbuffer.copy()
+                #Beep
                 tosend = bytearray(b'\xb1\x00\x08' + board.addr1.to_bytes(1, byteorder='big') + board.addr2.to_bytes(1, byteorder='big') + b'\x50\x08\x00\x08\x59\x08\x00')
                 tosend[2] = len(tosend)
                 tosend[len(tosend) - 1] = board.checksum(tosend)
@@ -248,14 +254,18 @@ def fieldcallback(field):
                     pausekeys = 1
                     time.sleep(1)
                     buttonPress = 0
-                    board.ser.read(1000000)
                     while buttonPress == 0:
                         board.sendPacket(b'\x83', b'')
-                        resp = board.ser.read(10000)
+                        try:
+                            resp = board.ser.read(1000)
+                        except:
+                            board.sendPacket(b'\x83', b'')
                         resp = bytearray(resp)
                         board.sendPacket(b'\x94', b'')
-                        expect = board.buildPacket(b'\xb1\x00', b'')
-                        resp = board.ser.read(10000)
+                        try:
+                            resp = board.ser.read(1000)
+                        except:
+                            board.sendPacket(b'\x94', b'')
                         resp = bytearray(resp)
                         if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
                             buttonPress = 1  # BACK
@@ -272,6 +282,7 @@ def fieldcallback(field):
                         time.sleep(0.1)
                     epaper.epaperbuffer = screenback.copy()
                     pausekeys = 2
+                    
             if forcemove == 1:
                 mv = computermove
             else:
