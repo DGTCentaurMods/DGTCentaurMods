@@ -35,6 +35,8 @@ import configparser
 curturn = 1
 computeronturn = 0
 kill = 0
+statusbar = epaper.statusBar()
+statusbar.start()
 
 # Expect the first argument to be 'white' 'black' or 'random' for what the player is playing
 computerarg = sys.argv[1]
@@ -85,13 +87,13 @@ def eventCallback(event):
 	global kill
 	# This function receives event callbacks about the game in play
 	if event == gamemanager.EVENT_NEW_GAME:
-		epaper.writeText(0,"New Game")
-		epaper.writeText(1,"               ")
+		epaper.writeText(1,"New Game")
+		epaper.writeText(2,"               ")
 		curturn = 1
 		epaper.drawFen(gamemanager.cboard.fen())
 	if event == gamemanager.EVENT_WHITE_TURN:
 		curturn = 1
-		epaper.writeText(0,"White turn")
+		epaper.writeText(1,"White turn")
 		if curturn == computeronturn:
 			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
 			if ucioptions != {}:
@@ -105,7 +107,7 @@ def eventCallback(event):
 			gamemanager.computerMove(str(mv))
 	if event == gamemanager.EVENT_BLACK_TURN:
 		curturn = 0
-		epaper.writeText(0,"Black turn")
+		epaper.writeText(1,"Black turn")
 		if curturn == computeronturn:
 			engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
 			if ucioptions != {}:
@@ -145,6 +147,8 @@ def moveCallback(move):
 
 # Activate the epaper
 epaper.initEpaper()
+epaper.clearScreen()
+statusbar.print()
 
 # Set the initial state of curturn to indicate white's turn
 curturn = 1
@@ -155,9 +159,11 @@ else:
 
 # Subscribe to the game manager to activate the previous functions
 gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
-epaper.writeText(0,"Place pieces in")
-epaper.writeText(1,"Starting Pos")
+statusbar.print()
+epaper.writeText(2,"Place pieces in")
+epaper.writeText(3,"Starting Pos")
 
 
 while kill == 0:
-	time.sleep(0.1)
+    time.sleep(0.1)
+

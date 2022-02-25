@@ -546,11 +546,9 @@ while True:
                     epaper.writeText(0, "Loading...")
                     board.pauseEvents()
                     statusbar.stop()
-                    statusbar.stop()
                     print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/handbrain.py " + color + " \"" + result + "\"")
                     board.unPauseEvents()
-                    statusbar.start()
                     statusbar.start()
     if result == "About" or result == "BTNHELP":
         selection = ""
