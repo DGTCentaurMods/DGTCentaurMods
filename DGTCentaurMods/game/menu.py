@@ -81,7 +81,7 @@ def keyPressed(id):
         menuitem = 1
     if menuitem > len(curmenu):
         menuitem = len(curmenu)
-    epaper.clearArea(0,0 + (shift * 2),17,295)
+    epaper.clearArea(0,20 + shift,17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
                   (17, (menuitem * 20) + 10 + shift)], fill=0)
@@ -146,11 +146,12 @@ def doMenu(menu, title=None):
     for k, v in menu.items():
         epaper.writeText(row,"    " + str(v))
         row = row + 1
-    epaper.clearArea(0,0 + (shift * 2),17,295)
+    epaper.clearArea(0,20 + shift,17,295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon([(2, (menuitem * 20) + 2 + shift), (2, (menuitem * 20) + 18 + shift),
                   (17, (menuitem * 20) + 10 + shift)], fill=0)
     draw.line((17,20 + shift,17,295), fill=0, width=1)
+    statusbar.print()
     print("drawn")
     epaper.unPauseEpaper()
     event_key.wait()
@@ -162,8 +163,8 @@ def doMenu(menu, title=None):
 # image epaper.epaperbuffer to change the screen.
 board.ledsOff()
 board.beep(board.SOUND_POWER_ON)
-board.clearSerial()
 epaper.initEpaper(1)
+board.clearSerial()
 statusbar = epaper.statusBar()
 statusbar.start()
 update = centaur.updateSystem()
@@ -199,16 +200,14 @@ while True:
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
     if result == "Cast":
-        epaper.clearScreen()
-        epaper.writeText(0,"Loading...")
+        epaper.loadingScreen()
         board.pauseEvents()
         statusbar.stop()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../display/chromecast.py")
         board.unPauseEvents()
         statusbar.start()
     if result == "Centaur":
-        epaper.clearScreen()
-        epaper.writeText(0, "Loading...")
+        epaper.loadingScreen()
         time.sleep(1)
         board.pauseEvents()
         statusbar.stop()
@@ -221,9 +220,8 @@ while True:
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
     if result == "pegasus":
+        epaper.loadingScreen()
         statusbar.stop()
-        epaper.clearScreen()
-        epaper.writeText(0, "Loading...")
         board.pauseEvents()
         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/pegasus.py")
         statusbar.start()
@@ -235,16 +233,14 @@ while True:
         }
         result = doMenu(boardmenu)
         if result == "dgtclassic":
-            epaper.clearScreen()
-            epaper.writeText(0, "Loading...")
+            epaper.loadingScreen()
             board.pauseEvents()
             statusbar.stop()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/eboard.py")
             board.unPauseEvents()
             statusbar.start()
         if result == "millennium":
-            epaper.clearScreen()
-            epaper.writeText(0, "Loading...")
+            epaper.loadingScreen()
             board.pauseEvents()
             statusbar.stop()
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
@@ -326,8 +322,7 @@ while True:
                 result = doMenu(wifimenu)
                 if (result != "BACK"):
                     if (result == 'wpa2'):
-                        board.pauseEvents()
-                        epaper.writeText(0, "Loading...")
+                        epaper.loadingScreen()
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/wifi.py")
                         board.unPauseEvents()
                     if (result == 'wps'):
@@ -371,14 +366,14 @@ while True:
             if result == "Pairing":
                 board.pauseEvents()
                 statusbar.stop()
-                epaper.writeText(0, "Loading...")
+                epaper.loadingScreen()
                 os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/pair.py")
                 board.unPauseEvents()
                 statusbar.start()
             if result == "LichessAPI":
                 board.pauseEvents()
                 statusbar.stop()
-                epaper.writeText(0, "Loading...")
+                epaper.loadingScreen()
                 os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../config/lichesstoken.py")
                 board.unPauseEvents()
                 statusbar.start()
@@ -427,8 +422,7 @@ while True:
                     if result == "60 , 20":
                         gtime = '60'
                         gincrement = '20'
-                    epaper.clearScreen()
-                    epaper.writeText(0, "Loading...")
+                    epaper.loadingScreen()
                     board.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New " + str(gtime) + " " + str(gincrement) + " " + str(rated) + " " + str(color))
                     board.unPauseEvents()
@@ -455,8 +449,7 @@ while True:
                 ratingmenu = {'2850': 'Pure', '1350': '1350 ELO', '1500': '1500 ELO', '1700': '1700 ELO', '1800': '1800 ELO', '2000': '2000 ELO', '2200': '2200 ELO', '2400': '2400 ELO', '2600': '2600 ELO'}
                 elo = doMenu(ratingmenu)
                 if elo != "BACK":
-                    epaper.clearScreen()
-                    epaper.writeText(0, "Loading...")
+                    epaper.loadingScreen()
                     board.pauseEvents()
                     statusbar.stop()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/stockfish.py " + color + " " + elo)
@@ -481,8 +474,7 @@ while True:
                             smenu[sect] = sect
                         sec = doMenu(smenu)
                         if sec != "BACK":
-                            epaper.clearScreen()
-                            epaper.writeText(0, "Loading...")
+                            epaper.loadingScreen()
                             board.pauseEvents()
                             statusbar.stop()
                             print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
@@ -491,8 +483,7 @@ while True:
                             statusbar.start()
                     else:
                         # With no uci file we just call the engine
-                        epaper.clearScreen()
-                        epaper.writeText(0, "Loading...")
+                        epaper.loadingScreen()
                         board.pauseEvents()
                         statusbar.stop()
                         statusbar.stop()
@@ -532,8 +523,7 @@ while True:
                         smenu[sect] = sect
                     sec = doMenu(smenu)
                     if sec != "BACK":
-                        epaper.clearScreen()
-                        epaper.writeText(0, "Loading...")
+                        epaper.loadingScreen()
                         board.pauseEvents()
                         statusbar.stop()
                         print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
@@ -542,8 +532,7 @@ while True:
                         statusbar.start()
                 else:
                     # With no uci file we just call the engine
-                    epaper.clearScreen()
-                    epaper.writeText(0, "Loading...")
+                    epaper.loadingScreen()
                     board.pauseEvents()
                     statusbar.stop()
                     print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")

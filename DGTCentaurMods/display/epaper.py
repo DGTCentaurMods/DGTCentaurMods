@@ -60,7 +60,7 @@ def epaperUpdate():
     global screeninverted
     print("started epaper update thread")
     epd.display(epd.getbuffer(epaperbuffer))
-    time.sleep(6)
+    time.sleep(1)
     print("epaper init image sent")
     while True and kill == 0:
         im = epaperbuffer.copy()
@@ -107,6 +107,17 @@ def refresh():
     event_refresh.clear()
     event_refresh.wait()
     event_refresh.clear()
+
+
+def loadingScreen():
+    global epaperbuffer
+    statusBar().print()
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    lg = Image.open(filename)
+    epaperbuffer.paste(lg,(0,20))
+    writeText(10,'     Loading')
+    print('Display loading screen')
+    
 
 def initEpaper(mode = 0):
     # Set the screen to a known start state and start the epaperUpdate thread
@@ -202,6 +213,7 @@ def clearScreen():
 
 def drawBoard(pieces, startrow=2):
     global epaperbuffer
+    draw = ImageDraw.Draw(epaperbuffer)
     chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
     for x in range(0,64):
         pos = (x - 63) * -1
@@ -241,6 +253,9 @@ def drawBoard(pieces, startrow=2):
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
+    draw.rectangle([(0,48),(128,177)],fill=None,outline='black')
+    #draw.line((0, 47, 128,47), fill=0, width=1)
+    #draw.line((0, 177, 128,177), fill=0, width=1)
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
@@ -306,10 +321,10 @@ class statusBar():
 
     def print(self):
     #Get the latest status bar if needed.
-        if self.is_running:
-            bar = self.build()
-            writeText(0,bar)
-            return
+        #if self.is_running:
+        bar = self.build()
+        writeText(0,bar)
+        return
 
     def init(self):
         print("Starting status bar update thread")
@@ -324,4 +339,4 @@ class statusBar():
     def stop(self):
         print("Kill status bar thread")
         self.is_running = False
-    
+
