@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEFAULT_HOSTNAME="raspberrypi"
+ARCH=`uname -m`
 NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
 DGTCM_PATH=""
@@ -169,6 +170,12 @@ echo -e "::: Installing python packages.\n"
 
 
 function insertMaia {
+    if [[ $ARCH == "armv6"* ]]; then
+        #Remove maia and don't get weights
+        echo -e "::: This system is not compatible with maia engine. Removing"
+        rm -rf ${DGTCM_PATH}/engines/maia* > /dev/null 2>&1
+        return 1
+    fi
     if [ ! -d  ${DGTCM_PATH}/tmp ]
     then
         mkdir ${DGTCM_PATH}/tmp
