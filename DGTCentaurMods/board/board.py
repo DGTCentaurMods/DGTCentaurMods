@@ -383,16 +383,18 @@ def doMenu(items, fast = 0):
 def clearSerial():
     print('Checking and clear the serial line.')
     while True:
-        #ser.read(1000)
-        
         sendPacket(b'\x83', b'')
         expect1 = buildPacket(b'\x85\x00\x06', b'')
-        resp1 = ser.read(256)
-
+        try:
+            resp1 = ser.read(256)
+        except:
+            pass
         sendPacket(b'\x94', b'')
         expect2 = buildPacket(b'\xb1\x00\x06', b'')
-        resp2 = ser.read(256)
-
+        try:
+            resp2 = ser.read(256)
+        except:
+            pass
         #If board is idle, return True
         if expect1 == resp1 and expect2 == resp2:
             print('Board is idle. Serial is clear.')
