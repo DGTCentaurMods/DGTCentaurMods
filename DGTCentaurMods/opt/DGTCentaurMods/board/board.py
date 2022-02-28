@@ -80,7 +80,10 @@ ser.read(10000)
 print("attempt address discovery")
 tosend = bytearray(b'\x4d')
 ser.write(tosend)
-ser.read(10000)
+try:
+    ser.read(10000)
+except:
+    ser.read(10000)
 tosend = bytearray(b'\x4e')
 ser.write(tosend)
 ser.read(10000)
