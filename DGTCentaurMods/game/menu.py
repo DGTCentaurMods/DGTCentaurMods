@@ -231,7 +231,7 @@ while True:
             'dgtclassic' : 'DGT REVII',
             'millennium' : 'Millennium',
         }
-        result = doMenu(boardmenu)
+        result = doMenu(boardmenu, 'e-Board')
         if result == "dgtclassic":
             epaper.loadingScreen()
             board.pauseEvents()
@@ -268,9 +268,9 @@ while True:
                         updatemenu.update({'channel': 'Chnl: '+update.getChannel(),
                             'policy': 'Plcy: '+update.getPolicy()})
                     selection = ''
-                    result = doMenu(updatemenu)
+                    result = doMenu(updatemenu, 'Update opts')
                     if result == 'status':
-                        result = doMenu({'enable': 'Enable', 'disable': 'Disable'})
+                        result = doMenu({'enable': 'Enable', 'disable': 'Disable'}, 'Status')
                         print(result)
                         if result == 'enable':
                             update.enable()
@@ -278,10 +278,10 @@ while True:
                             update.disable()
 
                     if result == 'channel':
-                        result = doMenu({'stable': 'Stable', 'beta': 'Beta'})
+                        result = doMenu({'stable': 'Stable', 'beta': 'Beta'}, 'Channel')
                         update.setChannel(result)
                     if result == 'policy':
-                        result = doMenu({'always': 'Always', 'revision': 'Revisions'})
+                        result = doMenu({'always': 'Always', 'revision': 'Revisions'}, 'Policy')
                         update.setPolicy(result)
                     if selection == 'BACK':
                         #Trigger the update system to appply new settings
@@ -301,15 +301,11 @@ while True:
 
             if result == "Sound":
                 soundmenu = {'On': 'On', 'Off': 'Off'}
-                epaper.epd.init()
-                time.sleep(0.5)
-                result = doMenu(soundmenu)
+                result = doMenu(soundmenu, 'Sound')
                 if result == "On":
                     centaur.set_sound("on")
                 if result == "Off":
                     centaur.set_sound("off")
-                epaper.epd.init()
-                time.sleep(0.5)
             if result == "WiFi":
                 if network.check_network():
                     wifimenu = {'wpa2': 'WPA2-PSK', 'wps': 'WPS Setup'}
@@ -319,7 +315,7 @@ while True:
                     cmd = "sudo sh -c \"" + str(pathlib.Path(__file__).parent.resolve()) + "/../scripts/wifi_backup.sh backup\""
                     print(cmd)
                     centaur.shell_run(cmd)
-                result = doMenu(wifimenu)
+                result = doMenu(wifimenu, 'Wifi Setup')
                 if (result != "BACK"):
                     if (result == 'wpa2'):
                         epaper.loadingScreen()
@@ -343,7 +339,7 @@ while True:
                                 time.sleep(2)
                         else:
                             wpsMenu = {'connect': 'Connect wifi'}
-                            result = doMenu(wpsMenu)
+                            result = doMenu(wpsMenu, 'WPS')
                             if (result == 'connect'):
                                 epaper.clearScreen()
                                 epaper.writeText(0, 'Press WPS button')
@@ -393,19 +389,19 @@ while True:
                 sys.exit()
     if result == "Lichess":
         livemenu = {'Rated': 'Rated', 'Unrated': 'Unrated'}
-        result = doMenu(livemenu)
+        result = doMenu(livemenu, 'Lichess')
         if result != "BACK":
             if result == "Rated":
                 rated = True
             else:
                 rated = False
             colormenu = {'random': 'Random', 'white': 'White', 'black': 'Black'}
-            result = doMenu(colormenu)
+            result = doMenu(colormenu, 'Color')
             if result != "BACK":
                 color = result
                 timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
                             '30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
-                result = doMenu(timemenu)
+                result = doMenu(timemenu, 'Time')
                 if result != "BACK":
                     if result == '10 , 5':
                         gtime = '10'
@@ -438,16 +434,16 @@ while True:
             if '.uci' not in fn:
                 # If this file is not .uci then assume it is an engine
                 enginemenu[fn] = fn
-        result = doMenu(enginemenu)
+        result = doMenu(enginemenu, 'Engines')
         print(result)
         if result == "stockfish":
             sfmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
-            color = doMenu(sfmenu)
+            color = doMenu(sfmenu, 'Color')
             print(color)
             # Current game will launch the screen for the current
             if (color != "BACK"):
                 ratingmenu = {'2850': 'Pure', '1350': '1350 ELO', '1500': '1500 ELO', '1700': '1700 ELO', '1800': '1800 ELO', '2000': '2000 ELO', '2200': '2200 ELO', '2400': '2400 ELO', '2600': '2600 ELO'}
-                elo = doMenu(ratingmenu)
+                elo = doMenu(ratingmenu, 'ELO')
                 if elo != "BACK":
                     epaper.loadingScreen()
                     board.pauseEvents()
@@ -461,7 +457,7 @@ while True:
                 enginefile = enginepath + result
                 ucifile = enginepath + result + ".uci"
                 cmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
-                color = doMenu(cmenu)
+                color = doMenu(cmenu, result)
                 # Current game will launch the screen for the current
                 if (color != "BACK"):
                     if os.path.exists(ucifile):
@@ -472,7 +468,7 @@ while True:
                         smenu = {}
                         for sect in config.sections():
                             smenu[sect] = sect
-                        sec = doMenu(smenu)
+                        sec = doMenu(smenu, result)
                         if sec != "BACK":
                             epaper.loadingScreen()
                             board.pauseEvents()
@@ -486,11 +482,9 @@ while True:
                         epaper.loadingScreen()
                         board.pauseEvents()
                         statusbar.stop()
-                        statusbar.stop()
                         print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         board.unPauseEvents()
-                        statusbar.start()
                         statusbar.start()
     if result == "HandBrain":
         # Pick up the engines from the engines folder and build the menu
@@ -503,14 +497,14 @@ while True:
             if '.uci' not in fn:
                 # If this file is not .uci then assume it is an engine
                 enginemenu[fn] = fn
-        result = doMenu(enginemenu)
+        result = doMenu(enginemenu, 'Engines')
         print(result)
         if result != "BACK":
             # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
             enginefile = enginepath + result
             ucifile = enginepath + result + ".uci"
             cmenu = {'white': 'White', 'black': 'Black', 'random': 'Random'}
-            color = doMenu(cmenu)
+            color = doMenu(cmenu, result)
             # Current game will launch the screen for the current
             if (color != "BACK"):
                 if os.path.exists(ucifile):
@@ -521,7 +515,7 @@ while True:
                     smenu = {}
                     for sect in config.sections():
                         smenu[sect] = sect
-                    sec = doMenu(smenu)
+                    sec = doMenu(smenu, result)
                     if sec != "BACK":
                         epaper.loadingScreen()
                         board.pauseEvents()
