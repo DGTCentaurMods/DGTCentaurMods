@@ -4,13 +4,11 @@ DEFAULT_HOSTNAME="raspberrypi"
 ARCH=`uname -m`
 NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
-DGTCM_PATH=""
+PACKAGE="DGTCentaurMods"
+DGTCM_PATH="/opt/${PACKAGE}"
 DATABASE="${DGTCM_PATH}/db/centaur.db"
 CONFIGINI="${DGTCM_PATH}/config/centaur.ini"
 CMDLINEFILE="/boot/cmdline.txt"
-BTPIN="* *"
-BTMACHINEINFO="PRETTY_HOSTNAME=PCS-REVII-081500"
-BTSERVICE="/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
 BTMAIN="/etc/bluetooth/main.conf"
 DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
 CENTAUR="/home/pi/centaur/"
@@ -18,8 +16,6 @@ CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
 MAIA_REPO="https://github.com/CSSLab/maia-chess.git"
-RODENTIV="rodentIV"
-MAIA="maia"
 FENLOG="/home/pi/centaur/fen.log"
 ################################
 
@@ -166,7 +162,7 @@ fi
 
 echo -e "::: Installing python packages.\n"
     cd $DGTCM_PATH
-    CFLAGS="-fcommon" pip3 install -r $DGTCM_PATH/requirements.txt
+    CFLAGS="-fcommon" pip3 install -r $DGTCM_PATH/setup/requirements.txt
 
 
 function insertMaia {
@@ -191,7 +187,7 @@ function insertMaia {
     chmod 755 ${DGTCM_PATH}/engines/maia
     if [ ! -f ${DGTCM_PATH}/engines/maia.uci ]
     then
-        cp ${DGTCM_PATH}/setup/engines/maia.uci ${DGTCM_PATH}/engines/
+        cp ${DGTCM_PATH}/defaults/engines/maia.uci ${DGTCM_PATH}/engines/
     fi
 
 }
@@ -217,11 +213,11 @@ function insertRodentIV {
     chmod 744 ${DGTCM_PATH}/engines/rodentIV
     if [ ! -f ${DGTCM_PATH}/engines/rodentIV.uci ] 
     then
-        cp ${DGTCM_PATH}/setup/engines/rodentIV.uci ${DGTCM_PATH}/engines/
+        cp ${DGTCM_PATH}/defaults/engines/rodentIV.uci ${DGTCM_PATH}/engines/
     fi
     if [ ! -f ${DGTCM_PATH}/engines/personalities/basic.ini ]
     then
-        cp ${DGTCM_PATH}/setup/engines/basic.ini ${DGTCM_PATH}/engines/personalities/
+        cp ${DGTCM_PATH}/defaults/engines/basic.ini ${DGTCM_PATH}/engines/personalities/
     fi
 }
 
@@ -229,17 +225,10 @@ function insertZahak {
     chmod 755 ${DGTCM_PATH}/engines/zahak
     if [ ! -f ${DGTCM_PATH}/engines/zahak.uci ]
     then
-        cp ${DGTCM_PATH}/setup/engines/zahak.uci ${DGTCM_PATH}/engines/
+        cp ${DGTCM_PATH}/defaults/engines/zahak.uci ${DGTCM_PATH}/engines/
     fi
 
 }
-
-#function add_lichess_key {
-#CENTAURINI=/home/pi/DGTCentaurMods/config/centaur.ini
-#read -p "Lichess API token: "
-#sed -i "s/^api_token.*/api_token = $REPLY/g" $CENTAURINI
-#}
-
 
 
 insertMaia
@@ -308,15 +297,5 @@ case $1 in
 esac
 
 
-# Setting up lichess key
-#echo -e "\n\n"
-#read -p "Do you have a Lichess API token? (y/n): "
-#case $REPLY in
-#    [Yy]* ) add_lichess_key;;
-#    [Nn]* )
-#        exit
-#        ;;
-#    * ) ;;
-#esac
 exit 0
 

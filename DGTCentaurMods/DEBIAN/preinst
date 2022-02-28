@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-DGTCM_PATH=""
+PACKAGE="DGTCentaurMods"
+DGTCM_PATH="/opt/${PACKAGE}"
 DATABASE="${DGTCM_PATH}/db/centaur.db"
-
 
 
 function backupOld10beta {

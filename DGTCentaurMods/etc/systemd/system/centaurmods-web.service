@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 ExecStart=flask run
-WorkingDirectory=/home/pi/DGTCentaur/DGTCentaurMods/web/
-Environment=
+WorkingDirectory=/opt/DGTCentaurMods/web
+Environment="PYTHONPATH=/opt"
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
