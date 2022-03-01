@@ -18,14 +18,15 @@ function restartServices {
 
 
 function moveEnginesFolder {
+    cd ${LINK_PATH}/${PCK_NAME}
     if [ -d ${INSTALL_DIR}/.${PCK_NAME}/engines ]; then
         read -p "Do you want to link engines too? (y/n): "
         case $REPLY in
             [Yy]* ) 
                 echo -e "--> Linking engines folder:
                 ${INSTALL_DIR}/.${PCK_NAME}/engines --> ${LINK_PATH}/engines"
-                mv engines .engines
-                ln -s ${INSTALL_DIR}/.${PCK_NAME}/engines ${PCK_NAME}/engines
+                    mv engines .engines
+                    ln -s ${INSTALL_DIR}/.${PCK_NAME}/engines engines
                 ;;
             [Nn]* ) break ;; 
             * ) break ;;
@@ -42,7 +43,7 @@ function toggle {
         # Checki if engines are linked.
         if [ -d ${PCK_NAME}/.engines ]; then
             echo -e "-- > Unlinking engines folder..."
-            rm engines && mv .engines engines
+            rm ${PCK_NAME}/engines && mv ${PCK_NAME}/.engines ${PCK_NAME}/engines
         fi
         cd ${INSTALL_DIR}
         sudo rm ${PCK_NAME}
