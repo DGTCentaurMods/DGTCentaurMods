@@ -1,8 +1,11 @@
 #!/usr/bin/bash
 
 BASE="$(pwd)/../.."
+cd ../../DGTCentaurMods/opt
+LINK_PATH=$(pwd)
+
 PCK_NAME="DGTCentaurMods"
-INSTALL_DIR=/home/pi
+INSTALL_DIR=/opt
 SERVICES=(DGTCentaurMods.service centaurmods-web.service)
 
 function restartServices {
@@ -20,9 +23,9 @@ function moveEnginesFolder {
         case $REPLY in
             [Yy]* ) 
                 echo -e "--> Linking engines folder:
-                ${INSTALL_DIR}/.${PCK_NAME}/engines --> ${PCK_NAME}/engines"
-                mv ${BASE}/${PCK_NAME}/engines ${BASE}/${PCK_NAME}/.engines
-                ln -s ${INSTALL_DIR}/.${PCK_NAME}/engines ${BASE}/${PCK_NAME}/engines
+                ${INSTALL_DIR}/.${PCK_NAME}/engines --> ${LINK_PATH}/engines"
+                mv engines .engines
+                ln -s ${INSTALL_DIR}/.${PCK_NAME}/engines ${PCK_NAME}/engines
                 ;;
             [Nn]* ) break ;; 
             * ) break ;;
@@ -37,25 +40,27 @@ function toggle {
         echo -e "This repository is live on board in ${INSTALL_DIR}."
         echo -e "Deactivating."
         # Checki if engines are linked.
-        cd ${BASE}/${PCK_NAME}
-        if [ -d .engines ]; then
+        if [ -d ${PCK_NAME}/.engines ]; then
             echo -e "-- > Unlinking engines folder..."
             rm engines && mv .engines engines
         fi
         cd ${INSTALL_DIR}
-        rm ${PCK_NAME}
+        sudo rm ${PCK_NAME}
         if [ -d .${PCK_NAME} ]; then
-            mv .${PCK_NAME} ${PCK_NAME} && rm $BASE/.toggled
+            mv .${PCK_NAME} ${PCK_NAME}
+            restartServices
         fi
-        restartServices
+        rm ${BASE}/.toggled
     echo -e "Done. Have a nice day!"
     else
-        echo -e "Installing in ${INSTALL_DIR}"
+        # /opt might be missing
+        if [ ! -d /opt ]; then sudo mkdir /opt; fi
         cd ${INSTALL_DIR}
+        echo -e "Installing in ${INSTALL_DIR}"
         if [ -d ${PCK_NAME} ]; then
             mv ${PCK_NAME} .${PCK_NAME}
         fi
-        ln -s ${BASE}/${PCK_NAME} && touch ${BASE}/.toggled
+        sudo ln -s ${LINK_PATH}/${PCK_NAME} ${PCK_NAME} && touch ${BASE}/.toggled
         moveEnginesFolder
         restartServices
         echo -e "!!! You are using now a repo as a QA tier. Be careful on your git commits. !!!"
