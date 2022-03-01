@@ -90,7 +90,7 @@ echo -e "Services setup\n"
     cp $BTMAIN $BTMAIN.bak
     sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
     sed -i "/PairableTimeout/s/^# *//" $BTMAIN
-    sed -i "s/#JustWorksRepairing = never/JustWorksRepairing = allways/g" $BTMAIN
+    sed -i "s/#JustWorksRepairing = never/JustWorksRepairing = always/g" $BTMAIN
     #Mark file as changed
     sed -i "$ a #dgtcentaurmods" $BTMAIN
 
