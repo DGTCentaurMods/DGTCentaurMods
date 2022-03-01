@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
-DGTCM_PATH=""
+PACKAGE="DGTCentaurMods"
+DGTCM_PATH="/opt/${PACKAGE}"
 
 function reloadSystemd {
     systemctl daemon-reload
