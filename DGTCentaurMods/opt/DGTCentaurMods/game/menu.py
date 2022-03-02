@@ -276,7 +276,10 @@ while True:
                             update.enable()
                         if result == 'disable':
                             update.disable()
-
+                            try:
+                                os.remove(package)
+                            except:
+                                pass
                     if result == 'channel':
                         result = doMenu({'stable': 'Stable', 'beta': 'Beta'}, 'Channel')
                         update.setChannel(result)
@@ -290,7 +293,7 @@ while True:
                         except:
                             pass
                         finally:
-                            update.main()
+                            threading.Thread(target=update.main, args=()).start()
                         topmenu = True
                         print('Return to settings')
                         selection = ''
