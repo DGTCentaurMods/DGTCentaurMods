@@ -1,4 +1,3 @@
-#
 # This file is part of the DGTCentaur Mods open source software
 # ( https://github.com/EdNekebno/DGTCentaur )
 #
@@ -285,3 +284,69 @@ class updateSystem:
         print('Update not needed or disabled')
         return
 
+
+class ConfigSystem:
+    def __init__(self):
+        self.configfile = 'config/centaur.ini'
+        self.defconfigfile = 'defaults/config/centaur.ini'
+        
+        #Get current config
+        self.config = configparser.ConfigParser()
+        self.config.read(self.configfile)
+        
+        #Get the defaults
+        self.defconfig = configparser.ConfigParser()
+        self.defconfig.read(self.defconfigfile)
+
+
+    def add_defaults(self, section, key):
+        '''
+        Check if key is in configfile orherwise it will get it from default config
+        '''
+        if not self.config.has_section(section):
+            self.config.add_section(section)
+            self.write_config()
+        # Add the new key from default
+        def_value = self.defconfig[section][key]
+        self.config.set(section, key, def_value)
+        self.write_config()
+        self.config.read(self.configfile)
+
+
+    def write_config(self):
+        with open(self.configfile, 'w') as f:
+            self.config.write(f)
+
+
+    def read_value(self, section, key):
+        self.config.read(self.configfile)
+        try:
+            value = self.config[section][key]
+        except:
+            self.add_defaults(section, key)
+            self.write_config()
+            self.config.read(self.configfile)
+            value = self.config[section][key]
+        return value
+
+
+    def update_key(self, section, key, value):
+        self.config.read(self.configfile)
+        try:
+            self.config.set(section, key, value)
+            self.write_config()
+        except:
+            self.add_defaults(section,key)
+            self.congif.set(section, key, value)
+            self.write_config()
+            self.config.read(self.config_file)
+ 
+
+    def delete_key(self, section, key):
+        self.config.read(self.configfile)
+        try:
+            self.config.remove_option(section, key)
+            self.write_config()
+            self.config.read(configfile)
+        except:
+            pass
