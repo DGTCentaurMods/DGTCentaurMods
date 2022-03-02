@@ -97,7 +97,10 @@ resp = ""
 while len(resp) < 4:
     tosend = bytearray(b'\x87\x00\x00\x07')
     ser.write(tosend)
-    resp = ser.read(10000)
+    try:
+        resp = ser.read(1000)
+    except:
+        resp = ser.read(1000)
     if len(resp) > 3:
         addr1 = resp[3]
         addr2 = resp[4]

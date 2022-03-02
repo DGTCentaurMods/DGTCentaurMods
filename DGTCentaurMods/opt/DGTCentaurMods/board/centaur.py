@@ -104,18 +104,19 @@ try:
 except:
     centaur_sound = "on"
 
-class updateSystem:
+class UpdateSystem:
     def __init__(self):
+        self.conf = ConfigSystem()
         self.status = self.getStatus()
         
         print('Update system status: ' + self.getStatus())
-        print("Update source: ",config['update']['source'])
+        print("Update source: ",self.conf.read_value('update', 'source'))
         print('Update channel: ' + self.getChannel())
         print('Policy: ' + self.getPolicy())
         #print('Installed version on the board: ' + self.getInstalledVersion())
 
         #Download update ingormation file
-        self.update_source = config['update']['source']
+        self.update_source = self.conf.read_value('update', 'source')
         self.versions_file = '/tmp/versions.json'
         url = 'https://raw.githubusercontent.com/{}/master/build/config/versions.json'.format(self.update_source)
         try:
@@ -216,47 +217,39 @@ class updateSystem:
 
 
     def enable(self):
-        config.set('update','status','enabled')
-        with open(config_file, 'w') as configfile:
-            config.write(configfile)
+        self.conf.update_value('update','status','enabled')
         print('Autoupdate has been enabled')
         return
         
 
     def disable(self):
-        config.set('update','status','disabled')
-        with open(config_file, 'w') as configfile:
-            config.write(configfile)
+        self.conf.update_value('update','status','disabled')
         print('Autoupdate has beed disabled.')
         return
 
 
     def setPolicy(self,policy):
-        config.set('update','policy',policy)
-        with open(config_file, 'w') as configfile:
-            config.write(configfile)
+        self.conf.update_value('update','policy',policy)
         print('Policy set to: ' + policy)
         return
 
 
     def setChannel(self,channel):
-        config.set('update','channel',channel)
-        with open(config_file, 'w') as configfile:
-            config.write(configfile)
+        self.conf.update_value('update','channel',channel)
         print('Update channel  has beed set to ',channel)
         return
 
 
     def getChannel(self):
-        return config['update']['channel']
+        return self.conf.read_value('update', 'channel')
 
 
     def getStatus(self):
-        return config['update']['status']
+        return self.conf.read_value('update', 'status')
 
 
     def getPolicy(self):
-        return config['update']['policy']
+        return self.conf.read_value('update', 'policy')
 
 
     def updateInstall(self):
@@ -330,7 +323,7 @@ class ConfigSystem:
         return value
 
 
-    def update_key(self, section, key, value):
+    def update_value(self, section, key, value):
         self.config.read(self.configfile)
         try:
             self.config.set(section, key, value)
