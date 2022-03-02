@@ -117,14 +117,13 @@ class UpdateSystem:
 
         #Download update ingormation file
         self.update_source = self.conf.read_value('update', 'source')
-        self.versions_file = '/tmp/versions.json'
-        url = 'https://raw.githubusercontent.com/{}/master/build/config/versions.json'.format(self.update_source)
+        print('Downloading update information...')
+        url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(self.update_source)
         try:
-            print('Downloading update information...')
-            urllib.request.urlretrieve(url,self.versions_file)
-            self.ver = json.load(open(self.versions_file))
+            with urllib.request.urlopen(url) as versions:
+                self.ver = json.loads(versions.read().decode())
         except Exception as e:
-            print('Cannot download update info: ', e)
+            print('!! Cannot download update info: ', e)
 
             
     def getInstalledVersion(self):
