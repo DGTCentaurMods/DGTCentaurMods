@@ -52,6 +52,7 @@ BTNLONGPLAY = 7
 # Various setup
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+time.sleep(2)
 
 # This is the most common address of the board
 addr1 = 0x06
