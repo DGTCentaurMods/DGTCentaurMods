@@ -25,12 +25,12 @@
 # distribution, modification, variant, or derivative of this software.
 
 
-$releaseVersion = '0.1.0'
+$releaseVersion = '1.1.0'
 $dev = '0'
 $SleepTime = 3
 
-$releaseFileName = "dgtcentaurmods_armhf.deb"
-$releaseURL = "https://github.com/EdNekebno/DGTCentaurMods/releases/latest/download/dgtcentaurmods_armhf.deb"
+$releaseFileName = -join ("dgtcentaurmodss_" , $releaseVersion , "_armhf.deb" )
+$releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/v", $releaseVersion , "/" , $releaseFileName )
 
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
     $OutPutFolder = "$PSScriptRoot\$OutPutFolder"
