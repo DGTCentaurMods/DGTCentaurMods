@@ -509,6 +509,7 @@ def shutdown():
     package = '/tmp/dgtcentaurmods_armhf.deb'
     if os.path.exists(package) and update.getStatus() == 'enabled':
         update.updateInstall()
+        return
     epaper.clearScreen()
     epaper.writeText(0, "Shutting down...")
     time.sleep(3)

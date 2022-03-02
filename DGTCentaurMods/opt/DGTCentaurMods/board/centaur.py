@@ -259,8 +259,8 @@ class UpdateSystem:
         import shutil
         from DGTCentaurMods.display import epaper
         epaper.clearScreen()
-        epaper.writeText(1, 'System will now')
-        epaper.writeText(0, 'update...')
+        epaper.writeText(3, '    System will')
+        epaper.writeText(4, '       update')
         shutil.copy(update_helper,'/tmp')
         print('About to execute the installer')
         time.sleep(5)
