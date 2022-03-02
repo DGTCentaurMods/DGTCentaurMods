@@ -28,8 +28,8 @@ function moveEnginesFolder {
                     mv engines .engines
                     ln -s ${INSTALL_DIR}/.${PCK_NAME}/engines engines
                 ;;
-            [Nn]* ) break ;; 
-            * ) break ;;
+            [Nn]* ) return ;; 
+            * ) return ;;
         esac
     fi
 }
