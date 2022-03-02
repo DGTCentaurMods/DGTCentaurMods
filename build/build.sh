@@ -7,18 +7,10 @@ PACKAGE="DGTCentaurMods"
 INSTALLDIR="/opt/${PACKAGE}"
 cd ../
 
-function selectBuild {
-    #See if this is a git repo
-    VERSION=`git branch | grep "*" | cut -f2 -d' '`
-    echo -e "::: Checking build type"
-    if [ "$VERSION" != "" ]; then
-        if [ ${VERSION:0:1} = v ]; then VERSION=${VERSION:0:1}; fi
-        return
-    else
-        VERSION=`basename "$PWD" | cut -c16-`
-        if [ ${VERSION:0:1} = v ]; then VERSION=${VERSION:0:1}; fi
-        return
-    fi
+function detectVersion {
+    echo -e "::: Getting version"
+    VERSION=`cat ${PACKAGE}/DEBIAN/control | grep Version | cut -d':' -f2 | cut -c2-`
+    return
 }
 
 function stage {
@@ -89,7 +81,7 @@ case $1 in
         ;;
     *)
         clean 2>/dev/null
-        selectBuild
+        detectVersion
         stage
         removeDev 2>/dev/null
         setPermissions
