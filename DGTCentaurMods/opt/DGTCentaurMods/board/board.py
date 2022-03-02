@@ -53,6 +53,7 @@ BTNLONGPLAY = 7
 ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
+update = centaur.UpdateSystem()
 
 # This is the most common address of the board
 addr1 = 0x06
