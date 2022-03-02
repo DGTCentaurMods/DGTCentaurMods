@@ -76,17 +76,23 @@ def sendPacket(command, data):
     ser.write(tosend)
 
 # But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
-ser.read(10000)
-print("attempt address discovery")
+print("Detecting board adress")
+try:
+    ser.read(1000)
+except:
+    ser.read(1000)
 tosend = bytearray(b'\x4d')
 ser.write(tosend)
 try:
-    ser.read(10000)
+    ser.read(1000)
 except:
-    ser.read(10000)
+    ser.read(1000)
 tosend = bytearray(b'\x4e')
 ser.write(tosend)
-ser.read(10000)
+try:
+    ser.read(1000)
+except:
+    ser.read(1000)
 resp = ""
 while len(resp) < 4:
     tosend = bytearray(b'\x87\x00\x00\x07')
@@ -95,15 +101,14 @@ while len(resp) < 4:
     if len(resp) > 3:
         addr1 = resp[3]
         addr2 = resp[4]
-        print("Discovered new address")
-        print(addr1)
-        print(addr2)
-        print(hex(addr1))
-        print(hex(addr2))
+        print("Discovered new address:" + hex(addr1) + hex(addr2))
         sendPacket(b'\xf4\x00\x07', b'\x7f')
         resp = ser.read(10000)
         sendPacket(b'\xf0\x00\x07', b'\x7f')
-        ser.read(100000)
+        try:
+            ser.read(1000)
+        except:
+            ser.read(1000)
         resp = "         "
 
 #
