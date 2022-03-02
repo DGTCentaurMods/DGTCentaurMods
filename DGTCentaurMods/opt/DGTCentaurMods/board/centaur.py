@@ -258,11 +258,13 @@ class UpdateSystem:
         print('Put the board in update mode')
         import shutil
         from DGTCentaurMods.display import epaper
-        epaper.writeText(0, 'System is')
-        epaper.writeText(1, 'updating...')
+        epaper.clearScreen()
+        epaper.writeText(1, 'System will now')
+        epaper.writeText(0, 'update...')
         shutil.copy(update_helper,'/tmp')
         print('About to execute the installer')
-        time.sleep(3)
+        time.sleep(5)
+        epaper.stopEpaper()
         os.system('. /tmp/update.sh')
         print('Stop DGTCM for update')
         time.sleep(6) # Wait for eink
