@@ -4,24 +4,19 @@ PACKAGE="DGTCentaurMods"
 DGTCM_PATH="/opt/${PACKAGE}"
 DATABASE="${DGTCM_PATH}/db/centaur.db"
 
-
-function backupOld10beta {
-    echo "::: Version 1.0-beta detected: backing up database."
-    if [ -d /tmp/db ]; then rm -rf /tmp/db; fi
-        mv ${DGTCM_PATH}/db /tmp
-    echo "::: Version 1.0-beta detected: backing up configuration."    
-    if [ -d /tmp/config ]; then rm -rf /tmp/config; fi
-        mv ${DGTCM_PATH}/config /tmp
+function saveOldBeta {
+    echo -e "::: Saving old beta configurations"
+    mkdir -p ${DGTCM_PATH}/config/
+    mkdir -p ${DGTCM_PATH}/db/
+    cp /home/pi/DGTCentaurMods/config/centaur.ini ${DGTCM_PATH}/config/
+    cp /home/pi/DGTCentaurMods/db/centaur.db ${DGTCM_PATH}/db/
 }
 
-
 case $1 in
-    upgrade* )
+    upgrade )
         case $2 in
-            1.0-beta* )
-                backupOld10beta
+            1.0-beta|1.0.1-beta)
+                saveOldBeta
                 ;;
         esac
-        ;;
-    esac
-
+esac

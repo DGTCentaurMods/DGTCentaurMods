@@ -70,7 +70,8 @@ fi
 
 
 #Make DGTCM available to all users
-cd /usr/lib/python3/dist-packages; sudo ln -s ${DGTCM_PATH} DGTCentaurMods
+rm /usr/lib/python3/dist-packages/DGTCentaurMods
+cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} DGTCentaurMods
 
 
 ##### Enable systemd services.
@@ -242,55 +243,44 @@ function setPermissions {
 
 }
 
-update_hostname
 
-#Database handling
-function installDatabase {
-    cp -r ${DGTCM_PATH}/defaults/db/* ${DGTCM_PATH}/db
+function copyDefaults {
+    echo -e "::: Installing defaults"
+    cp -rn ${DGTCM_PATH}/defaults/* ${DGTCM_PATH}/
 }
 
-function installConfig {
-    cp -r ${DGTCM_PATH}/defaults/config/* ${DGTCM_PATH}/config
-    if [ -f /tmp/config/centaur.ini ]; then
-        cp /tmp/config/centaur.ini $CONFIGINI
-    fi
+update_hostname
 
+#Old versions special handling tasks
+function cleanOldBeta {
+    rm -rf /home/pi/DGTCentaurMods
+}
+
+
+function restoreConfig {
+    cp /tmp/config/centaur.ini $CONFIGINI
 }
 
 
 function restoreDatabase {
-    echo -e "::: Restoring database"
     cp /tmp/db/centaur.db ${DGTCM_PATH}/db && rm -r /tmp/db
 }
 
 
 case $1 in
     configure* )
-        echo -e "Configuring package..."
         case $2 in
-            1.0-beta* )
-                echo -e "::: Previous 1.0-beta version detected:"
-                if [ -d /tmp/db ]; then 
-                    restoreDatabase
-                fi
-                echo "::: Restoring config file"
-                installConfig
-                #Patching new config
-                setPermissions
-                exit 0
+            1.0-beta|1.0.1-beta)
+                cleanOldBeta
                 ;;
-        esac
-        if [ ! -f $DATABASE ]; then
-            echo -e "Installing database"
-            installDatabase
-        fi
-        if [ ! -f $CONFIGINI ]; then
-            echo -e "Installing default configuration"
-            installConfig
-        fi
-        setPermissions
-        exit 0
-        ;;
+        esac       
+    echo -e "::: Configuring DGTCentaurMods..."
+    #Copy over all defaults from /defaults
+    copyDefaults
+        
+    setPermissions
+    exit 0
+    ;;
 esac
 
 
