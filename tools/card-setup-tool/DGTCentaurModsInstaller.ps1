@@ -29,7 +29,7 @@ $releaseVersion = '1.1.0'
 $dev = '0'
 $SleepTime = 3
 
-$releaseFileName = -join ("dgtcentaurmodss_" , $releaseVersion , "_armhf.deb" )
+$releaseFileName = -join ("dgtcentaurmods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/v", $releaseVersion , "/" , $releaseFileName )
 
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
