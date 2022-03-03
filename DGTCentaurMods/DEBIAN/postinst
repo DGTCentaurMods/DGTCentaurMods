@@ -21,8 +21,8 @@ FENLOG="/home/pi/centaur/fen.log"
 
 if ! cat $CONFIG | grep -q "#dgtcentaurmods"
 then
-    echo -e "Hardware configuration"
-    echo -e "Backup first"
+    echo -e "::: Hardware configuration"
+    echo -e "::: Backup some first"
     cp $CONFIG $CONFIG.bak
     cp $CMDLINEFILE $CMDLINEFILE.bak
 
@@ -37,7 +37,7 @@ then
         sed -i "$ a dtparam=spi=on" $CONFIG
     fi    
     
-    echo -e ":::::: Checking SPI 1.0 bus.\n"
+    echo -e "::: Checking SPI 1.0 bus."
     if [ -z $SPI10 ]
     then
         sed -i "$ a dtoverlay=spi1-3cs" $CONFIG
@@ -58,7 +58,7 @@ fi
 
 if cat $CMDLINEFILE | grep -q "console=serial0"
 then
-    echo -e "::: Disable console on ttyS0\n"
+    echo -e "::: Disable console on ttyS0"
         REPLY=$(sed 's/[^ ]* *//' $CMDLINEFILE)
         echo -e "$REPLY" > $CMDLINEFILE
 fi
@@ -75,7 +75,7 @@ cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} DGTCentaurMods
 
 
 ##### Enable systemd services.
-echo -e "Services setup\n"
+echo -e "::: Setup services"
     systemctl daemon-reload
     systemctl enable rfcomm.service
     systemctl enable centaurmods-web.service
@@ -161,7 +161,7 @@ else
     sudo apt-get install -y python3-pip
 fi
 
-echo -e "::: Installing python packages.\n"
+echo -e "::: Installing python packages."
     cd $DGTCM_PATH
     CFLAGS="-fcommon" pip3 install -r $DGTCM_PATH/setup/requirements.txt
 
@@ -272,6 +272,8 @@ case $1 in
         case $2 in
             1.0-beta|1.0.1-beta)
                 cleanOldBeta
+                systemctl restart DGTCentaurMods.service
+                echo -e "@@@ You must power cycle your board to enable all features in this update. @@@"
                 ;;
         esac       
     echo -e "::: Configuring DGTCentaurMods..."
