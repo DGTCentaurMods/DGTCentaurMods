@@ -68,7 +68,7 @@ def set_sound(onoff):
         config.write(configfile)
         configfile.close()
 
-def rel_path():
+def dgtcm_path():
     return str(pathlib.Path(__file__).parent.resolve()) + "/.."
 
 def shell_run(rcmd):
@@ -86,7 +86,7 @@ def shell_run(rcmd):
         return response_stdout
 
 
-config_file = rel_path() + "/config/centaur.ini"
+config_file = dgtcm_path() + "/config/centaur.ini"
 config = configparser.ConfigParser()
 config.read(config_file)
 
@@ -124,6 +124,7 @@ class UpdateSystem:
                 self.ver = json.loads(versions.read().decode())
         except Exception as e:
             print('!! Cannot download update info: ', e)
+            pass
 
             
     def getInstalledVersion(self):
@@ -281,8 +282,8 @@ class UpdateSystem:
 
 class ConfigSystem:
     def __init__(self):
-        self.configfile = 'config/centaur.ini'
-        self.defconfigfile = 'defaults/config/centaur.ini'
+        self.configfile = dgtcm_path() +'/config/centaur.ini'
+        self.defconfigfile = dgtcm_path() + '/defaults/config/centaur.ini'
         
         #Get current config
         self.config = configparser.ConfigParser()
