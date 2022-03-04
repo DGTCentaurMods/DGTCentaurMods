@@ -48,7 +48,7 @@ function toggle {
         cd ${INSTALL_DIR}
         sudo rm ${PCK_NAME}
         if [ -d .${PCK_NAME} ]; then
-            mv .${PCK_NAME} ${PCK_NAME}
+            sudo mv .${PCK_NAME} ${PCK_NAME}
             restartServices
         fi
         rm ${BASE}/.toggled
@@ -59,7 +59,7 @@ function toggle {
         cd ${INSTALL_DIR}
         echo -e "Installing in ${INSTALL_DIR}"
         if [ -d ${PCK_NAME} ]; then
-            mv ${PCK_NAME} .${PCK_NAME}
+           sudo mv ${PCK_NAME} .${PCK_NAME}
         fi
         sudo ln -s ${LINK_PATH}/${PCK_NAME} ${PCK_NAME} && touch ${BASE}/.toggled
         moveEnginesFolder
