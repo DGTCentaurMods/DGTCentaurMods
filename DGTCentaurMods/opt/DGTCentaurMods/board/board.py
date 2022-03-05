@@ -50,7 +50,13 @@ BTNPLAY = 6
 BTNLONGPLAY = 7
 
 # Various setup
-ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
+try:
+    ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
+    ser.isOpen()
+except:
+    ser.close()
+    ser.open()
+
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
 update = centaur.UpdateSystem()
@@ -395,6 +401,8 @@ def doMenu(items, fast = 0):
 
 def clearSerial():
     print('Checking and clear the serial line.')
+    resp1 = ""
+    resp2 = ""
     while True:
         sendPacket(b'\x83', b'')
         expect1 = buildPacket(b'\x85\x00\x06', b'')
@@ -712,8 +720,12 @@ def getBoardState(field=None):
     # Consider this function experimental
     # lowerlimit/upperlimit may need adjusting
     # Get the board data
-    sendPacket(b'\xf0\x00\x07', b'\x7f')
-    resp = ser.read(10000)
+    resp = []
+    while (len(resp) < 64):
+        sendPacket(b'\xf0\x00\x07', b'\x7f')
+        resp = ser.read(10000)
+        if (len(resp) < 64):
+            time.sleep(0.5)
     resp = resp = resp[6:(64 * 2) + 6]
     boarddata = [None] * 64
     for x in range(0, 127, 2):
