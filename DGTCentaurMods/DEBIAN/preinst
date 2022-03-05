@@ -10,6 +10,11 @@ function saveOldBeta {
     mkdir -p ${DGTCM_PATH}/db/
     cp /home/pi/DGTCentaurMods/config/centaur.ini ${DGTCM_PATH}/config/
     cp /home/pi/DGTCentaurMods/db/centaur.db ${DGTCM_PATH}/db/
+
+    # Move rodentIV uci and personalities
+    mkdir -p ${DGTCM_PATH}/engines/personalities/
+    cp -r /home/pi/DGTCentaurMods/engines/personalities ${DGTCM_PATH}/engines
+    cp /home/pi/DGTCentaurMods/engines/rodentIV.uci ${DGTCM_PATH}/engines
 }
 
 case $1 in

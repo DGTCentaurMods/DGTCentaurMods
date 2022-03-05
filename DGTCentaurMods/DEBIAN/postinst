@@ -171,26 +171,21 @@ function insertMaia {
         #Remove maia and don't get weights
         echo -e "::: This system is not compatible with maia engine. Removing"
         rm -rf ${DGTCM_PATH}/engines/maia* > /dev/null 2>&1
-        return 1
-    fi
-    if [ ! -d  ${DGTCM_PATH}/tmp ]
-    then
-        mkdir ${DGTCM_PATH}/tmp
-    fi
-    if [ ! -d ${DGTCM_PATH}/tmp/maia-chess ]
-    then
-        git clone --depth 1 $MAIA_REPO ${DGTCM_PATH}/tmp/maia-chess;
-        if (($? > 0))
-            then echo "git clone maia chess failed with $?"
+        return
+        if [ ! -d  ${DGTCM_PATH}/tmp ]
+        then
+            mkdir ${DGTCM_PATH}/tmp
         fi
+        if [ ! -d ${DGTCM_PATH}/tmp/maia-chess ]
+        then
+            git clone --depth 1 $MAIA_REPO ${DGTCM_PATH}/tmp/maia-chess;
+            if (($? > 0))
+                then echo "git clone maia chess failed with $?"
+            fi
+        fi
+        cp -r ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
+        chmod 755 ${DGTCM_PATH}/engines/maia
     fi
-    cp -r ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
-    chmod 755 ${DGTCM_PATH}/engines/maia
-    if [ ! -f ${DGTCM_PATH}/engines/maia.uci ]
-    then
-        cp ${DGTCM_PATH}/defaults/engines/maia.uci ${DGTCM_PATH}/engines/
-    fi
-
 }
 
 function insertRodentIV {
@@ -205,29 +200,13 @@ function insertRodentIV {
             then echo "git clone rodentiv failed with $?"
         fi
     fi
-    if [ -f ${DGTCM_PATH}/tmp/rodent-iv/personalities/basic.ini ]
-    then
-        rm ${DGTCM_PATH}/tmp/rodent-iv/personalities/basic.ini
-    fi
-    cp -r ${DGTCM_PATH}/tmp/rodent-iv/personalities ${DGTCM_PATH}/engines/
+    cp -rn ${DGTCM_PATH}/tmp/rodent-iv/personalities ${DGTCM_PATH}/engines/
     cp -r ${DGTCM_PATH}/tmp/rodent-iv/books ${DGTCM_PATH}/engines/
     chmod 744 ${DGTCM_PATH}/engines/rodentIV
-    if [ ! -f ${DGTCM_PATH}/engines/rodentIV.uci ] 
-    then
-        cp ${DGTCM_PATH}/defaults/engines/rodentIV.uci ${DGTCM_PATH}/engines/
-    fi
-    if [ ! -f ${DGTCM_PATH}/engines/personalities/basic.ini ]
-    then
-        cp ${DGTCM_PATH}/defaults/engines/basic.ini ${DGTCM_PATH}/engines/personalities/
-    fi
 }
 
 function insertZahak {
     chmod 755 ${DGTCM_PATH}/engines/zahak
-    if [ ! -f ${DGTCM_PATH}/engines/zahak.uci ]
-    then
-        cp ${DGTCM_PATH}/defaults/engines/zahak.uci ${DGTCM_PATH}/engines/
-    fi
 
 }
 
@@ -245,7 +224,6 @@ function setPermissions {
 
 
 function copyDefaults {
-    echo -e "::: Installing defaults"
     cp -rn ${DGTCM_PATH}/defaults/* ${DGTCM_PATH}/
 }
 
@@ -272,16 +250,17 @@ case $1 in
         case $2 in
             1.0-beta|1.0.1-beta)
                 cleanOldBeta
-                systemctl restart DGTCentaurMods.service
-                echo -e "@@@ You must power cycle your board to enable all features in this update. @@@"
                 ;;
         esac       
-    echo -e "::: Configuring DGTCentaurMods..."
+    echo -e "::: Finalizing install..."
     #Copy over all defaults from /defaults
     copyDefaults
-        
+
     setPermissions
-    exit 0
+    #Try to start the services. This will not work on a new install.
+    #TODO: Find a way to condition this
+    sudo systemctl start DGTCentaurMods
+    sudo systemctl start centaurmods-web.service
     ;;
 esac
 
