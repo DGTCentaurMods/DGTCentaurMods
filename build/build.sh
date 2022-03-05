@@ -30,7 +30,7 @@ function setPermissions {
 
 
 function build {
-    echo -e "::: Building starting"
+    echo -e "::: Building version ${VERSION}"
     if [ ! -d ${BASEDIR}/releases ]; then mkdir ${BASEDIR}/releases; fi
     dpkg-deb --build /tmp/${STAGE} ${BASEDIR}/releases/${STAGE}.deb
     return
