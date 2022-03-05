@@ -30,7 +30,7 @@ $dev = '0'
 $SleepTime = 3
 
 $releaseFileName = -join ("dgtcentaurmods_" , $releaseVersion , "_armhf.deb" )
-$releaseURL = -join ("https://github.com/EdNekebno/DGTCentaur/releases/download/v", $releaseVersion , "/" , $releaseFileName )
+$releaseURL = -join ("https://github.com/EdNekebno/DGTCentaurMods/releases/download/v", $releaseVersion , "/" , $releaseFileName )
 
 function retrieveFiles($URL, $fileName, $OutPutFolder) {
     $OutPutFolder = "$PSScriptRoot\$OutPutFolder"
