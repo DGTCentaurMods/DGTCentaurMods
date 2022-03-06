@@ -43,49 +43,51 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
+    global idle
     epaper.epapermode = 0
     board.beep(board.SOUND_GENERAL)
-    if id == board.BTNLONGPLAY:
-        board.shutdown()
-    if id == board.BTNDOWN:
-        menuitem = menuitem + 1
-    if id == board.BTNUP:
-        menuitem = menuitem - 1
-    if id == board.BTNTICK:
-        if not curmenu:
-            selection = "BTNTICK"
-            print(selection)
-            #event_key.set()
+    if idle:
+        if id == board.BTNTICK:
+            event_key.set()
             return
-        c = 1
-        r = ""
-        for k, v in curmenu.items():
-            if (c == menuitem):
-                selection = k
+    else:
+        if id == board.BTNTICK:
+            if not curmenu:
+                selection = "BTNTICK"
                 print(selection)
-                event_key.set()
-                menuitem = 1
+                #event_key.set()
                 return
-            c = c + 1
-    if id == board.BTNBACK:
-        selection = "BACK"
-        #epaper.epd.Clear(0xff)
-        #time.sleep(2)
-        event_key.set()
-        return
-    if id == board.BTNHELP:
-        selection = "BTNHELP"
-        event_key.set()
-        return
-    if menuitem < 1:
-        menuitem = 1
-    if menuitem > len(curmenu):
-        menuitem = len(curmenu)
-    epaper.clearArea(0,20 + shift,17,295)
-    draw = ImageDraw.Draw(epaper.epaperbuffer)
-    draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
-                  (17, (menuitem * 20) + 10 + shift)], fill=0)
-    draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
+            c = 1
+            r = ""
+            for k, v in curmenu.items():
+                if (c == menuitem):
+                    selection = k
+                    print(selection)
+                    event_key.set()
+                    menuitem = 1
+                    return
+                c = c + 1
+        if id == board.BTNDOWN:
+            menuitem = menuitem + 1
+        if id == board.BTNUP:
+            menuitem = menuitem - 1
+        if id == board.BTNBACK:
+            selection = "BACK"
+            event_key.set()
+            return
+        if id == board.BTNHELP:
+            selection = "BTNHELP"
+            event_key.set()
+            return
+        if menuitem < 1:
+            menuitem = 1
+        if menuitem > len(curmenu):
+            menuitem = len(curmenu)
+        epaper.clearArea(0,20 + shift,17,295)
+        draw = ImageDraw.Draw(epaper.epaperbuffer)
+        draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
+                      (17, (menuitem * 20) + 10 + shift)], fill=0)
+        draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
 
 quickselect = 0
 
@@ -134,6 +136,7 @@ def doMenu(menu, title=None):
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
     epaper.clearScreen()
+    time.sleep(0.2)
     if title:
         row = 2
         shift = 20
@@ -174,6 +177,25 @@ threading.Timer(300,update.main).start()
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
 
+def show_welcome():
+    global idle
+    epaper.welcomeScreen()
+    idle = True
+    event_key.wait()
+    event_key.clear()
+    idle = False
+
+show_welcome()
+time.sleep(0.2) # wait eink
+
+def wellcome():
+    global board_idle
+    epaper.welcomeScreen()
+    idle = True
+    event_key.wait()
+    epaper.clearScreen()
+    board_idle = False
+
 
 # Handle the menu structure
 while True:
@@ -199,6 +221,7 @@ while True:
     #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
+        show_welcome()
     if result == "Cast":
         epaper.loadingScreen()
         board.pauseEvents()
@@ -491,6 +514,7 @@ while True:
                         statusbar.start()
     if result == "HandBrain":
         # Pick up the engines from the engines folder and build the menu
+        enginemenu = {}
         enginepath = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
         enginefiles = os.listdir(enginepath)
         enginefiles = list(filter(lambda x: os.path.isfile(enginepath + x), os.listdir(enginepath)))
@@ -554,5 +578,4 @@ while True:
                 break
         epaper.clearScreen()
         time.sleep(0.5)
-
 

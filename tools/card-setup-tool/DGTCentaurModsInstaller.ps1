@@ -25,9 +25,14 @@
 # distribution, modification, variant, or derivative of this software.
 
 
-$releaseVersion = '1.1.0'
+$currentReleaseVersion = '1.1.1'
 $dev = '0'
 $SleepTime = 3
+
+write-Host "Latest release version is $currentReleaseVersion"
+Write-Host "If you want to install another release, input the version number below"
+$releaseVersion = Read-Host -Prompt "Enter the version number ($currentReleaseVersion)"
+$releaseVersion = ($currentReleaseVersion,$releaseVersion)[[bool]$releaseVersion]
 
 $releaseFileName = -join ("dgtcentaurmods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaurMods/releases/download/v", $releaseVersion , "/" , $releaseFileName )
@@ -83,8 +88,8 @@ function retrieveFiles($URL, $fileName, $OutPutFolder) {
 
 
 function ExtractCentaur {
-    if (Test-Path -Path $PSScriptRoot\centaur.tar.gz) {
-        Write-host "Nothing to do file centaur.tar.gz is already there`r`n"
+    if (Test-Path -Path $PSScriptRoot\home) {
+        Write-host "Nothing to do folder /home/pi/centaur is already there`r`n"
     }
     else {
 
@@ -109,11 +114,6 @@ function ExtractCentaur {
         Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList "x $PSScriptRoot\2.img epaper* *.dat *.info -o.\home\pi\centaur\settings"
         Remove-Item  "$PSScriptRoot\1.img"
         Remove-Item  "$PSScriptRoot\2.img"
-        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
-        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar  -ttar .\home\pi\centaur"
-        Write-Host  Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
-        Start-Process "$PSScriptRoot\7-Zip\7z.exe"  -Wait -ArgumentList  "a $PSScriptRoot\centaur.tar.gz  -tgzip .\centaur.tar"
-        Remove-Item  "$PSScriptRoot\centaur.tar"
     }
 
 }
@@ -229,17 +229,18 @@ function ModifyBootDrive {
     (Get-Content "$BootDrive\firstrun_new.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstrun.sh" -Force
     Remove-Item  "$BootDrive\firstrun_new.sh"
 
-    Write-host "Write firstboot.sh to $BootDrive"
-    (Get-Content "$PSScriptRoot\firstboot.sh") `
+    Write-host "Write firstboot.py to $BootDrive"
+    (Get-Content "$PSScriptRoot\firstboot.py") `
         -replace 'DGT.*?\.deb', $releaseFileName | `
-        Out-File "$BootDrive\firstboot.sh"
-    (Get-Content "$BootDrive\firstboot.sh" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstboot.sh" -Force
+        Out-File "$BootDrive\firstboot.py"
+    (Get-Content "$BootDrive\firstboot.py" -Raw).Replace("`r`n", "`n") | Set-Content "$BootDrive\firstboot.py" -Force
+     Copy-Item "$PSScriptRoot\lib" -Destination "$BootDrive\lib" -Recurse
 
     Write-host "Write firstboot.service to $BootDrive"
     Copy-Item "$PSScriptRoot\firstboot.service" -Destination "$BootDrive\firstboot.service"
 
-    Write-host "Write centaur.tar.gz to $BootDrive"
-    Copy-Item "$PSScriptRoot\centaur.tar.gz" -Destination "$BootDrive\centaur.tar.gz"
+    Write-host "Write original DGT Centaur software to $BootDrive"
+    Copy-Item "$PSScriptRoot\home\pi\centaur" -Destination "$BootDrive\" -Recurse 
     
     Write-host "Write $releaseFileName to $BootDrive"
     Copy-Item "$releaseFilePath" -Destination "$BootDrive\$releaseFileName"

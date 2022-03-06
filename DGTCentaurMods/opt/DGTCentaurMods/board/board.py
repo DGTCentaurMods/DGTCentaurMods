@@ -59,7 +59,6 @@ except:
 
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
-update = centaur.UpdateSystem()
 
 # This is the most common address of the board
 addr1 = 0x06
@@ -82,6 +81,32 @@ def sendPacket(command, data):
     # pass command and data as bytes
     tosend = buildPacket(command, data)
     ser.write(tosend)
+
+
+def clearSerial():
+    print('Checking and clear the serial line.')
+    resp1 = ""
+    resp2 = ""
+    while True:
+        sendPacket(b'\x83', b'')
+        expect1 = buildPacket(b'\x85\x00\x06', b'')
+        try:
+            resp1 = ser.read(256)
+        except:
+            pass
+        sendPacket(b'\x94', b'')
+        expect2 = buildPacket(b'\xb1\x00\x06', b'')
+        try:
+            resp2 = ser.read(256)
+        except:
+            pass
+        #If board is idle, return True
+        if expect1 == resp1 and expect2 == resp2:
+            print('Board is idle. Serial is clear.')
+            return True
+        else:
+            print('  Attempting to clear serial')
+
 
 # But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
 print("Detecting board adress")
@@ -113,15 +138,7 @@ while len(resp) < 4:
         addr1 = resp[3]
         addr2 = resp[4]
         print("Discovered new address:" + hex(addr1) + hex(addr2))
-        sendPacket(b'\xf4\x00\x07', b'\x7f')
-        resp = ser.read(10000)
-        sendPacket(b'\xf0\x00\x07', b'\x7f')
-        try:
-            ser.read(1000)
-        except:
-            ser.read(1000)
-        resp = "         "
-
+        clearSerial()
 #
 # Screen functions - deprecated, use epaper.py if possible
 #
@@ -399,31 +416,6 @@ def doMenu(items, fast = 0):
 # Board control - functions related to making the board do something
 #
 
-def clearSerial():
-    print('Checking and clear the serial line.')
-    resp1 = ""
-    resp2 = ""
-    while True:
-        sendPacket(b'\x83', b'')
-        expect1 = buildPacket(b'\x85\x00\x06', b'')
-        try:
-            resp1 = ser.read(256)
-        except:
-            pass
-        sendPacket(b'\x94', b'')
-        expect2 = buildPacket(b'\xb1\x00\x06', b'')
-        try:
-            resp2 = ser.read(256)
-        except:
-            pass
-        #If board is idle, return True
-        if expect1 == resp1 and expect2 == resp2:
-            print('Board is idle. Serial is clear.')
-            return True
-        else:
-            print('  Attempting to clear serial')
-
-
 def clearBoardData():
     ser.read(100000)
     sendPacket(b'\x83', b'')
@@ -512,14 +504,20 @@ def ledFlash():
 
 
 def shutdown():
+    update = centaur.UpdateSystem()
     beep(SOUND_POWER_OFF)
-    ledFromTo(7,7)
     package = '/tmp/dgtcentaurmods_armhf.deb'
-    if os.path.exists(package) and update.getStatus() == 'enabled':
+    if os.path.exists(package):
+        ledArray([0,1,2,3,4,5,6,7],6)
+        epaper.clearScreen()
         update.updateInstall()
         return
+    print('Normal shutdown')
     epaper.clearScreen()
-    epaper.writeText(0, "Shutting down...")
+    time.sleep(1)
+    ledFromTo(7,7)
+    epaper.writeText(3, "     Shutting")
+    epaper.writeText(4, "       down")
     time.sleep(3)
     epaper.stopEpaper()
     os.system("sudo poweroff")
@@ -806,53 +804,61 @@ def eventsThread(keycallback, fieldcallback):
     # This monitors the board for events
     # keypresses and pieces lifted/placed down
     global eventsrunning
+    global standby
+    standby = False
     while True:
         if eventsrunning == 1:
             buttonPress = 0
-            try:
-                sendPacket(b'\x83', b'')
-                expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
-                expect.append(checksum(expect))
-                resp = ser.read(10000)
-                resp = bytearray(resp)
-                if (bytearray(resp) != expect):
-                    if (resp[0] == 133 and resp[1] == 0):
-                        for x in range(0, len(resp) - 1):
-                            if (resp[x] == 64):
-                                # Calculate the square to 0(a1)-63(h8) so that
-                                # all functions match
-                                fieldHex = resp[x + 1]
-                                newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback(newsquare + 1)
-                            if (resp[x] == 65):
-                                #print("PIECE PLACED")
-                                # Calculate the square to 0(a1)-63(h8) so that
-                                # all functions match
-                                fieldHex = resp[x + 1]
-                                newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback((newsquare + 1) * -1)
-            except:
-                pass
+            if not standby:
+                #Hold fields on standby
+                try:
+                    sendPacket(b'\x83', b'')
+                    expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                    expect.append(checksum(expect))
+                    resp = ser.read(10000)
+                    resp = bytearray(resp)
+                    if (bytearray(resp) != expect):
+                        if (resp[0] == 133 and resp[1] == 0):
+                            for x in range(0, len(resp) - 1):
+                                if (resp[x] == 64):
+                                    # Calculate the square to 0(a1)-63(h8) so that
+                                    # all functions match
+                                    fieldHex = resp[x + 1]
+                                    newsquare = rotateFieldHex(fieldHex)
+                                    fieldcallback(newsquare + 1)
+                                if (resp[x] == 65):
+                                    #print("PIECE PLACED")
+                                    # Calculate the square to 0(a1)-63(h8) so that
+                                    # all functions match
+                                    fieldHex = resp[x + 1]
+                                    newsquare = rotateFieldHex(fieldHex)
+                                    fieldcallback((newsquare + 1) * -1)
+                except:
+                    pass
+           
             try:
                 sendPacket(b'\x94', b'')
                 expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
                 expect.append(checksum(expect))
                 resp = ser.read(10000)
                 resp = bytearray(resp)
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
-                    buttonPress = BTNBACK  # BACK
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
-                    buttonPress = BTNTICK  # TICK
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
-                    buttonPress = BTNUP  # UP
-                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
-                    print("down")
-                    buttonPress = BTNDOWN  # DOWN
-                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
-                    print('Help pressed')
-                    buttonPress = BTNHELP   # HELP
+                if not standby:
+                    #Lock these buttons on standby
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
+                        buttonPress = BTNBACK  # BACK
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
+                        buttonPress = BTNTICK  # TICK
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
+                        buttonPress = BTNUP  # UP
+                    if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
+                        print("down")
+                        buttonPress = BTNDOWN  # DOWN
+                    if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
+                        print('Help pressed')
+                        buttonPress = BTNHELP   # HELP
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
-                    breaktime = time.time() + 3
+                    breaktime = time.time() + 0.5
+                    beep(SOUND_GENERAL)
                     while time.time() < breaktime:
                         sendPacket(b'\x94', b'')
                         expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
@@ -860,12 +866,27 @@ def eventsThread(keycallback, fieldcallback):
                         resp = ser.read(1000)
                         resp = bytearray(resp)
                         if resp.hex().startswith("b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0500040"):
-                            #No funtion on BTNPLAY yet
-                            #buttonPress = BTNPLAY
+                            print('Play btn pressed. Stanby is:',standby)
+                            if standby == False:
+                                print('Calling standbyScreen()')
+                                epaper.standbyScreen(True)
+                                standby = True
+                                print('Starting shutdown countdown')
+                                sd = threading.Timer(600,shutdown)
+                                sd.start()
+                                break
+                            else:
+                                clearSerial()
+                                epaper.standbyScreen(False)
+                                print('Cancel shutdown')
+                                sd.cancel()
+                                standby = False
+                                break
                             break
                     else:
+                        beep(SOUND_POWER_OFF)
+                        shutdown()
                         print('BTNLONGPLAY pressed')
-                        buttonPress = BTNLONGPLAY
             except:
                 pass
             time.sleep(0.05)

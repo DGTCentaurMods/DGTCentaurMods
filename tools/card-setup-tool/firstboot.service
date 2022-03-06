@@ -3,6 +3,7 @@ Description=One time boot script
 After=network.target
 [Service]
 Type=simple
-ExecStart=/home/pi/firstboot.sh
+ExecStart=python firstboot.py
+WorkingDirectory=/home/pi
 [Install]
 WantedBy=multi-user.target

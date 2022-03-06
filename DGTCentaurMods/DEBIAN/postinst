@@ -257,10 +257,6 @@ case $1 in
     copyDefaults
 
     setPermissions
-    #Try to start the services. This will not work on a new install.
-    #TODO: Find a way to condition this
-    sudo systemctl start DGTCentaurMods
-    sudo systemctl start centaurmods-web.service
     ;;
 esac
 

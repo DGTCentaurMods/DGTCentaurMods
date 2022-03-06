@@ -27,11 +27,10 @@
 
 from DGTCentaurMods.board import centaur,board
 from DGTCentaurMods.display import epd2in9d
-import time, sched
+import os, time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import threading
-import hashlib
 
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 # Screenbuffer is what we want to display on the screen
@@ -118,6 +117,42 @@ def loadingScreen():
     writeText(10,'     Loading')
     print('Display loading screen')
     
+
+def welcomeScreen():
+    global epaperbuffer
+    statusBar().print()
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    lg = Image.open(filename)
+    epaperbuffer.paste(lg,(0,20))
+    writeText(10,'     Press')
+    writeText(11,'      to start')
+    draw = ImageDraw.Draw(epaperbuffer)
+    # Tick sign location
+    x,y = 75,200
+    draw.line((6+x,y+16,16+x,y+4), fill=0, width=5)
+    draw.line((2+x,y+10, 8+x,y+16), fill=0, width=5)
+
+
+def standbyScreen(show):
+    global epaperbuffer
+    f = '/tmp/epapersave.bmp'
+    if show:
+        print('Saving buffer')
+        epaperbuffer.save(f)
+        statusBar().print()
+        
+        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+        lg = Image.open(filename)
+        epaperbuffer.paste(lg,(0,20))
+        writeText(10,'   Press [>||]')
+        writeText(11,'   to power on')
+
+    if not show:
+        print('Restore buffer')
+        restore = Image.open(f)
+        epaperbuffer.paste(restore,(0,0))
+        os.remove(f)
+
 
 def initEpaper(mode = 0):
     # Set the screen to a known start state and start the epaperUpdate thread
@@ -285,6 +320,7 @@ def promotionOptions(row):
     o = 66
     draw.line((0+o,offset+16,16+o,offset+16), fill=0, width=5)
     draw.line((14+o,offset+16,14+o,offset+5), fill=0, width=5)
+    input()
     draw.line((16+o,offset+6,4+o,offset+6), fill=0, width=5)
     draw.polygon([(8+o, offset+2), (8+o, offset+10), (0+o, offset+6)], fill=0)
     o = 97

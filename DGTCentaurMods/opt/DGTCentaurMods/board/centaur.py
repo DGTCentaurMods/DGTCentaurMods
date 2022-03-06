@@ -19,6 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
@@ -109,24 +110,13 @@ class UpdateSystem:
         self.conf = ConfigSystem()
         self.status = self.getStatus()
         
+
+    def info(self):
         print('Update system status: ' + self.getStatus())
         print("Update source: ",self.conf.read_value('update', 'source'))
         print('Update channel: ' + self.getChannel())
         print('Policy: ' + self.getPolicy())
-        #print('Installed version on the board: ' + self.getInstalledVersion())
 
-        #Download update ingormation file
-        self.update_source = self.conf.read_value('update', 'source')
-        print('Downloading update information...')
-        url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(self.update_source)
-        try:
-            with urllib.request.urlopen(url) as versions:
-                self.ver = json.loads(versions.read().decode())
-        except Exception as e:
-            print('!! Cannot download update info: ', e)
-            pass
-
-            
     def getInstalledVersion(self):
         version = os.popen("dpkg -l | grep dgtcentaurmods | tr -s ' ' | cut -d' ' -f3").read().strip()
         return version
@@ -255,23 +245,31 @@ class UpdateSystem:
     def updateInstall(self):
         # Check for available update
         package = '/tmp/dgtcentaurmods_armhf.deb'
-        update_helper = 'scripts/update.sh'
         print('Put the board in update mode')
         import shutil
-        from DGTCentaurMods.display import epaper
-        epaper.clearScreen()
+
         epaper.writeText(3, '    System will')
         epaper.writeText(4, '       update')
-        shutil.copy(update_helper,'/tmp')
-        print('About to execute the installer')
+        shutil.copy('update/update.py','/tmp')
+        shutil.copytree('update/lib','/tmp/lib')
+        print('Keep the info on the screen')
         time.sleep(5)
-        epaper.stopEpaper()
-        os.system('. /tmp/update.sh')
-        print('Stop DGTCM for update')
-        time.sleep(6) # Wait for eink
+        subprocess.Popen('cd /tmp; python /tmp/update.py', shell=True)
         sys.exit()
 
+
     def main(self):
+        #Download update ingormation file
+        self.update_source = self.conf.read_value('update', 'source')
+        print('Downloading update information...')
+        url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(self.update_source)
+        try:
+            with urllib.request.urlopen(url) as versions:
+                self.ver = json.loads(versions.read().decode())
+        except Exception as e:
+            print('!! Cannot download update info: ', e)
+            pass
+
         # This function will run as a thread once, sometime after boot if updting is enabled.
         if not self.getStatus() == "disabled" and self.checkForUpdate():
             self.downloadUpdate(self.update)

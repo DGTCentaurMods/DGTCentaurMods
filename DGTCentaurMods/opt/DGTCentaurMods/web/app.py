@@ -22,7 +22,6 @@
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
 from DGTCentaurMods.board import centaur
-from DGTCentaurMods.display import epaper
 from board import LiveBoard
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
@@ -90,7 +89,7 @@ def tuner_upload_file():
 			else: # not found, we are at the eof  
 				file.write('\n') # append missing data
 				file.write('[' + file_name + ']\n') # append missing data
-				file.write('Personality = ' + file_name + '\n') # append missing data
+				file.write('PersonalityFile = ' + file_name + ' ' + file_name + '.txt' + '\n') # append missing data
 				file.write('UCI_LimitStrength = true\n') # append missing data
 				file.write('UCI_Elo = 1200\n') # append missing data
 	return render_template('index.html')
