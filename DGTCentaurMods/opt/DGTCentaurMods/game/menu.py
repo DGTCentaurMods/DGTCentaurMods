@@ -43,49 +43,54 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
+    global board_idle
     epaper.epapermode = 0
     board.beep(board.SOUND_GENERAL)
-    if id == board.BTNLONGPLAY:
-        board.shutdown()
-    if id == board.BTNDOWN:
-        menuitem = menuitem + 1
-    if id == board.BTNUP:
-        menuitem = menuitem - 1
-    if id == board.BTNTICK:
-        if not curmenu:
-            selection = "BTNTICK"
-            print(selection)
-            #event_key.set()
+    if board_idle:
+        if id == board.BTNPLAY:
+            selection = "BTNPLAY"
+            event_key.set()
             return
-        c = 1
-        r = ""
-        for k, v in curmenu.items():
-            if (c == menuitem):
-                selection = k
+    elif not board_idle:
+        if id == board.BTNLONGPLAY:
+            board.shutdown()
+        if id == board.BTNDOWN:
+            menuitem = menuitem + 1
+        if id == board.BTNUP:
+            menuitem = menuitem - 1
+        if id == board.BTNTICK:
+            if not curmenu:
+                selection = "BTNTICK"
                 print(selection)
-                event_key.set()
-                menuitem = 1
+                #event_key.set()
                 return
-            c = c + 1
-    if id == board.BTNBACK:
-        selection = "BACK"
-        #epaper.epd.Clear(0xff)
-        #time.sleep(2)
-        event_key.set()
-        return
-    if id == board.BTNHELP:
-        selection = "BTNHELP"
-        event_key.set()
-        return
-    if menuitem < 1:
-        menuitem = 1
-    if menuitem > len(curmenu):
-        menuitem = len(curmenu)
-    epaper.clearArea(0,20 + shift,17,295)
-    draw = ImageDraw.Draw(epaper.epaperbuffer)
-    draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
-                  (17, (menuitem * 20) + 10 + shift)], fill=0)
-    draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
+            c = 1
+            r = ""
+            for k, v in curmenu.items():
+                if (c == menuitem):
+                    selection = k
+                    print(selection)
+                    event_key.set()
+                    menuitem = 1
+                    return
+                c = c + 1
+        if id == board.BTNBACK:
+            selection = "BACK"
+            event_key.set()
+            return
+        if id == board.BTNHELP:
+            selection = "BTNHELP"
+            event_key.set()
+            return
+        if menuitem < 1:
+            menuitem = 1
+        if menuitem > len(curmenu):
+            menuitem = len(curmenu)
+        epaper.clearArea(0,20 + shift,17,295)
+        draw = ImageDraw.Draw(epaper.epaperbuffer)
+        draw.polygon([(2, (menuitem * 20 + shift) + 2), (2, (menuitem * 20) + 18 + shift),
+                      (17, (menuitem * 20) + 10 + shift)], fill=0)
+        draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
 
 quickselect = 0
 
@@ -174,6 +179,15 @@ threading.Timer(300,update.main).start()
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
 
+def goidle():
+    global board_idle
+    epaper.idleScreen()
+    board_idle = True
+    while selection != "BTNPLAY":
+        event_key.wait()
+    board_idle = False
+    
+goidle()
 
 # Handle the menu structure
 while True:
@@ -199,6 +213,7 @@ while True:
     #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
+        goidle()
     if result == "Cast":
         epaper.loadingScreen()
         board.pauseEvents()
@@ -555,5 +570,4 @@ while True:
                 break
         epaper.clearScreen()
         time.sleep(0.5)
-
 

@@ -852,8 +852,7 @@ def eventsThread(keycallback, fieldcallback):
                         resp = ser.read(1000)
                         resp = bytearray(resp)
                         if resp.hex().startswith("b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0500040"):
-                            #No funtion on BTNPLAY yet
-                            #buttonPress = BTNPLAY
+                            buttonPress = BTNPLAY
                             break
                     else:
                         print('BTNLONGPLAY pressed')

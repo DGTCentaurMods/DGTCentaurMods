@@ -119,6 +119,17 @@ def loadingScreen():
     print('Display loading screen')
     
 
+def idleScreen():
+    global epaperbuffer
+    statusBar().print()
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    lg = Image.open(filename)
+    epaperbuffer.paste(lg,(0,20))
+    writeText(10,'   Press [>||}')
+    writeText(11,'      to start')
+    print('Display idle screen')
+
+
 def initEpaper(mode = 0):
     # Set the screen to a known start state and start the epaperUpdate thread
     global epaperbuffer
