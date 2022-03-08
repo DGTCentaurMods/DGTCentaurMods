@@ -90,7 +90,7 @@ def tuner_upload_file():
 			else: # not found, we are at the eof  
 				file.write('\n') # append missing data
 				file.write('[' + file_name + ']\n') # append missing data
-				file.write('Personality = ' + file_name + '\n') # append missing data
+				file.write('PersonalityFile = ' + file_name + ' ' + file_name + '.txt' + '\n') # append missing data
 				file.write('UCI_LimitStrength = true\n') # append missing data
 				file.write('UCI_Elo = 1200\n') # append missing data
 	return render_template('index.html')
