@@ -53,20 +53,20 @@ def status():
             epaper.writeText(1,progress + "[" + a + "]")
             time.sleep(1)
 
-progress = 'Preparing    '
+progress = 'Preparing      '
 msg = threading.Thread(target=status,args=())
 msg.start()
 time.sleep(0.5)
 epaper.writeText(3,"[1/3] Setup OS")
 os.system("sleep 30")
 
-progress = 'Updating     '
+progress = 'Updating       '
 epaper.writeText(4,"[2/3] Updating")
 epaper.writeText(5,"    Raspbian")
 os.system("apt update")
 os.system("apt full-upgrade -y")
 
-progress = 'Installing   '
+progress = 'Installing     '
 epaper.writeText(6,"[3/3] Installing")
 epaper.writeText(7,"    DGTCM")
 os.system("apt -y install /boot/DGTCentaurMods_armhf.deb")
@@ -80,6 +80,6 @@ os.system("systemctl disable firstboot.service")
 print('Setup dome')
 
 epaper.writeText(3,'    Rebooting')
-time.sleep(2) 
 os.system("rm -rf /etc/systemd/system/firstboot.service")
+time.sleep(5)
 os.system("reboot")

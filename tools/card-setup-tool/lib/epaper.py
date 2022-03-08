@@ -35,6 +35,7 @@ import threading
 import hashlib
 
 font18 = ImageFont.truetype("lib/font/Font.ttc", 18)
+fixedfont = ImageFont.truetype("lib/font/fixed_01.ttf")
 # Screenbuffer is what we want to display on the screen
 epaperbuffer = Image.new('1', (128, 296), 255) # You can also use pillow to directly change this image
 lastepaperhash = 0
@@ -168,7 +169,7 @@ def writeText(row,txt):
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
-    draw.text((0, 0), txt, font=font18, fill=0)
+    draw.text((0, 0), txt, font=fixedfont, fill=0)
     nimage.paste(image, (0, (row * 20)))
     epaperbuffer = nimage.copy()
 
