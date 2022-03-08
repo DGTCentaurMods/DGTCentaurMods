@@ -59,7 +59,6 @@ except:
 
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
-update = centaur.UpdateSystem()
 
 # This is the most common address of the board
 addr1 = 0x06
@@ -82,6 +81,32 @@ def sendPacket(command, data):
     # pass command and data as bytes
     tosend = buildPacket(command, data)
     ser.write(tosend)
+
+
+def clearSerial():
+    print('Checking and clear the serial line.')
+    resp1 = ""
+    resp2 = ""
+    while True:
+        sendPacket(b'\x83', b'')
+        expect1 = buildPacket(b'\x85\x00\x06', b'')
+        try:
+            resp1 = ser.read(256)
+        except:
+            pass
+        sendPacket(b'\x94', b'')
+        expect2 = buildPacket(b'\xb1\x00\x06', b'')
+        try:
+            resp2 = ser.read(256)
+        except:
+            pass
+        #If board is idle, return True
+        if expect1 == resp1 and expect2 == resp2:
+            print('Board is idle. Serial is clear.')
+            return True
+        else:
+            print('  Attempting to clear serial')
+
 
 # But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
 print("Detecting board adress")
@@ -113,15 +138,7 @@ while len(resp) < 4:
         addr1 = resp[3]
         addr2 = resp[4]
         print("Discovered new address:" + hex(addr1) + hex(addr2))
-        sendPacket(b'\xf4\x00\x07', b'\x7f')
-        resp = ser.read(10000)
-        sendPacket(b'\xf0\x00\x07', b'\x7f')
-        try:
-            ser.read(1000)
-        except:
-            ser.read(1000)
-        resp = "         "
-
+        clearSerial()
 #
 # Screen functions - deprecated, use epaper.py if possible
 #
@@ -399,31 +416,6 @@ def doMenu(items, fast = 0):
 # Board control - functions related to making the board do something
 #
 
-def clearSerial():
-    print('Checking and clear the serial line.')
-    resp1 = ""
-    resp2 = ""
-    while True:
-        sendPacket(b'\x83', b'')
-        expect1 = buildPacket(b'\x85\x00\x06', b'')
-        try:
-            resp1 = ser.read(256)
-        except:
-            pass
-        sendPacket(b'\x94', b'')
-        expect2 = buildPacket(b'\xb1\x00\x06', b'')
-        try:
-            resp2 = ser.read(256)
-        except:
-            pass
-        #If board is idle, return True
-        if expect1 == resp1 and expect2 == resp2:
-            print('Board is idle. Serial is clear.')
-            return True
-        else:
-            print('  Attempting to clear serial')
-
-
 def clearBoardData():
     ser.read(100000)
     sendPacket(b'\x83', b'')
@@ -515,7 +507,7 @@ def shutdown():
     beep(SOUND_POWER_OFF)
     ledFromTo(7,7)
     package = '/tmp/dgtcentaurmods_armhf.deb'
-    if os.path.exists(package) and update.getStatus() == 'enabled':
+    if os.path.exists(package):
         update.updateInstall()
         return
     epaper.clearScreen()
