@@ -119,7 +119,7 @@ def loadingScreen():
     print('Display loading screen')
     
 
-def idleScreen():
+def welcomeScreen():
     global epaperbuffer
     statusBar().print()
     filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
@@ -127,7 +127,16 @@ def idleScreen():
     epaperbuffer.paste(lg,(0,20))
     writeText(10,'   Press [>||}')
     writeText(11,'      to start')
-    print('Display idle screen')
+
+
+def standbyScreen(show):
+    global epaperbuffer
+    if show:
+        epaperbuffer.save('/tmp/epapersave.bmp')
+        welcomeScreen()
+    if not show:
+        restore = Image.open('/tmp/epapersave.bmp')
+        epaperbuffer.paste(restore,(0,0))
 
 
 def initEpaper(mode = 0):
