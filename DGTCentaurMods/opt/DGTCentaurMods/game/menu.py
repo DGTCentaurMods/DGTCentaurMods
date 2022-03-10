@@ -179,15 +179,15 @@ threading.Timer(300,update.main).start()
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
 
-def goidle():
+def welcome():
     global board_idle
-    epaper.idleScreen()
+    epaper.welcomeScreen()
     board_idle = True
     while selection != "BTNPLAY":
         event_key.wait()
     board_idle = False
     
-goidle()
+welcome()
 
 # Handle the menu structure
 while True:
@@ -213,7 +213,7 @@ while True:
     #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
-        goidle()
+        welcome()
     if result == "Cast":
         epaper.loadingScreen()
         board.pauseEvents()
