@@ -845,7 +845,7 @@ def eventsThread(keycallback, fieldcallback):
                     print('Help pressed')
                     buttonPress = BTNHELP   # HELP
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
-                    breaktime = time.time() + 3
+                    breaktime = time.time() + 0.5
                     while time.time() < breaktime:
                         sendPacket(b'\x94', b'')
                         expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
