@@ -139,6 +139,7 @@ def doMenu(menu, title=None):
         if res[24] == 0 and res[25] == 0 and res[26] == 0 and res[27] == 0 and res[28] == 0 and res[29] == 0 and res[30] == 0 and res[31] == 0:
             quickselect = 1
     epaper.clearScreen()
+    time.sleep(0.2)
     if title:
         row = 2
         shift = 20
@@ -188,6 +189,7 @@ def welcome():
     board_idle = False
     
 welcome()
+time.sleep(0.2)
 
 # Handle the menu structure
 while True:
