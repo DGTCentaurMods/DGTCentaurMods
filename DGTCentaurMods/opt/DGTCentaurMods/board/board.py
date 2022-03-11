@@ -511,7 +511,8 @@ def shutdown():
         update.updateInstall()
         return
     epaper.clearScreen()
-    epaper.writeText(0, "Shutting down...")
+    epaper.writeText(3, "     Shutting")
+    epaper.writeText(4, "       sown")
     time.sleep(3)
     epaper.stopEpaper()
     os.system("sudo poweroff")
