@@ -1,6 +1,6 @@
 [Unit]
 Description=Centaur Web interface
-After=network.target
+After=network.target DGTCentaurMods.service
 
 [Service]
 ExecStart=flask run

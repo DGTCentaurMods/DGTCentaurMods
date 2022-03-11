@@ -22,7 +22,6 @@
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
 from DGTCentaurMods.board import centaur
-from DGTCentaurMods.display import epaper
 from board import LiveBoard
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
