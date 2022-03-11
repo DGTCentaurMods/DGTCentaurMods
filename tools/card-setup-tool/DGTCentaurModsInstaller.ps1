@@ -25,9 +25,14 @@
 # distribution, modification, variant, or derivative of this software.
 
 
-$releaseVersion = '1.1.0'
+$currentReleaseVersion = '1.1.0'
 $dev = '0'
 $SleepTime = 3
+
+write-Host "Latest release version is $currentReleaseVersion"
+Write-Host "If you want to install another release, input the version number below"
+$releaseVersion = Read-Host -Prompt "Enter the version number ($currentReleaseVersion)"
+$releaseVersion = ($currentReleaseVersion,$releaseVersion)[[bool]$releaseVersion]
 
 $releaseFileName = -join ("dgtcentaurmods_" , $releaseVersion , "_armhf.deb" )
 $releaseURL = -join ("https://github.com/EdNekebno/DGTCentaurMods/releases/download/v", $releaseVersion , "/" , $releaseFileName )
