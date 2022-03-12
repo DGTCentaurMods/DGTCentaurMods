@@ -24,7 +24,8 @@
 
 import os
 os.system("apt update")
-os.system("apt install -y python3-pip  libopenjp2-7-dev libtiff5 libopenjp2-7")
+os.system("apt install -y python3-pip")
+os.system("apt install -y libopenjp2-7-dev libtiff5 libopenjp2-7")
 
 import pip
 
@@ -71,9 +72,10 @@ epaper.writeText(6,"[3/3] Installing")
 epaper.writeText(7,"    DGTCM")
 os.system("apt -y install /boot/DGTCentaurMods_armhf.deb")
 
+os.system("systemctl stop DGTCentaurMods.service")
 animate = False
 sb.stop()
-time.sleep(4)
+time.sleep(2)
 epaper.clearScreen()
 time.sleep(1)
 os.system("systemctl disable firstboot.service")
