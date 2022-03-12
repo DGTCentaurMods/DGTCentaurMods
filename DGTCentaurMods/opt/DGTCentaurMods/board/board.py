@@ -514,7 +514,7 @@ def shutdown():
         return
     epaper.clearScreen()
     time.sleep(0.2)
-    board.ledFromTo(7,7)
+    ledFromTo(7,7)
     epaper.writeText(3, "     Shutting")
     epaper.writeText(4, "       down")
     time.sleep(3)
