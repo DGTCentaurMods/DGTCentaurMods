@@ -188,7 +188,7 @@ def welcome():
     while selection != "BTNPLAY":
         event_key.wait()
     epaper.clearScreen()
-    time.sleep(0.5)
+    time.sleep(0.8)
     board_idle = False
     
 welcome()

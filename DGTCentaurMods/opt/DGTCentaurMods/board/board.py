@@ -512,8 +512,9 @@ def shutdown():
         epaper.clearScreen()
         update.updateInstall()
         return
+    print('Normal shutdown')
     epaper.clearScreen()
-    time.sleep(0.2)
+    time.sleep(1)
     ledFromTo(7,7)
     epaper.writeText(3, "     Shutting")
     epaper.writeText(4, "       down")
