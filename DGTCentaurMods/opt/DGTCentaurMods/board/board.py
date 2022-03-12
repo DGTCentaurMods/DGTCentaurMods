@@ -57,6 +57,7 @@ except:
     ser.close()
     ser.open()
 
+update = centaur.UpdateSystem()
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
 
@@ -505,12 +506,15 @@ def ledFlash():
 
 def shutdown():
     beep(SOUND_POWER_OFF)
-    ledFromTo(7,7)
     package = '/tmp/dgtcentaurmods_armhf.deb'
     if os.path.exists(package):
+        ledArray([0,1,2,3,4,5,6,7],6)
+        epaper.clearScreen()
         update.updateInstall()
         return
     epaper.clearScreen()
+    time.sleep(0.2)
+    board.ledFromTo(7,7)
     epaper.writeText(3, "     Shutting")
     epaper.writeText(4, "       down")
     time.sleep(3)

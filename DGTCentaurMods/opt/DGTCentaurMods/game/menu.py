@@ -54,6 +54,7 @@ def keyPressed(id):
     elif not board_idle:
         if id == board.BTNLONGPLAY:
             board.shutdown()
+            return
         if id == board.BTNDOWN:
             menuitem = menuitem + 1
         if id == board.BTNUP:
@@ -186,10 +187,11 @@ def welcome():
     board_idle = True
     while selection != "BTNPLAY":
         event_key.wait()
+    epaper.clearScreen()
+    time.sleep(0.5)
     board_idle = False
     
 welcome()
-time.sleep(0.2)
 
 # Handle the menu structure
 while True:

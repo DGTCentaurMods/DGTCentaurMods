@@ -19,6 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
@@ -244,21 +245,18 @@ class UpdateSystem:
     def updateInstall(self):
         # Check for available update
         package = '/tmp/dgtcentaurmods_armhf.deb'
-        update_helper = 'scripts/update.sh'
         print('Put the board in update mode')
         import shutil
-        from DGTCentaurMods.display import epaper
-        epaper.clearScreen()
+
         epaper.writeText(3, '    System will')
         epaper.writeText(4, '       update')
-        shutil.copy(update_helper,'/tmp')
-        print('About to execute the installer')
+        shutil.copy('update/update.py','/tmp')
+        shutil.copytree('update/lib','/tmp/lib')
+        print('Keep the info on the screen')
         time.sleep(5)
-        epaper.stopEpaper()
-        os.system('. /tmp/update.sh')
-        print('Stop DGTCM for update')
-        time.sleep(6) # Wait for eink
+        subprocess.Popen('cd /tmp; python /tmp/update.py', shell=True)
         sys.exit()
+
 
     def main(self):
         #Download update ingormation file
