@@ -512,7 +512,7 @@ def shutdown():
         return
     epaper.clearScreen()
     epaper.writeText(3, "     Shutting")
-    epaper.writeText(4, "       sown")
+    epaper.writeText(4, "       down")
     time.sleep(3)
     epaper.stopEpaper()
     os.system("sudo poweroff")
