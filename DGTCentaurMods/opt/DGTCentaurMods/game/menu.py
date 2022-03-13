@@ -185,13 +185,12 @@ def welcome():
     global board_idle
     epaper.welcomeScreen()
     board_idle = True
-    while selection != "BTNPLAY":
-        event_key.wait()
+    event_key.wait()
     epaper.clearScreen()
-    time.sleep(0.8)
     board_idle = False
     
 welcome()
+time.sleep(0.3)
 
 # Handle the menu structure
 while True:
