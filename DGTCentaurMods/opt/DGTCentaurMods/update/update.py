@@ -61,7 +61,7 @@ os.system("sudo apt install -y /tmp/dgtcentaurmods_armhf.deb")
 
 animate = False
 sb.stop()
-time.sleep(5)
+time.sleep(3)
 epaper.clearScreen()
 time.sleep(1)
 print('Setup dome')
