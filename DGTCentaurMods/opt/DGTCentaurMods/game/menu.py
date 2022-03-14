@@ -43,22 +43,14 @@ def keyPressed(id):
     global curmenu
     global selection
     global event_key
-    global board_idle
+    global idle
     epaper.epapermode = 0
     board.beep(board.SOUND_GENERAL)
-    if board_idle:
-        if id == board.BTNPLAY:
-            selection = "BTNPLAY"
+    if idle:
+        if id == board.BTNTICK:
             event_key.set()
             return
-    elif not board_idle:
-        if id == board.BTNLONGPLAY:
-            board.shutdown()
-            return
-        if id == board.BTNDOWN:
-            menuitem = menuitem + 1
-        if id == board.BTNUP:
-            menuitem = menuitem - 1
+    else:
         if id == board.BTNTICK:
             if not curmenu:
                 selection = "BTNTICK"
@@ -75,6 +67,14 @@ def keyPressed(id):
                     menuitem = 1
                     return
                 c = c + 1
+
+        if id == board.BTNLONGPLAY:
+            board.shutdown()
+            return
+        if id == board.BTNDOWN:
+            menuitem = menuitem + 1
+        if id == board.BTNUP:
+            menuitem = menuitem - 1
         if id == board.BTNBACK:
             selection = "BACK"
             event_key.set()
@@ -181,16 +181,25 @@ threading.Timer(300,update.main).start()
 # field activity
 board.subscribeEvents(keyPressed, fieldActivity)
 
-def welcome():
+def show_welcome():
+    global idle
+    epaper.welcomeScreen()
+    idle = True
+    event_key.wait()
+    event_key.clear()
+    idle = False
+
+show_welcome()
+time.sleep(0.2) # wait eink
+
+def wellcome():
     global board_idle
     epaper.welcomeScreen()
-    board_idle = True
+    idle = True
     event_key.wait()
     epaper.clearScreen()
     board_idle = False
-    
-welcome()
-time.sleep(0.3)
+
 
 # Handle the menu structure
 while True:
@@ -216,7 +225,7 @@ while True:
     #time.sleep(1)
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
-        welcome()
+        show_welcome()
     if result == "Cast":
         epaper.loadingScreen()
         board.pauseEvents()
