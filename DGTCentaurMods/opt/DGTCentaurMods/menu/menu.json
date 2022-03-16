@@ -1,0 +1,59 @@
+{
+  "mainmenu": {
+    "title": "Main menu",
+    "items": {
+      "dgtcentaur": {
+        "title": "DGT Centaur",
+        "type": "file"
+      },
+      "pegasus": {
+        "title": "DGT Pegasus",
+        "type": "file"
+      },
+      "engines": {
+        "title": "Engines",
+        "type": "menu"
+      },
+      "cast": {
+        "title": "Chromecast",
+        "type": "file"
+      },
+      "settings": {
+        "title": "Settings",
+        "type": "menu",
+        "items": {
+          "wifisetup": {
+            "title": "WiFi Setup",
+            "type": "exec"
+          },
+          "pairbt": {
+            "title": "Pair BT",
+            "type": "file"
+          },
+          "sound": {
+            "title": "Sound",
+            "type": "file"
+          },
+          "lichessapi": {
+            "title": "Lichess API",
+            "type": "file"
+          },
+          "update": {
+            "title": "Update opts",
+            "type": "file"
+          },
+          "shutdown": {
+            "title": "Shutdown",
+            "type": "function",
+            "func": "board.shutdown()"
+          },
+          "reboot": {
+            "title": "Reboot",
+            "type": "shell",
+            "command": "sudo reboot"
+          }
+        }
+      }
+    }
+  }
+}
