@@ -288,7 +288,7 @@ def drawBoard(pieces, startrow=2):
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
-    draw.rectangle([(0,47),(128,176)],fill=None,outline='black')
+    draw.rdraw.rectangle([(0,47),(128,176)],fill=None,outline='black')
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
@@ -374,3 +374,35 @@ class statusBar():
         print("Kill status bar thread")
         self.is_running = False
 
+
+class MenuDraw:
+    def __init__(self):
+        self.statusbar = statusBar()
+
+    def draw_page(self, title, items):
+        self.statusbar.print()
+        print('-------------')
+        print(title)
+        print('-------------')
+        clearScreen
+        writeMenuTitle(title)
+        row = 2
+        for item in items:
+            writeText(row, "  " + item)
+            print(item)
+            row += 1
+
+    def highlight(self, index, last_index):
+        next = epaperbuffer.copy()
+        draw = ImageDraw.Draw(next)
+        print('Index:',index)
+
+        # Store last index
+        print('Last index:',last_index)
+
+        # Delete old highlight
+        draw.rectangle([(0,40+(last_index*20)),(128,60+(last_index*20))],fill=None, outline='white', width=1)
+        # New highlight
+        draw.rectangle([(0,40+(index*20)),(128,60+(index*20))],fill=None,outline='black')
+        epaperbuffer.paste(next, (0,0))
+        #draw.line((0,60+(index*20),128,60+(index*20)), fill=0, width=1)
