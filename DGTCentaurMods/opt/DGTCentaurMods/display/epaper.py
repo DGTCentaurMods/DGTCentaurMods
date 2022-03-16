@@ -397,7 +397,7 @@ class MenuDraw:
         print("drew page")
 
 
-    def highlight(self, index, last_index):
+    def highlight(self, index):
         pos = 296 - (78 + (index * 20))
         epd.send_command(0x91)
         epd.send_command(0x90)
@@ -459,6 +459,4 @@ class MenuDraw:
             epd.send_data(0xFF)
             epd.send_data(0xFF)
         epd.send_command(0x12)
-
-
 

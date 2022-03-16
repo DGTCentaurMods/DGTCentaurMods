@@ -24,8 +24,9 @@ class MenuSystem:
             title = self.items[i]['title']
             item_list.append(title)
             #print(title)
+        print('Total items:',len(item_list))
         self.screen.draw_page(menu_title,item_list)
-        self.screen.highlight(0,0)
+        self.screen.highlight(0)
 
 
     def select(self, index):
@@ -40,15 +41,15 @@ class MenuSystem:
         if id == board.BTNTICK:
             self.select(self.index)
         if id == board.BTNUP:
-            print('UP:', self.index)
-            if self.index >= 0:
+            if self.index > 0:
                 self.index -= 1
-                self.screen.highlight(self.index, self.index+1)
+                self.screen.highlight(self.index)
+                print('UP:', self.index)
         if id == board.BTNDOWN:
-            print('DOWN:',self.index)
-            if self.index <= len(self.items):
+            if self.index < len(self.items):
                 self.index += 1
-                self.screen.highlight(self.index, self.index-1)
+                self.screen.highlight(self.index)
+                print('DOWN:',self.index)
         if id == board.BTNBACK:
             if self.level[-1] == 0:
                 self.select(self.level[-1])
