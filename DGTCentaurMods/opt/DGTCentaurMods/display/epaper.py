@@ -379,6 +379,7 @@ class MenuDraw:
     def __init__(self):
         self.statusbar = statusBar()
 
+
     def draw_page(self, title, items):
         self.statusbar.print()
         print('-------------')
@@ -391,18 +392,73 @@ class MenuDraw:
             writeText(row, "  " + item)
             print(item)
             row += 1
+        refresh()
+        drawRectangle(0,47,7,54,0,0)
+        print("drew page")
+
 
     def highlight(self, index, last_index):
-        next = epaperbuffer.copy()
-        draw = ImageDraw.Draw(next)
-        print('Index:',index)
+        pos = 296 - (78 + (index * 20))
+        epd.send_command(0x91)
+        epd.send_command(0x90)
+        epd.send_data(120)
+        epd.send_data(120+5)
+        epd.send_data(0)
+        epd.send_data(pos)
+        pos = pos + 23 + 8 + 20
+        if index == 0:
+            pos = pos - 13
+        epd.send_data(pos//256)
+        epd.send_data((pos % 256))
+        epd.send_command(0x28)
+        epd.send_command(0x13)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        for i in range(0, 8):
+            epd.send_data(0x00)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        epd.send_data(0xFF)
+        if index > 0:
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+            epd.send_data(0xFF)
+        epd.send_command(0x12)
 
-        # Store last index
-        print('Last index:',last_index)
 
-        # Delete old highlight
-        draw.rectangle([(0,40+(last_index*20)),(128,60+(last_index*20))],fill=None, outline='white', width=1)
-        # New highlight
-        draw.rectangle([(0,40+(index*20)),(128,60+(index*20))],fill=None,outline='black')
-        epaperbuffer.paste(next, (0,0))
-        #draw.line((0,60+(index*20),128,60+(index*20)), fill=0, width=1)
+
