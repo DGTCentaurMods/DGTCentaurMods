@@ -10,7 +10,7 @@ class MenuSystem:
         board.subscribeEvents(self.key_press)
         with open('menu/menu.json') as f:
             self.menu = json.load(f)
-        self.level = []
+        self.history = []
 
     def get_items(self, level):
         self.items = []
@@ -32,8 +32,8 @@ class MenuSystem:
     def select(self, index):
         # If this is a submenu - get the items and display
         if self.items[self.index]['type'] == 'menu':
+            self.history.append(self.items[index])
             self.get_items(self.items[index])
-            self.level.append(self.index)
         # If other types - add here what to do
 
 
@@ -51,16 +51,15 @@ class MenuSystem:
                 self.screen.highlight(self.index)
                 print('DOWN:',self.index)
         if id == board.BTNBACK:
-            if self.level[-1] == 0:
-                self.select(self.level[-1])
+            if len(self.history)  == 1:
+                self.get_items(self.history[-1])
             else:
-                self.level.pop()
-                self.select(self.level[-1])
+                self.history.pop()
+                self.get_items(self.history[-1])
 
 
     def main(self):
         epaper.initEpaper()
         # Show main menu
         self.get_items(self.menu['mainmenu'])
-        self.level.append('0')
-        #print(self.menu['mainmenu'])
+        self.history.append(self.menu['mainmenu'])
