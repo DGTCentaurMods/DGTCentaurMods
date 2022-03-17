@@ -23,7 +23,7 @@ class MenuSystem:
         for i in range(len(self.items)):
             title = self.items[i]['title']
             item_list.append(title)
-            #print(title)
+            #print(i,title)
         print('Total items:',len(item_list))
         self.screen.draw_page(menu_title,item_list)
         self.screen.highlight(0)
@@ -46,7 +46,7 @@ class MenuSystem:
                 self.screen.highlight(self.index)
                 print('UP:', self.index)
         if id == board.BTNDOWN:
-            if self.index < len(self.items):
+            if self.index < len(self.items) - 1:
                 self.index += 1
                 self.screen.highlight(self.index)
                 print('DOWN:',self.index)
