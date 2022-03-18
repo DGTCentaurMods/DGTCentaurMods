@@ -19,13 +19,14 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
 import configparser
 import pathlib
-import os, sys
+import os, sys, threading
 import time
 import json
 import urllib.request
@@ -343,3 +344,84 @@ class ConfigSystem:
             self.config.read(configfile)
         except:
             pass
+
+class MenuSystem:
+    def __init__(self):
+        self.screen = epaper.MenuDraw()
+        self.key = threading.Event()
+        board.subscribeEvents(self.key_press, self.field)
+        with open('menu/menu.json') as f:
+            self.menu = json.load(f)
+        self.history = []
+        self.event_key = threading.Event()
+
+    def get_items(self, level):
+        self.items = []
+        self.index = 0
+        menu_title, item_list = level['title'],[]
+        for item in level['items']:
+            k = level['items'][item]
+            if isinstance(k, dict):
+                self.items.append(k)
+        for i in range(len(self.items)):
+            title = self.items[i]['title']
+            item_list.append(title)
+            #print(i,title)
+        print('Total items:',len(item_list))
+        self.screen.draw_page(menu_title,item_list)
+        self.screen.highlight(0)
+
+
+    def select(self, index):
+        # If this is a submenu - get the items and display
+        if self.items[self.index]['type'] == 'menu':
+            self.history.append(self.items[index])
+            self.get_items(self.items[index])
+        # If other types - add here what to do
+        if self.items[self.index]['type'] == 'script':
+            # - stop events
+            # - execute scripte
+            # = start events
+            pass
+        if self.items[self.index]['type'] == 'dynamic':
+            exec(open("menu/items/" + self.items[self.index]).read())
+
+    def key_press(self, id):
+        if id == board.BTNTICK:
+            if not self.welcome:
+                self.select(self.index)
+            else:
+                self.key.set()
+                self.welcome = False
+                return
+        if not self.welcome:
+            if id == board.BTNUP:
+                if self.index > 0:
+                    self.index -= 1
+                    self.screen.highlight(self.index)
+                    print('UP:', self.index)
+                    self.event_key.set()
+            if id == board.BTNDOWN:
+                if self.index < len(self.items) - 1:
+                    self.index += 1
+                    self.screen.highlight(self.index)
+                    print('DOWN:',self.index)
+            if id == board.BTNBACK:
+                if len(self.history)  == 1:
+                    self.get_items(self.history[-1])
+                else:
+                    self.history.pop()
+                    self.get_items(self.history[-1])
+
+
+    def field(self):
+        pass
+
+
+    def main(self):
+        epaper.welcomeScreen()
+        self.welcome = True
+        self.key.wait()
+        # Show main menu
+        self.get_items(self.menu['mainmenu'])
+        self.history.append(self.menu['mainmenu'])
