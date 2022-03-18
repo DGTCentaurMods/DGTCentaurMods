@@ -386,6 +386,7 @@ class MenuDraw:
         print(title)
         print('-------------')
         clearScreen()
+        time.sleep(0.4)
         writeMenuTitle(title)
         row = 2
         for item in items:

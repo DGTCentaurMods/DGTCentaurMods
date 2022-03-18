@@ -4,19 +4,20 @@
     "items": {
       "dgtcentaur": {
         "title": "DGT Centaur",
-        "type": "file"
+        "type": "item-file"
       },
       "pegasus": {
         "title": "DGT Pegasus",
-        "type": "file"
+        "type": "script",
+        "path": "game/pegasus.py"
       },
       "engines": {
         "title": "Engines",
-        "type": "menu"
+        "type": "dynamic-menu"
       },
       "cast": {
         "title": "Chromecast",
-        "type": "file"
+        "type": "item-file"
       },
       "settings": {
         "title": "Settings",
@@ -24,23 +25,23 @@
         "items": {
           "wifisetup": {
             "title": "WiFi Setup",
-            "type": "exec"
+            "type": "item-file"
           },
           "pairbt": {
             "title": "Pair BT",
-            "type": "file"
+            "type": "script"
           },
           "sound": {
             "title": "Sound",
-            "type": "file"
+            "type": "item-file"
           },
           "lichessapi": {
             "title": "Lichess API",
-            "type": "file"
+            "type": "script"
           },
           "update": {
             "title": "Update opts",
-            "type": "file"
+            "type": "item-file"
           },
           "shutdown": {
             "title": "Shutdown",

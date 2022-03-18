@@ -4,7 +4,7 @@ from DGTCentaurMods.display import epaper
 import time
 import threading
 
-menu = centaur.MenuSystem()
+menu = menu.MenuSystem()
 statusbar = epaper.statusBar()
 update = centaur.UpdateSystem()
 
