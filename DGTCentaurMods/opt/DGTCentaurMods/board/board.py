@@ -894,7 +894,7 @@ def eventsThread(keycallback, fieldcallback):
                 keycallback(buttonPress)
         time.sleep(0.05)
 
-def subscribeEvents(keycallback, fieldcallback=None):
+def subscribeEvents(keycallback, fieldcallback):
     # Called by any program wanting to subscribe to events
     # Arguments are firstly the callback function for key presses, secondly for piece lifts and places
     clearSerial()
