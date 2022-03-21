@@ -47,7 +47,7 @@ def build():
                     colormenu = {'white': {'title': 'Play as white', 'type': 'script',
                     'path': '/../game/uci.py white ' + '"' + fn + '"' + ' "' + sect
                     + '"'}, 'black': {'title': 'Play as black', 'type': 'script',
-                    'path': 'game/uci.py black ' + '"' + fn + '"' + ' "' + sect
+                    'path': '/../game/uci.py black ' + '"' + fn + '"' + ' "' + sect
                     + '"'}}
                     engines[fn]['items'][sect]['items'] = colormenu
             else:
