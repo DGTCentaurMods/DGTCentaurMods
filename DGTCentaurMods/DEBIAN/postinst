@@ -172,20 +172,20 @@ function insertMaia {
         echo -e "::: This system is not compatible with maia engine. Removing"
         rm -rf ${DGTCM_PATH}/engines/maia* > /dev/null 2>&1
         return
-        if [ ! -d  ${DGTCM_PATH}/tmp ]
-        then
-            mkdir ${DGTCM_PATH}/tmp
-        fi
-        if [ ! -d ${DGTCM_PATH}/tmp/maia-chess ]
-        then
-            git clone --depth 1 $MAIA_REPO ${DGTCM_PATH}/tmp/maia-chess;
-            if (($? > 0))
-                then echo "git clone maia chess failed with $?"
-            fi
-        fi
-        cp -r ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
-        chmod 755 ${DGTCM_PATH}/engines/maia
     fi
+    if [ ! -d  ${DGTCM_PATH}/tmp ]
+    then
+        mkdir ${DGTCM_PATH}/tmp
+    fi
+    if [ ! -d ${DGTCM_PATH}/tmp/maia-chess ]
+    then
+        git clone --depth 1 $MAIA_REPO ${DGTCM_PATH}/tmp/maia-chess;
+        if (($? > 0))
+            then echo "git clone maia chess failed with $?"
+        fi
+    fi
+    cp -rn ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
+    chmod 755 ${DGTCM_PATH}/engines/maia
 }
 
 function insertRodentIV {
@@ -201,7 +201,7 @@ function insertRodentIV {
         fi
     fi
     cp -rn ${DGTCM_PATH}/tmp/rodent-iv/personalities ${DGTCM_PATH}/engines/
-    cp -r ${DGTCM_PATH}/tmp/rodent-iv/books ${DGTCM_PATH}/engines/
+    cp -rn ${DGTCM_PATH}/tmp/rodent-iv/books ${DGTCM_PATH}/engines/
     chmod 744 ${DGTCM_PATH}/engines/rodentIV
 }
 
