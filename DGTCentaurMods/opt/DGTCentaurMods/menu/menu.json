@@ -9,7 +9,7 @@
       "pegasus": {
         "title": "DGT Pegasus",
         "type": "script",
-        "path": "game/pegasus.py"
+        "path": "/../game/pegasus.py"
       },
       "engines": {
         "title": "Engines",
@@ -17,7 +17,8 @@
       },
       "cast": {
         "title": "Chromecast",
-        "type": "item-file"
+        "type": "script",
+        "path": "/../display/chromecast.py"
       },
       "settings": {
         "title": "Settings",
@@ -29,7 +30,8 @@
           },
           "pairbt": {
             "title": "Pair BT",
-            "type": "script"
+            "type": "script",
+            "path": ""
           },
           "sound": {
             "title": "Sound",
@@ -37,11 +39,12 @@
           },
           "lichessapi": {
             "title": "Lichess API",
-            "type": "script"
+            "type": "script",
+            "path": ""
           },
           "update": {
             "title": "Update opts",
-            "type": "item-file"
+            "type": "dynamic-menu"
           },
           "shutdown": {
             "title": "Shutdown",
