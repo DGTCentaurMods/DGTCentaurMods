@@ -187,18 +187,11 @@ def show_welcome():
     idle = True
     event_key.wait()
     event_key.clear()
+    epaper.clearScreen()
+    time.sleep(0.2)
     idle = False
 
 show_welcome()
-time.sleep(0.2) # wait eink
-
-def wellcome():
-    global board_idle
-    epaper.welcomeScreen()
-    idle = True
-    event_key.wait()
-    epaper.clearScreen()
-    board_idle = False
 
 
 # Handle the menu structure
