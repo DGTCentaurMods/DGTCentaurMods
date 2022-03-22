@@ -287,7 +287,7 @@ def drawBoard(pieces, startrow=2):
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
-    draw.rectangle([(0,47),(128,176)],fill=None,outline='black')
+    draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
