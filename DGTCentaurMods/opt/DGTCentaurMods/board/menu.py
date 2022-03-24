@@ -77,13 +77,23 @@ class MenuSystem:
             if id == board.BTNUP:
                 if self.index > 0:
                     self.index -= 1
-                    self.screen.highlight(self.index)
                     print('UP:', self.index)
+                    self.screen.highlight(self.index)
+                elif self.index == 0:
+                    self.index = len(self.items) - 1
+                    print('UP:', self.index)
+                    self.screen.highlight(self.index)
+                return
             if id == board.BTNDOWN:
                 if self.index < len(self.items) - 1:
                     self.index += 1
-                    self.screen.highlight(self.index)
                     print('DOWN:',self.index)
+                    self.screen.highlight(self.index)
+                elif self.index == len(self.items) - 1:
+                    self.index = 0
+                    print('DOWN:',self.index)
+                    self.screen.highlight(self.index)
+                return
             if id == board.BTNBACK:
                 if len(self.history)  == 1:
                     self.get_items(self.history[-1])
