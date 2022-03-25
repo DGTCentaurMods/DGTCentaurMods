@@ -12,10 +12,11 @@ REPO="${GIT_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
 BRANCH="update-tst"
 CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
-NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
+#NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
+NEW_VERSION='1.1.3'
 
 RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
-RELEASE_NOTES=`cat release_notes.md`
+RELEASE_NOTES=`cat templates/release_notes.md`
 
 WORKSPACE="release-${NEW_VERSION}"
 
@@ -55,8 +56,8 @@ function prepareAssets() {
 
     # Build the release deb
     cd ${BASEDIR}/..
-    ./build.sh
-    cp releases/dgtcentaurmods_${NEW_VERSION}_armhf.deb ${WORKSPACE}/assets
+    ./build.sh full
+    cp releases/dgtcentaurmods_${NEW_VERSION}_armhf.deb CI/${WORKSPACE}/assets
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
