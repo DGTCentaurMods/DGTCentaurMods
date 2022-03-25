@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 GIT_USER="wormstein"
-#GIT_PASSWD=Create a .git_passwd file with this variable
+#GIT_TOKEN=Create a .git_passwd file with this variable
 if [ -e .git_token ]; then source .git_token 
 else echo "No .git_token file"; exit 1; fi
 
@@ -35,17 +35,17 @@ function checkForRelease() {
 function prepareGitRRepo() {
     # Update new version in tools, update control file.
     # Update control file
-    cd ${BASEDIR}/../DGTCentaurMods/DEBIAN
-    sed -i 's/^Version:*/Version: $NEW_VERSION/g' control
+    cd ${BASEDIR}/../../DGTCentaurMods/DEBIAN
+    sed -i "s/^Version:.*/Version: ${NEW_VERSION}/g" control
     
     # Update bootstrap files
-    cd ${BASEDIR}/../tools/bootstrap
+    cd ${BASEDIR}/../../tools/bootstrap
     sed -i "s/^\$releaseVersion =.*/\$releaseVersion = \'${NEW_VERSION}\'/g" setup.ps1
     sed -i "s/^VERSION=.*/VERSION=\"${NEW_VERSION}\"/g" setup.sh
 
     # Update card-setup-tool
     cd ${BASEDIR}/../../tools/card-setup-tool
-    sed -i "s/^$currentReleaseVersion =.*/$currentReleaseVersion = \'${NEW_VERSION}\'/g" DGTCentaurModsInstaller.ps1
+    sed -i "s/^\$currentReleaseVersion =.*/\$currentReleaseVersion = \'${NEW_VERSION}\'/g" DGTCentaurModsInstaller.ps1
 }
 
 
