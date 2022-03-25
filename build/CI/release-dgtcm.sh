@@ -2,8 +2,8 @@
 
 GIT_USER="wormstein"
 #GIT_PASSWD=Create a .git_passwd file with this variable
-if [ -e .git_passwd ]; then source .git_passwd 
-else echo "No .git_passwd file"; exit 1; fi
+if [ -e .git_token ]; then source .git_token 
+else echo "No .git_token file"; exit 1; fi
 
 BASEDIR=`pwd`
 
