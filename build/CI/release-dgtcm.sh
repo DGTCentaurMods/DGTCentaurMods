@@ -10,17 +10,18 @@ BASEDIR=`pwd`
 REPO_NAME="DGTCentaurMods"
 REPO="${GIT_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
-BRANCH="update-tst"
+BRANCH="auto-release"
 CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
 #NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
 NEW_VERSION='1.1.3'
 
 RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
-RELEASE_NOTES=`cat templates/release_notes.md`
+RELEASE_NOTES=`cat templates/release_notes_new.md`
 
-WORKSPACE="release-${NEW_VERSION}"
+WORKSPACE="stage" ; mkdir -p $WORKSPACE
+#WORKSPACE="release-${NEW_VERSION}"
 
-function checkForRelease() {
+function checkForNewRelease() {
     # Check versions file fot changes
     git pull
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
@@ -58,19 +59,64 @@ function prepareAssets() {
     cd ${BASEDIR}/..
     ./build.sh full
     cp releases/dgtcentaurmods_${NEW_VERSION}_armhf.deb CI/${WORKSPACE}/assets
+    DEB_DILE="dgtcentaurmods_${NEW_VERSION}_armhf.deb"
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
     zip -r ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool.zip card-setup-tool
+    CARD_SETUP_TOOL="card-setup-tool.zip"
 }
 
 
-function prepareReleaseNotes() {
-    # Update release notes with the new version
+function prepareRelease() {
+    # Prepare the release  with the new version, notes and load the vars
+    
     cd $BASEDIR
-    sed 's/NEW_VERSION/${NEW_VERSION}/g' release_notes.md > ${BASEDIR}/${WORKSPACE}/release_notes.md
+
+    # Prepare notes
+    RELEASE_NOTES=$(< templates/release_notes.md)
+    RELEASE_NOTES="${RELEASE_NOTES//VERSION/$NEW_VERSIOPN}"
+
+    # Prepare the API json
+    RELEASE_JSON=$(< templates/release.json)
+    BODY=$(< templates/release_notes.md)
+    
+    RELEASE_JSON="${RELEASE_JSON//BODY/$BODY}"
+    RELEASE_JSON="${RELEASE_JSON//VERSION/$NEW_VERSION}"
+    RELEASE_JSON="${RELEASE_JSON//RELEASE_NAME/$RELEASE_NAME}"
+    RELEASE_JSON="${RELEASE_JSON//BRANCH/$BRANCH}"
+    
+    echo "$RELEASE_JSON" > ${WORKSPACE}/release.json
+    echo "RELEASE_NOTES" > ${WORKSPACE}/release_notes.md
+
+    echo $RELEASE_JSON
 }
 
+
+function postRelease() {
+    RESP=`curl -s --user "$GIT_USER:$GIT_TOKEN" -X POST \
+        https://api.github.com/repos/${GIT_USER}/${REPO_NAME}/releases \ 
+        -d "${REL}"`
+
+    RELEASE_ID=`echo $RESP | jq '.[].id'`
+    echo $RESP
+    echo -e "::: Created new draft release for ${NEW_VERSION}. ID: ${RELEASE_ID}"
+}
+
+
+function postAssets() {
+    curl -s \
+        --user "$GIT_USER:$GIT_TOKEN" \
+        -X POST \
+        https://uploads.github.com/repos/${GIT_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${DEB_FILE} \
+        --header 'Content-Type: application/octet-stream' \
+        --upload-file ${WORKSPACE}/${DEB_FILE}
+}
+
+
+function publishRelease() {
+    :
+}
 echo $1
 $1
 
