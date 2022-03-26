@@ -319,7 +319,6 @@ def promotionOptions(row):
     o = 66
     draw.line((0+o,offset+16,16+o,offset+16), fill=0, width=5)
     draw.line((14+o,offset+16,14+o,offset+5), fill=0, width=5)
-    input()
     draw.line((16+o,offset+6,4+o,offset+6), fill=0, width=5)
     draw.polygon([(8+o, offset+2), (8+o, offset+10), (0+o, offset+6)], fill=0)
     o = 97
