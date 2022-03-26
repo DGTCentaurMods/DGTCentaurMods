@@ -76,11 +76,13 @@ function prepareRelease() {
     # Prepare notes
     RELEASE_NOTES=$(< templates/release_notes.md)
     RELEASE_NOTES="${RELEASE_NOTES//VERSION/$NEW_VERSIOPN}"
-
+    
     # Prepare the API json
     RELEASE_JSON=$(< templates/release.json)
-    BODY=$(< templates/release_notes.md)
-    
+    BODY=$(echo $RELEASE_NOTES)
+    # Escape special chars
+    BODY=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$BODY")
+
     RELEASE_JSON="${RELEASE_JSON//BODY/$BODY}"
     RELEASE_JSON="${RELEASE_JSON//VERSION/$NEW_VERSION}"
     RELEASE_JSON="${RELEASE_JSON//RELEASE_NAME/$RELEASE_NAME}"
