@@ -15,7 +15,7 @@ CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGT
 NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
 
 RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
-RELEASE_NOTES=`cat templates/release_notes_new.md`
+RELEASE_NOTES=`cat templates/release_notes.md`
 
 WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
@@ -136,11 +136,16 @@ function publishRelease() {
 
 
 function archve() {
-    if [ ! -d archive ]; mkdir archive; fi 
+    if [ ! -d archive ]; then mkdir archive; fi 
     echo "::: Archiving release"
-    mv ${WORKSPACE} archive/release-${NEW_VERSION)
+    mv ${WORKSPACE} archive/release-${NEW_VERSION}
 }
 
+#Enable function selection for debugging
+if $1; then
+    $1
+    exit
+fi
 
 prepareGitRRepo
 prepareAssets
@@ -149,10 +154,6 @@ postRelease
 postAssets
 
 
-
-
-#echo $1
-#$1
 
 #function start() {
 #mkdir ${WORKSPACE} ££ cd ${WORKSPACE}
@@ -169,9 +170,6 @@ postAssets
 
 
 
-# 1. Clone the repo
-# 2. Check version file with git diff for the new version
-#       NO: exit 0
 
 # 3. YES: do the changes in the repo with the new versions: card-tool,
 # bootstrap, control file.
