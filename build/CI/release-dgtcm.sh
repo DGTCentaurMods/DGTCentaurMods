@@ -12,14 +12,12 @@ REPO="${REPO_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
 BRANCH="auto-release"
 CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
-#NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
-NEW_VERSION='1.1.3'
+NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
 
 RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
 RELEASE_NOTES=`cat templates/release_notes_new.md`
 
 WORKSPACE="stage" ; mkdir -p $WORKSPACE
-#WORKSPACE="release-${NEW_VERSION}"
 
 function checkForNewRelease() {
     # Check versions file fot changes
