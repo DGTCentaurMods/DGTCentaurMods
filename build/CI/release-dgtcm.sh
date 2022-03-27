@@ -24,8 +24,9 @@ function checkForNewRelease() {
     git pull 1>/dev/null
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
         echo -e "::: No new release request"
+        exit
     else
-        echo -e "::: Request for build for version: $NEW_VERSION\n::: Starting automated build and release"
+        echo -e "::: Request to build version: $NEW_VERSION\n::: Starting automated build and release"
     fi
 }
 
@@ -146,35 +147,12 @@ if [ $1 = "func" ]; then
     exit
 fi
 
+
+##### MAIN #####
+checkForNewRelease
 prepareGitRRepo
 prepareAssets
 prepareRelease
 postRelease
 postAssets
 
-
-
-#function start() {
-#mkdir ${WORKSPACE} ££ cd ${WORKSPACE}
-#cloneRepo
-
-#cd $REPO_NAME
-
-
-##### MAIN #####
-#if [ $CURRENT_VERSION = $NEW_VERSION ]; then
-#    start
-#else
-#    exit 1
-
-
-
-
-# 3. YES: do the changes in the repo with the new versions: card-tool,
-# bootstrap, control file.
-# 4. Prepare the assets: build the .deb file, zip card-setup-tool
-# 5. Prepare the release notes variable
-# 5. Commit and push the repo changes
-# 6. publish the release
-
-# Any step: NO: exit 0
