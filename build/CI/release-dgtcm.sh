@@ -1,14 +1,14 @@
 #!/usr/bin/bash
 
-GIT_USER="wormstein"
 #GIT_TOKEN=Create a .git_passwd file with this variable
-if [ -e .git_token ]; then source .git_token 
-else echo "No .git_token file"; exit 1; fi
+    if [ -e .git_token ]; then source .git_token 
+    else echo "No .git_token file"; exit 1; fi
 
 BASEDIR=`pwd`
 
+REPO_USER="wormstein"
 REPO_NAME="DGTCentaurMods"
-REPO="${GIT_USER}/${REPO_NAME}"
+REPO="${REPO_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
 BRANCH="auto-release"
 CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
@@ -63,64 +63,80 @@ function prepareAssets() {
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
-    zip -r ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool.zip card-setup-tool
+    zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool.zip card-setup-tool
     CARD_SETUP_TOOL="card-setup-tool.zip"
 }
 
 
 function prepareRelease() {
-    # Prepare the release  with the new version, notes and load the vars
-    
+    # Prepare the release  with the new version, notes and load the vars 
     cd $BASEDIR
 
-    # Prepare notes
-    RELEASE_NOTES=$(< templates/release_notes.md)
-    RELEASE_NOTES="${RELEASE_NOTES//VERSION/$NEW_VERSIOPN}"
-    
-    # Prepare the API json
-    RELEASE_JSON=$(< templates/release.json)
-    BODY=$(echo $RELEASE_NOTES)
-    # Escape special chars
-    BODY=$(sed 's/[^a-zA-Z0-9]/\\&/g' <<<"$BODY")
+    # Prepare notes with the new version
+    awk '$1=$1' ORS='\\n' templates/release_notes.md > ${WORKSPACE}/release_notes.md
+    RELEASE_NOTES=$(< ${WORKSPACE}/release_notes.md)
+    RELEASE_NOTES="${RELEASE_NOTES//VERSION/$NEW_VERSION}"
+    RELEASE_NOTES=$(sed 's/["]/\\&/g' <<<"$RELEASE_NOTES")
+    echo -e "$RELEASE_NOTES" > ${WORKSPACE}/release_notes.md    
 
-    RELEASE_JSON="${RELEASE_JSON//BODY/$BODY}"
+    # Load the default API json
+    RELEASE_JSON=$(< templates/release.json)
+
+    # Get all the info inside the JSON
+    RELEASE_JSON="${RELEASE_JSON//BODY/$RELEASE_NOTES}"
     RELEASE_JSON="${RELEASE_JSON//VERSION/$NEW_VERSION}"
     RELEASE_JSON="${RELEASE_JSON//RELEASE_NAME/$RELEASE_NAME}"
     RELEASE_JSON="${RELEASE_JSON//BRANCH/$BRANCH}"
     
+    # Write json for the archive
     echo "$RELEASE_JSON" > ${WORKSPACE}/release.json
-    echo "RELEASE_NOTES" > ${WORKSPACE}/release_notes.md
-
-    echo $RELEASE_JSON
 }
 
 
 function postRelease() {
-    RESP=`curl -s --user "$GIT_USER:$GIT_TOKEN" -X POST \
-        https://api.github.com/repos/${GIT_USER}/${REPO_NAME}/releases \ 
-        -d "${REL}"`
+    echo "::: Creating release at ${REPO_USER}/${REPO_NAME}"
 
-    RELEASE_ID=`echo $RESP | jq '.[].id'`
-    echo $RESP
-    echo -e "::: Created new draft release for ${NEW_VERSION}. ID: ${RELEASE_ID}"
+    RESP=`curl -sX POST \
+        -H "Authorization: token $GIT_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/${REPO_USER}/${REPO_NAME}/releases \
+        -d @stage/release.json`
+    
+    RELEASE_ID=`echo $RESP | jq '.id'`
+    echo $RESP > ${WORKSPACE}/response.json
+    echo -e "::: Created draft release for ${NEW_VERSION}. ID: ${RELEASE_ID}"
 }
 
 
 function postAssets() {
-    curl -s \
-        --user "$GIT_USER:$GIT_TOKEN" \
-        -X POST \
-        https://uploads.github.com/repos/${GIT_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${DEB_FILE} \
-        --header 'Content-Type: application/octet-stream' \
-        --upload-file ${WORKSPACE}/${DEB_FILE}
+    for FILE in ${WORKSPACE}/assets/*; do
+        NAME=`basename $FILE`
+        echo -e "::: Uploading asset: $FILE as $NAME"
+
+        RESP=`curl -sX POST \
+            https://uploads.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${NAME} \
+            --header "Authorization: token $GIT_TOKEN" \
+            --header "Content-Type: application/octet-stream" \
+            --upload-file ${FILE}`
+    done
 }
 
 
 function publishRelease() {
     :
 }
-echo $1
-$1
+
+prepareGitRRepo
+prepareAssets
+prepareRelease
+postRelease
+postAssets
+
+
+
+
+#echo $1
+#$1
 
 #function start() {
 #mkdir ${WORKSPACE} ££ cd ${WORKSPACE}
