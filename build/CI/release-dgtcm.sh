@@ -6,11 +6,11 @@
 
 BASEDIR=`pwd`
 
-REPO_USER="wormstein"
+REPO_USER="EdNekebno"
 REPO_NAME="DGTCentaurMods"
 REPO="${REPO_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
-BRANCH="auto-release"
+BRANCH="master"
 CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
 NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
 
