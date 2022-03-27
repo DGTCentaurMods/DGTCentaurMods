@@ -1,0 +1,8 @@
+{
+  "tag_name": "vVERSION",
+  "target_commitish": "BRANCH",
+  "name": "RELEASE_NAME",
+  "body": "BODY",
+  "draft": true,
+  "prerelease": false
+}
