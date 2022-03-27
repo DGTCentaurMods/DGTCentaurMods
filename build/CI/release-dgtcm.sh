@@ -141,12 +141,6 @@ function archive() {
     mv ${WORKSPACE} archive/release-${NEW_VERSION}
 }
 
-#Enable function selection for debugging
-if [ $1 = "func" ]; then
-    $2
-    exit
-fi
-
 
 ##### MAIN #####
 checkForNewRelease
@@ -155,4 +149,5 @@ prepareAssets
 prepareRelease
 postRelease
 postAssets
-
+publishRelease
+archive
