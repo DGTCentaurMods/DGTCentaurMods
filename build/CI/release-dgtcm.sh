@@ -21,7 +21,7 @@ WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
 function checkForNewRelease() {
     # Check versions file fot changes
-    git pull 1>/dev/null
+    git pull
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
         echo -e "::: No new release request"
         exit
