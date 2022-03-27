@@ -21,12 +21,11 @@ WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
 function checkForNewRelease() {
     # Check versions file fot changes
-    git pull
+    git pull 1>/dev/null
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
-        return
+        echo -e "::: No new release request"
     else
-        echo -e "::: No need for a release"
-        exit 1
+        echo -e "::: Request for build for version: $NEW_VERSION\n::: Starting automated build and release"
     fi
 }
 
@@ -142,8 +141,8 @@ function archve() {
 }
 
 #Enable function selection for debugging
-if $1; then
-    $1
+if [ $1 = "func" ]; then
+    $2
     exit
 fi
 
