@@ -134,7 +134,7 @@ function publishRelease() {
 }
 
 
-function archve() {
+function archive() {
     if [ ! -d archive ]; then mkdir archive; fi 
     echo "::: Archiving release"
     mv ${WORKSPACE} archive/release-${NEW_VERSION}
