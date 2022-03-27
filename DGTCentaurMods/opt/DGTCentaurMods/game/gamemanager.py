@@ -94,6 +94,7 @@ def keycallback(keypressed):
             epaper.resignDrawMenu(14)
         if inmenu == 1 and keypressed == BTNBACK:
             epaper.writeText(14,"                   ")
+            inmenu = 0
         if inmenu == 1 and keypressed == BTNUP:
             epaper.writeText(14,"                   ")
             eventcallbackfunction(EVENT_REQUEST_DRAW)
