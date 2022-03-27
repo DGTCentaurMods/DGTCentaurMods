@@ -136,6 +136,14 @@ function publishRelease() {
 
 }
 
+
+function archve() {
+    if [ ! -d archive ]; mkdir archive; fi 
+    echo "::: Archiving release"
+    mv ${WORKSPACE} archive/release-${NEW_VERSION)
+}
+
+
 prepareGitRRepo
 prepareAssets
 prepareRelease
