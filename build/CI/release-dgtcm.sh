@@ -113,8 +113,8 @@ function postAssets() {
 
         RESP=`curl -sX POST \
             https://uploads.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${NAME} \
-            --H "Authorization: token $GIT_TOKEN" \
-            --H "Content-Type: application/octet-stream" \
+            -H "Authorization: token $GIT_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
             --upload-file ${FILE}`
     done
 }

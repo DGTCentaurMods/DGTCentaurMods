@@ -25,7 +25,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 
-$currentReleaseVersion = '1.1.2'
+$currentReleaseVersion = '1.1.3'
 $dev = '0'
 $SleepTime = 3
 
