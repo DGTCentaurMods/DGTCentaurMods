@@ -115,15 +115,25 @@ function postAssets() {
 
         RESP=`curl -sX POST \
             https://uploads.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${NAME} \
-            --header "Authorization: token $GIT_TOKEN" \
-            --header "Content-Type: application/octet-stream" \
+            --H "Authorization: token $GIT_TOKEN" \
+            --H "Content-Type: application/octet-stream" \
             --upload-file ${FILE}`
     done
 }
 
 
 function publishRelease() {
-    :
+    # Commit back changes to git
+    git ls-files --modified ../../ | xargs git add
+    git commit -m "Release ($NEW_VERSION): auto release"
+    git push && \
+
+    curl -X POST \
+        -H "Authorization: token $GIT_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/${RELEASE_ID} \
+        -d '{"draft": "false"}'
+
 }
 
 prepareGitRRepo
