@@ -381,7 +381,6 @@ class MenuDraw:
 
 
     def draw_page(self, title, items):
-        self.statusbar.print()
         print('-------------')
         print(title)
         print('-------------')
@@ -395,10 +394,14 @@ class MenuDraw:
             row += 1
         refresh()
         drawRectangle(0,47,7,54,0,0)
+        self.statusbar.print()
         print("drew page")
 
 
-    def highlight(self, index):
+    def highlight(self, index, rollaround = 0):
+        print("----")
+        print(index)
+        print(rollaround)
         pos = 296 - (78 + (index * 20))
         epd.send_command(0x91)
         epd.send_command(0x90)
@@ -409,6 +412,7 @@ class MenuDraw:
         pos = pos + 23 + 8 + 20
         if index == 0:
             pos = pos - 13
+        print(pos)
         epd.send_data(pos//256)
         epd.send_data((pos % 256))
         epd.send_command(0x28)
