@@ -384,84 +384,98 @@ class MenuDraw:
         print('-------------')
         print(title)
         print('-------------')
-        clearScreen()
-        time.sleep(0.4)
+        global epaperbuffer
+        draw = ImageDraw.Draw(epaperbuffer)
+        draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
         writeMenuTitle(title)
         row = 2
         for item in items:
             writeText(row, "  " + item)
             print(item)
             row += 1
-        refresh()
-        drawRectangle(0,47,7,54,0,0)
         self.statusbar.print()
-        print("drew page")
+        # draw epaperbuffer to the screen
+        im = epaperbuffer.copy()
+        if screeninverted == 0:
+            im = im.transpose(Image.FLIP_TOP_BOTTOM)
+            im = im.transpose(Image.FLIP_LEFT_RIGHT)
+        bytes = im.tobytes()
+        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+        epaperbuffer.save(filename)
+        epd.send_command(0x91)
+        epd.send_command(0x90)
+        epd.send_data(0)
+        epd.send_data(127)
+        epd.send_data(0)
+        epd.send_data(0)
+        epd.send_data(1)
+        epd.send_data(35)
+        epd.send_command(0x10)
+        for i in range(0, 4672):
+            epd.send_data(bytes[i] ^ 255)
+        epd.send_command(0x13)
+        for i in range(0, 4672):
+            epd.send_data(bytes[i])
+        epd.send_command(0x12)
+        time.sleep(0.5)
 
 
     def highlight(self, index, rollaround = 0):
         print("----")
         print(index)
         print(rollaround)
+        if rollaround == 1:
+            epd.send_command(0x91)
+            epd.send_command(0x90)
+            epd.send_data(120)
+            epd.send_data(120+5)
+            epd.send_data(0)
+            epd.send_data(0)
+            epd.send_data(0)
+            epd.send_data(252)
+            epd.send_command(0x28)
+            epd.send_command(0x10)
+            for i in range(0, 252):
+                epd.send_data(0x00)
+            epd.send_command(0x13)
+            for i in range(0, 252):
+                epd.send_data(0xFF)
+            epd.send_command(0x12) 
+            time.sleep(0.3)
         pos = 296 - (78 + (index * 20))
-        epd.send_command(0x91)
-        epd.send_command(0x90)
-        epd.send_data(120)
-        epd.send_data(120+5)
-        epd.send_data(0)
-        epd.send_data(pos)
+        draw = ImageDraw.Draw(epaperbuffer)
+        draw.rectangle([(0, 40), (8, 191)], fill = 255, outline = 255)
+        draw.rectangle([(2,((index + 2) * 20) + 5), (8, ((index+2) * 20) + 14)], fill = 0, outline = 0)
+        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+        epaperbuffer.save(filename)
+        epd.send_command(0x91) # Enter partial mode
+        epd.send_command(0x90) # Set resolution
+        epd.send_data(120) #x start
+        epd.send_data(120+5) #x end
+        epd.send_data(0) #y start high
+        epd.send_data(pos) #y start low
+        print(pos)
         pos = pos + 23 + 8 + 20
         if index == 0:
-            pos = pos - 13
+            pos = pos - 20
         print(pos)
-        epd.send_data(pos//256)
-        epd.send_data((pos % 256))
-        epd.send_command(0x28)
-        epd.send_command(0x13)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
+        epd.send_data(pos//256) #y end high
+        epd.send_data((pos % 256))  # y end low
+        epd.send_command(0x28) # Send data
+        epd.send_command(0x10) # buffer
+        for i in range(0, 23):
+            epd.send_data(0x00)
+        for i in range(0, 8):
+            epd.send_data(0xFF)
+        if index > 0:
+            for i in range(0, 21):
+                epd.send_data(0x00)
+        epd.send_command(0x13) # buffer
+        for i in range(0, 23):
+            epd.send_data(0xFF)
         for i in range(0, 8):
             epd.send_data(0x00)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
-        epd.send_data(0xFF)
         if index > 0:
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-            epd.send_data(0xFF)
-        epd.send_command(0x12)
-
+            for i in range(0, 21):
+                epd.send_data(0xFF)
+        epd.send_command(0x12) #display

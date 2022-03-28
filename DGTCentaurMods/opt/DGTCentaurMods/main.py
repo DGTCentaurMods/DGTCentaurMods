@@ -11,7 +11,7 @@ update = centaur.UpdateSystem()
 update.info()
 
 # Start the display,turn off LEDs
-#epaper.initEpaper()
+epaper.initEpaper()
 board.ledsOff()
 
 # Start the menu

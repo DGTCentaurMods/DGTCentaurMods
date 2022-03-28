@@ -6,6 +6,7 @@ import pathlib
 import json
 import threading
 import importlib
+import time
 
 statusbar = epaper.statusBar()
 
@@ -116,6 +117,7 @@ class MenuSystem:
         epaper.welcomeScreen()
         self.welcome = True
         self.key.wait()
+        epaper.pauseEpaper()
         # Show main menu
         self.level = self.menu['mainmenu']
         self.get_items(self.level)
