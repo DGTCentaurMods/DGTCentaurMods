@@ -207,6 +207,7 @@ while True:
     menu.update({
             'Engines' : 'Engines',
             'HandBrain' : 'Hand + Brain',
+            '1v1Analysis' : '1v1 Analysis',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
@@ -266,6 +267,13 @@ while True:
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
             board.unPauseEvents()
             statusbar.start()
+    if result == "1v1Analysis":
+            epaper.loadingScreen()
+            board.pauseEvents()
+            statusbar.stop()
+            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/1v1Analysis.py")
+            epaper.quickClear()
+            board.unPauseEvents()               
     if result == "settings":
         setmenu = {
                 'WiFi': 'Wifi Setup',
@@ -499,6 +507,7 @@ while True:
                             print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             board.unPauseEvents()
+                            epaper.quickClear()
                             statusbar.start()
                     else:
                         # With no uci file we just call the engine
@@ -508,7 +517,8 @@ while True:
                         print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         board.unPauseEvents()
-                        statusbar.start()
+                        epaper.quickClear()
+                        statusbar.start()                        
     if result == "HandBrain":
         # Pick up the engines from the engines folder and build the menu
         enginemenu = {}

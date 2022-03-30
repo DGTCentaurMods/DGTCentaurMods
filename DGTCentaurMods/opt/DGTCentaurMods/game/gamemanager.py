@@ -32,12 +32,13 @@ from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.db import models
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, MetaData, func
+from sqlalchemy import create_engine, MetaData, func, select
 import threading
 import time
 import chess
 import sys
 import inspect
+
 
 # Some useful constants
 BTNBACK = 1
@@ -94,7 +95,6 @@ def keycallback(keypressed):
             epaper.resignDrawMenu(14)
         if inmenu == 1 and keypressed == BTNBACK:
             epaper.writeText(14,"                   ")
-            inmenu = 0
         if inmenu == 1 and keypressed == BTNUP:
             epaper.writeText(14,"                   ")
             eventcallbackfunction(EVENT_REQUEST_DRAW)
@@ -348,6 +348,15 @@ def resignGame(sideresigning):
     session.flush()
     session.commit()
     eventcallbackfunction("Termination.RESIGN")
+    
+def getResult():
+    # Looks up the result of the last game and returns it
+    gamedata = session.execute(
+        select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round,
+        models.Game.white, models.Game.black, models.Game.result, models.Game.id).
+        order_by(models.Game.id.desc())
+    ).first()
+    return str(gamedata["result"])
 
 def drawGame():
     # Take care of updating the data for a drawn game
@@ -496,7 +505,7 @@ def computerMove(mv):
     fromnum = ((ord(mv[1:2]) - ord("1")) * 8) + (ord(mv[0:1]) - ord("a"))
     tonum = ((ord(mv[3:4]) - ord("1")) * 8) + (ord(mv[2:3]) - ord("a"))
     # Then light it up!
-    board.ledFromTo(fromnum,tonum)
+    board.ledFromTo(fromnum,tonum)  
 
 def setGameInfo(gi_event,gi_site,gi_round,gi_white,gi_black):
     # Call before subscribing if you want to set further information about the game for the PGN files
