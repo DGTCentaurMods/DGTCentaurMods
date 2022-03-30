@@ -2,8 +2,6 @@
 ### * ***This release only works on the second version of DGT centaur board*** *
 You own a first verion of the board if your board has visible black circles on the fields. If you decide to install this software anyway, you can use the web interface to display in real time what should be on the screen. The web interface allows you to safely power off the board too.
 
-## What's new in vVERSION
-
 ## Installation
 ### Bootstrap install (new setup or upgrade)
 You need to have a working Raspberry Pi inside the board with SSH enabled for this method.
@@ -31,8 +29,7 @@ This method will always install the LATEST release of DGTCentaurMods. In case yo
 ### Manual install (new setup or upgrade)
 You need a SSH connection to the board for this method.
 1. Doenload to the board the deb installation file from the assets below. 
-`wget
-https://github.com/EdNekebno/DGTCentaurMods/releases/download/vVERSION/dgtcentaurmods_VERSION_armhf.deb`
+`wget  https://github.com/EdNekebno/DGTCentaurMods/releases/download/vVERSION/dgtcentaurmods_VERSION_armhf.deb`
 2. Start the installation using:
 `sudo apt install -y ./dgtcentaurmods_VERSION_armhf.deb`
 4. Reboot the board: `sudo reboot`

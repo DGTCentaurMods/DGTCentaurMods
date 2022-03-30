@@ -123,7 +123,7 @@ function postAssets() {
 function publishRelease() {
     # Commit back changes to git
     git ls-files --modified ../../ | xargs git add
-    git commit -m "Release ($NEW_VERSION): auto release"
+    git commit -m "Release: DGTCentaurMods ${NEW_VERSION}"
     git push && \
 
     PUBLISH=`curl -X POST \
