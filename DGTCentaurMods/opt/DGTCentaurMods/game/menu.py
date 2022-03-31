@@ -187,12 +187,10 @@ def show_welcome():
     idle = True
     event_key.wait()
     event_key.clear()
-    epaper.clearScreen()
-    time.sleep(0.2)
     idle = False
 
 show_welcome()
-
+epaper.quickClear()
 
 # Handle the menu structure
 while True:
