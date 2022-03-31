@@ -54,8 +54,8 @@ function insertStockfish {
                 make clean
                 make -j$(nproc) build ARCH=armv7    
 
-                mv stockfish stockfish_pi
-                cp stockfish_pi /tmp/${STAGE}${INSTALLDIR}/engines
+                mv stockfish Stockfish
+                cp Stockfish /tmp/${STAGE}${INSTALLDIR}/engines
                 return
                 ;;
             [Nn]* ) return

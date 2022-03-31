@@ -185,6 +185,7 @@ function insertMaia {
         fi
     fi
     cp -rn ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
+    cp -n ${DGTCM_PATH}/engines/maia_weights/maia-1900.pb.gz ${DGTCM_PATH}/engines/
     chmod 755 ${DGTCM_PATH}/engines/maia
 }
 

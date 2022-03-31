@@ -460,8 +460,8 @@ while True:
         print(enginefiles)
         for f in enginefiles:
             fn = str(f)
-            if '.uci' not in fn:
-                # If this file is not .uci then assume it is an engine
+            if '.' not in fn:
+                # If this file don't have an extension then it is an engine
                 enginemenu[fn] = fn
         result = doMenu(enginemenu, 'Engines')
         print(result)
