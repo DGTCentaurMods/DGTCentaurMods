@@ -804,53 +804,61 @@ def eventsThread(keycallback, fieldcallback):
     # This monitors the board for events
     # keypresses and pieces lifted/placed down
     global eventsrunning
+    global standby
+    standby = False
     while True:
         if eventsrunning == 1:
             buttonPress = 0
-            try:
-                sendPacket(b'\x83', b'')
-                expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
-                expect.append(checksum(expect))
-                resp = ser.read(10000)
-                resp = bytearray(resp)
-                if (bytearray(resp) != expect):
-                    if (resp[0] == 133 and resp[1] == 0):
-                        for x in range(0, len(resp) - 1):
-                            if (resp[x] == 64):
-                                # Calculate the square to 0(a1)-63(h8) so that
-                                # all functions match
-                                fieldHex = resp[x + 1]
-                                newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback(newsquare + 1)
-                            if (resp[x] == 65):
-                                #print("PIECE PLACED")
-                                # Calculate the square to 0(a1)-63(h8) so that
-                                # all functions match
-                                fieldHex = resp[x + 1]
-                                newsquare = rotateFieldHex(fieldHex)
-                                fieldcallback((newsquare + 1) * -1)
-            except:
-                pass
+            if not standby:
+                #Hold fields activity on standby
+                try:
+                    sendPacket(b'\x83', b'')
+                    expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                    expect.append(checksum(expect))
+                    resp = ser.read(10000)
+                    resp = bytearray(resp)
+                    if (bytearray(resp) != expect):
+                        if (resp[0] == 133 and resp[1] == 0):
+                            for x in range(0, len(resp) - 1):
+                                if (resp[x] == 64):
+                                    # Calculate the square to 0(a1)-63(h8) so that
+                                    # all functions match
+                                    fieldHex = resp[x + 1]
+                                    newsquare = rotateFieldHex(fieldHex)
+                                    fieldcallback(newsquare + 1)
+                                if (resp[x] == 65):
+                                    #print("PIECE PLACED")
+                                    # Calculate the square to 0(a1)-63(h8) so that
+                                    # all functions match
+                                    fieldHex = resp[x + 1]
+                                    newsquare = rotateFieldHex(fieldHex)
+                                    fieldcallback((newsquare + 1) * -1)
+                except:
+                    pass
+           
             try:
                 sendPacket(b'\x94', b'')
                 expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
                 expect.append(checksum(expect))
                 resp = ser.read(10000)
                 resp = bytearray(resp)
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
-                    buttonPress = BTNBACK  # BACK
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
-                    buttonPress = BTNTICK  # TICK
-                if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
-                    buttonPress = BTNUP  # UP
-                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
-                    print("down")
-                    buttonPress = BTNDOWN  # DOWN
-                if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
-                    print('Help pressed')
-                    buttonPress = BTNHELP   # HELP
+                if not standby:
+                    #Disable these buttons on standby
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
+                        buttonPress = BTNBACK  # BACK
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
+                        buttonPress = BTNTICK  # TICK
+                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
+                        buttonPress = BTNUP  # UP
+                    if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
+                        print("down")
+                        buttonPress = BTNDOWN  # DOWN
+                    if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
+                        print('Help pressed')
+                        buttonPress = BTNHELP   # HELP
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
                     breaktime = time.time() + 0.5
+                    beep(SOUND_GENERAL)
                     while time.time() < breaktime:
                         sendPacket(b'\x94', b'')
                         expect = bytearray(b'\xb1\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
@@ -858,12 +866,27 @@ def eventsThread(keycallback, fieldcallback):
                         resp = ser.read(1000)
                         resp = bytearray(resp)
                         if resp.hex().startswith("b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0500040"):
-                            #No function yet
-                            #buttonPress = BTNPLAY
+                            print('Play btn pressed. Stanby is:',standby)
+                            if standby == False:
+                                print('Calling standbyScreen()')
+                                epaper.standbyScreen(True)
+                                standby = True
+                                print('Starting shutdown countdown')
+                                sd = threading.Timer(600,shutdown)
+                                sd.start()
+                                break
+                            else:
+                                clearSerial()
+                                epaper.standbyScreen(False)
+                                print('Cancel shutdown')
+                                sd.cancel()
+                                standby = False
+                                break
                             break
                     else:
+                        beep(SOUND_POWER_OFF)
+                        shutdown()
                         print('BTNLONGPLAY pressed')
-                        buttonPress = BTNLONGPLAY
             except:
                 pass
             time.sleep(0.05)
