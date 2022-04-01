@@ -29,7 +29,7 @@ os.system("apt install -y libopenjp2-7-dev libtiff5 libopenjp2-7")
 
 import pip
 
-pip.main(['install','pillow'])
+pip.main(['install','pillow==8.3.2'])
 pip.main(['install','pyserial'])
 pip.main(['install','spidev'])
 
