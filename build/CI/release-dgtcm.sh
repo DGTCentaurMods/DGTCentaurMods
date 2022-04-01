@@ -11,21 +11,50 @@ REPO_NAME="DGTCentaurMods"
 REPO="${REPO_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
 BRANCH="master"
-CURRENT_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/control | grep Version: | cut -d' ' -f2`
-NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.latest' | tr -d \"`
+VERSIONS_FILE="../../DGTCentaurMods/DEBIAN/versions"
+CURRENT_VERSION=`cat ../../${REPO_NAME}/DEBIAN/versions | jq -r '.stable | .["release"]' | tr -d \"`
+NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.release' | tr -d \"`
 
-RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
-RELEASE_NOTES=`cat templates/release_notes.md`
+CURR_PRE_RELEASE=`cat ../../${REPO_NAME}/DEBIAN/versions | jq -r '.stable | .["pre-release"]' | tr -d \"`
+NEW_PRE_RELEASE=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq -r '.stable | .["pre-release"]' | tr -d \"`
 
 WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
+function status() {
+    echo -e "\
+RELEASE:
+Current version: $CURRENT_VERSION
+Requested new version: $NEW_VERSION
+PRE-RELEAsE:
+Current pre-release: $CURR_PRE_RELEASE
+Requested pre-release: $NEW_PRE_RELEASE"
+
+}
+
 function checkForNewRelease() {
     # Check versions file fot changes
+    # If pre-release match a latest release, exit
+    if [ $CURRENT_VERSION = $NEW_PRE_RELEASE ]; then echo -e "::: Latest version should never match a pre-release or opposite. Aborting"; exit 1; fi
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
         echo -e "::: No new release request"
+    else
+        IS_PRERELEASE=0
+        RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
+        COMMIT_MSG="Release: DGTCentaurMods ${NEW_VERSION}"
+        echo -e "::: Request to build version: $NEW_VERSION\n::: Starting automated build and release"
+        return
+    fi
+
+    if [ $CURR_PRE_RELEASE = $NEW_PRE_RELEASE ]; then
+        echo -e "::: No new pre-release request"
         exit
     else
-        echo -e "::: Request to build version: $NEW_VERSION\n::: Starting automated build and release"
+        IS_PRERELEASE=1
+        NEW_VERSION="$NEW_PRE_RELEASE"
+        RELEASE_NAME="DGTCentaurMods ${NEW_VERSION} - Pre-release"
+        COMMIT_MSG="Pre-release: DGTCentaurMods ${NEW_VERSION}"
+        echo -e "::: Request to build pre-release version: $NEW_VERSION\n::: Starting automated build"
+        #return
     fi
 }
 
@@ -36,16 +65,22 @@ function prepareGitRRepo() {
     cd ${BASEDIR}/../../DGTCentaurMods/DEBIAN
     git pull
 
-    sed -i "s/^Version:.*/Version: ${NEW_VERSION}/g" control
-    
-    # Update bootstrap files
-    cd ${BASEDIR}/../../tools/bootstrap
-    sed -i "s/^\$releaseVersion =.*/\$releaseVersion = \'${NEW_VERSION}\'/g" setup.ps1
-    sed -i "s/^VERSION=.*/VERSION=\"${NEW_VERSION}\"/g" setup.sh
+    if [ ! $IS_PRERELEASE = 1 ]; then 
+        sed -i "s/^Version:.*/Version: ${NEW_VERSION}/g" control
 
-    # Update card-setup-tool
-    cd ${BASEDIR}/../../tools/card-setup-tool
-    sed -i "s/^\$currentReleaseVersion =.*/\$currentReleaseVersion = \'${NEW_VERSION}\'/g" DGTCentaurModsInstaller.ps1
+        # Update bootstrap files
+        cd ${BASEDIR}/../../tools/bootstrap
+        sed -i "s/^\$releaseVersion =.*/\$releaseVersion = \'${NEW_VERSION}\'/g" setup.ps1
+        sed -i "s/^VERSION=.*/VERSION=\"${NEW_VERSION}\"/g" setup.sh
+
+        # Update card-setup-tool
+        cd ${BASEDIR}/../../tools/card-setup-tool
+        sed -i "s/^\$currentReleaseVersion =.*/\$currentReleaseVersion = \'${NEW_VERSION}\'/g" DGTCentaurModsInstaller.ps1
+    else
+        # Update control file
+        sed -i "s/^Version:.*/Version: ${NEW_VERSION}/g" control
+        #OUT=`jq '.stable["release"] = "'"$NEW_VERSION"'"' $VERSIONS_FILE` ; echo "$OUT" > $VERSIONS_FILE
+    fi
 }
 
 
@@ -57,13 +92,11 @@ function prepareAssets() {
     # Build the release deb
     cd ${BASEDIR}/..
     ./build.sh full
-    cp releases/dgtcentaurmods_${NEW_VERSION}_armhf.deb CI/${WORKSPACE}/assets
-    DEB_DILE="dgtcentaurmods_${NEW_VERSION}_armhf.deb"
+    cp releases/* CI/${WORKSPACE}/assets
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
     zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool.zip card-setup-tool
-    CARD_SETUP_TOOL="card-setup-tool.zip"
 }
 
 
@@ -72,7 +105,12 @@ function prepareRelease() {
     cd $BASEDIR
 
     # Prepare notes with the new version
-    awk '$1=$1' ORS='\\n' templates/release_notes.md > ${WORKSPACE}/release_notes.md
+    if [ ! $IS_PRERELEASE = 1 ]; then
+        awk '$1=$1' ORS='\\n' templates/release_notes.md > ${WORKSPACE}/release_notes.md
+    else
+        awk '$1=$1' ORS='\\n'  templates/pre_release_notes.md > ${WORKSPACE}/release_notes.md
+    fi
+
     RELEASE_NOTES=$(< ${WORKSPACE}/release_notes.md)
     RELEASE_NOTES="${RELEASE_NOTES//VERSION/$NEW_VERSION}"
     RELEASE_NOTES=$(sed 's/["]/\\&/g' <<<"$RELEASE_NOTES")
@@ -82,11 +120,17 @@ function prepareRelease() {
     RELEASE_JSON=$(< templates/release.json)
 
     # Get all the info inside the JSON
-    RELEASE_JSON="${RELEASE_JSON//BODY/$RELEASE_NOTES}"
+    if [ $IS_PRERELEASE = 1 ]; then
+        RELEASE_JSON="${RELEASE_JSON//PRE_RELEASE/true}"
+    else
+        RELEASE_JSON="${RELEASE_JSON//PRE_RELEASE/false}"
+    fi
+
     RELEASE_JSON="${RELEASE_JSON//VERSION/$NEW_VERSION}"
+    RELEASE_JSON="${RELEASE_JSON//BODY/$RELEASE_NOTES}"
     RELEASE_JSON="${RELEASE_JSON//RELEASE_NAME/$RELEASE_NAME}"
     RELEASE_JSON="${RELEASE_JSON//BRANCH/$BRANCH}"
-    
+
     # Write json for the archive
     echo "$RELEASE_JSON" > ${WORKSPACE}/release.json
 }
@@ -124,7 +168,7 @@ function postAssets() {
 function publishRelease() {
     # Commit back changes to git
     git ls-files --modified ../../ | xargs git add
-    git commit -m "Release: DGTCentaurMods ${NEW_VERSION}"
+    git commit -m "$COMMIT_MSG"
     git push && \
 
     PUBLISH=`curl -X POST \
@@ -145,6 +189,7 @@ function archive() {
 
 
 ##### MAIN #####
+status
 checkForNewRelease
 prepareGitRRepo
 prepareAssets
