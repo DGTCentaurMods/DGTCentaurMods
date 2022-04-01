@@ -81,8 +81,6 @@ def keyCallback(key):
     # gamemanager.BTNBACK  gamemanager.BTNTICK  gamemanager.BTNUP
     # gamemanager.BTNDOWN  gamemanager.BTNHELP  gamemanager.BTNPLAY
     global kill
-    global graphson
-    global firstmove
     print("Key event received: " + str(key))
     if key == gamemanager.BTNBACK:
         kill = 1
