@@ -21,7 +21,6 @@ WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
 function checkForNewRelease() {
     # Check versions file fot changes
-    git pull
     if [ $CURRENT_VERSION = $NEW_VERSION ]; then
         echo -e "::: No new release request"
         exit
@@ -35,6 +34,8 @@ function prepareGitRRepo() {
     # Update new version in tools, update control file.
     # Update control file
     cd ${BASEDIR}/../../DGTCentaurMods/DEBIAN
+    git pull
+
     sed -i "s/^Version:.*/Version: ${NEW_VERSION}/g" control
     
     # Update bootstrap files
