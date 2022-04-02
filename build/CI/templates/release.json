@@ -4,5 +4,5 @@
   "name": "RELEASE_NAME",
   "body": "BODY",
   "draft": true,
-  "prerelease": false
+  "prerelease": PRE_RELEASE
 }
