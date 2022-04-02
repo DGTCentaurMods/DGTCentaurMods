@@ -96,7 +96,7 @@ def keyCallback(key):
     if key == gamemanager.BTNUP:
         graphson = 1
         firstmove = 1
-        engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
         engine.quit()
         evaluationGraphs(info)
@@ -120,7 +120,7 @@ def eventCallback(event):
         drawBoardLocal(gamemanager.cboard.fen())
     if event == gamemanager.EVENT_WHITE_TURN:
         curturn = 1
-        engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
         engine.quit()
         evaluationGraphs(info)
@@ -139,7 +139,7 @@ def eventCallback(event):
             gamemanager.computerMove(str(mv))                 
     if event == gamemanager.EVENT_BLACK_TURN:
         curturn = 0
-        engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))        
         engine.quit()
         evaluationGraphs(info)        
