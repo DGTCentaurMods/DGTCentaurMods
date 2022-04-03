@@ -22,7 +22,11 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import os
+import os,time
+
+# Wait for network
+time.sleep(30)
+
 os.system("apt update")
 os.system("apt install -y python3-pip")
 os.system("apt install -y libopenjp2-7-dev libtiff5 libopenjp2-7")
@@ -34,7 +38,6 @@ pip.main(['install','pyserial'])
 pip.main(['install','spidev'])
 
 from lib import *
-import os, time
 import threading
 
 global animate
@@ -59,7 +62,7 @@ msg = threading.Thread(target=status,args=())
 msg.start()
 time.sleep(0.5)
 epaper.writeText(3,"[1/3] Setup OS")
-os.system("sleep 30")
+os.system("sleep 10")
 
 progress = 'Updating       '
 epaper.writeText(4,"[2/3] Updating")
