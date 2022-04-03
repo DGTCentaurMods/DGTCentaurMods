@@ -41,7 +41,7 @@ function insertStockfish {
     REPLY="Y"
     if [ ! $FULL -eq 1 ]; then
         read -p "Do you want to compile and insert Stockfinsh in this build? (y/n): "
-    else
+    fi 
         case $REPLY in
             [Yy]* )
                 cd /tmp
@@ -61,7 +61,6 @@ function insertStockfish {
             [Nn]* ) return
                 ;;
         esac
-    fi
 }
 
 
