@@ -96,7 +96,7 @@ function prepareAssets() {
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
-    zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool.zip card-setup-tool
+    zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool_${NEW_VERSION}.zip card-setup-tool
 }
 
 
