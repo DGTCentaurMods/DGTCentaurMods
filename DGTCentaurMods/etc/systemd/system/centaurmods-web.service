@@ -3,7 +3,7 @@ Description=Centaur Web interface
 After=network.target DGTCentaurMods.service
 
 [Service]
-ExecStart=flask run
+ExecStart=authbind --deep flask run
 WorkingDirectory=/opt/DGTCentaurMods/web
 Environment="PYTHONPATH=/opt"
 StandardOutput=inherit

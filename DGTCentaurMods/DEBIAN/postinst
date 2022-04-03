@@ -73,6 +73,9 @@ fi
 rm /usr/lib/python3/dist-packages/DGTCentaurMods
 cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} DGTCentaurMods
 
+# Allow flask on port 80
+sudo touch /etc/authbind/byport/80
+sudo chmod 777 /etc/authbind/byport/80
 
 ##### Enable systemd services.
 echo -e "::: Setup services"
