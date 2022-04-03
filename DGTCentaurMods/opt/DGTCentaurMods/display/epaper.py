@@ -146,11 +146,18 @@ def standbyScreen(show):
         epaperbuffer.paste(lg,(0,20))
         writeText(10,'   Press [>||]')
         writeText(11,'   to power on')
+        
+        if epaperprocesschange == 0:
+            # Assume in partial mode
+            drawImagePartial(0,0,epaperbuffer.crop((0,0,128,292)))
 
     if not show:
         print('Restore buffer')
         restore = Image.open(f)
         epaperbuffer.paste(restore,(0,0))
+        if epaperprocesschange == 0:
+            # Assume in partial mode
+            drawImagePartial(0,0,epaperbuffer.crop((0,0,128,292)))
         os.remove(f)
 
 
@@ -312,29 +319,182 @@ def promotionOptions(row):
     # Draws the promotion options to the screen buffer
     global epaperbuffer
     print("drawing promotion options")
-    offset = row * 20
-    draw = ImageDraw.Draw(epaperbuffer)
-    draw.text((0, offset+0), "    Q    R    N    B", font=font18, fill=0)
-    draw.polygon([(2, offset+18), (18, offset+18), (10, offset+3)], fill=0)
-    draw.polygon([(35, offset+3), (51, offset+3), (43, offset+18)], fill=0)
-    o = 66
-    draw.line((0+o,offset+16,16+o,offset+16), fill=0, width=5)
-    draw.line((14+o,offset+16,14+o,offset+5), fill=0, width=5)
-    input()
-    draw.line((16+o,offset+6,4+o,offset+6), fill=0, width=5)
-    draw.polygon([(8+o, offset+2), (8+o, offset+10), (0+o, offset+6)], fill=0)
-    o = 97
-    draw.line((6+o,offset+16,16+o,offset+4), fill=0, width=5)
-    draw.line((2+o,offset+10, 8+o,offset+16), fill=0, width=5)
+    global epaperprocesschange
+    if epaperprocesschange == 1:    
+        offset = row * 20
+        draw = ImageDraw.Draw(epaperbuffer)
+        draw.text((0, offset+0), "    Q    R    N    B", font=font18, fill=0)
+        draw.polygon([(2, offset+18), (18, offset+18), (10, offset+3)], fill=0)
+        draw.polygon([(35, offset+3), (51, offset+3), (43, offset+18)], fill=0)
+        o = 66
+        draw.line((0+o,offset+16,16+o,offset+16), fill=0, width=5)
+        draw.line((14+o,offset+16,14+o,offset+5), fill=0, width=5)        
+        draw.line((16+o,offset+6,4+o,offset+6), fill=0, width=5)
+        draw.polygon([(8+o, offset+2), (8+o, offset+10), (0+o, offset+6)], fill=0)
+        o = 97
+        draw.line((6+o,offset+16,16+o,offset+4), fill=0, width=5)
+        draw.line((2+o,offset+10, 8+o,offset+16), fill=0, width=5)
+    else:
+        timage = Image.new('1', (128, 20), 255)
+        draw = ImageDraw.Draw(timage)
+        font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+        draw.text((0, 0), "    Q    R    N    B", font=font18, fill=0)      
+        offset = 0
+        draw.polygon([(2, offset+18), (18, offset+18), (10, offset+3)], fill=0)
+        draw.polygon([(35, offset+3), (51, offset+3), (43, offset+18)], fill=0)
+        o = 66
+        draw.line((0+o,offset+16,16+o,offset+16), fill=0, width=5)
+        draw.line((14+o,offset+16,14+o,offset+5), fill=0, width=5)        
+        draw.line((16+o,offset+6,4+o,offset+6), fill=0, width=5)
+        draw.polygon([(8+o, offset+2), (8+o, offset+10), (0+o, offset+6)], fill=0)
+        o = 97
+        draw.line((6+o,offset+16,16+o,offset+4), fill=0, width=5)
+        draw.line((2+o,offset+10, 8+o,offset+16), fill=0, width=5)
+        print("drawing promotion options")
+        drawImagePartial(0, 270, timage)
+        print("drawn")
 
 def resignDrawMenu(row):
     # Draws draw or resign options to the screen buffer
     global epaperbuffer
-    offset = row * 20
-    draw = ImageDraw.Draw(epaperbuffer)
-    draw.text((0, offset + 0), "    DRW    RESI", font=font18, fill=0)
-    draw.polygon([(2, offset + 18), (18, offset + 18), (10, offset + 3)], fill=0)
-    draw.polygon([(35+25, offset + 3), (51+25, offset + 3), (43+25, offset + 18)], fill=0)
+    global epaperprocesschange
+    if epaperprocesschange == 1:
+        offset = row * 20
+        draw = ImageDraw.Draw(epaperbuffer)
+        draw.text((0, offset + 0), "    DRW    RESI", font=font18, fill=0)
+        draw.polygon([(2, offset + 18), (18, offset + 18), (10, offset + 3)], fill=0)
+        draw.polygon([(35+25, offset + 3), (51+25, offset + 3), (43+25, offset + 18)], fill=0)
+    else:
+        # If epaperprocesschange is 0 then assume that the app calling is using the new partial display functions
+        timage = Image.new('1', (128, 20), 255)
+        draw = ImageDraw.Draw(timage)
+        font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+        draw.text((0, 0), "    DRW    RESI", font=font18, fill=0)
+        draw.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
+        draw.polygon([(35+25, 3), (51+25, 3), (43+25, 18)], fill=0)
+        drawImagePartial(0, 271, timage)
+
+def drawWindow(x, y, w, data):
+    # Calling this function assumes the screen is already initialised
+    # if using epaper.py, also pauseEpaper() should have been run
+    # x is a value 0 - 15 , representing the column that the first data byte represents
+    # y is a value 0 - 291, representing the row that the first data byte starts on
+    # w is a width value in bytes (e.g. 1 = 8 pixels, 2 = 16 pixels represented by 2 bytes, etc)
+    # data holds the bytes to write to the screen and the epaper buffer
+
+    # First take care of the epaperbuffer (the image goes to the web view for example)
+    global epaperbuffer
+    dxoff = x * 8
+    dyoff = y
+    dw = w
+    tw = 0
+    for i in range(0, len(data)):
+        # Loop through each of the bytes
+        if data[i] & 128 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8),dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8),dyoff),0)
+        if data[i] & 64 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 1,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 1,dyoff),0)
+        if data[i] & 32 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 2,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 2,dyoff),0)
+        if data[i] & 16 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 3,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 3,dyoff),0)
+        if data[i] & 8 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 4,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 4,dyoff),0)
+        if data[i] & 4 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 5,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 5,dyoff),0)
+        if data[i] & 2 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 6,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 6,dyoff),0)
+        if data[i] & 1 > 0:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 7,dyoff),255)
+        else:
+            epaperbuffer.putpixel((dxoff + (tw*8) + 7,dyoff),0)
+        tw = tw + 1
+        if tw >= dw:
+            tw = 0
+            dyoff = dyoff + 1
+    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+    epaperbuffer.save(filename)
+    # Now take care of the actual epaper. Note that the epaper is reversed
+    epd.send_command(0x91) # Switch to partial display mode
+    epd.send_command(0x90) # Tell epaper we want to define an update window
+    # For epaper 0, 0 is then bottom right, 127, 291 is top right
+    ex2 = 127 - (x * 8)
+    ey2 = 291 - y
+    ex = ex2 - (8 * w) + 1
+    ey = ey2 - (len(data) // w) + 1
+    epd.send_data(ex) # x start
+    epd.send_data(ex2) # x end
+    epd.send_data(ey // 256) # y start high byte
+    epd.send_data(ey % 256) # y start low byte
+    epd.send_data(ey2 // 256) # y end high byte
+    epd.send_data(ey2 % 256) # y end low byte
+    epd.send_command(0x10) # First buffer, send 0xFF
+    for i in range(len(data)-1,-1,-1):
+        # we also need to reverse the order of the bits as the screen is flipped
+        val = 0
+        if data[i] & 128 > 0:
+            val = val + 1
+        if data[i] & 64 > 0:
+            val = val + 2
+        if data[i] & 32 > 0:
+            val = val + 4
+        if data[i] & 16 > 0:
+            val = val + 8
+        if data[i] & 8 > 0:
+            val = val + 16
+        if data[i] & 4 > 0:
+            val = val + 32
+        if data[i] & 2 > 0:
+            val = val + 64
+        if data[i] & 1 > 0:
+            val = val + 128
+        data[i] = val
+        epd.send_data(data[i] ^ 255)
+    epd.send_command(0x13) # Second buffer
+    for i in range(len(data)-1,-1,-1):
+        epd.send_data(data[i])
+    epd.send_command(0x12) # Display result
+    
+def quickClear():
+    # Assumes the screen is in partial mode and makes it white
+    epd.send_command(0x91)
+    epd.send_command(0x90)
+    epd.send_data(0)
+    epd.send_data(127)
+    epd.send_data(0)
+    epd.send_data(0)
+    epd.send_data(1)
+    epd.send_data(35)
+    epd.send_command(0x10)
+    for i in range(0,4672):
+        epd.send_data(0x00)
+    epd.send_command(0x13)
+    for i in range(0,4672):
+        epd.send_data(0xFF)
+    epd.send_command(0x12)
+
+def drawImagePartial(x, y, img):
+    # Draws a PIL image. The img must have a width divisible by 8
+    # Calling this function assumes the screen is already initialised
+    # if using epaper.py, also pauseEpaper() should have been run
+    # x is a value 0 - 15 representing the column
+    # y is a value 0 - 291 representing the pixel row
+    width, height = img.size
+    drawWindow(x,y,width//8,list(img.tobytes()))
 
 class statusBar():
     def __init__(self):

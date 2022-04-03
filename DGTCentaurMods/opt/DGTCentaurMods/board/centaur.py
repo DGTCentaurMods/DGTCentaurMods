@@ -19,7 +19,6 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
 import subprocess

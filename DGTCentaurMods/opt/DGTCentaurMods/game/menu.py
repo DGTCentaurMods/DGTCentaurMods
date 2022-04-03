@@ -67,6 +67,10 @@ def keyPressed(id):
                     menuitem = 1
                     return
                 c = c + 1
+
+        if id == board.BTNLONGPLAY:
+            board.shutdown()
+            return
         if id == board.BTNDOWN:
             menuitem = menuitem + 1
         if id == board.BTNUP:
@@ -186,16 +190,7 @@ def show_welcome():
     idle = False
 
 show_welcome()
-time.sleep(0.2) # wait eink
-
-def wellcome():
-    global board_idle
-    epaper.welcomeScreen()
-    idle = True
-    event_key.wait()
-    epaper.clearScreen()
-    board_idle = False
-
+epaper.quickClear()
 
 # Handle the menu structure
 while True:
@@ -210,6 +205,7 @@ while True:
     menu.update({
             'Engines' : 'Engines',
             'HandBrain' : 'Hand + Brain',
+            '1v1Analysis' : '1v1 Analysis',
             'EmulateEB': 'e-Board',
             'Cast' : 'Chromecast',
             'settings': 'Settings',
@@ -269,6 +265,13 @@ while True:
             os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/millenium.py")
             board.unPauseEvents()
             statusbar.start()
+    if result == "1v1Analysis":
+            epaper.loadingScreen()
+            board.pauseEvents()
+            statusbar.stop()
+            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/1v1Analysis.py")
+            epaper.quickClear()
+            board.unPauseEvents()               
     if result == "settings":
         setmenu = {
                 'WiFi': 'Wifi Setup',
@@ -457,8 +460,8 @@ while True:
         print(enginefiles)
         for f in enginefiles:
             fn = str(f)
-            if '.uci' not in fn:
-                # If this file is not .uci then assume it is an engine
+            if '.' not in fn:
+                # If this file don't have an extension then it is an engine
                 enginemenu[fn] = fn
         result = doMenu(enginemenu, 'Engines')
         print(result)
@@ -502,6 +505,7 @@ while True:
                             print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"" + " \"" + sec+ "\"")
                             board.unPauseEvents()
+                            epaper.quickClear()
                             statusbar.start()
                     else:
                         # With no uci file we just call the engine
@@ -511,7 +515,8 @@ while True:
                         print(str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci.py " + color + " \"" + result + "\"")
                         board.unPauseEvents()
-                        statusbar.start()
+                        epaper.quickClear()
+                        statusbar.start()                        
     if result == "HandBrain":
         # Pick up the engines from the engines folder and build the menu
         enginemenu = {}

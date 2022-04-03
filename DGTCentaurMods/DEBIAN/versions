@@ -1,7 +1,8 @@
 {
   "stable": {
-    "latest": "1.1.1",
-    "ota": "1.1.1"
+    "release": "1.1.4",
+    "pre-release": "1.1.5",
+    "ota": "1.1.4"
   },
   "beta": {
     "latest": "1.0.1-beta",

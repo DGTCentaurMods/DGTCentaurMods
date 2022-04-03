@@ -38,26 +38,30 @@ function build {
 
 
 function insertStockfish {
-    read -p "Do you want to compile and insert Stockfinsh in this build? (y/n): "
-    case $REPLY in
-        [Yy]* )
-            cd /tmp
-            echo -e "Cloning Stockfish repo"  
-            git clone $STOCKFISH_REPO
-            if [ $(dpkg-query -W -f='${Status}' libsqlite3-dev 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
-                sudo apt-get install libsqlite3-dev;
-            fi
-            cd Stockfish/src
-            make clean
-            make -j$(nproc) build ARCH=armv7    
+    REPLY="Y"
+    if [ ! $FULL -eq 1 ]; then
+        read -p "Do you want to compile and insert Stockfinsh in this build? (y/n): "
+    else
+        case $REPLY in
+            [Yy]* )
+                cd /tmp
+                echo -e "Cloning Stockfish repo"  
+                git clone $STOCKFISH_REPO
+                if [ $(dpkg-query -W -f='${Status}' libsqlite3-dev 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+                    sudo apt-get install libsqlite3-dev;
+                fi
+                cd Stockfish/src
+                make clean
+                make -j$(nproc) build ARCH=armv7    
 
-            mv stockfish stockfish_pi
-            cp stockfish_pi /tmp/${STAGE}${INSTALLDIR}/engines
-            return
-            ;;
-        [Nn]* ) return
-            ;;
-    esac
+                mv stockfish Stockfish
+                cp Stockfish /tmp/${STAGE}${INSTALLDIR}/engines
+                return
+                ;;
+            [Nn]* ) return
+                ;;
+        esac
+    fi
 }
 
 
@@ -74,20 +78,32 @@ function removeDev {
     rm /tmp/${STAGE}/opt/${PACKAGE}/db/centaur.db
 }
 
+
+function main() {
+    clean 2>/dev/null
+    detectVersion
+    stage
+    removeDev 2>/dev/null
+    setPermissions
+    insertStockfish
+    build
+}
+
+
 ## MAIN ##
 case $1 in
     clean* )
         clean
         ;;
-    *)
-        clean 2>/dev/null
-        detectVersion
-        stage
-        removeDev 2>/dev/null
-        setPermissions
-        insertStockfish
-        build
-        exit 0
+    full* )
+        FULL=1
+        main
+        ;;
+    * )
+        FULL=0
+        main
         ;;
 esac
+
+exit 0
 

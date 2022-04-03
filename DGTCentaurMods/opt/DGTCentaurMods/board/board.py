@@ -810,7 +810,7 @@ def eventsThread(keycallback, fieldcallback):
         if eventsrunning == 1:
             buttonPress = 0
             if not standby:
-                #Hold fields on standby
+                #Hold fields activity on standby
                 try:
                     sendPacket(b'\x83', b'')
                     expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
@@ -843,7 +843,7 @@ def eventsThread(keycallback, fieldcallback):
                 resp = ser.read(10000)
                 resp = bytearray(resp)
                 if not standby:
-                    #Lock these buttons on standby
+                    #Disable these buttons on standby
                     if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
                         buttonPress = BTNBACK  # BACK
                     if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
