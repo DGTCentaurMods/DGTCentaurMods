@@ -8,11 +8,9 @@ import threading
 import importlib
 import time
 
-statusbar = epaper.statusBar()
-
 class MenuSystem:
     def __init__(self):
-        #self.statusbar = epaper.statusBar()
+        self.statusbar = epaper.statusBar()
         self.key = threading.Event()
         self.screen = epaper.MenuDraw()
         board.subscribeEvents(self.key_press, self.field)
@@ -47,7 +45,6 @@ class MenuSystem:
             dynamic_menu = {}
             menu_file = importlib.import_module('menu.' + self.keys[self.index])
             self.get_items(menu_file.build())
-        # If other types - add here what to do
         elif self.items[self.index]['type'] == 'script':
             statusbar.stop()
             board.pauseEvents()
@@ -59,8 +56,8 @@ class MenuSystem:
             self.mainmenu()
         elif self.items[self.index]['type'] == 'item-file':
             # Start an item file in menu/items called as the dict key
-            print('Execute: menu/items/' + self.keys[index])
-            exec(open('menu/items/' + self.keys[index]).read())
+            print('Execute: menu/' + self.keys[index] + '.py')
+            exec(open('menu/' + self.keys[index] + '.py').read())
         elif self.items[self.index]['type'] == 'function':
             function = self.items[self.index]['func']
             print('Command: ' + function)
@@ -101,7 +98,8 @@ class MenuSystem:
                 else:
                     self.history.pop()
                     self.get_items(self.history[-1])
-
+            if id == board.BTNHELP:
+                exec(open('menu/about.py').read())
 
     def field(self, field):
         """ Placeholder so eventThread() won't break """

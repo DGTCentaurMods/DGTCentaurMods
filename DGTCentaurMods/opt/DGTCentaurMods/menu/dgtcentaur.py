@@ -2,7 +2,7 @@
 # Name: DGT Centaur
 # Description: start original DGT Centaur software
 
-epaper.clearScreen()
+epaper.quickClear()
 epaper.loadingScreen()
 time.sleep(1)
 board.pauseEvents()

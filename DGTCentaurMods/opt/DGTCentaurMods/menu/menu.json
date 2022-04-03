@@ -57,7 +57,11 @@
             "command": "sudo reboot"
           }
         }
-      }
+      },
+      "about": {
+        "title": "About",
+        "type": "item-file"
+        }
     }
   }
 }
