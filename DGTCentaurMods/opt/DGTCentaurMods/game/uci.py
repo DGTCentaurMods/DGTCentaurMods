@@ -400,3 +400,5 @@ writeTextLocal(1,"Starting Pos")
 while kill == 0:
     time.sleep(0.1)
 
+gamemanager.unsubscribeGame()
+

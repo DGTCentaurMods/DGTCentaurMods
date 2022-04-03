@@ -537,4 +537,5 @@ def subscribeGame(eventCallback, moveCallback, keyCallback):
 def unsubscribeGame():
     # Stops the game manager
     global kill
+    board.ledsOff()
     kill = 1
