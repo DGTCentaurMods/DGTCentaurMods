@@ -1,7 +1,12 @@
 # Bootstrap installer for DGTCentaurMods using Windows PowerShell
 #
 
-$releaseVersion = '1.1.4'
+$currentReleaseVersion = '1.1.4'
+write-Host "Latest release version is $currentReleaseVersion"
+Write-Host "If you want to install another release, input the version number below"
+$releaseVersion = Read-Host -Prompt "Enter the version number ($currentReleaseVersion)"
+$releaseVersion = ($currentReleaseVersion,$releaseVersion)[[bool]$releaseVersion]
+
 $username = "pi"
 $hostname = 'dgtcentaur.local'
 $releaseFileName = -join ("dgtcentaurmods_" , $releaseVersion , "_armhf.deb" )
@@ -14,6 +19,7 @@ $raspiIP = Read-Host -Prompt "Enter the IP/hostname of your Centaur board ($host
 $raspiIP = ($hostname,$raspiIP)[[bool]$raspiIP]
 
 ssh $raspiUser@$raspiIP "
+echo -e 'Downloading DGTCentaurMods $releaseVersion'
 wget -q $releaseURL
 sudo apt install -y ./$releaseFileName
 rm $releaseFileName
