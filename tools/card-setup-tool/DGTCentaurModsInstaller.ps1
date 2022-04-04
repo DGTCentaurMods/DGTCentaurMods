@@ -255,9 +255,9 @@ function ModifyBootDrive {
     $CONFIG = "$BootDrive\config.txt"
     $CMDLINEFILE = "$BootDrive\cmdline.txt"
     
-    if ( ! (Select-String -Path $CONFIG -Pattern "#dgtcentaurmod"  -Quiet) ) {
+    if ( ! (Select-String -Path $CONFIG -Pattern "#dgtcentaurmods"  -Quiet) ) {
         Add-Content -Path $CONFIG -Value ''
-        Add-Content -Path $CONFIG -Value '#dgtcentaurmod'
+        Add-Content -Path $CONFIG -Value '#dgtcentaurmods'
         Add-Content -Path $CONFIG -Value ''
     }
     Write-host "Modify  $CONFIG and $CMDLINEFILE"
