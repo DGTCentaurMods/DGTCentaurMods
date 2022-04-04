@@ -70,7 +70,7 @@ function prepareGitRRepo() {
 
         # Update bootstrap files
         cd ${BASEDIR}/../../tools/bootstrap
-        sed -i "s/^\$releaseVersion =.*/\$releaseVersion = \'${NEW_VERSION}\'/g" setup.ps1
+        sed -i "s/^\$currentReleaseVersion =.*/\$currentReleaseVersion = \'${NEW_VERSION}\'/g" setup.ps1
         sed -i "s/^VERSION=.*/VERSION=\"${NEW_VERSION}\"/g" setup.sh
 
         # Update card-setup-tool
