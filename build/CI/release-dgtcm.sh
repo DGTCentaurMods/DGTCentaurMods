@@ -45,7 +45,7 @@ END
     curl \
         -H "Content-Type: application/json" \
         -d "$JSON" \
-        https://discord.com/api/webhooks/960257189149278228/YGuNLkq28bbXDJNxxH0arAt1sx8xwUwswMGTIWfZJFhPkvWaLsVi0cyu6_w2BPlh2n_I
+        $DISCORD_WH
 }
 
 
