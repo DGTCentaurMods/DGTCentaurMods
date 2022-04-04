@@ -105,7 +105,7 @@ function prepareGitRRepo() {
 
 
 function prepareAssets() {
-    sayOnDiscord "::: Preparing build assets"
+    sayOnDiscord "::: Building assets"
     # Do the build, zip card-setup-tool
     cd $BASEDIR
     mkdir -p ${WORKSPACE}/assets
@@ -114,12 +114,12 @@ function prepareAssets() {
     cd ${BASEDIR}/..
     ./build.sh full
     cp releases/* CI/${WORKSPACE}/assets
-    sayOnDiscord "::: dgtcentaurmods_${NEW_VERSION}_armhf.deb prepared"
+    sayOnDiscord "::: dgtcentaurmods_${NEW_VERSION}_armhf.deb ready"
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
     zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool_${NEW_VERSION}.zip card-setup-tool
-    sayOnDiscord "::: card-setup-tool_${NEW_VERSION}.zip prepared"
+    sayOnDiscord "::: card-setup-tool_${NEW_VERSION}.zip ready"
 }
 
 
@@ -157,7 +157,7 @@ function prepareRelease() {
     # Write json for the archive
     echo "$RELEASE_JSON" > ${WORKSPACE}/release.json
 
-    sayOnDiscord "::: Release json request prepared"
+    sayOnDiscord "::: JSON request is ready"
 }
 
 
