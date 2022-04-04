@@ -1,8 +1,10 @@
 #!/usr/bin/bash
 
-#GIT_TOKEN=Create a .git_passwd file with this variable
-    if [ -e .git_token ]; then source .git_token 
-    else echo "No .git_token file"; exit 1; fi
+#GIT_TOKEN=Set it in .ci.conf
+#DISCORD_WH=Set it in .ci.conf
+
+    if [ -e .ci.conf ]; then source .ci.conf
+    else echo "No .ci.conf file"; exit 1; fi
 
 BASEDIR=`pwd`
 
@@ -28,8 +30,24 @@ Requested new version: $NEW_VERSION
 PRE-RELEAsE:
 Current pre-release: $CURR_PRE_RELEASE
 Requested pre-release: $NEW_PRE_RELEASE"
-
 }
+
+function sayOnDiscord() {
+    MSG="$1"
+    TIMESTAMP=`date +%H:%M:%S`
+    JSON=$(cat <<-END
+    {
+        "username": "DGTCM CI",
+        "content": "\`\`\`[$TIMESTAMP] $MSG\`\`\`"
+    }
+END
+)
+    curl \
+        -H "Content-Type: application/json" \
+        -d "$JSON" \
+        https://discord.com/api/webhooks/960257189149278228/YGuNLkq28bbXDJNxxH0arAt1sx8xwUwswMGTIWfZJFhPkvWaLsVi0cyu6_w2BPlh2n_I
+}
+
 
 function checkForNewRelease() {
     # Check versions file fot changes
@@ -41,6 +59,7 @@ function checkForNewRelease() {
         IS_PRERELEASE=0
         RELEASE_NAME="DGTCentaurMods ${NEW_VERSION}"
         COMMIT_MSG="Release: DGTCentaurMods ${NEW_VERSION}"
+        sayOnDiscord "::: Request to build $COMMIT_MSG at $REPO"
         echo -e "::: Request to build version: $NEW_VERSION\n::: Starting automated build and release"
         return
     fi
@@ -53,6 +72,7 @@ function checkForNewRelease() {
         NEW_VERSION="$NEW_PRE_RELEASE"
         RELEASE_NAME="DGTCentaurMods ${NEW_VERSION} - Pre-release"
         COMMIT_MSG="Pre-release: DGTCentaurMods ${NEW_VERSION}"
+        sayOnDiscord "::: Request to build pre-release $COMMIT_MSG at $REPO"
         echo -e "::: Request to build pre-release version: $NEW_VERSION\n::: Starting automated build"
         #return
     fi
@@ -85,6 +105,7 @@ function prepareGitRRepo() {
 
 
 function prepareAssets() {
+    sayOnDiscord "::: Preparing build assets"
     # Do the build, zip card-setup-tool
     cd $BASEDIR
     mkdir -p ${WORKSPACE}/assets
@@ -93,10 +114,12 @@ function prepareAssets() {
     cd ${BASEDIR}/..
     ./build.sh full
     cp releases/* CI/${WORKSPACE}/assets
+    sayOnDiscord "::: dgtcentaurmods_${NEW_VERSION}_armhf.deb prepared"
 
     # Zip the card setup tool
     cd ${BASEDIR}/../../tools/
     zip -qr ${BASEDIR}/${WORKSPACE}/assets/card-setup-tool_${NEW_VERSION}.zip card-setup-tool
+    sayOnDiscord "::: card-setup-tool_${NEW_VERSION}.zip prepared"
 }
 
 
@@ -133,6 +156,8 @@ function prepareRelease() {
 
     # Write json for the archive
     echo "$RELEASE_JSON" > ${WORKSPACE}/release.json
+
+    sayOnDiscord "::: Release json request prepared"
 }
 
 
@@ -148,6 +173,7 @@ function postRelease() {
     RELEASE_ID=`echo $RESP | jq '.id'`
     echo $RESP > ${WORKSPACE}/response.json
     echo -e "::: Created draft release for ${NEW_VERSION}. ID: ${RELEASE_ID}"
+    sayOnDiscord "::: Created draft release. ID: ${RELEASE_ID}"
 }
 
 
@@ -155,6 +181,7 @@ function postAssets() {
     for FILE in ${WORKSPACE}/assets/*; do
         NAME=`basename $FILE`
         echo -e "::: Uploading asset: $FILE as $NAME"
+        sayOnDiscord "::: Uploading assets: $NAME"
 
         RESP=`curl -sX POST \
             https://uploads.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/${RELEASE_ID}/assets?name=${NAME} \
@@ -178,6 +205,7 @@ function publishRelease() {
         -d '{"draft": "false"}'`
     
     echo "$PUBLISH" > ${WORKSPACE}/publish.json
+    sayOnDiscord "::: Release published and archived.\nEnjoy your day!"
 }
 
 
