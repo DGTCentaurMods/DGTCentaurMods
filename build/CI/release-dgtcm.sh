@@ -32,7 +32,21 @@ Current pre-release: $CURR_PRE_RELEASE
 Requested pre-release: $NEW_PRE_RELEASE"
 }
 
+# The following vars must not be empty
+if [ -z $CURRENT_VERSION ] || \
+   [ -z $NEW_VERSION ] || \
+   [ -z CURR_PRE_RELEASE ] || \
+   [ -z $NEW_PRE_RELEASE ] || \
+   [ -z $GIT_TOKEN ]; then
+   echo -e "::: Error processing. Aborting"
+    exit 1
+fi
+
 function sayOnDiscord() {
+    if [ -z $DISCORD_WH ]; then
+        return
+    fi
+
     MSG="$1"
     TIMESTAMP=`date +%H:%M:%S`
     JSON=$(cat <<-END
