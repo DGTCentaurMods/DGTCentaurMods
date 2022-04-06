@@ -61,8 +61,47 @@ font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../
 time.sleep(2)
 
 # This is the most common address of the board
-addr1 = 0x06
-addr2 = 0x50
+addr1 = ""
+addr2 = ""
+
+# But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
+print("Detecting board adress")
+try:
+    ser.read(1000)
+except:
+    ser.read(1000)
+tosend = bytearray(b'\x4d')
+ser.write(tosend)
+try:
+    ser.read(1000)
+except:
+    ser.read(1000)
+print('Sent payload 1')
+tosend = bytearray(b'\x4e')
+ser.write(tosend)
+try:
+    ser.read(1000)
+except:
+    ser.read(1000)
+print('Sent payload 2')
+print('Serial is open. Waiting for response.')
+resp = ""
+timeout = time.time() + 60
+while len(resp) < 4 and time.time() < timeout:
+    tosend = bytearray(b'\x87\x00\x00\x07')
+    ser.write(tosend)
+    try:
+        resp = ser.read(1000)
+    except:
+        resp = ser.read(1000)
+    if len(resp) > 3:
+        addr1 = resp[3]
+        addr2 = resp[4]
+        print("Discovered new address:" + hex(addr1) + hex(addr2))
+else:
+    if not addr1 or not addr2:
+        print('FATAL: No response from serial')
+        sys.exit(1)
 
 def checksum(barr):
     csum = 0
@@ -107,39 +146,6 @@ def clearSerial():
         else:
             print('  Attempting to clear serial')
 
-
-# But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
-print("Detecting board adress")
-try:
-    ser.read(1000)
-except:
-    ser.read(1000)
-tosend = bytearray(b'\x4d')
-ser.write(tosend)
-try:
-    ser.read(1000)
-except:
-    ser.read(1000)
-tosend = bytearray(b'\x4e')
-ser.write(tosend)
-try:
-    ser.read(1000)
-except:
-    ser.read(1000)
-resp = ""
-while len(resp) < 4:
-    tosend = bytearray(b'\x87\x00\x00\x07')
-    ser.write(tosend)
-    try:
-        resp = ser.read(1000)
-    except:
-        resp = ser.read(1000)
-    if len(resp) > 3:
-        addr1 = resp[3]
-        addr2 = resp[4]
-        print("Discovered new address:" + hex(addr1) + hex(addr2))
-        clearSerial()
-#
 # Screen functions - deprecated, use epaper.py if possible
 #
 
