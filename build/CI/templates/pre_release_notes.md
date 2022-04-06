@@ -2,6 +2,8 @@
 ### * ***This release only works on the second version of DGT centaur board*** *
 You own a first verion of the board if your board has visible black circles on the fields. If you decide to install this software anyway, you can use the web interface to display in real time what should be on the screen. The web interface allows you to safely power off the board too.
 
+This is a pre-release version of our software. This means it will never be pushed as OTA update, is not the default version in our bootstrap install and it is not a stable release. You might face issues  when using it especially with the new fetaures or bug fixes for this pre-releas. If you do find new bugs, we encourage you to (re)open an issue on our GitHub project page.
+
 ## Installation
 This is a pre-release and the only option to install it is to download the deb package and perform a manual install. You can use the card-setup-tool and specify the version number when the tool prompts for it.
 ### Manual install (new setup or upgrade)
