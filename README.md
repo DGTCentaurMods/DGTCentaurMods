@@ -22,7 +22,7 @@ DGT Pegasus - Emulate a DGT Pegasus. Works with the DGT Chess app
 
 Online Gameplay - Lichess (set Lichess API token from the web interface) then play from the board.
 
-Web Interface - on http://ipaddress:5000 Shows live view of chessboard, settings, and the other features below
+Web Interface - on http://IP_ADDRESS or the hostname of you board. Shows live view of chessboard, settings, and the other features below
 
 PGN Download - For all played games from web interface
 
