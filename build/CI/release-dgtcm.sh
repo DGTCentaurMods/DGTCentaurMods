@@ -1,18 +1,13 @@
 #!/usr/bin/bash
-
-#GIT_TOKEN=Set it in .ci.conf
-#DISCORD_WH=Set it in .ci.conf
-
-    if [ -e .ci.conf ]; then source .ci.conf
-    else echo "No .ci.conf file"; exit 1; fi
+# Move .ci.conf file in your home directory and edit it
+if [ -e ~/.ci.conf ]; then source ~/.ci.conf
+else echo "No .ci.conf file"; exit 1; fi
 
 BASEDIR=`pwd`
 
-REPO_USER="EdNekebno"
 REPO_NAME="DGTCentaurMods"
 REPO="${REPO_USER}/${REPO_NAME}"
 REPO_URL="https://github.com/${REPO}"
-BRANCH="master"
 VERSIONS_FILE="../../DGTCentaurMods/DEBIAN/versions"
 CURRENT_VERSION=`cat ../../${REPO_NAME}/DEBIAN/versions | jq -r '.stable | .["release"]' | tr -d \"`
 NEW_VERSION=`curl -s https://raw.githubusercontent.com/${REPO}/${BRANCH}/DGTCentaurMods/DEBIAN/versions | jq '.stable.release' | tr -d \"`
@@ -24,6 +19,7 @@ WORKSPACE="stage" ; mkdir -p $WORKSPACE
 
 function status() {
     echo -e "\
+Checking at $REPO in $BRANCH
 RELEASE:
 Current version: $CURRENT_VERSION
 Requested new version: $NEW_VERSION
@@ -38,7 +34,7 @@ if [ -z $CURRENT_VERSION ] || \
    [ -z CURR_PRE_RELEASE ] || \
    [ -z $NEW_PRE_RELEASE ] || \
    [ -z $GIT_TOKEN ]; then
-   echo -e "::: Error processing. Aborting"
+   echo -e "::: Error processing.\nCheck your .ci.conf file.  Aborting"
     exit 1
 fi
 
@@ -226,6 +222,9 @@ function publishRelease() {
 function archive() {
     if [ ! -d archive ]; then mkdir archive; fi 
     echo "::: Archiving release"
+    if [ -e /tmp/release.log ]; then
+        mv /tmp/release.log ${WORKSPACE}
+    fi
     mv ${WORKSPACE} archive/release-${NEW_VERSION}
 }
 
