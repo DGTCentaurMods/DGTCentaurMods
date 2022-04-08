@@ -1,3 +1,12 @@
+FIRSTUSER=`getent passwd 1000 | cut -d: -f1`
+if [ "$FIRSTUSER" != "pi" ]; then
+    useradd -m pi
+    usermod -L pi
+    sed -i "s/\:$FIRSTUSER/\:$FIRSTUSER,pi,/g" /etc/group
+    # Add sudo access for pi
+    echo "pi ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/010_pi-nopasswd
+fi
+
 echo $(date +"%T")  "copy centaur to /home/pi/" >/boot/centaur_install.log
 mv /boot/centaur /home/pi/ | awk '{ print strftime("%H:%M:%S: "), $0; fflush(); }'>>/boot/centaur_install.log
 echo $(date +"%T")  "copy firstboot service" >>/boot/centaur_install.log
@@ -15,4 +24,5 @@ rm -rf /hoot/lib
 echo $(date +"%T")  "remove firstboot.service from /boot/ " >>/boot/centaur_install.log
 rm -rf /boot/firstboot.service
 echo $(date +"%T")  "reboot 1" >>/boot/centaur_install.log
+
 exit 0
