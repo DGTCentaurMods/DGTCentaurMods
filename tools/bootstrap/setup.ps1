@@ -1,7 +1,7 @@
 # Bootstrap installer for DGTCentaurMods using Windows PowerShell
 #
 
-$currentReleaseVersion = '1.1.4'
+$currentReleaseVersion = '1.1.7'
 write-Host "Latest release version is $currentReleaseVersion"
 Write-Host "If you want to install another release, input the version number below"
 $releaseVersion = Read-Host -Prompt "Enter the version number ($currentReleaseVersion)"

@@ -3,7 +3,7 @@
 # Bootstrap installer for Linux
 #
 
-VERSION="1.1.4"
+VERSION="1.1.7"
 URL="https://github.com/EdNekebno/DGTCentaurMods/releases/download/v${VERSION}/dgtcentaurmods_${VERSION}_armhf.deb"
 FILE="dgtcentaurmods_${VERSION}_armhf.deb"
 
