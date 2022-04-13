@@ -64,6 +64,11 @@ time.sleep(2)
 addr1 = ""
 addr2 = ""
 
+# Battery related
+chargerconnected = 0
+batterylevel = -1
+batterylastchecked = 0
+
 # But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
 print("Detecting board adress")
 try:
@@ -758,6 +763,52 @@ def printBoardState():
         print("|\r")
     print("+---+---+---+---+---+---+---+---+")
 
+def getChargingState():
+    # Returns if the board is plugged into the charger or not
+    # 0 = not plugged in, 1 = plugged in, -1 = error in checking
+    resp = ""
+    timeout = time.time() + 5
+    while len(resp) < 7 and time.time() < timeout:
+        # Sending the board a packet starting with 152 gives battery info
+        sendPacket(bytearray([152]), b'')
+        try:
+            resp = ser.read(1000)
+        except:
+            pass
+        if len(resp) < 7:
+            pass
+        else:  
+            if resp[0] == 181:
+                print("connected state")
+                print(resp.hex())                
+                vall = (resp[5] >> 5) & 7
+                print(vall)
+                if vall == 1:
+                    return 1
+                else:
+                    return 0
+    return - 1
+
+def getBatteryLevel():
+    # Returns a number 0 - 20 representing battery level of the board
+    # 20 is fully charged. The board dies somewhere around a low of 1
+    resp = ""
+    timeout = time.time() + 5
+    while len(resp) < 7 and time.time() < timeout:
+        # Sending the board a packet starting with 152 gives battery info
+        sendPacket(bytearray([152]), b'')
+        try:
+            resp = ser.read(1000)
+        except:
+            pass
+    if len(resp) < 7:
+        return -1
+    else:        
+        if resp[0] == 181:
+            print(resp.hex())
+            vall = resp[5] & 31
+            return vall
+    
 
 #
 # Miscellaneous functions - do they belong in this file?
@@ -811,6 +862,9 @@ def eventsThread(keycallback, fieldcallback):
     # keypresses and pieces lifted/placed down
     global eventsrunning
     global standby
+    global batterylevel
+    global batterylastchecked
+    global chargerconnected
     standby = False
     while True:
         if eventsrunning == 1:
@@ -893,6 +947,33 @@ def eventsThread(keycallback, fieldcallback):
                         beep(SOUND_POWER_OFF)
                         shutdown()
                         print('BTNLONGPLAY pressed')
+            except:
+                pass
+            try:
+                # Sending 152 to the controller provides us with battery information
+                # Do this every 30 seconds and fill in the globals
+                if time.time() - batterylastchecked > 15:
+                    # Every 5 seconds check the battery details
+                    resp = ""
+                    timeout = time.time() + 4
+                    while len(resp) < 7 and time.time() < timeout:
+                        # Sending the board a packet starting with 152 gives battery info
+                        sendPacket(bytearray([152]), b'')
+                        try:
+                            resp = ser.read(1000)
+                        except:
+                            pass
+                    if len(resp) < 7:
+                        pass
+                    else:        
+                        if resp[0] == 181:                            
+                            batterylastchecked = time.time()
+                            batterylevel = resp[5] & 31
+                            vall = (resp[5] >> 5) & 7                            
+                            if vall == 1:
+                                chargerconnected = 1
+                            else:
+                                chargerconnected = 0
             except:
                 pass
             time.sleep(0.05)

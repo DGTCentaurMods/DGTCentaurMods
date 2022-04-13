@@ -496,6 +496,23 @@ def drawImagePartial(x, y, img):
     width, height = img.size
     drawWindow(x,y,width//8,list(img.tobytes()))
 
+def drawBatteryIndicator():
+    batteryindicator = "battery1"
+    if board.batterylevel >= 6:
+        batteryindicator = "battery2"
+    if board.batterylevel >= 12:
+        batteryindicator = "battery3"
+    if board.batterylevel >= 18:
+        batteryindicator = "battery4"            
+    if board.chargerconnected > 0:
+        batteryindicator = "batteryc"
+        if board.batterylevel == 20:
+            batteryindicator = "batterycf"    
+    if board.batterylevel >= 0:
+        img = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/" + batteryindicator + ".bmp")
+        epaperbuffer.paste(img,(98, 2))        
+        #drawImagePartial(13,0,img)     
+
 class statusBar():
     def __init__(self):
         return
@@ -504,13 +521,16 @@ class statusBar():
     # This currently onlt shows the time but we can prepare it as an Image to
     # put it on top of the screen
         self.clock = time.strftime("%H:%M")
-        self.bar = self.clock+"      "+board.temp()
-        return self.bar
+        self.bar = self.clock
+        #self.bar = self.clock+"      "+board.temp()
+        #self.bar = self.clock+"   " + str(board.chargerconnected) + "   " + str(board.batterylevel)            
+        return self.bar          
 
     def display(self):
         while self.is_running:
             bar = self.build()
             writeText(0,bar)
+            drawBatteryIndicator()
             time.sleep(30)
 
     def print(self):
@@ -518,6 +538,7 @@ class statusBar():
         #if self.is_running:
         bar = self.build()
         writeText(0,bar)
+        drawBatteryIndicator()
         return
 
     def init(self):
