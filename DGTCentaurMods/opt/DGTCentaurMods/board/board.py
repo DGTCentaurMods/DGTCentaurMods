@@ -857,7 +857,7 @@ def temp():
     temp = os.popen("vcgencmd measure_temp | cut -d'=' -f2").read().strip()
     return temp
 
-def eventsThread(keycallback, fieldcallback):
+def eventsThread(keycallback, fieldcallback, tout):
     # This monitors the board for events
     # keypresses and pieces lifted/placed down
     global eventsrunning
@@ -866,8 +866,26 @@ def eventsThread(keycallback, fieldcallback):
     global batterylastchecked
     global chargerconnected
     standby = False
-    while True:
+    hold_timeout = False
+    events_paused = False
+    to = time.time() + tout
+    print('Timeout at ' + str(tout) + ' seconds')
+    while time.time() < to:
+        loopstart = time.time()
         if eventsrunning == 1:
+            # Hold and restart timeout on charger attached
+            if chargerconnected == 1:
+                to = time.time() + 100000
+                hold_timeout = True
+            if chargerconnected == 0 and hold_timeout:
+                to = time.time() + tout
+                hold_timeout = False
+
+            # Reset timeout on unPauseEvents
+            if events_paused:
+                to = time.time() + tout
+                events_paused = False
+
             buttonPress = 0
             if not standby:
                 #Hold fields activity on standby
@@ -886,6 +904,7 @@ def eventsThread(keycallback, fieldcallback):
                                     fieldHex = resp[x + 1]
                                     newsquare = rotateFieldHex(fieldHex)
                                     fieldcallback(newsquare + 1)
+                                    to = time.time() + tout
                                 if (resp[x] == 65):
                                     #print("PIECE PLACED")
                                     # Calculate the square to 0(a1)-63(h8) so that
@@ -893,6 +912,7 @@ def eventsThread(keycallback, fieldcallback):
                                     fieldHex = resp[x + 1]
                                     newsquare = rotateFieldHex(fieldHex)
                                     fieldcallback((newsquare + 1) * -1)
+                                    to = time.time() + tout
                 except:
                     pass
            
@@ -905,16 +925,19 @@ def eventsThread(keycallback, fieldcallback):
                 if not standby:
                     #Disable these buttons on standby
                     if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
+                        to = time.time() + tout
                         buttonPress = BTNBACK  # BACK
                     if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
+                        to = time.time() + tout
                         buttonPress = BTNTICK  # TICK
                     if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
+                        to = time.time() + tout
                         buttonPress = BTNUP  # UP
                     if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
-                        print("down")
+                        to = time.time() + tout
                         buttonPress = BTNDOWN  # DOWN
                     if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
-                        print('Help pressed')
+                        to = time.time() + tout
                         buttonPress = BTNHELP   # HELP
                 if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
                     breaktime = time.time() + 0.5
@@ -934,6 +957,7 @@ def eventsThread(keycallback, fieldcallback):
                                 print('Starting shutdown countdown')
                                 sd = threading.Timer(600,shutdown)
                                 sd.start()
+                                to = time.time() + 100000
                                 break
                             else:
                                 clearSerial()
@@ -941,12 +965,12 @@ def eventsThread(keycallback, fieldcallback):
                                 print('Cancel shutdown')
                                 sd.cancel()
                                 standby = False
+                                to = time.time() + tout
                                 break
                             break
                     else:
                         beep(SOUND_POWER_OFF)
                         shutdown()
-                        print('BTNLONGPLAY pressed')
             except:
                 pass
             try:
@@ -970,7 +994,7 @@ def eventsThread(keycallback, fieldcallback):
                             batterylastchecked = time.time()
                             batterylevel = resp[5] & 31
                             vall = (resp[5] >> 5) & 7                            
-                            if vall == 1:
+                            if vall == 1 or vall == 2:
                                 chargerconnected = 1
                             else:
                                 chargerconnected = 0
@@ -978,14 +1002,27 @@ def eventsThread(keycallback, fieldcallback):
                 pass
             time.sleep(0.05)
             if buttonPress != 0:
+                to = time.time() + tout
                 keycallback(buttonPress)
-        time.sleep(0.05)
+        else:
+            # If pauseEvents() hold timeout in the thread
+            to = time.time() + 100000
+            events_paused = True
 
-def subscribeEvents(keycallback, fieldcallback):
+        if time.time() - loopstart > 30:
+            to = time.time() + tout
+        time.sleep(0.05)
+    else:
+        # Timeout reached, while loop breaks. Shutdown.
+        print('Timeout. Shutting doen')
+        shutdown()
+
+
+def subscribeEvents(keycallback, fieldcallback, timeout=100000):
     # Called by any program wanting to subscribe to events
     # Arguments are firstly the callback function for key presses, secondly for piece lifts and places
     clearSerial()
-    eventsthreadpointer = threading.Thread(target=eventsThread, args=([keycallback, fieldcallback]))
+    eventsthreadpointer = threading.Thread(target=eventsThread, args=([keycallback, fieldcallback, timeout]))
     eventsthreadpointer.daemon = True
     eventsthreadpointer.start()
 
