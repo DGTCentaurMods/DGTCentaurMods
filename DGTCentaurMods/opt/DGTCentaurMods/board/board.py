@@ -870,7 +870,8 @@ def eventsThread(keycallback, fieldcallback, tout):
     events_paused = False
     to = time.time() + tout
     print('Timeout at ' + str(tout) + ' seconds')
-    while True and time.time() < to:
+    while time.time() < to:
+        loopstart = time.time()
         if eventsrunning == 1:
             # Hold and restart timeout on charger attached
             if chargerconnected == 1:
@@ -1008,6 +1009,8 @@ def eventsThread(keycallback, fieldcallback, tout):
             to = time.time() + 100000
             events_paused = True
 
+        if time.time() - loopstart > 30:
+            to = time.time() + tout
         time.sleep(0.05)
     else:
         # Timeout reached, while loop breaks. Shutdown.
