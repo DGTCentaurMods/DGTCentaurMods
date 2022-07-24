@@ -10,5 +10,5 @@ Make sure you have a working Docker.
 * Build the image `sudo docker build <IMAGE_NAME> .`
 
 ### Starting the container
-* `sudo docker run <IMAGE_ID>`
+* `sudo docker run -d <IMAGE_ID>`
 
