@@ -25,4 +25,4 @@
 # 
 # m h  dom mon dow   command
 
-*/10 * * * * echo `date` > /tmp/release.log; cd /data/DGTCentaurMods/build/CI; ./release-dgtcm.sh >> /tmp/release.log 
+*/10 * * * * echo `date` | tee /tmp/release.log > /proc/1/fd/1; cd /data/DGTCentaurMods/build/CI; ./release-dgtcm.sh | tee -a /tmp/release.log > /proc/1/fd/1
