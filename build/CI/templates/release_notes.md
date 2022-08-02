@@ -2,6 +2,9 @@
 ### * ***This release only works on the second version of DGT centaur board*** *
 You own a first verion of the board if your board has visible black circles on the fields. If you decide to install this software anyway, you can use the web interface to display in real time what should be on the screen. The web interface allows you to safely power off the board too.
 
+## What's new in 1.2.1
+- bug fix for pawn promotion on e-board emulation
+
 ## Installation
 ### Bootstrap install (new setup or upgrade)
 You need to have a working Raspberry Pi inside the board with SSH enabled for this method.
@@ -35,7 +38,7 @@ You need a SSH connection to the board for this method.
 4. Reboot the board: `sudo reboot`
 
 ### Using SD card self setup tool (new setup only)
-This will create a new SD Card ready to use in you board. It will self setup everything. Use the attached .pdf file to this release for instructions.
+This will create a new SD Card ready to use in you board. You must have a 2.4 Ghz WI-FI for this to work. It will self setup everything. Use the attached .pdf file to this release for instructions.
 1. Download the card-setup-tool archive from the assets below.
 2. Unzip the archive.
 6. Start DGTCentaurModsInstaller.ps1 by right clicking and use Power shell. Follow on screen instructions.
