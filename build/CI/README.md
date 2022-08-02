@@ -3,6 +3,11 @@
 ## Docker image creation
 This image runs a cron job  every 10 minutes by default. It builds a deb file in case `version` is updated in `DGTCentaurMods/DGTCentaurMods/DEBIAN` file on GitHub repo
 
+### This is WIP
+TODO:
+- add .gitconfig and .git-credentials
+- add them to the image on building
+
 ### Build the image
 Make sure you have a working Docker.
 * Edit variables in the .ci.conf file
