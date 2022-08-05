@@ -9,6 +9,9 @@ WORKDIR /data
 RUN git clone https://github.com/EdNekebno/DGTCentaurMods
 
 COPY .ci.conf /root
+COPY .gitconfig /root
+COPY .git-credentials /root
+
 COPY cronjob/root /var/spool/cron/crontabs/
 RUN chown root.crontab /var/spool/cron/crontabs/root; chmod 600 /var/spool/cron/crontabs/root
 
