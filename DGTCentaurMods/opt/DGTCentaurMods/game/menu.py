@@ -19,15 +19,16 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+import configparser
+import os
+import pathlib
+import sys
+import threading
+import time
+
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
-import time
-import pathlib
-import os
-import sys
-import threading
-import configparser
 
 menuitem = 1
 curmenu = None
@@ -428,25 +429,22 @@ while True:
             result = doMenu(colormenu, 'Color')
             if result != "BACK":
                 color = result
-                timemenu = {'10 , 5': '10+5 minutes', '15 , 10': '15+10 minutes', '30': '30 minutes',
-                            '30 , 20': '30+20 minutes', '60 , 20': '60+20 minutes'}
+                timemenu = {'10 , 5': '10+5 minutes',
+                            '15 , 10': '15+10 minutes',
+                            '30 , 0': '30 minutes',
+                            '30 , 20': '30+20 minutes',
+                            '45 , 45': '45+45 minutes',
+                            '60 , 20': '60+20 minutes',
+                            '60 , 30': '60+30 minutes',
+                            '90 , 30': '90+30 minutes',
+                            }
                 result = doMenu(timemenu, 'Time')
+                # split time and increment '10 , 5' -> ['10', '5']
+                seek_time = result.split(',')
+                gtime = int(seek_time[0])
+                gincrement = int(seek_time[1])
+                
                 if result != "BACK":
-                    if result == '10 , 5':
-                        gtime = '10'
-                        gincrement = '5'
-                    if result == '15 , 10':
-                        gtime = '15'
-                        gincrement = '10'
-                    if result == '30':
-                        gtime = '30'
-                        gincrement = '0'
-                    if result == '30 , 20':
-                        gtime = '30'
-                        gincrement = '20'
-                    if result == "60 , 20":
-                        gtime = '60'
-                        gincrement = '20'
                     epaper.loadingScreen()
                     board.pauseEvents()
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New " + str(gtime) + " " + str(gincrement) + " " + str(rated) + " " + str(color))
