@@ -24,21 +24,21 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game import gamemanager
-from DGTCentaurMods.display import epaper
-from DGTCentaurMods.board import centaur
-from DGTCentaurMods.board import board
-
+import gc
+import os
+import pathlib
+import ssl
+import sys
+import threading
 import time
+from random import randint
+
+import berserk
 import chess
 import chess.engine
-import sys
-import pathlib
-from random import randint
-import berserk
-import ssl
-import threading
-import os
+from DGTCentaurMods.board import board, centaur
+from DGTCentaurMods.display import epaper
+from DGTCentaurMods.game import gamemanager
 
 curturn = 1
 computeronturn = 0
@@ -231,66 +231,11 @@ def newGameThread():
 	global gcolor
 	ratingrange = centaur.lichess_range
 	epaper.writeText(0, "Finding Game...")
-	if (gtime == '10' and ginc == '5' and grated == "False" and gcolor == "white"):
-		client.board.seek(10, 5, rated=False, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '10' and ginc == '5' and grated == "False" and gcolor == "black"):
-		client.board.seek(10, 5, rated=False, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '10' and ginc == '5' and grated == "False" and gcolor == "random"):
-		client.board.seek(10, 5, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '10' and ginc == '5' and grated == "True" and gcolor == "white"):
-		client.board.seek(10, 5, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '10' and ginc == '5' and grated == "True" and gcolor == "black"):
-		client.board.seek(10, 5, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '10' and ginc == '5' and grated == "True" and gcolor == "random"):
-		client.board.seek(10, 5, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "False" and gcolor == "white"):
-		client.board.seek(15, 10, rated=False, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "False" and gcolor == "black"):
-		client.board.seek(15, 10, rated=False, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "False" and gcolor == "random"):
-		client.board.seek(15, 10, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "white"):
-		client.board.seek(15, 10, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "black"):
-		client.board.seek(15, 10, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '15' and ginc == '10' and grated == "True" and gcolor == "random"):
-		client.board.seek(15, 10, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "False" and gcolor == "white"):
-		client.board.seek(30, 0, rated=False, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "False" and gcolor == "black"):
-		client.board.seek(30, 0, rated=False, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "False" and gcolor == "random"):
-		client.board.seek(30, 0, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "True" and gcolor == "white"):
-		client.board.seek(30, 0, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "True" and gcolor == "black"):
-		client.board.seek(30, 0, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '0' and grated == "True" and gcolor == "random"):
-		client.board.seek(30, 0, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "False" and gcolor == "white"):
-		client.board.seek(30, 20, rated=False, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "False" and gcolor == "black"):
-		client.board.seek(30, 20, rated=False, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "False" and gcolor == "random"):
-		client.board.seek(30, 20, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "True" and gcolor == "white"):
-		client.board.seek(30, 20, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "True" and gcolor == "black"):
-		client.board.seek(30, 20, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '30' and ginc == '20' and grated == "True" and gcolor == "random"):
-		client.board.seek(30, 20, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "False" and gcolor == "white"):
-		client.board.seek(60, 20, rated=False, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "False" and gcolor == "black"):
-		client.board.seek(60, 20, rated=False, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "False" and gcolor == "random"):
-		client.board.seek(60, 20, rated=False, variant='standard', color='random', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "True" and gcolor == "white"):
-		client.board.seek(60, 20, rated=True, variant='standard', color='white', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "True" and gcolor == "black"):
-		client.board.seek(60, 20, rated=True, variant='standard', color='black', rating_range=f'{ratingrange}')
-	if (gtime == '60' and ginc == '20' and grated == "True" and gcolor == "random"):
-		client.board.seek(60, 20, rated=True, variant='standard', color='random', rating_range=f'{ratingrange}')
+	# not sure if there was a reason this was a bunch of ifs
+	# Simplified it to a single call
+	seek_rated = True if grated == "True" else False
+	client.board.seek(int(gtime), int(ginc), seek_rated, color=gcolor, rating_range=f'{ratingrange}')
+	
 
 checkback = 0
 kill = 0
