@@ -3,12 +3,13 @@ Description=DGTCentaurMods software.
 After=network.target
 
 [Service]
+Environment=PYTHONUNBUFFERED=1
 ExecStartPre=/bin/sleep 4
 ExecStart=python3 game/menu.py
 WorkingDirectory=/opt/DGTCentaurMods
 Environment="PYTHONPATH=/opt"
-StandardOutput=inherit
-StandardError=inherit
+StandardOutput=file:/var/log/modmenuoutput.log
+StandardError=file:/var/log/modmenuoutput.log
 Restart=no
 User=pi
 
