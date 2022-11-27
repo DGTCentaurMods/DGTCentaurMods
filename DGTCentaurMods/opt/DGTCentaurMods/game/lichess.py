@@ -331,16 +331,27 @@ def stateThread():
 		for state in gamestate:
 			print(state)
 			message1 = str(state)
-			# print(message1)
+			print("message1 = ", message1)
+
+			if 'chatLine' in message1 or 'opponentGone' in message1:
+				time.sleep(0.1)
+				continue
+			
 			if message1.find('moves'):
 				c = message1.find("wtime")
 				messagehelp = message1[c:len(message1)]
+				print("messagehelp = ", messagehelp)
 				# At this point if the string contains date then the time is in date format
 				# otherwise it's in number format.
 				whitetimemin = 0
 				whitetimesec = 0
 				if "date" not in messagehelp:
 					whitetimesec = messagehelp[8:messagehelp.find(",")]
+					
+					# this can be removed when all the special message cases have been dealt with
+					if whitetimesec == "":
+						whitetimesec = "0"
+
 					whitetimesec = str(int(whitetimesec)//1000)
 				else:
 					c = messagehelp.find(", ")
@@ -358,13 +369,25 @@ def stateThread():
 					whitetimesec = messagehelp[1:c]
 					if whitetimesec[:2] == "tz" or whitetimesec[1:3] == "st":
 						whitetimesec = "0"
+				
+				# this can be removed when all the special message cases have been dealt with
+				if whitetimemin == '':
+					whitetimemin = 0
+
 				whitetime = (int(str(whitetimemin)) * 60) + int(str(whitetimesec))
+					
 				c = message1.find("btime")
 				messagehelp = message1[c:len(message1)]
+				print("messagehelp = ", messagehelp)
+
 				blacktimemin = 0
 				blacktimesec = 0
 				if "date" not in messagehelp:
 					blacktimesec = messagehelp[8:messagehelp.find(",")]
+
+					# this can be removed when all the special message cases have been dealt with
+					if blacktimesec == "":
+						blacktimesec = "0"
 					blacktimesec = str(int(blacktimesec)//1000)
 				else:
 					c = messagehelp.find(", ")
@@ -382,6 +405,11 @@ def stateThread():
 					blacktimesec = messagehelp[1:c]
 					if blacktimesec[:2] == "tz" or blacktimesec[1:3] == "st":
 						blacktimesec = "0"
+
+				# this can be removed when all the special message cases have been dealt with
+				if blacktimemin == '':
+					blacktimemin = 0
+
 				blacktime = (int(blacktimemin) * 60) + int(blacktimesec)
 				gamemanager.setClock(whitetime, blacktime)
 			if ('state' in state.keys()):
