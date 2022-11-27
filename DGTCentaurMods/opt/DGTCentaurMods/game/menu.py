@@ -522,9 +522,19 @@ while True:
                 os.system("/sbin/shutdown -r now &")
                 sys.exit()
     if result == "Lichess":
-        livemenu = {"Rated": "Rated", "Unrated": "Unrated"}
+        livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing"}
         result = doMenu(livemenu, "Lichess")
         if result != "BACK":
+            if result == "Ongoing":
+                epaper.loadingScreen()
+                board.pauseEvents()
+                os.system(
+                    str(sys.executable)
+                    + " "
+                    + str(pathlib.Path(__file__).parent.resolve())
+                    + "/../game/lichess.py Ongoing"
+                )
+                board.unPauseEvents()
             if result == "Rated":
                 rated = True
             else:

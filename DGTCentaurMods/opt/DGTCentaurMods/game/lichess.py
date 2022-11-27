@@ -189,19 +189,24 @@ if (len(sys.argv) == 1) and kill == 0:
 	sys.exit()
 
 if (len(sys.argv) > 1) and kill == 0:
-	if (str(sys.argv[1]) != "current" and str(sys.argv[1]) != "New"):
+	if (sys.argv[1] != "current" and sys.argv[1] != "New"):
 		sys.exit()
 
 gtime = 0
 ginc = 0
 grated = 0
 gcolor = 0
-if (len(sys.argv) > 1):
-	if str(sys.argv[1]) == "New":
-		gtime = str(sys.argv[2])
-		ginc = str(sys.argv[3])
-		grated = str(sys.argv[4])
-		gcolor = str(sys.argv[5])
+current = False
+if len(sys.argv) > 1:
+	if sys.argv[1] == "New":
+		gtime = sys.argv[2]
+		ginc = sys.argv[3]
+		grated = sys.argv[4]
+		gcolor = sys.argv[5]
+	elif sys.argv[1] == "current":
+		current = True
+	else:
+		raise ValueError("Not expected value %s" % (sys.argv[1],))
 
 # Prepare for the lichess api
 session = berserk.TokenSession(token)
@@ -237,9 +242,25 @@ def newGameThread():
 	client.board.seek(int(gtime), int(ginc), seek_rated, color=gcolor, rating_range=f'{ratingrange}')
 	
 
+gameid = ""
+
+
+def ongoingGameThread():
+	global current
+	global gameid
+	if not current:
+		raise ValueError("Value `current` is expected to be True")
+	epaper.writeText(0, "Waiting fot the game...")
+	while True:
+		current_games = client.games.get_ongoing(10)
+		if len(current_games) > 0:
+			break
+		time.sleep(0.5)
+	gameid = current_games[0]['gameId']
+
+
 checkback = 0
 kill = 0
-gameid = ""
 
 def backTest():
 	# Check for the back button. We use this to allow the user to stop seeking for a game
@@ -262,13 +283,16 @@ def backTest():
 		time.sleep(0.2)
 
 # Wait for a game to start and get the game id!
-if (str(sys.argv[1]) == "New"):
+if sys.argv[1] == "New":
 	gt = threading.Thread(target=newGameThread, args=())
 	gt.daemon = True
 	gt.start()
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+elif sys.argv[1] == "ongoing":
+	...
+
 
 while gameid == "" and kill == 0:
 	for event in client.board.stream_incoming_events():
