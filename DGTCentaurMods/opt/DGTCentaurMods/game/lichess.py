@@ -40,6 +40,10 @@ from DGTCentaurMods.board import board, centaur
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.game import gamemanager
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+logging.info("loaded lichess.py")
 curturn = 1
 computeronturn = 0
 kill = 0
@@ -180,6 +184,7 @@ if (token == "" or token == "tokenhere") and kill == 0:
 # or New [time=10|15|30|60] [increment=5|10|20] [rated=True|False] [color=White|Black|Random]
 
 if (len(sys.argv) == 1) and kill == 0:
+	logging.error("no parameter given!")
 	epaper.writeText(0,"Error:        ")
 	epaper.writeText(1,"lichess.py    ")
 	epaper.writeText(2,"no parameter")
@@ -189,23 +194,25 @@ if (len(sys.argv) == 1) and kill == 0:
 	sys.exit()
 
 if (len(sys.argv) > 1) and kill == 0:
-	if (sys.argv[1] != "current" and sys.argv[1] != "New"):
+	if (sys.argv[1] != "Ongoing" and sys.argv[1] != "New"):
+		logging.error("Wrong first input parameter")
 		sys.exit()
 
 gtime = 0
 ginc = 0
 grated = 0
 gcolor = 0
-current = False
+ongoing = False
 if len(sys.argv) > 1:
 	if sys.argv[1] == "New":
 		gtime = sys.argv[2]
 		ginc = sys.argv[3]
 		grated = sys.argv[4]
 		gcolor = sys.argv[5]
-	elif sys.argv[1] == "current":
-		current = True
+	elif sys.argv[1] == "Ongoing":
+		ongoing = True
 	else:
+		logging.error("Wrong input value")
 		raise ValueError("Not expected value %s" % (sys.argv[1],))
 
 # Prepare for the lichess api
@@ -246,17 +253,19 @@ gameid = ""
 
 
 def ongoingGameThread():
-	global current
+	global ongoing
 	global gameid
-	if not current:
-		raise ValueError("Value `current` is expected to be True")
+	if not ongoing:
+		raise ValueError("Value `ongoing` is expected to be True")
 	epaper.writeText(0, "Waiting fot the game...")
+	logging.info("Waiting fot the game...")
 	while True:
 		current_games = client.games.get_ongoing(10)
 		if len(current_games) > 0:
 			break
 		time.sleep(0.5)
 	gameid = current_games[0]['gameId']
+	logging.info("found game with ID="+gameid)
 
 
 checkback = 0
@@ -290,8 +299,14 @@ if sys.argv[1] == "New":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
-elif sys.argv[1] == "ongoing":
-	...
+elif sys.argv[1] == "Ongoing":
+	gt = threading.Thread(target=ongoingGameThread, args=())
+	gt.daemon = True
+	gt.start()
+	bb = threading.Thread(target=backTest, args=())
+	bb.daemon = True
+	bb.start()
+
 
 
 while gameid == "" and kill == 0:
