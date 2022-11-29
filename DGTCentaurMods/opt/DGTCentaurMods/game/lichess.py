@@ -194,7 +194,7 @@ if (len(sys.argv) == 1) and kill == 0:
 	sys.exit()
 
 if (len(sys.argv) > 1) and kill == 0:
-	if (sys.argv[1] != "Ongoing" and sys.argv[1] != "New"):
+	if sys.argv[1] not in ["New", "Ongoing", "Challenge"]:
 		logging.error("Wrong first input parameter")
 		sys.exit()
 
@@ -202,7 +202,9 @@ gtime = 0
 ginc = 0
 grated = 0
 gcolor = 0
+gameid = ""
 ongoing = False
+challenge = False
 if len(sys.argv) > 1:
 	if sys.argv[1] == "New":
 		gtime = sys.argv[2]
@@ -211,6 +213,10 @@ if len(sys.argv) > 1:
 		gcolor = sys.argv[5]
 	elif sys.argv[1] == "Ongoing":
 		ongoing = True
+		gameid = sys.argv[2]
+	elif sys.argv[1] == "Challenge":
+		challenge = True
+		challengeid = sys.argv[2]
 	else:
 		logging.error("Wrong input value")
 		raise ValueError("Not expected value %s" % (sys.argv[1],))
@@ -249,23 +255,28 @@ def newGameThread():
 	client.board.seek(int(gtime), int(ginc), seek_rated, color=gcolor, rating_range=f'{ratingrange}')
 	
 
-gameid = ""
-
-
-def ongoingGameThread():
-	global ongoing
+def newChallengeThread():
+	global challengeid
 	global gameid
-	if not ongoing:
-		raise ValueError("Value `ongoing` is expected to be True")
-	epaper.writeText(0, "Waiting fot the game...")
-	logging.info("Waiting fot the game...")
-	while True:
-		current_games = client.games.get_ongoing(10)
-		if len(current_games) > 0:
-			break
-		time.sleep(0.5)
-	gameid = current_games[0]['gameId']
-	logging.info("found game with ID="+gameid)
+	epaper.writeText(0, "Accepting challenge / waiting...")
+	client.challenges.accept(challengeid)
+	gameid = challengeid
+
+
+#def ongoingGameThread():
+	#global ongoing
+	#global gameid
+	#if not ongoing:
+	#	raise ValueError("Value `ongoing` is expected to be True")
+	#epaper.writeText(0, "Waiting fot the game...")
+	#logging.info("Waiting fot the game...")
+	#while True:
+	#	current_games = client.games.get_ongoing(10)
+	#	if len(current_games) > 0:
+	#		break
+	#	time.sleep(0.5)
+	#gameid = sys.argv[2]
+	#logging.info("found game with ID="+gameid)
 
 
 checkback = 0
@@ -300,16 +311,28 @@ if sys.argv[1] == "New":
 	bb.daemon = True
 	bb.start()
 elif sys.argv[1] == "Ongoing":
-	gt = threading.Thread(target=ongoingGameThread, args=())
+	logging.info(f"selected game id {gameid}")
+elif sys.argv[1] == "Challenge":
+	logging.info(f"selected challenge id {challengeid}")
+	gt = threading.Thread(target=newChallengeThread, args=())
 	gt.daemon = True
 	gt.start()
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+else:
+	raise ValueError(f"Wrong argv[1] value: {sys.argv[1]}")
+#gt = threading.Thread(target=ongoingGameThread, args=())
+	#gt.daemon = True
+	#gt.start()
+	#bb = threading.Thread(target=backTest, args=())
+	#bb.daemon = True
+	#bb.start()
 
 
-
+logging.info(f"challenge accepted. Current challenge id {challengeid}")
 while gameid == "" and kill == 0:
+	logging.info('.')
 	for event in client.board.stream_incoming_events():
 		if ('type' in event.keys()):
 			if (event.get('type') == "gameStart"):

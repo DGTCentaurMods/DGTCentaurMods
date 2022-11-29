@@ -26,10 +26,13 @@ import sys
 import threading
 import time
 import berserk
+import logging
 
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
+
+logging.basicConfig(level=logging.DEBUG)
 
 menuitem = 1
 curmenu = None
@@ -525,28 +528,76 @@ while True:
     if result == "Lichess":
         livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing", 'Challenges': 'Challenges'}
         result = doMenu(livemenu, "Lichess")
+        logging.debug('menu active: lichess')
         if result != "BACK":
             if result == "Ongoing":
-                ongoing_games = ...  # berserk -> get
-                result = doMenu(ongoing_games, "Ongoing games")
+                logging.debug('menu active: Ongoing')
+                token = centaur.get_lichess_api()
+                if not len(token):
+                    logging.error('lichess token not defined')
+                    raise ValueError('lichess token not defined')
+                    #TODO implement more info
+                session = berserk.TokenSession(token)
+                client = berserk.Client(session=session)
+                ongoing_games = client.games.get_ongoing(10)
+                ongoing_menu = {}
+                logging.debug(f"{ongoing_menu}")
+                for game in ongoing_games:
+                    gameid = game["gameId"]
+                    opponent = game['opponent']['id']
+                    if game['color'] == 'white':
+                        desc = f"{client.account.get()['username']} vs. {opponent}"
+                    else:
+                        desc = f" {opponent} vs. {client.account.get()['username']}"
+                    ongoing_menu[gameid] = desc
+                logging.debug(f"ongoing menu: {ongoing_menu}")
+                if len(ongoing_menu) > 0:
+                    result = doMenu(ongoing_menu, "Current games:")
+                    if result != "BACK":
+                        logging.debug(f"menu current games")
+                        game_id = result
+                        epaper.loadingScreen()
+                        board.pauseEvents()
+                        logging.debug(f"staring lichess")
+                        os.system(
+                            str(sys.executable)
+                            + " "
+                            + str(pathlib.Path(__file__).parent.resolve())
+                            + f"/../game/lichess.py Ongoing {game_id}"
+                        )
+                        board.unPauseEvents()
+                else:
+                    pass #TODO implement me
+
+            elif result == "Challenges":
+                token = centaur.get_lichess_api()
+                if not len(token):
+                    logging.error('lichess token not defined')
+                    raise ValueError('lichess token not defined')
+                    # TODO implement more info
+                session = berserk.TokenSession(token)
+                client = berserk.Client(session=session)
+                challenge_menu = {}
+                # very ugly call, there is no adequate method in berserk's API,
+                # see https://github.com/rhgrant10/berserk/blob/master/berserk/todo.md
+                challenges = client._r.get('api/challenge')
+                for challenge in challenges['in']:
+                    challenge_menu[challenge['id']] = f"in: {challenge['challenger']['id']}"
+                for challenge in challenges['out']:
+                    challenge_menu[challenge['id']] = f"out: {challenge['destUser']['id']}"
+                result = doMenu(challenge_menu, "Challenges")
                 if result != "BACK":
-                    ...
-                    game_id = ... # wybierz id
+                    logging.debug('menu active: Challenge')
+                    game_id = result
                     epaper.loadingScreen()
                     board.pauseEvents()
-                    os.system(
-                        str(sys.executable)
-                        + " "
-                        + str(pathlib.Path(__file__).parent.resolve())
-                        + f"/../game/lichess.py Ongoing {game_id}"
-                    )
+                    logging.debug(f"staring lichess")
+                    os.system(f"{sys.executable} {pathlib.Path(__file__).parent.resolve()}"
+                              f"/../game/lichess.py Challenge {game_id}"
+                              )
                     board.unPauseEvents()
-            elif result == "Challenges":
-                challengemenu = ... # berserk -> pobierz challenge i zapisz do słownika
-                result = doMenu(challengemenu, "Challenges")
-                if result != "BACK":
-                    ...
-
+                else:
+                    pass  #TODO implement me
 
             else:  # new Rated or Unrated
                 if result == "Rated":
