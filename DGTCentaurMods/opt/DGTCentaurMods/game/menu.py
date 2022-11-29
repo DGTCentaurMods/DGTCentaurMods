@@ -25,6 +25,7 @@ import pathlib
 import sys
 import threading
 import time
+import berserk
 
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
@@ -522,60 +523,63 @@ while True:
                 os.system("/sbin/shutdown -r now &")
                 sys.exit()
     if result == "Lichess":
-        livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing"}
+        livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing", 'Challenges': 'Challenges'}
         result = doMenu(livemenu, "Lichess")
         if result != "BACK":
             if result == "Ongoing":
-                epaper.loadingScreen()
-                board.pauseEvents()
-                os.system(
-                    str(sys.executable)
-                    + " "
-                    + str(pathlib.Path(__file__).parent.resolve())
-                    + "/../game/lichess.py Ongoing"
-                )
-                board.unPauseEvents()
-            if result == "Rated":
-                rated = True
-            else:
-                rated = False
-            colormenu = {"random": "Random", "white": "White", "black": "Black"}
-            result = doMenu(colormenu, "Color")
-            if result != "BACK":
-                color = result
-                timemenu = {
-                    "10 , 5": "10+5 minutes",
-                    "15 , 10": "15+10 minutes",
-                    "30 , 0": "30 minutes",
-                    "30 , 20": "30+20 minutes",
-                    "45 , 45": "45+45 minutes",
-                    "60 , 20": "60+20 minutes",
-                    "60 , 30": "60+30 minutes",
-                    "90 , 30": "90+30 minutes",
-                }
-                result = doMenu(timemenu, "Time")
-
+                ongoing_games = ...  # berserk -> get
+                result = doMenu(ongoing_games, "Ongoing games")
                 if result != "BACK":
-                    # split time and increment '10 , 5' -> ['10', '5']
-                    seek_time = result.split(",")
-                    gtime = int(seek_time[0])
-                    gincrement = int(seek_time[1])
+                    ...
+                    game_id = ... # wybierz id
                     epaper.loadingScreen()
                     board.pauseEvents()
                     os.system(
                         str(sys.executable)
                         + " "
                         + str(pathlib.Path(__file__).parent.resolve())
-                        + "/../game/lichess.py New "
-                        + str(gtime)
-                        + " "
-                        + str(gincrement)
-                        + " "
-                        + str(rated)
-                        + " "
-                        + str(color)
+                        + f"/../game/lichess.py Ongoing {game_id}"
                     )
                     board.unPauseEvents()
+            elif result == "Challenges":
+                challengemenu = ... # berserk -> pobierz challenge i zapisz do słownika
+                result = doMenu(challengemenu, "Challenges")
+                if result != "BACK":
+                    ...
+
+
+            else:  # new Rated or Unrated
+                if result == "Rated":
+                    rated = True
+                else:
+                    rated = False
+                colormenu = {"random": "Random", "white": "White", "black": "Black"}
+                result = doMenu(colormenu, "Color")
+                if result != "BACK":
+                    color = result
+                    timemenu = {
+                        "10 , 5": "10+5 minutes",
+                        "15 , 10": "15+10 minutes",
+                        "30 , 0": "30 minutes",
+                        "30 , 20": "30+20 minutes",
+                        "45 , 45": "45+45 minutes",
+                        "60 , 20": "60+20 minutes",
+                        "60 , 30": "60+30 minutes",
+                        "90 , 30": "90+30 minutes",
+                    }
+                    result = doMenu(timemenu, "Time")
+
+                    if result != "BACK":
+                        # split time and increment '10 , 5' -> ['10', '5']
+                        seek_time = result.split(",")
+                        gtime = int(seek_time[0])
+                        gincrement = int(seek_time[1])
+                        epaper.loadingScreen()
+                        board.pauseEvents()
+                        os.system(f"{sys.executable} {pathlib.Path(__file__).parent.resolve()}/../game/lichess.py "
+                                  f"New {gtime} {gincrement} {rated} {color}"
+                                  )
+                        board.unPauseEvents()
     if result == "Engines":
         enginemenu = {"stockfish": "Stockfish"}
         # Pick up the engines from the engines folder and build the menu
