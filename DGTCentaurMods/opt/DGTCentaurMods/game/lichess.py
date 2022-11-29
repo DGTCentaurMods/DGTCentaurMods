@@ -40,6 +40,10 @@ from DGTCentaurMods.board import board, centaur
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.game import gamemanager
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+logging.info("loaded lichess.py")
 curturn = 1
 computeronturn = 0
 kill = 0
@@ -180,6 +184,7 @@ if (token == "" or token == "tokenhere") and kill == 0:
 # or New [time=10|15|30|60] [increment=5|10|20] [rated=True|False] [color=White|Black|Random]
 
 if (len(sys.argv) == 1) and kill == 0:
+	logging.error("no parameter given!")
 	epaper.writeText(0,"Error:        ")
 	epaper.writeText(1,"lichess.py    ")
 	epaper.writeText(2,"no parameter")
@@ -189,23 +194,25 @@ if (len(sys.argv) == 1) and kill == 0:
 	sys.exit()
 
 if (len(sys.argv) > 1) and kill == 0:
-	if (sys.argv[1] != "current" and sys.argv[1] != "New"):
+	if (sys.argv[1] != "Ongoing" and sys.argv[1] != "New"):
+		logging.error("Wrong first input parameter")
 		sys.exit()
 
 gtime = 0
 ginc = 0
 grated = 0
 gcolor = 0
-current = False
+ongoing = False
 if len(sys.argv) > 1:
 	if sys.argv[1] == "New":
 		gtime = sys.argv[2]
 		ginc = sys.argv[3]
 		grated = sys.argv[4]
 		gcolor = sys.argv[5]
-	elif sys.argv[1] == "current":
-		current = True
+	elif sys.argv[1] == "Ongoing":
+		ongoing = True
 	else:
+		logging.error("Wrong input value")
 		raise ValueError("Not expected value %s" % (sys.argv[1],))
 
 # Prepare for the lichess api
@@ -246,17 +253,19 @@ gameid = ""
 
 
 def ongoingGameThread():
-	global current
+	global ongoing
 	global gameid
-	if not current:
-		raise ValueError("Value `current` is expected to be True")
+	if not ongoing:
+		raise ValueError("Value `ongoing` is expected to be True")
 	epaper.writeText(0, "Waiting fot the game...")
+	logging.info("Waiting fot the game...")
 	while True:
 		current_games = client.games.get_ongoing(10)
 		if len(current_games) > 0:
 			break
 		time.sleep(0.5)
 	gameid = current_games[0]['gameId']
+	logging.info("found game with ID="+gameid)
 
 
 checkback = 0
@@ -290,8 +299,14 @@ if sys.argv[1] == "New":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
-elif sys.argv[1] == "ongoing":
-	...
+elif sys.argv[1] == "Ongoing":
+	gt = threading.Thread(target=ongoingGameThread, args=())
+	gt.daemon = True
+	gt.start()
+	bb = threading.Thread(target=backTest, args=())
+	bb.daemon = True
+	bb.start()
+
 
 
 while gameid == "" and kill == 0:
@@ -355,16 +370,27 @@ def stateThread():
 		for state in gamestate:
 			print(state)
 			message1 = str(state)
-			# print(message1)
+			print("message1 = ", message1)
+
+			if 'chatLine' in message1 or 'opponentGone' in message1:
+				time.sleep(0.1)
+				continue
+			
 			if message1.find('moves'):
 				c = message1.find("wtime")
 				messagehelp = message1[c:len(message1)]
+				print("messagehelp = ", messagehelp)
 				# At this point if the string contains date then the time is in date format
 				# otherwise it's in number format.
 				whitetimemin = 0
 				whitetimesec = 0
 				if "date" not in messagehelp:
 					whitetimesec = messagehelp[8:messagehelp.find(",")]
+					
+					# this can be removed when all the special message cases have been dealt with
+					if whitetimesec == "":
+						whitetimesec = "0"
+
 					whitetimesec = str(int(whitetimesec)//1000)
 				else:
 					c = messagehelp.find(", ")
@@ -382,13 +408,25 @@ def stateThread():
 					whitetimesec = messagehelp[1:c]
 					if whitetimesec[:2] == "tz" or whitetimesec[1:3] == "st":
 						whitetimesec = "0"
+				
+				# this can be removed when all the special message cases have been dealt with
+				if whitetimemin == '':
+					whitetimemin = 0
+
 				whitetime = (int(str(whitetimemin)) * 60) + int(str(whitetimesec))
+					
 				c = message1.find("btime")
 				messagehelp = message1[c:len(message1)]
+				print("messagehelp = ", messagehelp)
+
 				blacktimemin = 0
 				blacktimesec = 0
 				if "date" not in messagehelp:
 					blacktimesec = messagehelp[8:messagehelp.find(",")]
+
+					# this can be removed when all the special message cases have been dealt with
+					if blacktimesec == "":
+						blacktimesec = "0"
 					blacktimesec = str(int(blacktimesec)//1000)
 				else:
 					c = messagehelp.find(", ")
@@ -406,6 +444,11 @@ def stateThread():
 					blacktimesec = messagehelp[1:c]
 					if blacktimesec[:2] == "tz" or blacktimesec[1:3] == "st":
 						blacktimesec = "0"
+
+				# this can be removed when all the special message cases have been dealt with
+				if blacktimemin == '':
+					blacktimemin = 0
+
 				blacktime = (int(blacktimemin) * 60) + int(blacktimesec)
 				gamemanager.setClock(whitetime, blacktime)
 			if ('state' in state.keys()):
