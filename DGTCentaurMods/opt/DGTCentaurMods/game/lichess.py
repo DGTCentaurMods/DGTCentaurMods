@@ -217,6 +217,7 @@ if len(sys.argv) > 1:
 	elif sys.argv[1] == "Challenge":
 		challenge = True
 		challengeid = sys.argv[2]
+		challenge_direction = sys.argv[3]
 	else:
 		logging.error("Wrong input value")
 		raise ValueError("Not expected value %s" % (sys.argv[1],))
@@ -258,8 +259,14 @@ def newGameThread():
 def newChallengeThread():
 	global challengeid
 	global gameid
-	epaper.writeText(0, "Accepting challenge / waiting...")
-	client.challenges.accept(challengeid)
+	epaper.writeText(0, "Accepting challenge / waiting for the opponent...")
+	logging.debug("Accepting challenge / waiting for the opponent...")
+	if challenge_direction == 'in':
+		client.challenges.accept(challengeid)
+	else:
+		# wait until challenge accepted?
+		...
+
 	gameid = challengeid
 
 
@@ -310,6 +317,14 @@ if sys.argv[1] == "New":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+	while gameid == "" and kill == 0:
+		# logging.info('')
+		for event in client.board.stream_incoming_events():
+			if 'type' in event.keys():
+				if event.get('type') == "gameStart":
+					if 'game' in event.keys():
+						gameid = event.get('game').get('id')
+						break
 elif sys.argv[1] == "Ongoing":
 	logging.info(f"selected game id {gameid}")
 elif sys.argv[1] == "Challenge":
@@ -320,6 +335,16 @@ elif sys.argv[1] == "Challenge":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+
+	while gameid == "" and kill == 0:
+		logging.info('.')
+		ongoing_games = client.games.get_ongoing(10)
+		for game in ongoing_games:
+			if game["gameId"] == challengeid:
+				gameid = challengeid
+				break
+	logging.info(f"challenge accepted. Current challenge id {gameid}")
+
 else:
 	raise ValueError(f"Wrong argv[1] value: {sys.argv[1]}")
 #gt = threading.Thread(target=ongoingGameThread, args=())
@@ -330,15 +355,6 @@ else:
 	#bb.start()
 
 
-logging.info(f"challenge accepted. Current challenge id {challengeid}")
-while gameid == "" and kill == 0:
-	logging.info('.')
-	for event in client.board.stream_incoming_events():
-		if ('type' in event.keys()):
-			if (event.get('type') == "gameStart"):
-				if ('game' in event.keys()):
-					gameid = event.get('game').get('id')
-					break
 checkback = 1
 
 if kill == 1:
