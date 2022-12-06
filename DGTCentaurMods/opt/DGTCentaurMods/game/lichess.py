@@ -23,7 +23,7 @@
 #
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
-
+import datetime
 import gc
 import os
 import pathlib
@@ -317,14 +317,26 @@ if sys.argv[1] == "New":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+	gameids = [game['gameId'] for game in client.games.get_ongoing(30)]
+
+	# TODO test, check
+	newest = datetime.datetime(1, 1, 1)
+	for g in gameids:
+		game_info = client.games.export(g)
+		if game_info['date'] > newest:
+			newest = game_info['date']
+			id_newest = g
+
+
 	while gameid == "" and kill == 0:
 		# logging.info('')
 		for event in client.board.stream_incoming_events():
 			if 'type' in event.keys():
 				if event.get('type') == "gameStart":
 					if 'game' in event.keys():
-						gameid = event.get('game').get('id')
-						break
+
+						gameids.append(event.get('game').get('id'))
+						# break
 elif sys.argv[1] == "Ongoing":
 	logging.info(f"selected game id {gameid}")
 elif sys.argv[1] == "Challenge":
