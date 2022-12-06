@@ -309,6 +309,7 @@ def backTest():
 			pass
 		time.sleep(0.2)
 
+
 # Wait for a game to start and get the game id!
 if sys.argv[1] == "New":
 	gt = threading.Thread(target=newGameThread, args=())
@@ -317,26 +318,30 @@ if sys.argv[1] == "New":
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
-	gameids = [game['gameId'] for game in client.games.get_ongoing(30)]
+	while not gameid and not kill:
+		newest = datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc)
+		time.sleep(0.5)  # wait a little before accessing ongoing games (maybe the opponent haven't  bben found yet)?
+		game_ids = [game['gameId'] for game in client.games.get_ongoing(30)]
+		for g in game_ids:
+			a_game = client.games.export(g)
+			game_start = a_game['createdAt']
+			# remove all the ongoing games that started earlier than 3 minutes ago
+			if game_start < datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(minutes=300000):
+				continue
+			# remove all the wrong timecontrols (if there were any)
+			if not a_game.get('clock'):
+				print(f'1 {g}')
+				continue
+			if (a_game['clock']['initial'] != (int(gtime)*60)) or (a_game['clock']['increment'] != int(ginc)):
+				print(f'2 {g}')
+				continue
+			# are there some changes breaking compatibility in berserk?
+			if isinstance(game_start, int):
+				game_start = datetime.datetime.utcfromtimestamp(game_start/1000)
+			if game_start > newest:
+				newest = game_start
+				gameid = g
 
-	# TODO test, check
-	newest = datetime.datetime(1, 1, 1)
-	for g in gameids:
-		game_info = client.games.export(g)
-		if game_info['date'] > newest:
-			newest = game_info['date']
-			id_newest = g
-
-
-	while gameid == "" and kill == 0:
-		# logging.info('')
-		for event in client.board.stream_incoming_events():
-			if 'type' in event.keys():
-				if event.get('type') == "gameStart":
-					if 'game' in event.keys():
-
-						gameids.append(event.get('game').get('id'))
-						# break
 elif sys.argv[1] == "Ongoing":
 	logging.info(f"selected game id {gameid}")
 elif sys.argv[1] == "Challenge":
