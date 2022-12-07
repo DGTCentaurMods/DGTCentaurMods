@@ -51,7 +51,7 @@ BTNLONGPLAY = 7
 
 # Various setup
 try:
-    ser = serial.Serial("/dev/ttyS0", baudrate=1000000, timeout=0.2)
+    ser = serial.Serial("/dev/serial0", baudrate=1000000, timeout=0.2)
     ser.isOpen()
 except:
     ser.close()
