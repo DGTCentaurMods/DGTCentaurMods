@@ -57,4 +57,34 @@ if answer == "BACK":
 board.epd.init()
 
 # If the answer is not "BACK" then answer contains our SSID
-# Now we n
+# Now we need to get the password
+password = board.getText("Wifi Password")
+
+if password == "":
+	sys.exit()
+
+# Add an SSID
+cmd = """sudo sh -c \"wpa_passphrase '""" + answer + """' '""" + password + """'\""""
+res = os.popen(cmd)
+result = list(res)
+section = ""
+for i in range(0,len(result)):
+	section = section + result[i]
+print(section)
+if section.find("ssid") != -1:
+	wpas = open('/etc/wpa_supplicant/wpa_supplicant.conf','r')
+	curconf = wpas.read()
+	wpas.close()
+	print(curconf)
+	if curconf.find(answer) != -1:
+		# SSID is already in file
+		newtext = re.sub('network={[^\}]+?ssid=\"' + answer + '\"[^\}]+?\}\n','',curconf,re.DOTALL)
+		print(newtext)
+		wpas = open('/etc/wpa_supplicant/wpa_supplicant.conf','w')
+		wpas.write(newtext)
+		wpas.close()
+	# Success - append it to wpa_supplicant
+	wpas = open('/etc/wpa_supplicant/wpa_supplicant.conf','a')
+	wpas.write(section)
+	wpas.close()
+	os.system("sudo wpa_cli -i wlan0 reconfigure")
