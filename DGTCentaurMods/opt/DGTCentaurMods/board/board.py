@@ -49,20 +49,34 @@ BTNHELP = 5
 BTNPLAY = 6
 BTNLONGPLAY = 7
 
+# Get the config
+conf = centaur.ConfigSystem()
+
+dev = conf.read_value('system', 'developer')
+print("Developer mode is ",dev)
+
 # Various setup
-try:
-    ser = serial.Serial("/dev/serial0", baudrate=1000000, timeout=0.2)
-    ser.isOpen()
-except:
-    ser.close()
-    ser.open()
+if dev:
+    # Enable virtual serial port
+    # TODO: setup as a service
+    os.system("socat -d -d pty,raw,echo=0 pty,raw,echo=0 &")
+    time.sleep(10)
+    # Then redirect
+    ser = serial.Serial("/dev/pts/2", baudrate=1000000, timeout=0.2)
+else:
+    try:
+        ser = serial.Serial("/dev/serial0", baudrate=1000000, timeout=0.2) 
+        ser.isOpen()
+    except:
+        ser.close()
+        ser.open()
 
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 time.sleep(2)
 
 # This is the most common address of the board
-addr1 = ""
-addr2 = ""
+addr1 = 00
+addr2 = 00
 
 # Battery related
 chargerconnected = 0
@@ -92,7 +106,7 @@ print('Sent payload 2')
 print('Serial is open. Waiting for response.')
 resp = ""
 timeout = time.time() + 60
-while len(resp) < 4 and time.time() < timeout:
+while not dev and len(resp) < 4 and time.time() < timeout:
     tosend = bytearray(b'\x87\x00\x00\x07')
     ser.write(tosend)
     try:
@@ -104,9 +118,10 @@ while len(resp) < 4 and time.time() < timeout:
         addr2 = resp[4]
         print("Discovered new address:" + hex(addr1) + hex(addr2))
 else:
-    if not addr1 or not addr2:
-        print('FATAL: No response from serial')
-        sys.exit(1)
+    if not dev: 
+        if not addr1 or not addr2:
+            print('FATAL: No response from serial')
+            sys.exit(1)
 
 def checksum(barr):
     csum = 0
@@ -131,7 +146,7 @@ def clearSerial():
     print('Checking and clear the serial line.')
     resp1 = ""
     resp2 = ""
-    while True:
+    while not dev and True:
         sendPacket(b'\x83', b'')
         expect1 = buildPacket(b'\x85\x00\x06', b'')
         try:
