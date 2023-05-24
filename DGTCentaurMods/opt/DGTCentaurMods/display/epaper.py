@@ -359,6 +359,7 @@ def resignDrawMenu(row):
     # Draws draw or resign options to the screen buffer
     global epaperbuffer
     global epaperprocesschange
+    global font18
     if epaperprocesschange == 1:
         offset = row * 20
         draw = ImageDraw.Draw(epaperbuffer)

@@ -25,10 +25,13 @@ import pathlib
 import sys
 import threading
 import time
+import logging
 
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
+
+logging.basicConfig(level=logging.DEBUG)
 
 menuitem = 1
 curmenu = None
@@ -229,6 +232,26 @@ def show_welcome():
 
 show_welcome()
 epaper.quickClear()
+
+
+def get_lichess_client():
+    logging.debug("get_lichess_client")
+    import berserk
+    import berserk.exceptions
+    token = centaur.get_lichess_api()
+    if not len(token):
+        logging.error('lichess token not defined')
+        raise ValueError('lichess token not defined')
+    session = berserk.TokenSession(token)
+    client = berserk.Client(session=session)
+    # just to test if the token is a valid one
+    try:
+        who = client.account.get()
+    except berserk.exceptions.ResponseError:
+        logging.error('Lichess API error. Wrong token maybe?')
+        raise
+    return client
+
 
 # Handle the menu structure
 while True:
@@ -522,50 +545,98 @@ while True:
                 os.system("/sbin/shutdown -r now &")
                 sys.exit()
     if result == "Lichess":
-        livemenu = {"Rated": "Rated", "Unrated": "Unrated"}
+        livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing", 'Challenges': 'Challenges'}
         result = doMenu(livemenu, "Lichess")
+        logging.debug('menu active: lichess')
         if result != "BACK":
-            if result == "Rated":
-                rated = True
-            else:
-                rated = False
-            colormenu = {"random": "Random", "white": "White", "black": "Black"}
-            result = doMenu(colormenu, "Color")
-            if result != "BACK":
-                color = result
-                timemenu = {
-                    "10 , 5": "10+5 minutes",
-                    "15 , 10": "15+10 minutes",
-                    "30 , 0": "30 minutes",
-                    "30 , 20": "30+20 minutes",
-                    "45 , 45": "45+45 minutes",
-                    "60 , 20": "60+20 minutes",
-                    "60 , 30": "60+30 minutes",
-                    "90 , 30": "90+30 minutes",
-                }
-                result = doMenu(timemenu, "Time")
+            if result == "Ongoing":
+                logging.debug('menu active: Ongoing')
+                client = get_lichess_client()
+                ongoing_games = client.games.get_ongoing(10)
+                ongoing_menu = {}
+                logging.debug(f"{ongoing_menu}")
+                for game in ongoing_games:
+                    gameid = game["gameId"]
+                    opponent = game['opponent']['id']
+                    if game['color'] == 'white':
+                        desc = f"{client.account.get()['username']} vs. {opponent}"
+                    else:
+                        desc = f" {opponent} vs. {client.account.get()['username']}"
+                    ongoing_menu[gameid] = desc
+                logging.debug(f"ongoing menu: {ongoing_menu}")
+                if len(ongoing_menu) > 0:
+                    result = doMenu(ongoing_menu, "Current games:")
+                    if result != "BACK":
+                        logging.debug(f"menu current games")
+                        game_id = result
+                        epaper.loadingScreen()
+                        board.pauseEvents()
+                        logging.debug(f"staring lichess")
+                        os.system(f"{sys.executable} {pathlib.Path(__file__).parent.resolve()}"
+                                  f"/../game/lichess.py Ongoing {game_id}"
+                                  )
+                        board.unPauseEvents()
+                else:
+                    logging.warning("No ongoing games!")
+                    epaper.writeText(1, "No ongoing games!")
+                    time.sleep(3)
 
+
+            elif result == "Challenges":
+                client = get_lichess_client()
+                challenge_menu = {}
+                # very ugly call, there is no adequate method in berserk's API,
+                # see https://github.com/rhgrant10/berserk/blob/master/berserk/todo.md
+                challenges = client._r.get('api/challenge')
+                for challenge in challenges['in']:
+                    challenge_menu[f"{challenge['id']}:in"] = f"in: {challenge['challenger']['id']}"
+                for challenge in challenges['out']:
+                    challenge_menu[f"{challenge['id']}:out"] = f"out: {challenge['destUser']['id']}"
+                result = doMenu(challenge_menu, "Challenges")
                 if result != "BACK":
-                    # split time and increment '10 , 5' -> ['10', '5']
-                    seek_time = result.split(",")
-                    gtime = int(seek_time[0])
-                    gincrement = int(seek_time[1])
+                    logging.debug('menu active: Challenge')
+                    game_id, challenge_direction = result.split(":")
                     epaper.loadingScreen()
                     board.pauseEvents()
-                    os.system(
-                        str(sys.executable)
-                        + " "
-                        + str(pathlib.Path(__file__).parent.resolve())
-                        + "/../game/lichess.py New "
-                        + str(gtime)
-                        + " "
-                        + str(gincrement)
-                        + " "
-                        + str(rated)
-                        + " "
-                        + str(color)
-                    )
+                    logging.debug(f"staring lichess")
+                    os.system(f"{sys.executable} {pathlib.Path(__file__).parent.resolve()}"
+                              f"/../game/lichess.py Challenge {game_id} {challenge_direction}"
+                              )
                     board.unPauseEvents()
+
+            else:  # new Rated or Unrated
+                if result == "Rated":
+                    rated = True
+                else:
+                    assert result == "Unrated", "Wrong game type"  #nie można rzucać wyjątków, bo cała aplikacja się sypie
+                    rated = False
+                colormenu = {"random": "Random", "white": "White", "black": "Black"}
+                result = doMenu(colormenu, "Color")
+                if result != "BACK":
+                    color = result
+                    timemenu = {
+                        "10 , 5": "10+5 minutes",
+                        "15 , 10": "15+10 minutes",
+                        "30 , 0": "30 minutes",
+                        "30 , 20": "30+20 minutes",
+                        "45 , 45": "45+45 minutes",
+                        "60 , 20": "60+20 minutes",
+                        "60 , 30": "60+30 minutes",
+                        "90 , 30": "90+30 minutes",
+                    }
+                    result = doMenu(timemenu, "Time")
+
+                    if result != "BACK":
+                        # split time and increment '10 , 5' -> ['10', '5']
+                        seek_time = result.split(",")
+                        gtime = int(seek_time[0])
+                        gincrement = int(seek_time[1])
+                        epaper.loadingScreen()
+                        board.pauseEvents()
+                        os.system(f"{sys.executable} {pathlib.Path(__file__).parent.resolve()}/../game/lichess.py "
+                                  f"New {gtime} {gincrement} {rated} {color}"
+                                  )
+                        board.unPauseEvents()
     if result == "Engines":
         enginemenu = {"stockfish": "Stockfish"}
         # Pick up the engines from the engines folder and build the menu

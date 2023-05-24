@@ -23,7 +23,7 @@
 #
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
-
+import datetime
 import gc
 import os
 import pathlib
@@ -40,6 +40,10 @@ from DGTCentaurMods.board import board, centaur
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.game import gamemanager
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+logging.info("loaded lichess.py")
 curturn = 1
 computeronturn = 0
 kill = 0
@@ -180,6 +184,7 @@ if (token == "" or token == "tokenhere") and kill == 0:
 # or New [time=10|15|30|60] [increment=5|10|20] [rated=True|False] [color=White|Black|Random]
 
 if (len(sys.argv) == 1) and kill == 0:
+	logging.error("no parameter given!")
 	epaper.writeText(0,"Error:        ")
 	epaper.writeText(1,"lichess.py    ")
 	epaper.writeText(2,"no parameter")
@@ -189,19 +194,33 @@ if (len(sys.argv) == 1) and kill == 0:
 	sys.exit()
 
 if (len(sys.argv) > 1) and kill == 0:
-	if (str(sys.argv[1]) != "current" and str(sys.argv[1]) != "New"):
+	if sys.argv[1] not in ["New", "Ongoing", "Challenge"]:
+		logging.error("Wrong first input parameter")
 		sys.exit()
 
 gtime = 0
 ginc = 0
 grated = 0
 gcolor = 0
-if (len(sys.argv) > 1):
-	if str(sys.argv[1]) == "New":
-		gtime = str(sys.argv[2])
-		ginc = str(sys.argv[3])
-		grated = str(sys.argv[4])
-		gcolor = str(sys.argv[5])
+gameid = ""
+ongoing = False
+challenge = False
+if len(sys.argv) > 1:
+	if sys.argv[1] == "New":
+		gtime = sys.argv[2]
+		ginc = sys.argv[3]
+		grated = sys.argv[4]
+		gcolor = sys.argv[5]
+	elif sys.argv[1] == "Ongoing":
+		ongoing = True
+		gameid = sys.argv[2]
+	elif sys.argv[1] == "Challenge":
+		challenge = True
+		challengeid = sys.argv[2]
+		challenge_direction = sys.argv[3]
+	else:
+		logging.error("Wrong input value")
+		raise ValueError("Not expected value %s" % (sys.argv[1],))
 
 # Prepare for the lichess api
 session = berserk.TokenSession(token)
@@ -237,9 +256,38 @@ def newGameThread():
 	client.board.seek(int(gtime), int(ginc), seek_rated, color=gcolor, rating_range=f'{ratingrange}')
 	
 
+def newChallengeThread():
+	global challengeid
+	global gameid
+	epaper.writeText(0, "Accepting challenge / waiting for the opponent...")
+	logging.debug("Accepting challenge / waiting for the opponent...")
+	if challenge_direction == 'in':
+		client.challenges.accept(challengeid)
+	else:
+		# wait until challenge accepted?
+		...
+
+	gameid = challengeid
+
+
+#def ongoingGameThread():
+	#global ongoing
+	#global gameid
+	#if not ongoing:
+	#	raise ValueError("Value `ongoing` is expected to be True")
+	#epaper.writeText(0, "Waiting fot the game...")
+	#logging.info("Waiting fot the game...")
+	#while True:
+	#	current_games = client.games.get_ongoing(10)
+	#	if len(current_games) > 0:
+	#		break
+	#	time.sleep(0.5)
+	#gameid = sys.argv[2]
+	#logging.info("found game with ID="+gameid)
+
+
 checkback = 0
 kill = 0
-gameid = ""
 
 def backTest():
 	# Check for the back button. We use this to allow the user to stop seeking for a game
@@ -261,22 +309,69 @@ def backTest():
 			pass
 		time.sleep(0.2)
 
+
 # Wait for a game to start and get the game id!
-if (str(sys.argv[1]) == "New"):
+if sys.argv[1] == "New":
 	gt = threading.Thread(target=newGameThread, args=())
 	gt.daemon = True
 	gt.start()
 	bb = threading.Thread(target=backTest, args=())
 	bb.daemon = True
 	bb.start()
+	while not gameid and not kill:
+		newest = datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc)
+		time.sleep(0.5)  # wait a little before accessing ongoing games (maybe the opponent haven't  bben found yet)?
+		game_ids = [game['gameId'] for game in client.games.get_ongoing(30)]
+		for g in game_ids:
+			a_game = client.games.export(g)
+			game_start = a_game['createdAt']
+			# remove all the ongoing games that started earlier than 3 minutes ago
+			if game_start < datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(minutes=300000):
+				continue
+			# remove all the wrong timecontrols (if there were any)
+			if not a_game.get('clock'):
+				print(f'1 {g}')
+				continue
+			if (a_game['clock']['initial'] != (int(gtime)*60)) or (a_game['clock']['increment'] != int(ginc)):
+				print(f'2 {g}')
+				continue
+			# are there some changes breaking compatibility in berserk?
+			if isinstance(game_start, int):
+				game_start = datetime.datetime.utcfromtimestamp(game_start/1000)
+			if game_start > newest:
+				newest = game_start
+				gameid = g
 
-while gameid == "" and kill == 0:
-	for event in client.board.stream_incoming_events():
-		if ('type' in event.keys()):
-			if (event.get('type') == "gameStart"):
-				if ('game' in event.keys()):
-					gameid = event.get('game').get('id')
-					break
+elif sys.argv[1] == "Ongoing":
+	logging.info(f"selected game id {gameid}")
+elif sys.argv[1] == "Challenge":
+	logging.info(f"selected challenge id {challengeid}")
+	gt = threading.Thread(target=newChallengeThread, args=())
+	gt.daemon = True
+	gt.start()
+	bb = threading.Thread(target=backTest, args=())
+	bb.daemon = True
+	bb.start()
+
+	while gameid == "" and kill == 0:
+		logging.info('.')
+		ongoing_games = client.games.get_ongoing(10)
+		for game in ongoing_games:
+			if game["gameId"] == challengeid:
+				gameid = challengeid
+				break
+	logging.info(f"challenge accepted. Current challenge id {gameid}")
+
+else:
+	raise ValueError(f"Wrong argv[1] value: {sys.argv[1]}")
+#gt = threading.Thread(target=ongoingGameThread, args=())
+	#gt.daemon = True
+	#gt.start()
+	#bb = threading.Thread(target=backTest, args=())
+	#bb.daemon = True
+	#bb.start()
+
+
 checkback = 1
 
 if kill == 1:
