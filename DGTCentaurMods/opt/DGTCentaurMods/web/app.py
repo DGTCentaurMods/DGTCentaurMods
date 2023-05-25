@@ -21,8 +21,8 @@
 
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
-from DGTCentaurMods.board import centaur
-from board import LiveBoard
+from chessboard import LiveBoard
+import centaurflask
 from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, MetaData
@@ -99,8 +99,8 @@ def pgn():
 
 @app.route("/configure")
 def configure():
-	# Get the lichessapikey
-	return render_template('configure.html', lichesskey=centaur.get_lichess_api(), lichessrange=centaur.get_lichess_range())
+	# Get the lichessapikey		
+	return render_template('configure.html', lichesskey=centaurflask.get_lichess_api(), lichessrange=centaurflask.get_lichess_range())
 
 @app.route("/support")
 def support():
@@ -125,13 +125,13 @@ def shutdownboard():
 
 @app.route("/lichesskey/<key>")
 def lichesskey(key):
-    centaur.set_lichess_api(key)
+    centaurflask.set_lichess_api(key)
     os.system("sudo systemctl restart DGTCentaurMods.service")
     return "ok"
 
 @app.route("/lichessrange/<newrange>")
 def lichessrange(newrange):
-	centaur.set_lichess_range(newrange)
+	centaurflask.set_lichess_range(newrange)
 	return "ok"
 
 @app.route("/analyse/<gameid>")
