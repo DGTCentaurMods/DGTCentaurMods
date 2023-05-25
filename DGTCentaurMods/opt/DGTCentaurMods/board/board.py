@@ -119,6 +119,7 @@ while len(resp) < 4 and time.time() < timeout:
         addr1 = resp[3]
         addr2 = resp[4]
         print("Discovered new address:" + hex(addr1) + hex(addr2))
+        break
 else:
     print('FATAL: No response from serial')
     sys.exit(1)
