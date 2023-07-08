@@ -28,3 +28,5 @@ DGTCentaurMods/web/static/epaper.jpg
 **/build/dgtcentaurmods*
 **/build/Stockfish*
 **/.toggled
+DGTCentaurMods.code-workspace
+.gitignore

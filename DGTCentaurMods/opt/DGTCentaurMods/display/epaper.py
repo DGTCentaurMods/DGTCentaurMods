@@ -295,7 +295,7 @@ def drawBoard(pieces, startrow=2):
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
-    draw.rectangle([(0,47),(128,176)],fill=None,outline='black')
+    draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
@@ -359,7 +359,6 @@ def resignDrawMenu(row):
     # Draws draw or resign options to the screen buffer
     global epaperbuffer
     global epaperprocesschange
-    global font18
     if epaperprocesschange == 1:
         offset = row * 20
         draw = ImageDraw.Draw(epaperbuffer)
