@@ -44,6 +44,9 @@ import os
 
 from enum import Enum
 
+import logging
+import logging.handlers
+
 # https://pypi.org/project/py-flags/
 # pip install py-flags
 from flags import Flags
@@ -84,25 +87,56 @@ FENLOG = HOME_DIRECTORY+"/centaur/fen.log"
 
 class Log:
 
-    ENABLED = True
+    LEVEL = logging.DEBUG
+
+    __initialized = False
+
+    @staticmethod
+    def __init():
+
+        try:
+            LOG_DIR = HOME_DIRECTORY+"/logs"
+
+            if not os.path.exists(LOG_DIR):
+                os.makedirs(LOG_DIR)
+
+            handler = logging.handlers.WatchedFileHandler(LOG_DIR+'/DGTCentaurMods.log')
+            formatter = logging.Formatter(logging.BASIC_FORMAT)
+            handler.setFormatter(formatter)
+            
+            root = logging.getLogger()
+            root.setLevel(Log.LEVEL)
+            root.addHandler(handler)
+
+            Log.__initialized = True
+
+            print("Logging initialized.")
+            Log.info("Logging started.")
+
+        except Exception as e:
+            print(f'[Log.__init] {e}')
 
     @staticmethod
     def info(message):
-        if Log.ENABLED:
-            Log.__syslog(message)
+        if Log.__initialized == False:
+            Log.__init()
+
+        logging.info(message)
 
     @staticmethod
-    def error(message):
-        Log.__syslog(message, priority = syslog.LOG_ERR)
+    def exception(message):
+        if Log.__initialized == False:
+            Log.__init()
+
+        logging.exception(message)
 
     @staticmethod
-    def alert(message):
-        if Log.ENABLED:
-            Log.__syslog(message, priority = syslog.LOG_ALERT)
-            
-    @staticmethod
-    def __syslog(message, priority = syslog.LOG_INFO):
-        syslog.syslog(priority, f"[DGTCentaurMods] {message}")
+    def debug(message):
+        if Log.__initialized == False:
+            Log.__init()
+
+        logging.debug(message)
+
 
 class Converters:
 
@@ -147,7 +181,7 @@ class DAL(Singleton):
             self._db_game_id = session.query(func.max(models.Game.id)).scalar()
 
         except Exception as e:
-            Log.error(f'[__read_current_game_id] {e}')
+            Log.exception(f'[__read_current_game_id] {e}')
 
     def read_uci_moves_history(self):
 
@@ -162,7 +196,7 @@ class DAL(Singleton):
             return result.scalars().all()
 
         except Exception as e:
-            Log.error(f'[__read_moves_history] {e}')
+            Log.exception(f'[__read_moves_history] {e}')
 
     def insert_new_game(self, source, event, site, round, white, black):
 
@@ -195,7 +229,7 @@ class DAL(Singleton):
             session.commit()
 
         except Exception as e:
-            Log.error(f'[insert_new_game] {e}')
+            Log.exception(f'[insert_new_game] {e}')
 
     def terminate_game(self, result):
         try:
@@ -204,7 +238,7 @@ class DAL(Singleton):
             game.result = result
             session.commit()
         except Exception as e:
-            Log.error(f'[terminate_game] {e}')
+            Log.exception(f'[terminate_game] {e}')
 
     def delete_game_move(self, id):
         try:
@@ -213,7 +247,7 @@ class DAL(Singleton):
             session.execute(stmt)
             session.commit()
         except Exception as e:
-            Log.error(f'[delete_game_move] {e}')
+            Log.exception(f'[delete_game_move] {e}')
 
     def insert_new_game_move(self, uci_move, fen):
 
@@ -228,7 +262,7 @@ class DAL(Singleton):
             session.add(game_move)
             session.commit()
             
-            Log.info(f'Move "{uci_move}" has been commited.')
+            Log.debug(f'Move "{uci_move}" has been commited.')
 
         try:
             _insert()
@@ -239,7 +273,7 @@ class DAL(Singleton):
             try:
                 _insert()
             except Exception as e:
-                Log.error(f'Move "{uci_move}" HAS NOT been commited : {e}')
+                Log.exception(f'Move "{uci_move}" HAS NOT been commited : {e}')
 
     def read_last_db_move(self):
         # We read the last move that has been recorded
@@ -253,7 +287,7 @@ class DAL(Singleton):
                     .limit(1)).scalar()
     
         except Exception as e:
-            Log.error(f'[read_last_db_move] {e}')
+            Log.exception(f'[read_last_db_move] {e}')
 
 
 # Game manager class
@@ -287,10 +321,10 @@ class Factory():
     def __invoke_callback(callback, **args):
         if callback != None:
             try:
-                Log.info(f"callback [{callback.__name__}({args})]")
+                Log.debug(f"callback [{callback.__name__}({args})]")
                 callback(args)
             except Exception as e:
-                Log.error(f"callback error:{e}")
+                Log.exception(f"callback error:{e}")
 
     def __initialize(self):
 
@@ -330,7 +364,7 @@ class Factory():
             
             square_name = Converters.to_square_name(field_index)
       
-            Log.info(f"field_index:{field_index}, square_name:{square_name}, piece_action:{current_action}")
+            Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{current_action}")
 
             # Legal squares construction from the lifted piece
             if current_action == PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
@@ -354,7 +388,7 @@ class Factory():
                 self._legal_squares.append(field_index)
 
                         
-            Log.info(f'legalsquares:{self._legal_squares}')
+            Log.debug(f'legalsquares:{self._legal_squares}')
             
             # We cancel the current taking back process if a second piece has been lifted
             # Otherwise we can't capture properly...
@@ -425,7 +459,7 @@ class Factory():
 
                         self._san_move_list.pop()
                         
-                        Log.info(f'GameMove #{self._db_undo_id} "{uci_move}" will be removed from DB...')
+                        Log.debug(f'GameMove #{self._db_undo_id} "{uci_move}" will be removed from DB...')
 
                         self._dal.delete_game_move(self._db_undo_id)
                         
@@ -539,7 +573,7 @@ class Factory():
                             Factory.__invoke_callback(self._event_callback_function, termination=outcome.termination)
         
         except Exception as e:
-            Log.error(f"__field_callback error:{e}")
+            Log.exception(f"__field_callback error:{e}")
 
     def _game_thread_instance(self):
         # The main thread handles the actual chess game functionality and calls back to
@@ -568,7 +602,7 @@ class Factory():
                     if len(all_uci_moves) > 1:
                         all_uci_moves.pop(0)
 
-                        Log.alert("RESUMING LAST GAME!")
+                        Log.info("RESUMING LAST GAME!")
 
                         self.__initialize()
 
@@ -590,7 +624,7 @@ class Factory():
                             Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
                         
                         except Exception as e:
-                            Log.error(f"__game_thread error (while resuming game):{e}")
+                            Log.exception(f"__game_thread error (while resuming game):{e}")
 
                 # Detect if a new game has begun
                 if self._need_starting_position_check:
@@ -605,7 +639,7 @@ class Factory():
                             # In case of full undo we do not restart a game - no need
                             if bytearray(cs) == STARTSTATE:
                                 
-                                Log.alert("STARTING A NEW GAME!")
+                                Log.info("STARTING A NEW GAME!")
 
                                 self._chessboard = chess.Board(chess.STARTING_FEN)
 
@@ -636,7 +670,7 @@ class Factory():
                 time.sleep(0.1)
         
         except Exception as e:
-            Log.error(f"__game_thread error:{e}")
+            Log.exception(f"__game_thread error:{e}")
 
     def start(self):
 
@@ -652,7 +686,7 @@ class Factory():
         self._game_thread_instance.daemon = True
         self._game_thread_instance.start()
         
-        Log.info("_game_thread_instance started.")
+        Log.debug("_game_thread_instance started.")
 
     def stop(self):
         # Stops the game manager
@@ -661,7 +695,7 @@ class Factory():
 
         self._game_thread_instance.join()
 
-        Log.info("_game_thread_instance has been stopped.")
+        Log.debug("_game_thread_instance has been stopped.")
 
 
     def get_Stockfish_uci_move(self, _time = 1):
@@ -685,7 +719,7 @@ class Factory():
     
     def load_Centaur_FEN(self):
 
-        Log.info("Loading Centaur FEN...")
+        Log.debug("Loading Centaur FEN...")
 
         f = open(FENLOG, "r")
         fen = f.readline()
@@ -781,7 +815,7 @@ class Factory():
     def set_computer_move(self, uci_move):
             
         try:
-            Log.info(f"uci_computer_move:{uci_move}")
+            Log.debug(f"uci_computer_move:{uci_move}")
 
             # We don't care about the computer move if a new game started
             # TODO might not work when computer plays white
@@ -805,7 +839,7 @@ class Factory():
             board.ledFromTo(from_num,to_num)
  
         except Exception as e:
-            Log.error(f"computer_move error:{e}")
+            Log.exception(f"computer_move error:{e}")
 
 """""
 def clockThread():

@@ -120,7 +120,7 @@ def event_callback(args):
 
         if gm.get_board().turn == computer_color:
             
-            engine_move = engine.play(gm.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_ALL)
+            engine_move = engine.play(gm.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
             
             gm.set_computer_move(str(engine_move.move)) 
 
