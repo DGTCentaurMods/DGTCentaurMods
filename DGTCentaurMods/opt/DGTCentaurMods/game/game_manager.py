@@ -62,9 +62,10 @@ import syslog
 
 class Event(Enum):
     NEW_GAME = 1
-    PLAY = 2,
-    REQUEST_DRAW = 3
-    RESIGN_GAME = 4
+    RESUME_GAME = 2,
+    PLAY = 3,
+    REQUEST_DRAW = 4
+    RESIGN_GAME = 5
 
 class PieceAction(Enum):
     LIFT = 1
@@ -107,16 +108,16 @@ class Converters:
 
     @staticmethod
     def to_square_name(square):
-        squarerow = (square // 8)
-        squarecol = (square % 8)
-        squarecol = 7 - squarecol
-        return chr(ord("a") + (7 - squarecol)) + chr(ord("1") + squarerow)
+        square_row = (square // 8)
+        square_col = (square % 8)
+        square_col = 7 - square_col
+        return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
         
     @staticmethod
     def to_square_index(name):
-        sqcol = ord(name[0:1]) - ord('a')
-        sqrow = ord(name[1:2]) - ord('1')
-        return (sqrow * 8) + sqcol
+        square_col = ord(name[0:1]) - ord('a')
+        square_row = ord(name[1:2]) - ord('1')
+        return (square_row * 8) + square_col
 
 class Singleton:
     __instance = None
@@ -132,6 +133,36 @@ class DAL(Singleton):
     def __init__(self):
         
         self._Session = sessionmaker(bind=models.engine)
+
+        self.__read_current_game_id()
+
+
+    def __read_current_game_id(self):
+
+        try:
+
+            session = self._Session()
+
+            # Get the max game id as that is this game id and fill it into game
+            self._db_game_id = session.query(func.max(models.Game.id)).scalar()
+
+        except Exception as e:
+            Log.error(f'[__read_current_game_id] {e}')
+
+    def read_uci_moves_history(self):
+
+        try:
+
+            session = self._Session()
+
+            # Get all the moves for the current game_id
+            result = session.execute(select(models.GameMove.move).where(
+                models.GameMove.gameid == self._db_game_id).order_by(models.GameMove.id))
+
+            return result.scalars().all()
+
+        except Exception as e:
+            Log.error(f'[__read_moves_history] {e}')
 
     def insert_new_game(self, source, event, site, round, white, black):
 
@@ -151,8 +182,7 @@ class DAL(Singleton):
             session.add(game)
             session.commit()
 
-            # Get the max game id as that is this game id and fill it into gamedbid
-            self._db_game_id = session.query(func.max(models.Game.id)).scalar()
+            self.__read_current_game_id()
             
             # Now make an entry in GameMove for this start state
             game_move = models.GameMove(
@@ -272,8 +302,6 @@ class Factory():
         self._is_computer_move = False
         self._db_undo_id = None
         self._san_move_list = []
-
-        self._chessboard = chess.Board(chess.STARTING_FEN)
 
         self._initialized = True
 
@@ -523,10 +551,46 @@ class Factory():
 
         self._dal = DAL()
 
-        ticks = 0
+        self._chessboard = chess.Board(chess.STARTING_FEN)
+
+        ticks = -1
 
         try:
             while self._thread_is_alive:
+
+                # First time we are here
+                # We might need to resume a game...
+                if ticks == -1:
+                    #self.load_Centaur_FEN()
+
+                    all_uci_moves = self._dal.read_uci_moves_history()
+
+                    if len(all_uci_moves) > 1:
+                        all_uci_moves.pop(0)
+
+                        Log.alert("RESUMING LAST GAME!")
+
+                        self.__initialize()
+
+
+                        try:
+                            # We replay the previous game
+                            for uci_move in all_uci_moves:
+
+                                move = self._chessboard.parse_uci(uci_move)
+                                san_move = self._chessboard.san(move)
+                                self._chessboard.push(move)
+
+                                self._san_move_list.append(san_move)
+                            
+                            board.beep(board.SOUND_GENERAL)
+
+                            Factory.__invoke_callback(self._event_callback_function, event=Event.RESUME_GAME)
+                            Factory.__invoke_callback(self._move_callback_function)
+                            Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                        
+                        except Exception as e:
+                            Log.error(f"__game_thread error (while resuming game):{e}")
 
                 # Detect if a new game has begun
                 if self._need_starting_position_check:
@@ -543,12 +607,13 @@ class Factory():
                                 
                                 Log.alert("STARTING A NEW GAME!")
 
+                                self._chessboard = chess.Board(chess.STARTING_FEN)
+
                                 self.__initialize()
     
                                 self._need_starting_position_check = False
                                 
                                 board.beep(board.SOUND_GENERAL)
-                                #time.sleep(0.3)
 
                                 Factory.__invoke_callback(self._event_callback_function, event=Event.NEW_GAME)
                                 Factory.__invoke_callback(self._move_callback_function)
@@ -599,9 +664,9 @@ class Factory():
         Log.info("_game_thread_instance has been stopped.")
 
 
-    def get_Stockfish_uci_move(self):
+    def get_Stockfish_uci_move(self, _time = 1):
         sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
-        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 
         best_move = str(moves["pv"][0])
         sf_engine.quit()
@@ -619,10 +684,14 @@ class Factory():
         return san
     
     def load_Centaur_FEN(self):
+
+        Log.info("Loading Centaur FEN...")
+
         f = open(FENLOG, "r")
         fen = f.readline()
         f.close()
-        self._chessboard.set_fen(fen)
+
+        self._chessboard = chess.Board(fen)
 
     def update_Centaur_FEN(self):
         f = open(FENLOG, "w")
