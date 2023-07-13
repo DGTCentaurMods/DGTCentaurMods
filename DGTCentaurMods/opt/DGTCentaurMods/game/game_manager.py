@@ -251,9 +251,9 @@ class DAL(Singleton):
 
     def insert_new_game_move(self, uci_move, fen):
 
-        session = self._Session()
-
         def _insert():
+            session = self._Session()
+
             game_move = models.GameMove(
                     gameid=self._db_game_id,
                     move=uci_move,
@@ -261,19 +261,27 @@ class DAL(Singleton):
                     
             session.add(game_move)
             session.commit()
-            
-            Log.debug(f'Move "{uci_move}" has been commited.')
 
-        try:
-            _insert()
-        except Exception as e:
-            
-            session.rollback()
-            
+        # Try 5 times
+        for _ in range(0, 5):
             try:
                 _insert()
+                e = None
             except Exception as e:
-                Log.exception(f'Move "{uci_move}" HAS NOT been commited : {e}')
+                pass
+
+            if e:
+                # Wait for one half second before trying to fetch the data again
+                time.sleep(.5)  
+            else:
+                break
+
+        if e:
+            Log.exception(f'[insert_new_game_move] {e}')
+            return False
+
+        return True
+
 
     def read_last_db_move(self):
         # We read the last move that has been recorded
@@ -455,7 +463,7 @@ class Factory():
                         # Undo the move
                         uci_move = self._chessboard.pop()
                         
-                        Log.info(f'Undoing move "{uci_move}"...')
+                        Log.debug(f'Undoing move "{uci_move}"...')
 
                         self._san_move_list.pop()
                         
@@ -547,30 +555,35 @@ class Factory():
                         else:
                             uci_move = from_name + to_name + str_promotion
                         
-                        # Make the move and update fen.log
+                        # Make the move
                         self._chessboard.push(chess.Move.from_uci(uci_move))
 
-                        self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen()))
-                        
-                        self._legal_squares = []
-                        self._source_square = -1
-                        self._is_computer_move = False
+                        # We record the move
+                        if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
+                            Log.debug(f'Move "{uci_move}" has been commited.')
 
-                        self._san_move_list.append(self.get_last_san_move())
+                            self._legal_squares = []
+                            self._source_square = -1
+                            self._is_computer_move = False
 
-                        # We invoke the client callback
-                        Factory.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
-                        
-                        # Check the outcome
-                        outcome = self._chessboard.outcome(claim_draw=True)
-                        if outcome == None or outcome == "None" or outcome == 0:
-                            # Switch the turn
-                            Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                            self._san_move_list.append(self.get_last_san_move())
+
+                            # We invoke the client callback
+                            Factory.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
+                            
+                            # Check the outcome
+                            outcome = self._chessboard.outcome(claim_draw=True)
+                            if outcome == None or outcome == "None" or outcome == 0:
+                                # Switch the turn
+                                Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                            else:
+                                # Depending on the outcome we can update the game information for the result
+                                self._dal.terminate_game(str(self._chessboard.result()))
+
+                                Factory.__invoke_callback(self._event_callback_function, termination=outcome.termination)
                         else:
-                            # Depending on the outcome we can update the game information for the result
-                            self._dal.terminate_game(str(self._chessboard.result()))
-
-                            Factory.__invoke_callback(self._event_callback_function, termination=outcome.termination)
+                            Log.exception(f'Move "{uci_move}" HAS NOT been commited.')
+                            self.stop()
         
         except Exception as e:
             Log.exception(f"__field_callback error:{e}")
