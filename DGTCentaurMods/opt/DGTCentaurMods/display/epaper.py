@@ -213,13 +213,13 @@ def killEpaper():
     global kill
     kill = 1
 
-def writeText(row,txt):
+def writeText(row,txt,font=font18):
     # Write Text on a give line number
     global epaperbuffer
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
-    draw.text((0, 0), txt, font=font18, fill=0)
+    draw.text((0, 0), txt, font=font, fill=0)
     nimage.paste(image, (0, (row * 20)))
     epaperbuffer = nimage.copy()
 
@@ -252,6 +252,50 @@ def clearScreen():
     draw = ImageDraw.Draw(epaperbuffer)
     draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
     first = 1
+
+def _drawBoard(pieces, startrow=2):
+    global epaperbuffer
+    draw = ImageDraw.Draw(epaperbuffer)
+    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
+    for x in range(0,64):
+        pos = (x - 63) * -1
+        row = ((startrow * 20) + 8) + (16 * (pos // 8))
+        col = (x % 8) * 16
+        px = 0
+        r = x // 8
+        c = x % 8
+        py = 0
+        if (r // 2 == r / 2 and c // 2 == c / 2):
+            py = py + 16
+        if (r //2 != r / 2 and c // 2 != c / 2):
+            py = py + 16
+        if pieces[x] == "P":
+            px = 16
+        if pieces[x] == "R":
+            px = 32
+        if pieces[x] == "N":
+            px = 48
+        if pieces[x] == "B":
+            px = 64
+        if pieces[x] == "Q":
+            px = 80
+        if pieces[x] == "K":
+            px = 96
+        if pieces[x] == "p":
+            px = 112
+        if pieces[x] == "r":
+            px = 128
+        if pieces[x] == "n":
+            px = 144
+        if pieces[x] == "b":
+            px = 160
+        if pieces[x] == "q":
+            px = 176
+        if pieces[x] == "k":
+            px = 192
+        piece = chessfont.crop((px, py, px+16, py+16))
+        epaperbuffer.paste(piece,(col, row))
+    draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
 
 def drawBoard(pieces, startrow=2):
     global epaperbuffer
@@ -296,6 +340,24 @@ def drawBoard(pieces, startrow=2):
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
     draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
+
+def drawEvaluationBar(row=9, value=0):
+    global epaperbuffer
+    draw = ImageDraw.Draw(epaperbuffer)
+
+    MAX_VALUE = 1200
+    HEIGHT = 12
+
+    value = +MAX_VALUE if value>+MAX_VALUE else value
+    value = -MAX_VALUE if value<-MAX_VALUE else value
+
+    offset = -(value/MAX_VALUE) * 64
+
+    y = row * 20
+
+    draw.rectangle([(0,y),(127,y+HEIGHT+4)],fill="white")
+    draw.rectangle([(0,y),(127,y+HEIGHT)],fill="white",outline='black', width=1)
+    draw.rectangle([(0,y),(offset+64,y+HEIGHT)],fill="black",outline='black', width=1)
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen

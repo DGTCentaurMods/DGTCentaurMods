@@ -51,7 +51,11 @@ import logging.handlers
 # pip install py-flags
 from flags import Flags
 
-import syslog
+from PIL import ImageFont
+import pathlib
+
+FONT_Typewriter = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 16)
+
 
 # We use the constants from board.py
 # Some useful constants
@@ -303,13 +307,16 @@ class Factory():
 
     _thread_is_alive = False
     _initialized = False
+    _new_evaluation_requested = False
+
+    show_evaluation = True
 
     def __init__(self, event_callback = None, move_callback = None, key_callback = None, flags = BoardOption.CAN_DO_COFFEE, game_informations = {}):
 
-        epaper.writeText(3,"  Please place")
-        epaper.writeText(4,"     pieces in")
-        epaper.writeText(5,"      starting")
-        epaper.writeText(6,"      position!")
+        epaper.writeText(3," Please place", font=FONT_Typewriter)
+        epaper.writeText(4,"    pieces in", font=FONT_Typewriter)
+        epaper.writeText(5,"     starting", font=FONT_Typewriter)
+        epaper.writeText(6,"     position!", font=FONT_Typewriter)
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
@@ -345,6 +352,7 @@ class Factory():
         self._db_undo_id = None
         self._san_move_list = []
 
+        self._new_evaluation_requested = False
         self._initialized = True
 
     def __key_callback(self, key_index):
@@ -478,6 +486,7 @@ class Factory():
                         Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
 
                         self._db_undo_id = None
+                        self.update_evaluation()
                         
                     else:
                         
@@ -558,6 +567,8 @@ class Factory():
                         # Make the move
                         self._chessboard.push(chess.Move.from_uci(uci_move))
 
+                        self.update_evaluation()
+
                         # We record the move
                         if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
                             Log.debug(f'Move "{uci_move}" has been commited.')
@@ -587,6 +598,31 @@ class Factory():
         
         except Exception as e:
             Log.exception(f"__field_callback error:{e}")
+
+    def _evaluation_thread_instance(self):
+        try:
+
+            sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
+
+            while self._thread_is_alive:
+
+                if self.show_evaluation and self._new_evaluation_requested:
+                    result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+
+                    eval = int(str(result["score"].white()))
+
+                    #epaper.writeText(14, f"Eval {eval:+}", font=FONT_Typewriter)
+                    epaper.drawEvaluationBar(row=9, value=eval)
+
+                    self._new_evaluation_requested = False
+
+                time.sleep(1)
+
+            sf_engine.quit()
+        
+        except Exception as e:
+            Log.exception(f"_evaluation_thread_instance error:{e}")
+        
 
     def _game_thread_instance(self):
         # The main thread handles the actual chess game functionality and calls back to
@@ -636,6 +672,8 @@ class Factory():
                             Factory.__invoke_callback(self._move_callback_function)
                             Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
                         
+                            self.update_evaluation()
+
                         except Exception as e:
                             Log.exception(f"__game_thread error (while resuming game):{e}")
 
@@ -666,6 +704,8 @@ class Factory():
                                 Factory.__invoke_callback(self._move_callback_function)
                                 Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
                                 
+                                self.update_evaluation()
+
                                 # Log a new game in the db
                                 self._dal.insert_new_game(
                                     source = self.source,
@@ -685,6 +725,7 @@ class Factory():
         except Exception as e:
             Log.exception(f"__game_thread error:{e}")
 
+    
     def start(self):
 
         if self._thread_is_alive:
@@ -695,11 +736,15 @@ class Factory():
         self._thread_is_alive = True
 
         self._game_thread_instance = threading.Thread(target=self._game_thread_instance)
-
         self._game_thread_instance.daemon = True
         self._game_thread_instance.start()
-        
+
+        self._evaluation_thread_instance = threading.Thread(target=self._evaluation_thread_instance)
+        self._evaluation_thread_instance.daemon = True
+        self._evaluation_thread_instance.start()
+
         Log.debug("_game_thread_instance started.")
+
 
     def stop(self):
         # Stops the game manager
@@ -707,11 +752,25 @@ class Factory():
         self._thread_is_alive = False
 
         self._game_thread_instance.join()
+        self._evaluation_thread_instance.join()
 
         Log.debug("_game_thread_instance has been stopped.")
 
+    def update_evaluation(self):
+        self._new_evaluation_requested = True
 
     def get_Stockfish_uci_move(self, _time = 1):
+        sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
+        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
+
+        best_move = str(moves["pv"][0])
+        sf_engine.quit()
+
+        Log.info(f'Stockfish help requested :"{best_move}"')
+
+        return best_move
+    
+    def get_Stockfish_evaluation(self):
         sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
         moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 
@@ -748,8 +807,11 @@ class Factory():
     def display_board(self):
         epaper.drawFen(self._chessboard.fen())
 
-    def display_current_PGN(self, row=9, move_count=10):
+    def display_current_PGN(self, row=10, move_count=10):
     
+        if self.show_evaluation == False:
+            row=row -1
+
         # Maximum displayed moves
         move_count = 10
 
@@ -772,16 +834,16 @@ class Factory():
             # White move
             if current_turn == chess.WHITE:
                 if (san == None):
-                    epaper.writeText(row, ' '*20)
+                    epaper.writeText(row, ' '*20, font=FONT_Typewriter)
                 else:
                     current_row_move = f"{current_row_index}. "+san
-                    epaper.writeText(row, current_row_move)
+                    epaper.writeText(row, current_row_move, font=FONT_Typewriter)
 
             # Black move
             else:
                 if san != None:
                     current_row_move = current_row_move + ".."+san
-                    epaper.writeText(row, current_row_move)
+                    epaper.writeText(row, current_row_move, font=FONT_Typewriter)
 
                 row = row + 1
                 current_row_index = current_row_index + 1

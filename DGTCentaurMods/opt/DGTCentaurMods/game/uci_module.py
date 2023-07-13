@@ -92,6 +92,14 @@ def key_callback(args):
         board.ledsOff()
         exit_requested = True
 
+    if key == board.BTNTICK:
+        gm.show_evaluation = not gm.show_evaluation
+
+        gm.update_evaluation()
+
+        gm.display_board()
+        gm.display_current_PGN()
+
     if key == board.BTNHELP:
 
         if gm.get_board().turn != computer_color:
@@ -111,7 +119,7 @@ def event_callback(args):
 
         current_player = engine_name.capitalize() if gm.get_board().turn == computer_color else "You"
 
-        epaper.writeText(1,f">{current_player} [{'W' if gm.get_board().turn == chess.WHITE else 'B'}]")
+        epaper.writeText(1,f"{current_player} {'W' if gm.get_board().turn == chess.WHITE else 'B'}", font=game_manager.FONT_Typewriter)
 
         #sfengine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         #info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
@@ -137,7 +145,7 @@ def event_callback(args):
         # Termination.VARIANT_LOSS
         # Termination.VARIANT_DRAW
 
-        epaper.writeText(1,' '+str(args["termination"])[12:])
+        epaper.writeText(1,' '+str(args["termination"])[12:], font=game_manager.FONT_Typewriter)
 
 
 def move_callback(args):
