@@ -373,7 +373,18 @@ class Engine():
                     if self.show_evaluation:
                         result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
-                        eval = int(str(result["score"].white()))
+                        score = str(result["score"])
+
+                        if "Mate" in score:
+                            eval = 1000
+                        else:
+                            eval = score[11:24]
+                            eval = eval[1:eval.find(")")]
+                
+                        eval = int(eval)
+
+                        if "BLACK" in score:
+                            eval = eval * -1
 
                         #epaper.writeText(14, f"Eval {eval:+}", font=FONT_Typewriter)
                         _draw_evaluation(value=eval)
