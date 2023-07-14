@@ -180,6 +180,8 @@ class Engine():
                 
                 board.beep(board.SOUND_WRONG_MOVE)
 
+                self._source_square = -1
+
                 # Could be a reset request...
                 self._need_starting_position_check = True
 
@@ -308,36 +310,52 @@ class Engine():
                             uci_move = from_name + to_name + str_promotion
                         
                         # Make the move
-                        self._chessboard.push(chess.Move.from_uci(uci_move))
+                        try:
+                            self._chessboard.push(chess.Move.from_uci(uci_move))
+                            san_move = self.get_last_san_move()
+                        except:
+                            san_move = None
 
-                        self.update_evaluation()
+                        if san_move == None:
+                            board.beep(board.SOUND_WRONG_MOVE)
 
-                        # We record the move
-                        if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
-                            Log.debug(f'Move "{uci_move}" has been commited.')
+                            Log.debug(f'Wrong move "{uci_move}"')
 
-                            self._legal_squares = []
                             self._source_square = -1
-                            self._is_computer_move = False
 
-                            self._san_move_list.append(self.get_last_san_move())
+                            # Could be a reset request...
+                            self._need_starting_position_check = True
 
-                            # We invoke the client callback
-                            Engine.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
-                            
-                            # Check the outcome
-                            outcome = self._chessboard.outcome(claim_draw=True)
-                            if outcome == None or outcome == "None" or outcome == 0:
-                                # Switch the turn
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
-                            else:
-                                # Depending on the outcome we can update the game information for the result
-                                self._dal.terminate_game(str(self._chessboard.result()))
-
-                                Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
                         else:
-                            Log.exception(f'Move "{uci_move}" HAS NOT been commited.')
-                            self.stop()
+
+                            self.update_evaluation()
+
+                            # We record the move
+                            if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
+                                Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
+
+                                self._legal_squares = []
+                                self._source_square = -1
+                                self._is_computer_move = False
+
+                                self._san_move_list.append(san_move)
+
+                                # We invoke the client callback
+                                Engine.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
+                                
+                                # Check the outcome
+                                outcome = self._chessboard.outcome(claim_draw=True)
+                                if outcome == None or outcome == "None" or outcome == 0:
+                                    # Switch the turn
+                                    Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                                else:
+                                    # Depending on the outcome we can update the game information for the result
+                                    self._dal.terminate_game(str(self._chessboard.result()))
+
+                                    Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
+                            else:
+                                Log.exception(f'Move "{uci_move}" HAS NOT been commited.')
+                                self.stop()
         
         except Exception as e:
             Log.exception(f"__field_callback error:{e}")
@@ -536,12 +554,15 @@ class Engine():
         return best_move
 
     def get_last_san_move(self):
-        move = self._chessboard.pop()
-        san = self._chessboard.san(move)
+        try:
+            move = self._chessboard.pop()
+            san = self._chessboard.san(move)
 
-        self._chessboard.push_san(san)
+            self._chessboard.push_san(san)
 
-        return san
+            return san
+        except:
+            return None
     
     def load_Centaur_FEN(self):
 

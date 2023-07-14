@@ -345,7 +345,7 @@ def drawEvaluationBar(row=9, value=0, disabled=False, font=font18):
     global epaperbuffer
     draw = ImageDraw.Draw(epaperbuffer)
 
-    MAX_VALUE = 1200
+    MAX_VALUE = 1000
     HEIGHT = 12
 
     value = MAX_VALUE if disabled else value
