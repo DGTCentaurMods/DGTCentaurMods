@@ -32,8 +32,8 @@ from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.db import models
 
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, select, delete
+from sqlalchemy.orm import Session
 
 import threading
 import time
@@ -55,6 +55,7 @@ from PIL import ImageFont
 import pathlib
 
 FONT_Typewriter = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 16)
+FONT_Typewriter_small = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 11)
 
 
 # We use the constants from board.py
@@ -117,6 +118,8 @@ class Log:
             print("Logging initialized.")
             Log.info("Logging started.")
 
+            logging.getLogger('chess.engine').setLevel(logging.INFO)
+
         except Exception as e:
             print(f'[Log.__init] {e}')
 
@@ -169,8 +172,6 @@ class Singleton:
 class DAL(Singleton):
 
     def __init__(self):
-        
-        self._Session = sessionmaker(bind=models.engine)
 
         self.__read_current_game_id()
 
@@ -179,10 +180,12 @@ class DAL(Singleton):
 
         try:
 
-            session = self._Session()
+            with Session(bind=models.engine) as session:
 
-            # Get the max game id as that is this game id and fill it into game
-            self._db_game_id = session.query(func.max(models.Game.id)).scalar()
+                # Get the max game id as that is this game id and fill it into game
+                self._db_game_id = session.query(func.max(models.Game.id)).scalar()
+
+            Log.debug(f"_db_game_id={self._db_game_id}")
 
         except Exception as e:
             Log.exception(f'[__read_current_game_id] {e}')
@@ -191,13 +194,17 @@ class DAL(Singleton):
 
         try:
 
-            session = self._Session()
+            with Session(bind=models.engine) as session:
 
-            # Get all the moves for the current game_id
-            result = session.execute(select(models.GameMove.move).where(
-                models.GameMove.gameid == self._db_game_id).order_by(models.GameMove.id))
+                # Get all the moves for the current game_id
+                result = session.execute(select(models.GameMove.move).where(
+                    models.GameMove.gameid == self._db_game_id).order_by(models.GameMove.id))
 
-            return result.scalars().all()
+                result = result.scalars().all()
+
+                Log.debug(f"read_uci_moves_history result={result}")
+
+                return result
 
         except Exception as e:
             Log.exception(f'[__read_moves_history] {e}')
@@ -205,66 +212,68 @@ class DAL(Singleton):
     def insert_new_game(self, source, event, site, round, white, black):
 
         try:
-            session = self._Session()
+            with Session(bind=models.engine) as session:
 
-            # Create a new game in the db
-            game = models.Game(
-                source = source,
-                event  = event,
-                site   = site,
-                round  = round,
-                white  = white,
-                black  = black
-            )
+                # Create a new game in the db
+                game = models.Game(
+                    source = source,
+                    event  = event,
+                    site   = site,
+                    round  = round,
+                    white  = white,
+                    black  = black
+                )
 
-            session.add(game)
-            session.commit()
+                session.add(game)
+                
+                # Now make an entry in GameMove for this start state
+                game_move = models.GameMove(
+                    gameid = self._db_game_id,
+                    move   = '',
+                    fen    = str(chess.STARTING_FEN)
+                )
 
-            self.__read_current_game_id()
-            
-            # Now make an entry in GameMove for this start state
-            game_move = models.GameMove(
-                gameid = self._db_game_id,
-                move   = '',
-                fen    = str(chess.STARTING_FEN)
-            )
-
-            session.add(game_move)
-            session.commit()
+                session.add(game_move)
+                session.commit()
+                                
+                self.__read_current_game_id()
 
         except Exception as e:
             Log.exception(f'[insert_new_game] {e}')
 
     def terminate_game(self, result):
         try:
-            session = self._Session()
-            game = session.query(models.Game).filter(models.Game.id == self._db_game_id).first()
-            game.result = result
-            session.commit()
+            with Session(bind=models.engine) as session:
+                
+                game = session.query(models.Game).filter(models.Game.id == self._db_game_id).first()
+                game.result = result
+                session.commit()
+
         except Exception as e:
             Log.exception(f'[terminate_game] {e}')
 
     def delete_game_move(self, id):
         try:
-            session = self._Session()
-            stmt = delete(models.GameMove).where(models.GameMove.id == id)               
-            session.execute(stmt)
-            session.commit()
+            with Session(bind=models.engine) as session:
+                stmt = delete(models.GameMove).where(models.GameMove.id == id)               
+                session.execute(stmt)
+                session.commit()
+
         except Exception as e:
             Log.exception(f'[delete_game_move] {e}')
 
     def insert_new_game_move(self, uci_move, fen):
 
         def _insert():
-            session = self._Session()
+            with Session(bind=models.engine) as session:
 
-            game_move = models.GameMove(
-                    gameid=self._db_game_id,
-                    move=uci_move,
-                    fen=fen)
-                    
-            session.add(game_move)
-            session.commit()
+                game_move = models.GameMove(
+                        gameid=self._db_game_id,
+                        move=uci_move,
+                        fen=fen)
+                        
+                session.add(game_move)
+                session.commit()
 
         # Try 5 times
         for _ in range(0, 5):
@@ -288,15 +297,15 @@ class DAL(Singleton):
 
 
     def read_last_db_move(self):
-        # We read the last move that has been recorded
-        session = self._Session()
 
+        # We read the last move that has been recorded
         try:
 
-            return session.execute(
-                select(models.GameMove)
-                    .order_by(models.GameMove.id.desc())
-                    .limit(1)).scalar()
+            with Session(bind=models.engine) as session:
+                return session.execute(
+                    select(models.GameMove)
+                        .order_by(models.GameMove.id.desc())
+                        .limit(1)).scalar()
     
         except Exception as e:
             Log.exception(f'[read_last_db_move] {e}')
@@ -353,7 +362,6 @@ class Factory():
         self._san_move_list = []
 
         self._new_evaluation_requested = False
-        self._initialized = True
 
     def __key_callback(self, key_index):
         #key = list(filter(lambda a: a.value == key_index, Btn))[0]
@@ -602,21 +610,26 @@ class Factory():
     def _evaluation_thread_instance(self):
         try:
 
+            _draw_evaluation = lambda disabled=False,value=0:epaper.drawEvaluationBar(row=9, value=value, disabled=disabled, font=FONT_Typewriter_small)
+
             sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
 
             while self._thread_is_alive:
 
-                if self.show_evaluation and self._new_evaluation_requested:
-                    result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+                if self._new_evaluation_requested and self._initialized:
+                    if self.show_evaluation:
+                        result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
-                    eval = int(str(result["score"].white()))
+                        eval = int(str(result["score"].white()))
 
-                    #epaper.writeText(14, f"Eval {eval:+}", font=FONT_Typewriter)
-                    epaper.drawEvaluationBar(row=9, value=eval)
+                        #epaper.writeText(14, f"Eval {eval:+}", font=FONT_Typewriter)
+                        _draw_evaluation(value=eval)
+                    else:
+                        _draw_evaluation(disabled=True)
 
                     self._new_evaluation_requested = False
 
-                time.sleep(1)
+                time.sleep(.5)
 
             sf_engine.quit()
         
@@ -644,27 +657,27 @@ class Factory():
                 # First time we are here
                 # We might need to resume a game...
                 if ticks == -1:
-                    #self.load_Centaur_FEN()
 
                     all_uci_moves = self._dal.read_uci_moves_history()
 
-                    if len(all_uci_moves) > 1:
-                        all_uci_moves.pop(0)
+                    if len(all_uci_moves) > 0:
 
                         Log.info("RESUMING LAST GAME!")
 
                         self.__initialize()
-
-
+                        
                         try:
+
                             # We replay the previous game
                             for uci_move in all_uci_moves:
 
-                                move = self._chessboard.parse_uci(uci_move)
-                                san_move = self._chessboard.san(move)
-                                self._chessboard.push(move)
+                                if len(uci_move)>3:
+                                    move = self._chessboard.parse_uci(uci_move)
+                                    san_move = self._chessboard.san(move)
 
-                                self._san_move_list.append(san_move)
+                                    self._chessboard.push(move)
+
+                                    self._san_move_list.append(san_move)
                             
                             board.beep(board.SOUND_GENERAL)
 
@@ -672,6 +685,8 @@ class Factory():
                             Factory.__invoke_callback(self._move_callback_function)
                             Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
                         
+                            self._initialized = True
+
                             self.update_evaluation()
 
                         except Exception as e:
@@ -704,6 +719,8 @@ class Factory():
                                 Factory.__invoke_callback(self._move_callback_function)
                                 Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
                                 
+                                self._initialized = True
+
                                 self.update_evaluation()
 
                                 # Log a new game in the db
@@ -808,9 +825,6 @@ class Factory():
         epaper.drawFen(self._chessboard.fen())
 
     def display_current_PGN(self, row=10, move_count=10):
-    
-        if self.show_evaluation == False:
-            row=row -1
 
         # Maximum displayed moves
         move_count = 10

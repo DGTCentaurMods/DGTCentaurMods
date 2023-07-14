@@ -33,7 +33,6 @@ import chess.engine
 import sys
 import pathlib
 import configparser
-import pathlib
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
 

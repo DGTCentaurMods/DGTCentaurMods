@@ -341,12 +341,14 @@ def drawBoard(pieces, startrow=2):
         epaperbuffer.paste(piece,(col, row))
     draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
 
-def drawEvaluationBar(row=9, value=0):
+def drawEvaluationBar(row=9, value=0, disabled=False, font=font18):
     global epaperbuffer
     draw = ImageDraw.Draw(epaperbuffer)
 
     MAX_VALUE = 1200
     HEIGHT = 12
+
+    value = MAX_VALUE if disabled else value
 
     value = +MAX_VALUE if value>+MAX_VALUE else value
     value = -MAX_VALUE if value<-MAX_VALUE else value
@@ -355,9 +357,11 @@ def drawEvaluationBar(row=9, value=0):
 
     y = row * 20
 
-    draw.rectangle([(0,y),(127,y+HEIGHT+4)],fill="white")
     draw.rectangle([(0,y),(127,y+HEIGHT)],fill="white",outline='black', width=1)
     draw.rectangle([(0,y),(offset+64,y+HEIGHT)],fill="black",outline='black', width=1)
+
+    if disabled:
+        draw.text((0, y), "  evaluation disabled", font=font, fill=0)
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
