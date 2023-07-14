@@ -167,6 +167,7 @@ epaper.initEpaper()
 
 statusbar = epaper.statusBar()
 statusbar.start()
+statusbar.print()
 
 exit_requested = False
 

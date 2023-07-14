@@ -34,6 +34,7 @@ from DGTCentaurMods.db import models
 
 from sqlalchemy import func, select, delete
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 import threading
 import time
@@ -56,7 +57,6 @@ import pathlib
 
 FONT_Typewriter = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 16)
 FONT_Typewriter_small = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 11)
-
 
 # We use the constants from board.py
 # Some useful constants
@@ -209,9 +209,25 @@ class DAL(Singleton):
         except Exception as e:
             Log.exception(f'[__read_moves_history] {e}')
 
+    def delete_empty_games(self):
+        try:
+            with Session(bind=models.engine) as session:
+
+                session.execute(text("delete from gamemove where id in (select id from gamemove group by gameid having count(gameid)<2)"))
+                session.commit()
+                
+                session.execute(text("delete from game where id in (select g.id from game g left join gamemove gm on g.id=gm.gameid group by g.id having count(g.id)<2)"))
+                session.commit()
+
+        except Exception as e:
+            Log.exception(f'[delete_empty_games] {e}')
+
     def insert_new_game(self, source, event, site, round, white, black):
 
+        self.delete_empty_games()
+
         try:
+
             with Session(bind=models.engine) as session:
 
                 # Create a new game in the db
@@ -646,6 +662,8 @@ class Factory():
         board.subscribeEvents(self.__key_callback, self.__field_callback)
 
         self._dal = DAL()
+
+        self._dal.delete_empty_games()
 
         self._chessboard = chess.Board(chess.STARTING_FEN)
 
