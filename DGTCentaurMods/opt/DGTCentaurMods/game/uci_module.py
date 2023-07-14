@@ -21,7 +21,8 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game import game_manager
+from DGTCentaurMods.game.classes import GameFactory
+from DGTCentaurMods.game.consts import consts, Enums, fonts
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import board
 
@@ -52,7 +53,7 @@ if engine_name == "stockfish":
 
     # Only for Stockfish
     engine_elo = sys.argv[3]
-    engine = chess.engine.SimpleEngine.popen_uci(game_manager.HOME_DIRECTORY + "/centaur/engines/stockfish_pi")
+    engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
 
     uci_options = {"UCI_LimitStrength": True, "UCI_Elo": engine_elo}
 
@@ -92,21 +93,21 @@ def key_callback(args):
         exit_requested = True
 
     if key == board.BTNTICK:
-        gm.show_evaluation = not gm.show_evaluation
+        gfe.show_evaluation = not gfe.show_evaluation
 
-        gm.update_evaluation()
+        gfe.update_evaluation()
 
-        gm.display_board()
-        gm.display_current_PGN()
+        gfe.display_board()
+        gfe.display_current_PGN()
 
     if key == board.BTNHELP:
 
-        if gm.get_board().turn != computer_color:
+        if gfe.get_board().turn != computer_color:
 
-            uci_move = gm.get_Stockfish_uci_move()
+            uci_move = gfe.get_Stockfish_uci_move()
 
-            from_num = game_manager.Converters.to_square_index(uci_move[0:2])
-            to_num = game_manager.Converters.to_square_index(uci_move[2:4])
+            from_num = GameFactory.Converters.to_square_index(uci_move[0:2])
+            to_num = GameFactory.Converters.to_square_index(uci_move[2:4])
 
             board.ledFromTo(from_num,to_num)
 
@@ -114,22 +115,22 @@ def key_callback(args):
 def event_callback(args):
 
     # This function receives event callbacks about the game in play
-    if "event" in args and args["event"] == game_manager.Event.PLAY:
+    if "event" in args and args["event"] == Enums.Event.PLAY:
 
-        current_player = engine_name.capitalize() if gm.get_board().turn == computer_color else "You"
+        current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
 
-        epaper.writeText(1,f"{current_player} {'W' if gm.get_board().turn == chess.WHITE else 'B'}", font=game_manager.FONT_Typewriter)
+        epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter)
 
         #sfengine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         #info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
         #sfengine.quit()
         #evaluationGraphs(info)
 
-        if gm.get_board().turn == computer_color:
+        if gfe.get_board().turn == computer_color:
             
-            engine_move = engine.play(gm.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
+            engine_move = engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
             
-            gm.set_computer_move(str(engine_move.move)) 
+            gfe.set_computer_move(str(engine_move.move)) 
 
 
     if "termination" in args:
@@ -144,7 +145,7 @@ def event_callback(args):
         # Termination.VARIANT_LOSS
         # Termination.VARIANT_DRAW
 
-        epaper.writeText(1,' '+str(args["termination"])[12:], font=game_manager.FONT_Typewriter)
+        epaper.writeText(1,' '+str(args["termination"])[12:], font=fonts.FONT_Typewriter)
 
 
 def move_callback(args):
@@ -156,10 +157,10 @@ def move_callback(args):
     else:
         board.ledsOff()
 
-    gm.update_Centaur_FEN()
+    gfe.update_Centaur_FEN()
 
-    gm.display_board()
-    gm.display_current_PGN()
+    gfe.display_board()
+    gfe.display_current_PGN()
 
 
 # Activate the epaper
@@ -172,13 +173,13 @@ statusbar.print()
 exit_requested = False
 
 # Subscribe to the game manager
-gm = game_manager.Factory(
+gfe = GameFactory.Engine(
      
     event_callback = event_callback,
     move_callback = move_callback,
     key_callback = key_callback,
 
-    flags = game_manager.BoardOption.CAN_FORCE_MOVES | game_manager.BoardOption.CAN_UNDO_MOVES,
+    flags = Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES,
     
     game_informations = {
         "event" : uci_options_desc,
@@ -188,9 +189,9 @@ gm = game_manager.Factory(
         "black" : engine_name.capitalize() if computer_color == chess.BLACK else "Human",
     })
 
-gm.start()
+gfe.start()
 
 while exit_requested == False:
     time.sleep(0.1)
 
-gm.stop()
+gfe.stop()

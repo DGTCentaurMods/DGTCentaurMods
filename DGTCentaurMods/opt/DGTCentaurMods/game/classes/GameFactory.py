@@ -1,10 +1,3 @@
-# This script manages a chess game, passing events and moves back to the calling script with callbacks
-# The calling script is expected to manage the display itself using epaper.py
-# Calling script initialises with subscribeGame(eventCallback, moveCallback, keyCallback)
-# eventCallback feeds back events such as start of game, gameover
-# moveCallback feeds back the chess moves made on the board
-# keyCallback feeds back key presses from keys under the display
-
 # This file is part of the DGTCentaur Mods open source software
 # ( https://github.com/EdNekebno/DGTCentaur )
 #
@@ -26,124 +19,16 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-# TODO
-
 from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
-from DGTCentaurMods.db import models
-
-from sqlalchemy import func, select, delete
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from DGTCentaurMods.game.classes import DAL, Log
+from DGTCentaurMods.game.consts import Enums, fonts, consts
 
 import threading
 import time
 import chess
 import sys
 import inspect
-import os
-
-from enum import Enum
-
-import logging
-import logging.handlers
-
-# https://pypi.org/project/py-flags/
-# pip install py-flags
-from flags import Flags
-
-from PIL import ImageFont
-import pathlib
-
-FONT_Typewriter = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 16)
-FONT_Typewriter_small = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Typewriter Medium.ttf", 11)
-
-# We use the constants from board.py
-# Some useful constants
-#class Btn(Enum):
-#    BACK = 1
-#    TICK = 2
-#    UP = 3
-#    DOWN = 4
-#    HELP = 5
-#    PLAY = 6
-
-class Event(Enum):
-    NEW_GAME = 1
-    RESUME_GAME = 2,
-    PLAY = 3,
-    REQUEST_DRAW = 4
-    RESIGN_GAME = 5
-
-class PieceAction(Enum):
-    LIFT = 1
-    PLACE = 2
-
-class BoardOption(Flags):
-    CAN_FORCE_MOVES = 1
-    CAN_UNDO_MOVES = 2
-    CAN_DO_COFFEE = 4
-
-
-STARTSTATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
-
-HOME_DIRECTORY = os.path.expanduser( '~' )
-FENLOG = HOME_DIRECTORY+"/centaur/fen.log"
-
-class Log:
-
-    LEVEL = logging.DEBUG
-
-    __initialized = False
-
-    @staticmethod
-    def __init():
-
-        try:
-            LOG_DIR = HOME_DIRECTORY+"/logs"
-
-            if not os.path.exists(LOG_DIR):
-                os.makedirs(LOG_DIR)
-
-            handler = logging.handlers.WatchedFileHandler(LOG_DIR+'/DGTCentaurMods.log')
-            formatter = logging.Formatter(logging.BASIC_FORMAT)
-            handler.setFormatter(formatter)
-            
-            root = logging.getLogger()
-            root.setLevel(Log.LEVEL)
-            root.addHandler(handler)
-
-            Log.__initialized = True
-
-            print("Logging initialized.")
-            Log.info("Logging started.")
-
-            logging.getLogger('chess.engine').setLevel(logging.INFO)
-
-        except Exception as e:
-            print(f'[Log.__init] {e}')
-
-    @staticmethod
-    def info(message):
-        if Log.__initialized == False:
-            Log.__init()
-
-        logging.info(message)
-
-    @staticmethod
-    def exception(message):
-        if Log.__initialized == False:
-            Log.__init()
-
-        logging.exception(message)
-
-    @staticmethod
-    def debug(message):
-        if Log.__initialized == False:
-            Log.__init()
-
-        logging.debug(message)
-
 
 class Converters:
 
@@ -160,175 +45,9 @@ class Converters:
         square_row = ord(name[1:2]) - ord('1')
         return (square_row * 8) + square_col
 
-class Singleton:
-    __instance = None
-
-    def __new__(cls,*args, **kwargs):
-        if cls.__instance is None :
-            cls.__instance = super(Singleton, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance
-
-
-class DAL(Singleton):
-
-    def __init__(self):
-
-        self.__read_current_game_id()
-
-
-    def __read_current_game_id(self):
-
-        try:
-
-            with Session(bind=models.engine) as session:
-
-                # Get the max game id as that is this game id and fill it into game
-                self._db_game_id = session.query(func.max(models.Game.id)).scalar()
-
-            Log.debug(f"_db_game_id={self._db_game_id}")
-
-        except Exception as e:
-            Log.exception(f'[__read_current_game_id] {e}')
-
-    def read_uci_moves_history(self):
-
-        try:
-
-            with Session(bind=models.engine) as session:
-
-                # Get all the moves for the current game_id
-                result = session.execute(select(models.GameMove.move).where(
-                    models.GameMove.gameid == self._db_game_id).order_by(models.GameMove.id))
-
-                result = result.scalars().all()
-
-                Log.debug(f"read_uci_moves_history result={result}")
-
-                return result
-
-        except Exception as e:
-            Log.exception(f'[__read_moves_history] {e}')
-
-    def delete_empty_games(self):
-        try:
-            with Session(bind=models.engine) as session:
-
-                session.execute(text("delete from gamemove where id in (select id from gamemove group by gameid having count(gameid)<2)"))
-                session.commit()
-                
-                session.execute(text("delete from game where id in (select g.id from game g left join gamemove gm on g.id=gm.gameid group by g.id having count(g.id)<2)"))
-                session.commit()
-
-        except Exception as e:
-            Log.exception(f'[delete_empty_games] {e}')
-
-    def insert_new_game(self, source, event, site, round, white, black):
-
-        self.delete_empty_games()
-
-        try:
-
-            with Session(bind=models.engine) as session:
-
-                # Create a new game in the db
-                game = models.Game(
-                    source = source,
-                    event  = event,
-                    site   = site,
-                    round  = round,
-                    white  = white,
-                    black  = black
-                )
-
-                session.add(game)
-                
-                # Now make an entry in GameMove for this start state
-                game_move = models.GameMove(
-                    gameid = self._db_game_id,
-                    move   = '',
-                    fen    = str(chess.STARTING_FEN)
-                )
-
-                session.add(game_move)
-                session.commit()
-                                
-                self.__read_current_game_id()
-
-        except Exception as e:
-            Log.exception(f'[insert_new_game] {e}')
-
-    def terminate_game(self, result):
-        try:
-            with Session(bind=models.engine) as session:
-                
-                game = session.query(models.Game).filter(models.Game.id == self._db_game_id).first()
-                game.result = result
-                session.commit()
-
-        except Exception as e:
-            Log.exception(f'[terminate_game] {e}')
-
-    def delete_game_move(self, id):
-        try:
-            with Session(bind=models.engine) as session:
-                stmt = delete(models.GameMove).where(models.GameMove.id == id)               
-                session.execute(stmt)
-                session.commit()
-
-        except Exception as e:
-            Log.exception(f'[delete_game_move] {e}')
-
-    def insert_new_game_move(self, uci_move, fen):
-
-        def _insert():
-            with Session(bind=models.engine) as session:
-
-                game_move = models.GameMove(
-                        gameid=self._db_game_id,
-                        move=uci_move,
-                        fen=fen)
-                        
-                session.add(game_move)
-                session.commit()
-
-        # Try 5 times
-        for _ in range(0, 5):
-            try:
-                _insert()
-                e = None
-            except Exception as e:
-                pass
-
-            if e:
-                # Wait for one half second before trying to fetch the data again
-                time.sleep(.5)  
-            else:
-                break
-
-        if e:
-            Log.exception(f'[insert_new_game_move] {e}')
-            return False
-
-        return True
-
-
-    def read_last_db_move(self):
-
-        # We read the last move that has been recorded
-        try:
-
-            with Session(bind=models.engine) as session:
-                return session.execute(
-                    select(models.GameMove)
-                        .order_by(models.GameMove.id.desc())
-                        .limit(1)).scalar()
-    
-        except Exception as e:
-            Log.exception(f'[read_last_db_move] {e}')
-
 
 # Game manager class
-class Factory():
+class Engine():
 
     _thread_is_alive = False
     _initialized = False
@@ -336,12 +55,12 @@ class Factory():
 
     show_evaluation = True
 
-    def __init__(self, event_callback = None, move_callback = None, key_callback = None, flags = BoardOption.CAN_DO_COFFEE, game_informations = {}):
+    def __init__(self, event_callback = None, move_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
 
-        epaper.writeText(3," Please place", font=FONT_Typewriter)
-        epaper.writeText(4,"    pieces in", font=FONT_Typewriter)
-        epaper.writeText(5,"     starting", font=FONT_Typewriter)
-        epaper.writeText(6,"     position!", font=FONT_Typewriter)
+        epaper.writeText(3,"  Please place", font=fonts.FONT_Typewriter)
+        epaper.writeText(4,"    pieces in", font=fonts.FONT_Typewriter)
+        epaper.writeText(5,"     starting", font=fonts.FONT_Typewriter)
+        epaper.writeText(6,"     position!", font=fonts.FONT_Typewriter)
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
@@ -351,8 +70,8 @@ class Factory():
 
         self.source = inspect.getsourcefile(sys._getframe(1))
 
-        self._can_force_moves = BoardOption.CAN_FORCE_MOVES in flags
-        self._can_undo_moves = BoardOption.CAN_UNDO_MOVES in flags
+        self._can_force_moves = Enums.BoardOption.CAN_FORCE_MOVES in flags
+        self._can_undo_moves = Enums.BoardOption.CAN_UNDO_MOVES in flags
 
         board.clearSerial()
 
@@ -381,7 +100,7 @@ class Factory():
 
     def __key_callback(self, key_index):
         #key = list(filter(lambda a: a.value == key_index, Btn))[0]
-        Factory.__invoke_callback(self._key_callback_function, key=key_index)
+        Engine.__invoke_callback(self._key_callback_function, key=key_index)
 
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
@@ -395,7 +114,7 @@ class Factory():
             # We do not need to check the reset if a piece is lifted
             self._need_starting_position_check = False
 
-            current_action = PieceAction.LIFT if field_index >= 0 else PieceAction.PLACE
+            current_action = Enums.PieceAction.LIFT if field_index >= 0 else Enums.PieceAction.PLACE
 
             field_index = abs(field_index) -1
             
@@ -407,7 +126,7 @@ class Factory():
             Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{current_action}")
 
             # Legal squares construction from the lifted piece
-            if current_action == PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
+            if current_action == Enums.PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
   
                 self._source_square = field_index
 
@@ -432,10 +151,10 @@ class Factory():
             
             # We cancel the current taking back process if a second piece has been lifted
             # Otherwise we can't capture properly...
-            if current_action == PieceAction.LIFT:
+            if current_action == Enums.PieceAction.LIFT:
                 self._db_undo_id = None
                         
-            if self._is_computer_move and current_action == PieceAction.LIFT and piece_color_is_consistent:
+            if self._is_computer_move and current_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
                 # If this is a computer move then the piece lifted should equal the start of computermove
                 # otherwise set legalsquares so they can just put the piece back down! If it is the correct piece then
                 # adjust legalsquares so to only include the target square
@@ -457,7 +176,7 @@ class Factory():
                         # Only one choice possible
                         self._legal_squares = [Converters.to_square_index(self._computer_uci_move[2:4])]
 
-            if current_action == PieceAction.PLACE and field_index not in self._legal_squares:
+            if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
                 board.beep(board.SOUND_WRONG_MOVE)
 
@@ -465,7 +184,7 @@ class Factory():
                 self._need_starting_position_check = True
 
             # Taking back process
-            if self._can_undo_moves and piece_color_is_consistent == False and current_action == PieceAction.LIFT:
+            if self._can_undo_moves and piece_color_is_consistent == False and current_action == Enums.PieceAction.LIFT:
                 
                 # We read the last move that has been recorded
                 previous_db_move = self._dal.read_last_db_move()
@@ -479,7 +198,7 @@ class Factory():
                     # We keep the DB ID of the move, in order to delete it when the piece will be placed
                     self._db_undo_id = previous_db_move.id
 
-            if current_action == PieceAction.PLACE and field_index in self._legal_squares:
+            if current_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
 
                 if field_index == self._source_square:
                     # Piece has simply been placed back
@@ -506,8 +225,8 @@ class Factory():
                         self._legal_squares = []
                         self._source_square = -1
             
-                        Factory.__invoke_callback(self._move_callback_function, field_index=field_index)
-                        Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                        Engine.__invoke_callback(self._move_callback_function, field_index=field_index)
+                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
 
                         self._db_undo_id = None
                         self.update_evaluation()
@@ -604,18 +323,18 @@ class Factory():
                             self._san_move_list.append(self.get_last_san_move())
 
                             # We invoke the client callback
-                            Factory.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
+                            Engine.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
                             
                             # Check the outcome
                             outcome = self._chessboard.outcome(claim_draw=True)
                             if outcome == None or outcome == "None" or outcome == 0:
                                 # Switch the turn
-                                Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
                             else:
                                 # Depending on the outcome we can update the game information for the result
                                 self._dal.terminate_game(str(self._chessboard.result()))
 
-                                Factory.__invoke_callback(self._event_callback_function, termination=outcome.termination)
+                                Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
                         else:
                             Log.exception(f'Move "{uci_move}" HAS NOT been commited.')
                             self.stop()
@@ -626,9 +345,9 @@ class Factory():
     def _evaluation_thread_instance(self):
         try:
 
-            _draw_evaluation = lambda disabled=False,value=0:epaper.drawEvaluationBar(row=9, value=value, disabled=disabled, font=FONT_Typewriter_small)
+            _draw_evaluation = lambda disabled=False,value=0:epaper.drawEvaluationBar(row=9, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
 
-            sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
+            sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
 
             while self._thread_is_alive:
 
@@ -661,7 +380,7 @@ class Factory():
         board.ledsOff()
         board.subscribeEvents(self.__key_callback, self.__field_callback)
 
-        self._dal = DAL()
+        self._dal = DAL.DAL()
 
         self._dal.delete_empty_games()
 
@@ -699,9 +418,9 @@ class Factory():
                             
                             board.beep(board.SOUND_GENERAL)
 
-                            Factory.__invoke_callback(self._event_callback_function, event=Event.RESUME_GAME)
-                            Factory.__invoke_callback(self._move_callback_function)
-                            Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
+                            Engine.__invoke_callback(self._move_callback_function)
+                            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
                         
                             self._initialized = True
 
@@ -721,7 +440,7 @@ class Factory():
                             board.unPauseEvents()
 
                             # In case of full undo we do not restart a game - no need
-                            if bytearray(cs) == STARTSTATE:
+                            if bytearray(cs) == consts.BOARD_START_STATE:
                                 
                                 Log.info("STARTING A NEW GAME!")
 
@@ -733,9 +452,9 @@ class Factory():
                                 
                                 board.beep(board.SOUND_GENERAL)
 
-                                Factory.__invoke_callback(self._event_callback_function, event=Event.NEW_GAME)
-                                Factory.__invoke_callback(self._move_callback_function)
-                                Factory.__invoke_callback(self._event_callback_function, event=Event.PLAY)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
+                                Engine.__invoke_callback(self._move_callback_function)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
                                 
                                 self._initialized = True
 
@@ -795,7 +514,7 @@ class Factory():
         self._new_evaluation_requested = True
 
     def get_Stockfish_uci_move(self, _time = 1):
-        sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
+        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
         moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 
         best_move = str(moves["pv"][0])
@@ -806,8 +525,8 @@ class Factory():
         return best_move
     
     def get_Stockfish_evaluation(self):
-        sf_engine = chess.engine.SimpleEngine.popen_uci(HOME_DIRECTORY+"/centaur/engines/stockfish_pi")
-        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
+        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=2))
 
         best_move = str(moves["pv"][0])
         sf_engine.quit()
@@ -828,14 +547,14 @@ class Factory():
 
         Log.debug("Loading Centaur FEN...")
 
-        f = open(FENLOG, "r")
+        f = open(consts.FENLOG, "r")
         fen = f.readline()
         f.close()
 
         self._chessboard = chess.Board(fen)
 
     def update_Centaur_FEN(self):
-        f = open(FENLOG, "w")
+        f = open(consts.FENLOG, "w")
         f.write(self._chessboard.fen())
         f.close()
 
@@ -866,16 +585,16 @@ class Factory():
             # White move
             if current_turn == chess.WHITE:
                 if (san == None):
-                    epaper.writeText(row, ' '*20, font=FONT_Typewriter)
+                    epaper.writeText(row, ' '*20, font=fonts.FONT_Typewriter)
                 else:
                     current_row_move = f"{current_row_index}. "+san
-                    epaper.writeText(row, current_row_move, font=FONT_Typewriter)
+                    epaper.writeText(row, current_row_move, font=fonts.FONT_Typewriter)
 
             # Black move
             else:
                 if san != None:
                     current_row_move = current_row_move + ".."+san
-                    epaper.writeText(row, current_row_move, font=FONT_Typewriter)
+                    epaper.writeText(row, current_row_move, font=fonts.FONT_Typewriter)
 
                 row = row + 1
                 current_row_index = current_row_index + 1
