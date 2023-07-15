@@ -29,6 +29,7 @@ import time
 import chess
 import sys
 import inspect
+import re
 
 class Converters:
 
@@ -363,35 +364,35 @@ class Engine():
     def _evaluation_thread_instance(self):
         try:
 
-            _draw_evaluation = lambda disabled=False,value=0:epaper.drawEvaluationBar(row=9, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
-
             sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
 
             while self._thread_is_alive:
 
                 if self._new_evaluation_requested and self._initialized:
+
+                    self._new_evaluation_requested = False
+
                     if self.show_evaluation:
                         result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
                         score = str(result["score"])
 
                         if "Mate" in score:
-                            eval = 1000
+                            mate = re.search(r'PovScore\(Mate\(\+(\d+)\)', score)[1]
+                            self.update_evaluation(force=True, text=f" mate in {mate}")
                         else:
                             eval = score[11:24]
                             eval = eval[1:eval.find(")")]
                 
-                        eval = int(eval)
+                            eval = int(eval)
 
-                        if "BLACK" in score:
-                            eval = eval * -1
+                            if "BLACK" in score:
+                                eval = eval * -1
 
-                        #epaper.writeText(14, f"Eval {eval:+}", font=FONT_Typewriter)
-                        _draw_evaluation(value=eval)
+                            Log.debug(f"Position evaluation {eval:+}")
+                            self.update_evaluation(force=True, value=eval)
                     else:
-                        _draw_evaluation(disabled=True)
-
-                    self._new_evaluation_requested = False
+                        self.update_evaluation(force=True, disabled=True)
 
                 time.sleep(.5)
 
@@ -399,7 +400,6 @@ class Engine():
         
         except Exception as e:
             Log.exception(f"_evaluation_thread_instance error:{e}")
-        
 
     def _game_thread_instance(self):
         # The main thread handles the actual chess game functionality and calls back to
@@ -539,10 +539,13 @@ class Engine():
 
         Log.debug("_game_thread_instance has been stopped.")
 
-    def update_evaluation(self):
+    def update_evaluation(self, value=None, force=False, text=None, disabled=False):
         self._new_evaluation_requested = True
+        if force:
+            epaper.drawEvaluationBar(row=9, text=text, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
 
     def get_Stockfish_uci_move(self, _time = 1):
+
         sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
         moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 

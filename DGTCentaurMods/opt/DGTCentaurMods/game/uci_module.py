@@ -104,12 +104,16 @@ def key_callback(args):
 
         if gfe.get_board().turn != computer_color:
 
+            gfe.update_evaluation(force=True, text=" thinking...")
+
             uci_move = gfe.get_Stockfish_uci_move()
 
             from_num = GameFactory.Converters.to_square_index(uci_move[0:2])
             to_num = GameFactory.Converters.to_square_index(uci_move[2:4])
 
             board.ledFromTo(from_num,to_num)
+
+            gfe.update_evaluation()
 
 
 def event_callback(args):
