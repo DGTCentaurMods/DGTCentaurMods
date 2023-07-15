@@ -564,17 +564,6 @@ class Engine():
             return None
 
         return best_move
-    
-    def get_Stockfish_evaluation(self):
-        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
-        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=2))
-
-        best_move = str(moves["pv"][0])
-        sf_engine.quit()
-
-        Log.info(f'Stockfish help requested :"{best_move}"')
-
-        return best_move
 
     def get_last_san_move(self):
         try:
