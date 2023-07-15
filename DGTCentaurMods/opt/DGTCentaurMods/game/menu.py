@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.board import *
+from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
 import time
@@ -196,7 +197,13 @@ epaper.quickClear()
 while True:
 
     menu = {}
+
+    last_uci = common.get_last_uci_command()
     
+    if last_uci:
+        last_uci_item = {'last_uci': 'Resume'}
+        menu.update(last_uci_item)
+
     if os.path.exists(centaur_software):
         centaur_item = {'Centaur': 'DGT Centaur'}
         menu.update(centaur_item)
@@ -217,9 +224,19 @@ while True:
     #time.sleep(0.7)
     #epaper.clearArea(0,0 + shift,128,295)
     #time.sleep(1)
+
     if result == "BACK":
         board.beep(board.SOUND_POWER_OFF)
         show_welcome()
+    if result == "last_uci":
+        epaper.loadingScreen()
+        board.pauseEvents()
+        statusbar.stop()
+        os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci_module.py "+last_uci)
+        board.unPauseEvents()
+        epaper.quickClear()
+        statusbar.start()
+
     if result == "Cast":
         epaper.loadingScreen()
         board.pauseEvents()
@@ -484,6 +501,7 @@ while True:
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci_module.py " + color + " stockfish " + elo)
                     board.unPauseEvents()
                     statusbar.start()
+                    last_uci = common.get_last_uci_command()
         else:
             if result != "BACK":
                 # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
@@ -511,6 +529,7 @@ while True:
                             board.unPauseEvents()
                             epaper.quickClear()
                             statusbar.start()
+                            last_uci = common.get_last_uci_command()
                     else:
                         # With no uci file we just call the engine
                         epaper.loadingScreen()
@@ -520,7 +539,8 @@ while True:
                         os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/uci_module.py " + color + " \"" + result + "\"")
                         board.unPauseEvents()
                         epaper.quickClear()
-                        statusbar.start()                        
+                        statusbar.start()
+                        last_uci = common.get_last_uci_command()                        
     if result == "HandBrain":
         # Pick up the engines from the engines folder and build the menu
         enginemenu = {}

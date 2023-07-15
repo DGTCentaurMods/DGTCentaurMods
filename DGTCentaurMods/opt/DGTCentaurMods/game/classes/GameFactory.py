@@ -23,6 +23,7 @@ from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.game.classes import DAL, Log
 from DGTCentaurMods.game.consts import Enums, fonts, consts
+from DGTCentaurMods.game.lib import common
 
 import threading
 import time
@@ -577,19 +578,10 @@ class Engine():
             return None
     
     def load_Centaur_FEN(self):
-
-        Log.debug("Loading Centaur FEN...")
-
-        f = open(consts.FENLOG, "r")
-        fen = f.readline()
-        f.close()
-
-        self._chessboard = chess.Board(fen)
+        self._chessboard = chess.Board(common.get_Centaur_FEN())
 
     def update_Centaur_FEN(self):
-        f = open(consts.FENLOG, "w")
-        f.write(self._chessboard.fen())
-        f.close()
+        common.update_Centaur_FEN(self._chessboard.fen())
 
     def display_board(self):
         epaper.drawFen(self._chessboard.fen(), startrow=1.6)

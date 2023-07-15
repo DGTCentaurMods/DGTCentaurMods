@@ -23,8 +23,11 @@
 
 from DGTCentaurMods.game.classes import GameFactory
 from DGTCentaurMods.game.consts import consts, Enums, fonts
+from DGTCentaurMods.game.lib import common
+
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import board
+
 
 from random import randint
 
@@ -42,6 +45,8 @@ computer_color = {
      "white"  : chess.BLACK, 
      "black"  : chess.WHITE, 
      "random" : chess.WHITE if randint(0,1) == 1 else chess.BLACK }[sys.argv[1]]
+
+common.update_last_uci_command(("black" if computer_color else "white")+' '+sys.argv[2]+' '+sys.argv[3])
 
 # Arg2 is going to contain the name of our engine choice. We use this for database logging and to spawn the engine
 engine_name = sys.argv[2]
