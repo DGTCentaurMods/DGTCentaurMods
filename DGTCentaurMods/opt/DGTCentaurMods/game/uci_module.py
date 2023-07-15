@@ -104,14 +104,15 @@ def key_callback(args):
 
         if gfe.get_board().turn != computer_color:
 
-            gfe.update_evaluation(force=True, text=" thinking...")
+            gfe.update_evaluation(force=True, text="thinking...")
 
             uci_move = gfe.get_Stockfish_uci_move()
 
-            from_num = GameFactory.Converters.to_square_index(uci_move[0:2])
-            to_num = GameFactory.Converters.to_square_index(uci_move[2:4])
+            if uci_move!= None:
+                from_num = GameFactory.Converters.to_square_index(uci_move[0:2])
+                to_num = GameFactory.Converters.to_square_index(uci_move[2:4])
 
-            board.ledFromTo(from_num,to_num)
+                board.ledFromTo(from_num,to_num)
 
             gfe.update_evaluation()
 
@@ -123,7 +124,7 @@ def event_callback(args):
 
         current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
 
-        epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter)
+        epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
 
         #sfengine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
         #info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
@@ -149,7 +150,23 @@ def event_callback(args):
         # Termination.VARIANT_LOSS
         # Termination.VARIANT_DRAW
 
-        epaper.writeText(1,' '+str(args["termination"])[12:], font=fonts.FONT_Typewriter)
+        gfe.cancel_evaluation()
+
+        mapping = {
+
+            chess.Termination.CHECKMATE:"checkmate",
+            chess.Termination.STALEMATE:"stalemate",
+            chess.Termination.INSUFFICIENT_MATERIAL:"draw",
+            chess.Termination.SEVENTYFIVE_MOVES:"draw",
+            chess.Termination.FIVEFOLD_REPETITION:"draw",
+            chess.Termination.FIFTY_MOVES:"draw",
+            chess.Termination.THREEFOLD_REPETITION:"draw",
+            chess.Termination.VARIANT_WIN:"draw",
+            chess.Termination.VARIANT_LOSS:"draw",
+            chess.Termination.VARIANT_DRAW:"draw",
+        }
+
+        gfe.update_evaluation(force=True, text=mapping[args["termination"]])
 
 
 def move_callback(args):

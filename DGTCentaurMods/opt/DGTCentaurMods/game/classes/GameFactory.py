@@ -58,10 +58,10 @@ class Engine():
 
     def __init__(self, event_callback = None, move_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
 
-        epaper.writeText(3,"  Please place", font=fonts.FONT_Typewriter)
-        epaper.writeText(4,"    pieces in", font=fonts.FONT_Typewriter)
-        epaper.writeText(5,"     starting", font=fonts.FONT_Typewriter)
-        epaper.writeText(6,"     position!", font=fonts.FONT_Typewriter)
+        epaper.writeText(3,"Please place", font=fonts.FONT_Typewriter, align_center=True)
+        epaper.writeText(4,"pieces in", font=fonts.FONT_Typewriter, align_center=True)
+        epaper.writeText(5,"starting", font=fonts.FONT_Typewriter, align_center=True)
+        epaper.writeText(6,"position!", font=fonts.FONT_Typewriter, align_center=True)
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
@@ -377,8 +377,12 @@ class Engine():
 
                         score = str(result["score"])
 
+                        Log.debug(score)
+
                         if "Mate" in score:
-                            mate = re.search(r'PovScore\(Mate\(\+(\d+)\)', score)[1]
+                            
+                            mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+
                             self.update_evaluation(force=True, text=f" mate in {mate}")
                         else:
                             eval = score[11:24]
@@ -389,7 +393,6 @@ class Engine():
                             if "BLACK" in score:
                                 eval = eval * -1
 
-                            Log.debug(f"Position evaluation {eval:+}")
                             self.update_evaluation(force=True, value=eval)
                     else:
                         self.update_evaluation(force=True, disabled=True)
@@ -539,20 +542,26 @@ class Engine():
 
         Log.debug("_game_thread_instance has been stopped.")
 
+    def cancel_evaluation(self):
+        self._new_evaluation_requested = False
+
     def update_evaluation(self, value=None, force=False, text=None, disabled=False):
-        self._new_evaluation_requested = True
         if force:
-            epaper.drawEvaluationBar(row=9, text=text, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
+            epaper.drawEvaluationBar(text=text, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
+        else:
+            self._new_evaluation_requested = True
 
     def get_Stockfish_uci_move(self, _time = 1):
 
         sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
         moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 
-        best_move = str(moves["pv"][0])
-        sf_engine.quit()
-
-        Log.info(f'Stockfish help requested :"{best_move}"')
+        try:
+            best_move = str(moves["pv"][0])
+            sf_engine.quit()
+            Log.info(f'Stockfish help requested :"{best_move}"')
+        except:
+            return None
 
         return best_move
     
@@ -594,9 +603,9 @@ class Engine():
         f.close()
 
     def display_board(self):
-        epaper.drawFen(self._chessboard.fen())
+        epaper.drawFen(self._chessboard.fen(), startrow=1.6)
 
-    def display_current_PGN(self, row=10, move_count=10):
+    def display_current_PGN(self, row=9.3, move_count=10):
 
         # Maximum displayed moves
         move_count = 10

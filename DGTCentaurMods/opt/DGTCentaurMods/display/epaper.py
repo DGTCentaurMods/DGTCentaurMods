@@ -213,14 +213,25 @@ def killEpaper():
     global kill
     kill = 1
 
-def writeText(row,txt,font=font18):
+def writeText(row,txt,font=font18,align_center=False, border=False):
     # Write Text on a give line number
+
     global epaperbuffer
+
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 255)
+    
     draw = ImageDraw.Draw(image)
-    draw.text((0, 0), txt, font=font, fill=0)
-    nimage.paste(image, (0, (row * 20)))
+
+    _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=txt, font=font)
+
+    if border:
+        draw.rounded_rectangle([(0,0),(127,text_height+2)],radius=8,fill="white",outline='black', width=1)
+
+    x = int((128-text_width)/2 if align_center else 0)
+    draw.text((x, 0), text=txt, font=font, fill=0)
+
+    nimage.paste(image, box=(0, int(row * 20)))
     epaperbuffer = nimage.copy()
 
 def writeMenuTitle(title):
@@ -252,50 +263,6 @@ def clearScreen():
     draw = ImageDraw.Draw(epaperbuffer)
     draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
     first = 1
-
-def _drawBoard(pieces, startrow=2):
-    global epaperbuffer
-    draw = ImageDraw.Draw(epaperbuffer)
-    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
-    for x in range(0,64):
-        pos = (x - 63) * -1
-        row = ((startrow * 20) + 8) + (16 * (pos // 8))
-        col = (x % 8) * 16
-        px = 0
-        r = x // 8
-        c = x % 8
-        py = 0
-        if (r // 2 == r / 2 and c // 2 == c / 2):
-            py = py + 16
-        if (r //2 != r / 2 and c // 2 != c / 2):
-            py = py + 16
-        if pieces[x] == "P":
-            px = 16
-        if pieces[x] == "R":
-            px = 32
-        if pieces[x] == "N":
-            px = 48
-        if pieces[x] == "B":
-            px = 64
-        if pieces[x] == "Q":
-            px = 80
-        if pieces[x] == "K":
-            px = 96
-        if pieces[x] == "p":
-            px = 112
-        if pieces[x] == "r":
-            px = 128
-        if pieces[x] == "n":
-            px = 144
-        if pieces[x] == "b":
-            px = 160
-        if pieces[x] == "q":
-            px = 176
-        if pieces[x] == "k":
-            px = 192
-        piece = chessfont.crop((px, py, px+16, py+16))
-        epaperbuffer.paste(piece,(col, row))
-    draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
 
 def drawBoard(pieces, startrow=2):
     global epaperbuffer
@@ -338,33 +305,38 @@ def drawBoard(pieces, startrow=2):
         if pieces[x] == "k":
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
-        epaperbuffer.paste(piece,(col, row))
-    draw.rectangle([(0,47),(127,176)],fill=None,outline='black')
+        epaperbuffer.paste(piece,(col, int(row)))
 
-def drawEvaluationBar(row=9, value=0, text=None, disabled=False, font=font18):
+def drawEvaluationBar(row=8.5, value=0, text=None, disabled=False, font=font18):
+
+    if disabled:
+        text = "evaluation disabled"
+
+    if text:
+        writeText(row, text, font=font, align_center=True, border=True)
+        return
+    
     global epaperbuffer
     draw = ImageDraw.Draw(epaperbuffer)
 
-    MAX_VALUE = 1000
-    HEIGHT = 12
+    MAX_VALUE = 800
+    HEIGHT = 14
+    PADDING = 6
+    BAR_WIDTH = 128 - (PADDING*2)
 
     value = MAX_VALUE if disabled or text != None else value
 
     value = +MAX_VALUE if value>+MAX_VALUE else value
     value = -MAX_VALUE if value<-MAX_VALUE else value
 
-    offset = -(value/MAX_VALUE) * 64
+    offset = (-(value/MAX_VALUE) * BAR_WIDTH *.5) + (BAR_WIDTH *.5)
 
     y = row * 20
 
-    draw.rectangle([(0,y),(127,y+HEIGHT)],fill="white",outline='black', width=1)
-    draw.rectangle([(0,y),(offset+64,y+HEIGHT)],fill="black",outline='black', width=1)
+    draw.rounded_rectangle([(0,y),(127,y+HEIGHT)],radius=8, fill="white",outline='black', width=1)
+    draw.rectangle([(PADDING,y+(PADDING *.5)),(127-PADDING,y+HEIGHT-(PADDING *.5))],fill="white",outline='black', width=1)
+    draw.rectangle([(PADDING,y+(PADDING *.5)),(PADDING+offset,y+HEIGHT-(PADDING *.5))],fill="black",outline='black', width=1)
 
-    if disabled:
-        draw.text((0, y), "  evaluation disabled", font=font, fill=0)
-
-    if text:
-        draw.text((0, y), text, font=font, fill=0)
 
 def drawFen(fen, startrow=2):
     # As drawboard but draws a fen
