@@ -21,10 +21,12 @@
 
 from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.consts import consts
-from DGTCentaurMods.board import centaur
+from DGTCentaurMods.board import board
+
+
 
 # Get the config
-__conf = centaur.ConfigSystem()
+__conf = board.conf
 
 def get_Centaur_FEN():
 
