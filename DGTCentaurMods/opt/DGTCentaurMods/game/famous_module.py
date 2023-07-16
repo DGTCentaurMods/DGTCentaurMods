@@ -26,6 +26,7 @@ from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import board
 
+import pathlib
 import random
 import time
 import chess
@@ -36,7 +37,7 @@ import os
 
 assert len(sys.argv)>1, "The first argument needs to be the PGN file!"
 
-FAMOUS_PGNS_DIR = "famous_pgns/"
+FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
 MAX_RETRIES = 2
 AUTO_MOVES_COUNT = 4
 
