@@ -40,16 +40,20 @@ import configparser
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
 
+assert len(sys.argv)>1, "The first argument needs to be 'white' 'black' or 'random' for what the player is playing!"
+assert len(sys.argv)>2, "The second argument needs to be the engine name!"
+assert len(sys.argv)>3, "The third argument needs to be the engine parameter!"
+
 # Expect the first argument to be 'white' 'black' or 'random' for what the player is playing
 computer_color = {
      "white"  : chess.BLACK, 
      "black"  : chess.WHITE, 
      "random" : chess.WHITE if randint(0,1) == 1 else chess.BLACK }[sys.argv[1]]
 
-common.update_last_uci_command(("black" if computer_color else "white")+' '+sys.argv[2]+' '+sys.argv[3])
-
 # Arg2 is going to contain the name of our engine choice. We use this for database logging and to spawn the engine
 engine_name = sys.argv[2]
+
+common.update_last_uci_command(("black" if computer_color else "white")+' '+engine_name+' '+sys.argv[3])
 
 uci_options_desc = "Default"
 uci_options = {}
@@ -176,17 +180,24 @@ def event_callback(args):
 
 def move_callback(args):
 
-    board.beep(board.SOUND_GENERAL)
+    # field_index, san_move, uci_move are available
+    assert "uci_move" in args, "args needs to contain 'uci_move' key!"
+    assert "san_move" in args, "args needs to contain 'san_move' key!"
+    assert "field_index" in args, "args needs to contain 'field_index' key!"
 
-    if "field_index" in args:
-        board.led(args["field_index"])
-    else:
-        board.ledsOff()
+    # Move is accepted!
+    return True
 
-    gfe.update_Centaur_FEN()
+def undo_callback(args):
 
-    gfe.display_board()
-    gfe.display_current_PGN()
+    # field_index, san_move, uci_move are available
+    assert "uci_move" in args, "args needs to contain 'uci_move' key!"
+    assert "san_move" in args, "args needs to contain 'san_move' key!"
+    assert "field_index" in args, "args needs to contain 'field_index' key!"
+
+    return
+
+
 
 
 # Activate the epaper
@@ -203,6 +214,7 @@ gfe = GameFactory.Engine(
      
     event_callback = event_callback,
     move_callback = move_callback,
+    undo_callback = undo_callback,
     key_callback = key_callback,
 
     flags = Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES,

@@ -213,6 +213,7 @@ while True:
         menu.update(lichess_item)
     menu.update({
             'Engines' : 'Engines',
+            'famous_module' : 'Famous!',
             'HandBrain' : 'Hand + Brain',
             '1v1Analysis' : '1v1 Analysis',
             'EmulateEB': 'e-Board',
@@ -471,7 +472,32 @@ while True:
                     os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/lichess.py New " + str(gtime) + " " + str(gincrement) + " " + str(rated) + " " + str(color))
                     board.unPauseEvents()
     
-                    
+    if result == "famous_module":
+        famous_menu = {}
+
+        pgns_dir = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
+
+        for fn in list(os.listdir(pgns_dir)):
+
+            # The title entry is the filename with no extension
+            famous_menu[fn] = pathlib.Path(fn).stem
+
+        fns = list(famous_menu.keys())
+        fns.sort()
+        famous_menu = {i: famous_menu[i] for i in fns}
+
+        result = doMenu(famous_menu, 'Famous!')
+
+        if result != "BACK":
+            epaper.loadingScreen()
+            board.pauseEvents()
+            statusbar.stop()
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + f'/../game/famous_module.py "{result}"')
+            board.unPauseEvents()
+            epaper.quickClear()
+            statusbar.start()
+
+
     if result == "Engines":
         enginemenu = {'stockfish': 'Stockfish'}
         # Pick up the engines from the engines folder and build the menu

@@ -29,37 +29,58 @@ from sqlalchemy import text
 import time
 import chess
 
+class _Singleton:
+    _self = None
 
-class Singleton:
-    __instance = None
+    def __new__(cls):
+        if cls._self is None:
+            cls._self = super().__new__(cls)
+        return cls._self
 
-    def __new__(cls,*args, **kwargs):
-        if cls.__instance is None :
-            cls.__instance = super(Singleton, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance
+class DAL(_Singleton):
 
+    FAKE_GAME_ID = -999
+    FAKE_GAME_MOVE_ID =-888
 
-class DAL():
+    __read_only = False
+
+    def is_read_only(self, value):
+
+        Log.debug(f"__read_only={value}")
+
+        self.__read_only = value
 
     def __init__(self):
+
         self.__read_current_game_id()
 
     def __read_current_game_id(self):
+
+        self._inserted_moves = []
+
         try:
+            if self.__read_only:
+                self._db_game_id = DAL.FAKE_GAME_ID
+            else:
+                with Session(bind=models.engine) as session:
 
-            with Session(bind=models.engine) as session:
-
-                # Get the max game id as that is this game id and fill it into game
-                self._db_game_id = session.query(func.max(models.Game.id)).scalar()
-
+                    # Get the max game id as that is this game id and fill it into game
+                    self._db_game_id = session.query(func.max(models.Game.id)).scalar()
+            
             Log.debug(f"_db_game_id={self._db_game_id}")
 
         except Exception as e:
             Log.exception(f'[__read_current_game_id] {e}')
 
+
     def read_uci_moves_history(self):
 
         try:
+
+            self._inserted_moves = []
+
+            if self.__read_only:
+                return[]
 
             with Session(bind=models.engine) as session:
 
@@ -71,10 +92,18 @@ class DAL():
 
                 Log.debug(f"read_uci_moves_history result={result}")
 
+                for uci_move in result:
+                    self._inserted_moves.append(
+                        models.GameMove(
+                            id=DAL.FAKE_GAME_MOVE_ID,
+                            gameid=self._db_game_id,
+                            move=uci_move
+                        ))
+
                 return result
 
         except Exception as e:
-            Log.exception(f'[__read_moves_history] {e}')
+            Log.exception(f'[read_uci_moves_history] {e}')
 
     def delete_empty_games(self):
         try:
@@ -90,6 +119,9 @@ class DAL():
             Log.exception(f'[delete_empty_games] {e}')
 
     def insert_new_game(self, source, event, site, round, white, black):
+
+        if self.__read_only:
+            return
 
         self.delete_empty_games()
 
@@ -125,6 +157,10 @@ class DAL():
             Log.exception(f'[insert_new_game] {e}')
 
     def terminate_game(self, result):
+
+        if self.__read_only:
+            return
+
         try:
             with Session(bind=models.engine) as session:
                 
@@ -135,17 +171,37 @@ class DAL():
         except Exception as e:
             Log.exception(f'[terminate_game] {e}')
 
-    def delete_game_move(self, id):
+    def delete_last_game_move(self):
+
+        last_move = self.read_last_game_move()
+
+        if self.__read_only:
+            self._inserted_moves.pop()
+            return
+
         try:
             with Session(bind=models.engine) as session:
-                stmt = delete(models.GameMove).where(models.GameMove.id == id)               
+                stmt = delete(models.GameMove).where(models.GameMove.id == last_move.id)
                 session.execute(stmt)
                 session.commit()
 
+                self._inserted_moves.pop()
+
         except Exception as e:
-            Log.exception(f'[delete_game_move] {e}')
+            Log.exception(f'[delete_last_game_move] {e}')
 
     def insert_new_game_move(self, uci_move, fen):
+
+        if self.__read_only:
+
+            self._inserted_moves.append(
+                models.GameMove(
+                    id=DAL.FAKE_GAME_MOVE_ID,
+                    gameid=DAL.FAKE_GAME_ID,
+                    move=uci_move
+                ))
+
+            return True
 
         def _insert():
             with Session(bind=models.engine) as session:
@@ -157,6 +213,13 @@ class DAL():
                         
                 session.add(game_move)
                 session.commit()
+
+                self._inserted_moves.append(
+                    models.GameMove(
+                        id=DAL.FAKE_GAME_MOVE_ID,
+                        gameid=self._db_game_id,
+                        move=uci_move
+                    ))
 
         # Try 5 times
         for _ in range(0, 5):
@@ -179,10 +242,15 @@ class DAL():
         return True
 
 
-    def read_last_db_move(self):
+    def read_last_game_move(self):
 
         # We read the last move that has been recorded
         try:
+
+            if self.__read_only:
+
+                # We return a fake gamemove in case of readonly mode
+                return self._inserted_moves[-1]
 
             with Session(bind=models.engine) as session:
                 return session.execute(
@@ -191,4 +259,4 @@ class DAL():
                         .limit(1)).scalar()
     
         except Exception as e:
-            Log.exception(f'[read_last_db_move] {e}')
+            Log.exception(f'[read_last_game_move] {e}')

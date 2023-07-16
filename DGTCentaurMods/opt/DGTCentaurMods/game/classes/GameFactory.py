@@ -57,7 +57,7 @@ class Engine():
 
     show_evaluation = True
 
-    def __init__(self, event_callback = None, move_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
+    def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
 
         epaper.writeText(3,"Please place", font=fonts.FONT_Typewriter, align_center=True)
         epaper.writeText(4,"pieces in", font=fonts.FONT_Typewriter, align_center=True)
@@ -66,6 +66,7 @@ class Engine():
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
+        self._undo_callback_function = undo_callback
         self._event_callback_function = event_callback
 
         self._game_informations = game_informations
@@ -74,6 +75,12 @@ class Engine():
 
         self._can_force_moves = Enums.BoardOption.CAN_FORCE_MOVES in flags
         self._can_undo_moves = Enums.BoardOption.CAN_UNDO_MOVES in flags
+        
+        db_record_disabled = Enums.BoardOption.DB_RECORD_DISABLED in flags
+
+        self._dal = DAL.DAL()
+
+        self._dal.is_read_only(db_record_disabled)
 
         board.clearSerial()
 
@@ -83,9 +90,11 @@ class Engine():
         if callback != None:
             try:
                 Log.debug(f"callback [{callback.__name__}({args})]")
-                callback(args)
+                return callback(args)
             except Exception as e:
                 Log.exception(f"callback error:{e}")
+        else:
+            return True
 
     def __initialize(self):
 
@@ -191,15 +200,17 @@ class Engine():
             if self._can_undo_moves and piece_color_is_consistent == False and current_action == Enums.PieceAction.LIFT:
                 
                 # We read the last move that has been recorded
-                previous_db_move = self._dal.read_last_db_move()
-                
-                if previous_db_move.move[2:4] == square_name:
+                previous_db_move = self._dal.read_last_game_move()
+               
+                if previous_db_move.move and previous_db_move.move[2:4] == square_name:
                     Log.info(f'Takeback request : "{square_name}".')
                     
                     # The only legal square is the origin from the previous move
                     self._legal_squares = [Converters.to_square_index(previous_db_move.move[0:2])]
                     
                     # We keep the DB ID of the move, in order to delete it when the piece will be placed
+                    # BUT we don't need the ID itself since the DAL knows about it
+                    # Here, we could use a simple boolean value
                     self._db_undo_id = previous_db_move.id
 
             if current_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
@@ -220,16 +231,27 @@ class Engine():
                         
                         Log.debug(f'Undoing move "{uci_move}"...')
 
-                        self._san_move_list.pop()
+                        san_move = self._san_move_list.pop()
                         
-                        Log.debug(f'GameMove #{self._db_undo_id} "{uci_move}" will be removed from DB...')
+                        Log.debug(f'GameMove #{self._db_undo_id} "{uci_move}/{san_move}" will be removed from DB...')
 
-                        self._dal.delete_game_move(self._db_undo_id)
+                        self._dal.delete_last_game_move()
                         
                         self._legal_squares = []
                         self._source_square = -1
+
+                        board.beep(board.SOUND_WRONG_MOVE)
+                        board.led(field_index)
+
+                        self.update_Centaur_FEN()
+                        self.display_board()
+                        self.display_current_PGN()
             
-                        Engine.__invoke_callback(self._move_callback_function, field_index=field_index)
+                        Engine.__invoke_callback(self._undo_callback_function,
+                            uci_move=uci_move,
+                            san_move=san_move,
+                            field_index=field_index)
+            
                         Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
 
                         self._db_undo_id = None
@@ -330,34 +352,51 @@ class Engine():
 
                         else:
 
-                            self.update_evaluation()
+                            # We invoke the client callback
+                            # If the callback returns True, the move is accepted
+                            if Engine.__invoke_callback(self._move_callback_function, 
+                                    uci_move=uci_move,
+                                    san_move=san_move,
+                                    field_index=field_index):
 
-                            # We record the move
-                            if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
-                                Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
+                                self.update_evaluation()
 
-                                self._legal_squares = []
-                                self._source_square = -1
-                                self._is_computer_move = False
+                                # We record the move
+                                if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
+                                    Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
 
-                                self._san_move_list.append(san_move)
+                                    self._legal_squares = []
+                                    self._source_square = -1
+                                    self._is_computer_move = False
 
-                                # We invoke the client callback
-                                Engine.__invoke_callback(self._move_callback_function, uci_move=uci_move, field_index=field_index)
-                                
-                                # Check the outcome
-                                outcome = self._chessboard.outcome(claim_draw=True)
-                                if outcome == None or outcome == "None" or outcome == 0:
-                                    # Switch the turn
-                                    Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                                    self._san_move_list.append(san_move)
+
+                                    board.beep(board.SOUND_GENERAL)
+                                    board.led(field_index)
+
+                                    self.update_Centaur_FEN()
+                                    self.display_board()
+                                    self.display_current_PGN()
+
+                                    # Check the outcome
+                                    outcome = self._chessboard.outcome(claim_draw=True)
+                                    if outcome == None or outcome == "None" or outcome == 0:
+                                        # Switch the turn
+                                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                                    else:
+                                        # Depending on the outcome we can update the game information for the result
+                                        self._dal.terminate_game(str(self._chessboard.result()))
+
+                                        Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
                                 else:
-                                    # Depending on the outcome we can update the game information for the result
-                                    self._dal.terminate_game(str(self._chessboard.result()))
+                                    Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
+                                    self.stop()
 
-                                    Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
                             else:
-                                Log.exception(f'Move "{uci_move}" HAS NOT been commited.')
-                                self.stop()
+                                Log.debug(f'Client rejected the move "{uci_move}/{san_move}...')
+
+                                # Move has been rejected by the client...
+                                self._chessboard.pop()
         
         except Exception as e:
             Log.exception(f"__field_callback error:{e}")
@@ -413,8 +452,6 @@ class Engine():
         board.ledsOff()
         board.subscribeEvents(self.__key_callback, self.__field_callback)
 
-        self._dal = DAL.DAL()
-
         self._dal.delete_empty_games()
 
         self._chessboard = chess.Board(chess.STARTING_FEN)
@@ -451,8 +488,11 @@ class Engine():
                             
                             board.beep(board.SOUND_GENERAL)
 
+                            self.update_Centaur_FEN()
+                            self.display_board()
+                            self.display_current_PGN()
+
                             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
-                            Engine.__invoke_callback(self._move_callback_function)
                             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
                         
                             self._initialized = True
@@ -485,8 +525,11 @@ class Engine():
                                 
                                 board.beep(board.SOUND_GENERAL)
 
+                                self.update_Centaur_FEN()
+                                self.display_board()
+                                self.display_current_PGN()
+
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
-                                Engine.__invoke_callback(self._move_callback_function)
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
                                 
                                 self._initialized = True
@@ -667,11 +710,6 @@ class Engine():
             
         try:
             Log.debug(f"uci_computer_move:{uci_move}")
-
-            # We don't care about the computer move if a new game started
-            # TODO might not work when computer plays white
-            #if (self.new_game == 1):
-            #    return
 
             # Set the computer move that the player is expected to make
             # in the format b2b4 , g7g8q , etc
