@@ -1,4 +1,5 @@
 <div id="centaur" style="background-color: #212121; padding:9px; width: 685px;-webkit-border-radius: 23px;-moz-border-radius: 3px;border-radius: 3px;">
+
     <style>
         .white-1e1d7{background-color:#e5e5e5;color: #131313}
         .black-3c85d{background-color:#b2b2b2;color: #131313}
@@ -21,6 +22,7 @@
     <img id='logo' src="{{ url_for('static', filename='logo_mods_web.png') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 1px; background-color: #212121">
     <img id='epaper' src="{{ url_for('static', filename='epaper.jpg') }}" style="width:64px; float:left; padding-left: 13px; padding-top: 210px;">
     <div style="clear:both"></div>
+
     <script>
         var ratio = 1;
         function refreshImage(imgElement, imgURL){
@@ -35,6 +37,8 @@
             xmlhttp.onreadystatechange = function(){
                 if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
                     board1.position(xmlhttp.responseText)
+
+                    document.getElementById("lichessLink").href="https://lichess.org/analysis/"+xmlhttp.responseText;
                 }
             }
             xmlhttp.open("GET", "/fen", true);
@@ -88,3 +92,5 @@
         }
     </script>
 </div>
+
+<div style="padding:4px;">Analyse current position using <a href="#" id="lichessLink">Lichess</a></div>
