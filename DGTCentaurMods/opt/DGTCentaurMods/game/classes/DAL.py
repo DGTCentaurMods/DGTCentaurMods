@@ -44,7 +44,7 @@ class _DAL(Singleton):
 
     __read_only = False
 
-    def is_read_only(self, value):
+    def set_read_only(self, value):
 
         Log.debug(f"__read_only={value}")
 

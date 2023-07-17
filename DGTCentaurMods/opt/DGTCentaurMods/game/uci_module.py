@@ -107,8 +107,8 @@ def key_callback(args):
             uci_move = gfe.get_Stockfish_uci_move()
 
             if uci_move!= None:
-                from_num = common.Converters.to_square_index(uci_move[0:2])
-                to_num = common.Converters.to_square_index(uci_move[2:4])
+                from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
+                to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
                 board.ledFromTo(from_num,to_num)
 

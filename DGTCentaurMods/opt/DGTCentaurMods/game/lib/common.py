@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import Log
-from DGTCentaurMods.game.consts import consts
+from DGTCentaurMods.game.consts import consts, Enums
 from DGTCentaurMods.board import board
 
 
@@ -69,14 +69,18 @@ def get_last_uci_command():
 class Converters:
 
     @staticmethod
-    def to_square_name(square):
+    def to_square_name(square) -> str:
         square_row = (square // 8)
         square_col = (square % 8)
         square_col = 7 - square_col
         return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
         
     @staticmethod
-    def to_square_index(name):
-        square_col = ord(name[0:1]) - ord('a')
-        square_row = ord(name[1:2]) - ord('1')
+    def to_square_index(uci_move, square_type) -> int:
+
+        square_name = uci_move[0:2] if square_type == Enums.SquareType.ORIGIN else uci_move[2:4]
+        
+        square_col = ord(square_name[0:1]) - ord('a')
+        square_row = ord(square_name[1:2]) - ord('1')
+
         return (square_row * 8) + square_col

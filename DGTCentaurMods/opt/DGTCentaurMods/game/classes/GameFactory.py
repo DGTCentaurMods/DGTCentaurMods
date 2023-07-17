@@ -66,7 +66,7 @@ class Engine():
 
         self._dal = DAL.get()
 
-        self._dal.is_read_only(db_record_disabled)
+        self._dal.set_read_only(db_record_disabled)
 
         board.clearSerial()
 
@@ -134,8 +134,8 @@ class Engine():
                     previous_uci_move = self._dal.read_last_game_move().move
 
                     if previous_uci_move:
-                        from_num = common.Converters.to_square_index(previous_uci_move[0:2])
-                        to_num = common.Converters.to_square_index(previous_uci_move[2:4])
+                        from_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)
+                        to_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.TARGET)
 
                         board.ledFromTo(from_num,to_num)
 
@@ -175,7 +175,7 @@ class Engine():
                 self._legal_squares = list(
 
                     # All legal move indexes
-                    map(lambda item:common.Converters.to_square_index(item[2:4]), 
+                    map(lambda item:common.Converters.to_square_index(item, Enums.SquareType.TARGET), 
                                               
                     # All legal uci moves that start with the current square name
                     list(filter(lambda item:item[0:2]==square_name,
@@ -216,7 +216,7 @@ class Engine():
                     
                         # Forced move, correct piece lifted
                         # Only one choice possible
-                        self._legal_squares = [common.Converters.to_square_index(self._computer_uci_move[2:4])]
+                        self._legal_squares = [common.Converters.to_square_index(self._computer_uci_move, Enums.SquareType.TARGET)]
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
@@ -237,7 +237,7 @@ class Engine():
                     Log.info(f'Takeback request : "{square_name}".')
                     
                     # The only legal square is the origin from the previous move
-                    self._legal_squares = [common.Converters.to_square_index(previous_db_move.move[0:2])]
+                    self._legal_squares = [common.Converters.to_square_index(previous_db_move.move, Enums.SquareType.ORIGIN)]
 
                     self._undo_requested = True
 
@@ -771,8 +771,8 @@ class Engine():
             self._is_computer_move = True
             
             # Next indicate this on the board. First convert the text representation to the field number
-            from_num = common.Converters.to_square_index(uci_move[0:2])
-            to_num = common.Converters.to_square_index(uci_move[2:4])
+            from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
+            to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
             # Then light it up!
             board.ledFromTo(from_num,to_num)

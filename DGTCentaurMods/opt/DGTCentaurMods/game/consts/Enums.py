@@ -37,6 +37,10 @@ class PieceAction(Enum):
     LIFT = 1
     PLACE = 2
 
+class SquareType(Enum):
+    ORIGIN = 1
+    TARGET = 2
+
 class BoardOption(Flags):
     CAN_FORCE_MOVES = 1
     CAN_UNDO_MOVES = 2
