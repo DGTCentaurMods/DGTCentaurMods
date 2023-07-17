@@ -98,15 +98,6 @@ def key_callback(args):
 
     key = args["key"]
 
-    if key == board.BTNTICK:
-        gfe.show_evaluation = not gfe.show_evaluation
-
-        gfe.update_evaluation()
-
-        gfe.display_board()
-        gfe.display_current_PGN()
-        return True
-
     if key == board.BTNHELP:
 
         if gfe.get_board().turn != computer_color:

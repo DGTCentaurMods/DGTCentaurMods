@@ -100,6 +100,15 @@ class Engine():
         if Engine.__invoke_callback(self._key_callback_function, key=key_index) == False:
             # Key has not been handled by the client!
 
+            # Default tick key
+            if key_index == board.BTNTICK:
+                self.show_evaluation = not self.show_evaluation
+
+                self.update_evaluation()
+
+                self.display_board()
+                self.display_current_PGN()
+
             # Default exit key
             if key_index == board.BTNBACK:
                 
