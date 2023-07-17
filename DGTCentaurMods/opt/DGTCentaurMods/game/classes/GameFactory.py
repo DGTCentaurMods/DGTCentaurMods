@@ -90,7 +90,7 @@ class Engine():
         self._legal_squares = []
         self._computer_uci_move = ""
         self._is_computer_move = False
-        self._db_undo_id = None
+        self._undo_requested = False
         self._san_move_list = []
 
         self._new_evaluation_requested = False
@@ -194,7 +194,7 @@ class Engine():
             # We cancel the current taking back process if a second piece has been lifted
             # Otherwise we can't capture properly...
             if current_action == Enums.PieceAction.LIFT:
-                self._db_undo_id = None
+                self._undo_requested = False
                         
             if self._is_computer_move and current_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
                 # If this is a computer move then the piece lifted should equal the start of computermove
@@ -238,11 +238,8 @@ class Engine():
                     
                     # The only legal square is the origin from the previous move
                     self._legal_squares = [common.Converters.to_square_index(previous_db_move.move[0:2])]
-                    
-                    # We keep the DB ID of the move, in order to delete it when the piece will be placed
-                    # BUT we don't need the ID itself since the DAL knows about it
-                    # Here, we could use a simple boolean value
-                    self._db_undo_id = previous_db_move.id
+
+                    self._undo_requested = True
 
             if current_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
 
@@ -251,11 +248,11 @@ class Engine():
                     self._source_square = -1
                     self._legal_squares = []
                     
-                    self._db_undo_id = None
+                    self._undo_requested = False
                 else:
                     
                     # Previous move has been taken back
-                    if self._db_undo_id:
+                    if self._undo_requested:
                         
                         # Undo the move
                         uci_move = self._chessboard.pop()
@@ -264,7 +261,7 @@ class Engine():
 
                         san_move = self._san_move_list.pop()
                         
-                        Log.debug(f'GameMove #{self._db_undo_id} "{uci_move}/{san_move}" will be removed from DB...')
+                        Log.debug(f'Move "{uci_move}/{san_move}" will be removed from DB...')
 
                         self._dal.delete_last_game_move()
                         
@@ -285,7 +282,7 @@ class Engine():
             
                         Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
 
-                        self._db_undo_id = None
+                        self._undo_requested = False
                         self.update_evaluation()
                         
                     else:
