@@ -90,13 +90,21 @@ def show_uci_move_on_board(uci_move):
 
 def key_callback(args):
 
+    assert "key" in args, "key_callback args needs to contain the 'key' entry!"
+
     global exit_requested
 
     key = args["key"]
 
-    if key == board.BTNBACK:
-        board.ledsOff()
-        exit_requested = True
+    if key == board.BTNUP:
+
+        global retry_count
+
+        correct_uci_move = moves_history[current_index].uci().strip()
+        retry_count=0
+        show_uci_move_on_board(correct_uci_move)
+
+        return True
 
     if key == board.BTNHELP:
 
@@ -111,12 +119,23 @@ def key_callback(args):
 
             gfe.update_evaluation()
 
+        return True
+    
+    # Key has not been handled, Factory will handle it!
+    return False
+
 
 def event_callback(args):
 
-    global current_index
+    assert "event" in args, "event_callback args needs to contain the 'event' entry!"
 
-    if "event" in args and args["event"] == Enums.Event.NEW_GAME:
+    global current_index
+    global exit_requested
+
+    if args["event"] == Enums.Event.QUIT:
+        exit_requested = True
+
+    if args["event"] == Enums.Event.NEW_GAME:
         current_index = 0
 
         epaper.writeText(9.5,game.headers["Event"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
@@ -124,7 +143,7 @@ def event_callback(args):
         epaper.writeText(12,game.headers["Black"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
         epaper.writeText(13,"You play "+("white" if human_color else "black")+"!", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
         
-    if "event" in args and args["event"] == Enums.Event.PLAY:
+    if args["event"] == Enums.Event.PLAY:
 
         current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
 
@@ -138,37 +157,6 @@ def event_callback(args):
             time.sleep(.5)
 
             show_uci_move_on_board(uci_move)
-
-
-    if "termination" in args:
-        # Termination.CHECKMATE
-        # Termination.STALEMATE
-        # Termination.INSUFFICIENT_MATERIAL
-        # Termination.SEVENTYFIVE_MOVES
-        # Termination.FIVEFOLD_REPETITION
-        # Termination.FIFTY_MOVES
-        # Termination.THREEFOLD_REPETITION
-        # Termination.VARIANT_WIN
-        # Termination.VARIANT_LOSS
-        # Termination.VARIANT_DRAW
-
-        gfe.cancel_evaluation()
-
-        mapping = {
-
-            chess.Termination.CHECKMATE:"checkmate",
-            chess.Termination.STALEMATE:"stalemate",
-            chess.Termination.INSUFFICIENT_MATERIAL:"draw",
-            chess.Termination.SEVENTYFIVE_MOVES:"draw",
-            chess.Termination.FIVEFOLD_REPETITION:"draw",
-            chess.Termination.FIFTY_MOVES:"draw",
-            chess.Termination.THREEFOLD_REPETITION:"draw",
-            chess.Termination.VARIANT_WIN:"draw",
-            chess.Termination.VARIANT_LOSS:"draw",
-            chess.Termination.VARIANT_DRAW:"draw",
-        }
-
-        gfe.update_evaluation(force=True, text=mapping[args["termination"]])
 
 
 def move_callback(args):
@@ -247,5 +235,3 @@ gfe.start()
 
 while exit_requested == False:
     time.sleep(0.1)
-
-gfe.stop()

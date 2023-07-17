@@ -39,6 +39,8 @@ class Engine():
     _initialized = False
     _new_evaluation_requested = False
 
+    _previous_move_displayed = False
+
     show_evaluation = True
 
     def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
@@ -94,8 +96,42 @@ class Engine():
         self._new_evaluation_requested = False
 
     def __key_callback(self, key_index):
-        #key = list(filter(lambda a: a.value == key_index, Btn))[0]
-        Engine.__invoke_callback(self._key_callback_function, key=key_index)
+
+        if Engine.__invoke_callback(self._key_callback_function, key=key_index) == False:
+            # Key has not been handled by the client!
+
+            # Default exit key
+            if key_index == board.BTNBACK:
+                
+                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
+
+                self.stop()
+        
+            # Default down key: show previous move
+            if key_index == board.BTNDOWN:
+
+                if self._previous_move_displayed:
+                     
+                     self._previous_move_displayed = False
+                     
+                     if self._is_computer_move:
+                        self.set_computer_move()
+                          
+                     else:
+                        board.ledsOff()
+
+                else:
+                    # We read the last move that has been recorded
+                    previous_uci_move = self._dal.read_last_game_move().move
+
+                    if previous_uci_move:
+                        from_num = common.Converters.to_square_index(previous_uci_move[0:2])
+                        to_num = common.Converters.to_square_index(previous_uci_move[2:4])
+
+                        board.ledFromTo(from_num,to_num)
+
+                        self._previous_move_displayed = True
+                
 
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
@@ -104,6 +140,8 @@ class Engine():
 
         if self._initialized == False:
             return
+
+        self._previous_move_displayed = False
 
         try:
             # We do not need to check the reset if a piece is lifted
@@ -186,7 +224,7 @@ class Engine():
                 # We read the last move that has been recorded
                 previous_db_move = self._dal.read_last_game_move()
                
-                if previous_db_move.move and previous_db_move.move[2:4] == square_name:
+                if previous_db_move and previous_db_move.move and previous_db_move.move[2:4] == square_name:
                     Log.info(f'Takeback request : "{square_name}".')
                     
                     # The only legal square is the origin from the previous move
@@ -371,7 +409,24 @@ class Engine():
                                         # Depending on the outcome we can update the game information for the result
                                         self._dal.terminate_game(str(self._chessboard.result()))
 
-                                        Engine.__invoke_callback(self._event_callback_function, termination=outcome.termination)
+                                        self.cancel_evaluation()
+
+                                        self.update_evaluation(force=True, text={
+
+                                                chess.Termination.CHECKMATE:"checkmate",
+                                                chess.Termination.STALEMATE:"stalemate",
+                                                chess.Termination.INSUFFICIENT_MATERIAL:"draw",
+                                                chess.Termination.SEVENTYFIVE_MOVES:"draw",
+                                                chess.Termination.FIVEFOLD_REPETITION:"draw",
+                                                chess.Termination.FIFTY_MOVES:"draw",
+                                                chess.Termination.THREEFOLD_REPETITION:"draw",
+                                                chess.Termination.VARIANT_WIN:"draw",
+                                                chess.Termination.VARIANT_LOSS:"draw",
+                                                chess.Termination.VARIANT_DRAW:"draw",
+                                    
+                                            }[outcome.termination])
+
+                                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
                                 else:
                                     Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
                                     self.stop()
@@ -488,6 +543,7 @@ class Engine():
 
                 # Detect if a new game has begun
                 if self._need_starting_position_check:
+
                     if ticks < 5:
                         ticks = ticks + 1
                     else:
@@ -501,11 +557,11 @@ class Engine():
                                 
                                 Log.info("STARTING A NEW GAME!")
 
+                                self._need_starting_position_check = False
+
                                 self._chessboard = chess.Board(chess.STARTING_FEN)
 
                                 self.__initialize()
-    
-                                self._need_starting_position_check = False
                                 
                                 board.beep(board.SOUND_GENERAL)
 
@@ -529,13 +585,13 @@ class Engine():
                                     white  = self._game_informations["white"],
                                     black  = self._game_informations["black"]
                                 )
-                                
+
                             ticks = 0
                         except:
                             pass
 
-                time.sleep(0.1)
-        
+                time.sleep(.1)
+
         except Exception as e:
             Log.exception(f"__game_thread error:{e}")
 
@@ -690,9 +746,13 @@ class Engine():
     def get_board(self):
         return self._chessboard
 
-    def set_computer_move(self, uci_move):
+    def set_computer_move(self, uci_move = None):
             
         try:
+
+            if uci_move == None:
+                uci_move = self._computer_uci_move
+
             Log.debug(f"uci_computer_move:{uci_move}")
 
             # Set the computer move that the player is expected to make

@@ -30,6 +30,8 @@ class Event(Enum):
     PLAY = 3,
     REQUEST_DRAW = 4
     RESIGN_GAME = 5
+    QUIT = 6
+    TERMINATION = 7
 
 class PieceAction(Enum):
     LIFT = 1
