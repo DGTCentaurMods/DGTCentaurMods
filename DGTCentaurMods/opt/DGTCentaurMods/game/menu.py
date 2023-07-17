@@ -289,7 +289,7 @@ while True:
             epaper.loadingScreen()
             board.pauseEvents()
             statusbar.stop()
-            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/1v1Analysis.py")
+            os.system("sudo " + str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/1v1Analysis_module.py")
             epaper.quickClear()
             board.unPauseEvents()               
     if result == "settings":
