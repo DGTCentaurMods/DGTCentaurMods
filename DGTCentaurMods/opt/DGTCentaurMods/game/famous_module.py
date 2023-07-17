@@ -83,8 +83,8 @@ current_index = 0
 assert len(moves_history)>10, f"PGN must count at least 10 moves! (has {len(moves_history)})"
 
 def show_uci_move_on_board(uci_move):
-    from_num = GameFactory.Converters.to_square_index(uci_move[0:2])
-    to_num = GameFactory.Converters.to_square_index(uci_move[2:4])
+    from_num = common.Converters.to_square_index(uci_move[0:2])
+    to_num = common.Converters.to_square_index(uci_move[2:4])
 
     board.ledFromTo(from_num,to_num)
 

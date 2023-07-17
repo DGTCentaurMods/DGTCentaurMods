@@ -32,22 +32,6 @@ import sys
 import inspect
 import re
 
-class Converters:
-
-    @staticmethod
-    def to_square_name(square):
-        square_row = (square // 8)
-        square_col = (square % 8)
-        square_col = 7 - square_col
-        return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
-        
-    @staticmethod
-    def to_square_index(name):
-        square_col = ord(name[0:1]) - ord('a')
-        square_row = ord(name[1:2]) - ord('1')
-        return (square_row * 8) + square_col
-
-
 # Game manager class
 class Engine():
 
@@ -78,7 +62,7 @@ class Engine():
         
         db_record_disabled = Enums.BoardOption.DB_RECORD_DISABLED in flags
 
-        self._dal = DAL.DAL()
+        self._dal = DAL.get()
 
         self._dal.is_read_only(db_record_disabled)
 
@@ -132,7 +116,7 @@ class Engine():
             # Check the piece colour against the current turn
             piece_color_is_consistent = self._chessboard.turn == self._chessboard.color_at(field_index)
             
-            square_name = Converters.to_square_name(field_index)
+            square_name = common.Converters.to_square_name(field_index)
       
             Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{current_action}")
 
@@ -144,7 +128,7 @@ class Engine():
                 self._legal_squares = list(
 
                     # All legal move indexes
-                    map(lambda item:Converters.to_square_index(item[2:4]), 
+                    map(lambda item:common.Converters.to_square_index(item[2:4]), 
                                               
                     # All legal uci moves that start with the current square name
                     list(filter(lambda item:item[0:2]==square_name,
@@ -185,7 +169,7 @@ class Engine():
                     
                         # Forced move, correct piece lifted
                         # Only one choice possible
-                        self._legal_squares = [Converters.to_square_index(self._computer_uci_move[2:4])]
+                        self._legal_squares = [common.Converters.to_square_index(self._computer_uci_move[2:4])]
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
@@ -206,7 +190,7 @@ class Engine():
                     Log.info(f'Takeback request : "{square_name}".')
                     
                     # The only legal square is the origin from the previous move
-                    self._legal_squares = [Converters.to_square_index(previous_db_move.move[0:2])]
+                    self._legal_squares = [common.Converters.to_square_index(previous_db_move.move[0:2])]
                     
                     # We keep the DB ID of the move, in order to delete it when the piece will be placed
                     # BUT we don't need the ID itself since the DAL knows about it
@@ -262,8 +246,8 @@ class Engine():
                         Log.info(f'Piece has been moved to "{square_name}".')
                     
                         # Piece has been moved
-                        from_name = Converters.to_square_name(self._source_square)
-                        to_name = Converters.to_square_name(field_index)
+                        from_name = common.Converters.to_square_name(self._source_square)
+                        to_name = common.Converters.to_square_name(field_index)
                         
                         player_uci_move = from_name + to_name
                         
@@ -721,8 +705,8 @@ class Engine():
             self._is_computer_move = True
             
             # Next indicate this on the board. First convert the text representation to the field number
-            from_num = Converters.to_square_index(uci_move[0:2])
-            to_num = Converters.to_square_index(uci_move[2:4])
+            from_num = common.Converters.to_square_index(uci_move[0:2])
+            to_num = common.Converters.to_square_index(uci_move[2:4])
 
             # Then light it up!
             board.ledFromTo(from_num,to_num)

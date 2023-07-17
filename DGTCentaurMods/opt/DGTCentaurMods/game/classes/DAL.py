@@ -29,7 +29,7 @@ from sqlalchemy import text
 import time
 import chess
 
-class _Singleton:
+class Singleton:
     _self = None
 
     def __new__(cls):
@@ -37,7 +37,7 @@ class _Singleton:
             cls._self = super().__new__(cls)
         return cls._self
 
-class DAL(_Singleton):
+class _DAL(Singleton):
 
     FAKE_GAME_ID = -999
     FAKE_GAME_MOVE_ID =-888
@@ -60,7 +60,7 @@ class DAL(_Singleton):
 
         try:
             if self.__read_only:
-                self._db_game_id = DAL.FAKE_GAME_ID
+                self._db_game_id = _DAL.FAKE_GAME_ID
             else:
                 with Session(bind=models.engine) as session:
 
@@ -95,7 +95,7 @@ class DAL(_Singleton):
                 for uci_move in result:
                     self._inserted_moves.append(
                         models.GameMove(
-                            id=DAL.FAKE_GAME_MOVE_ID,
+                            id=_DAL.FAKE_GAME_MOVE_ID,
                             gameid=self._db_game_id,
                             move=uci_move
                         ))
@@ -196,8 +196,8 @@ class DAL(_Singleton):
 
             self._inserted_moves.append(
                 models.GameMove(
-                    id=DAL.FAKE_GAME_MOVE_ID,
-                    gameid=DAL.FAKE_GAME_ID,
+                    id=_DAL.FAKE_GAME_MOVE_ID,
+                    gameid=_DAL.FAKE_GAME_ID,
                     move=uci_move
                 ))
 
@@ -216,7 +216,7 @@ class DAL(_Singleton):
 
                 self._inserted_moves.append(
                     models.GameMove(
-                        id=DAL.FAKE_GAME_MOVE_ID,
+                        id=_DAL.FAKE_GAME_MOVE_ID,
                         gameid=self._db_game_id,
                         move=uci_move
                     ))
@@ -260,3 +260,7 @@ class DAL(_Singleton):
     
         except Exception as e:
             Log.exception(f'[read_last_game_move] {e}')
+
+
+def get():
+    return _DAL()
