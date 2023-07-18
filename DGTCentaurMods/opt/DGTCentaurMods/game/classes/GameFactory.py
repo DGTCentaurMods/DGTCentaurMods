@@ -448,17 +448,18 @@ class Engine():
             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
 
     def _evaluation_thread_instance(self):
-        try:
 
-            sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
 
-            while self._thread_is_alive:
+        while self._thread_is_alive:
 
-                if self._new_evaluation_requested and self._initialized:
+            if self._new_evaluation_requested and self._initialized:
 
-                    self._new_evaluation_requested = False
+                self._new_evaluation_requested = False
 
-                    if self.show_evaluation:
+                if self.show_evaluation:
+
+                    try:
                         result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
                         score = str(result["score"])
@@ -480,15 +481,16 @@ class Engine():
                                 eval = eval * -1
 
                             self.update_evaluation(force=True, value=eval)
-                    else:
-                        self.update_evaluation(force=True, disabled=True)
 
-                time.sleep(.5)
+                    except Exception as e:
+                        Log.exception(f"_evaluation_thread_instance error:{e}")
 
-            sf_engine.quit()
-        
-        except Exception as e:
-            Log.exception(f"_evaluation_thread_instance error:{e}")
+                else:
+                    self.update_evaluation(force=True, disabled=True)
+
+            time.sleep(.5)
+
+        sf_engine.quit()
 
     def _game_thread_instance(self):
         # The main thread handles the actual chess game functionality and calls back to
