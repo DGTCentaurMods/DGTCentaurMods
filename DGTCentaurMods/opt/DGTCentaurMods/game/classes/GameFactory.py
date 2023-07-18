@@ -648,15 +648,16 @@ class Engine():
 
     def get_Stockfish_uci_move(self, _time = 1):
 
-        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
-        moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
-
         try:
+            sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+            
+            moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
+
             best_move = str(moves["pv"][0])
             sf_engine.quit()
             Log.info(f'Stockfish help requested :"{best_move}"')
         except:
-            return None
+            best_move = None
 
         return best_move
 
