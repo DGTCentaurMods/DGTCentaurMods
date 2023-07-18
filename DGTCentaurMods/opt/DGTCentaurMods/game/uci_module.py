@@ -21,7 +21,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import GameFactory
+from DGTCentaurMods.game.classes import GameFactory, Log
 from DGTCentaurMods.game.consts import consts, Enums, fonts
 from DGTCentaurMods.game.lib import common
 
@@ -39,6 +39,74 @@ import pathlib
 import configparser
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
+
+# Wrapper intercepts inner engine exceptions that could occur...
+class EngineWrapper():
+
+    __engine = None
+    __engine_options = None
+    
+    def __init__(self, engine_path):
+
+        self.__engine_path = engine_path
+
+    def __instanciate(self):
+
+        try:
+
+            self.__engine = None
+
+            self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
+            self.__engine.configure(self.__engine_options)
+
+        except Exception as e:
+            Log.exception(f"EngineWrapper.__instanciate error:{e}")
+            self.__engine = None
+
+    def configure(self, engine_options = None):
+
+        self.__engine_options = engine_options
+
+    def play(self, board, limit, info):
+
+        try:
+
+            if self.__engine == None:
+                self.__instanciate()
+
+            if self.__engine != None:
+                return self.__engine.play(board, limit=limit, info=info)
+            
+            return None
+
+        except Exception as e:
+            Log.exception(f"EngineWrapper.play error:{e}")
+
+            time.sleep(.5)
+
+            try:
+                # We try anyway to quit the current engine...
+                self.__engine.quit()
+            except:
+                pass
+
+            # Another try with a FRESH engine!
+            self.__instanciate()
+
+            try:
+                if self.__engine != None:
+                    self.__engine.play(gfe.get_board(), board, limit, info)
+            except Exception as e:
+                Log.exception(f"EngineWrapper.play error:{e}")
+
+    def quit(self):
+
+        try:
+            self.__engine.quit()
+        except Exception as e:
+            Log.exception(f"EngineWrapper.quit error:{e}")
+
+
 
 assert len(sys.argv)>1, "The first argument needs to be 'white' 'black' or 'random' for what the player is playing!"
 assert len(sys.argv)>2, "The second argument needs to be the engine name!"
@@ -62,14 +130,14 @@ if engine_name == "stockfish":
 
     # Only for Stockfish
     engine_elo = sys.argv[3]
-    engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+    engine = EngineWrapper(consts.STOCKFISH_ENGINE_PATH)
 
     uci_options = {"UCI_LimitStrength": True, "UCI_Elo": engine_elo}
 
     engine_name = engine_name+'-'+engine_elo
 else:
 
-    engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name)
+    engine = EngineWrapper(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name)
 
     if len(sys.argv) > 3:
         
@@ -86,9 +154,8 @@ else:
         for item in config.items(uci_options_desc):
             uci_options[item[0]] = item[1]
 
-if uci_options != {}:
-    options = uci_options
-    engine.configure(options)
+
+engine.configure(uci_options)
 
 def key_callback(args):
 
@@ -195,4 +262,4 @@ gfe = GameFactory.Engine(
 gfe.start()
 
 while exit_requested == False:
-    time.sleep(0.1)
+    time.sleep(.1)
