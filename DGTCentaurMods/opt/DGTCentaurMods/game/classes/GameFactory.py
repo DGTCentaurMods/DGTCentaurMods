@@ -371,7 +371,7 @@ class Engine():
                         if san_move == None:
                             board.beep(board.SOUND_WRONG_MOVE)
 
-                            Log.debug(f'Wrong move "{uci_move}"')
+                            Log.debug(f'INVALID move "{uci_move}"')
 
                             self._source_square = -1
 
@@ -406,33 +406,7 @@ class Engine():
                                     self.display_board()
                                     self.display_current_PGN()
 
-                                    # Check the outcome
-                                    outcome = self._chessboard.outcome(claim_draw=True)
-                                    if outcome == None or outcome == "None" or outcome == 0:
-                                        # Switch the turn
-                                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
-                                    else:
-                                        # Depending on the outcome we can update the game information for the result
-                                        self._dal.terminate_game(str(self._chessboard.result()))
-
-                                        self.cancel_evaluation()
-
-                                        self.update_evaluation(force=True, text={
-
-                                                chess.Termination.CHECKMATE:"checkmate",
-                                                chess.Termination.STALEMATE:"stalemate",
-                                                chess.Termination.INSUFFICIENT_MATERIAL:"draw",
-                                                chess.Termination.SEVENTYFIVE_MOVES:"draw",
-                                                chess.Termination.FIVEFOLD_REPETITION:"draw",
-                                                chess.Termination.FIFTY_MOVES:"draw",
-                                                chess.Termination.THREEFOLD_REPETITION:"draw",
-                                                chess.Termination.VARIANT_WIN:"draw",
-                                                chess.Termination.VARIANT_LOSS:"draw",
-                                                chess.Termination.VARIANT_DRAW:"draw",
-                                    
-                                            }[outcome.termination])
-
-                                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
+                                    self._check_last_move_outcome_and_switch()
                                 else:
                                     Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
                                     self.stop()
@@ -445,6 +419,33 @@ class Engine():
         
         except Exception as e:
             Log.exception(f"__field_callback error:{e}")
+
+    def _check_last_move_outcome_and_switch(self):
+        # Check the outcome
+        outcome = self._chessboard.outcome(claim_draw=True)
+        if outcome == None or outcome == "None" or outcome == 0:
+            # Switch the turn
+            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+        else:
+            # Depending on the outcome we can update the game information for the result
+            self._dal.terminate_game(str(self._chessboard.result()))
+
+            self.update_evaluation(force=True, text={
+
+                    chess.Termination.CHECKMATE:"checkmate",
+                    chess.Termination.STALEMATE:"stalemate",
+                    chess.Termination.INSUFFICIENT_MATERIAL:"draw",
+                    chess.Termination.SEVENTYFIVE_MOVES:"draw",
+                    chess.Termination.FIVEFOLD_REPETITION:"draw",
+                    chess.Termination.FIFTY_MOVES:"draw",
+                    chess.Termination.THREEFOLD_REPETITION:"draw",
+                    chess.Termination.VARIANT_WIN:"draw",
+                    chess.Termination.VARIANT_LOSS:"draw",
+                    chess.Termination.VARIANT_DRAW:"draw",
+        
+                }[outcome.termination])
+
+            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
 
     def _evaluation_thread_instance(self):
         try:
@@ -538,11 +539,12 @@ class Engine():
                             self.display_current_PGN()
 
                             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
-                            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                            
+                            self.update_evaluation()
+
+                            self._check_last_move_outcome_and_switch()
                         
                             self._initialized = True
-
-                            self.update_evaluation()
 
                         except Exception as e:
                             Log.exception(f"__game_thread error (while resuming game):{e}")
@@ -637,6 +639,7 @@ class Engine():
 
     def update_evaluation(self, value=None, force=False, text=None, disabled=False):
         if force:
+            self._new_evaluation_requested = False
             epaper.drawEvaluationBar(text=text, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
         else:
             self._new_evaluation_requested = True
@@ -759,13 +762,16 @@ class Engine():
             if uci_move == None:
                 uci_move = self._computer_uci_move
 
-            Log.debug(f"uci_computer_move:{uci_move}")
-
             # Set the computer move that the player is expected to make
             # in the format b2b4 , g7g8q , etc
-            if len(uci_move) < 4:
+            try:
+                chess.Move.from_uci(uci_move)
+            except:
+                Log.debug(f'INVALID uci_computer_move:"{uci_move}"')
                 return
-            
+
+            Log.debug(f'uci_computer_move:"{uci_move}"')
+
             # First set the globals so that the thread knows there is a computer move
             self._computer_uci_move = uci_move
             self._is_computer_move = True
