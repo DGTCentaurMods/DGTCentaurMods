@@ -102,7 +102,9 @@ class EngineWrapper():
     def quit(self):
 
         try:
-            self.__engine.quit()
+            if self.__engine != None:
+                self.__engine.quit()
+
         except Exception as e:
             Log.exception(f"EngineWrapper.quit error:{e}")
 
