@@ -21,9 +21,11 @@
 
 from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
-from DGTCentaurMods.game.classes import DAL, Log
+from DGTCentaurMods.game.classes import ChessEngine, DAL, Log
 from DGTCentaurMods.game.consts import Enums, fonts, consts
 from DGTCentaurMods.game.lib import common
+
+#from pympler import muppy, summary
 
 import threading
 import time
@@ -449,48 +451,48 @@ class Engine():
 
     def _evaluation_thread_instance(self):
 
-        sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+        try:
+            sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
 
-        while self._thread_is_alive:
+            while self._thread_is_alive:
 
-            if self._new_evaluation_requested and self._initialized:
+                if self._new_evaluation_requested and self._initialized:
 
-                self._new_evaluation_requested = False
+                    self._new_evaluation_requested = False
 
-                if self.show_evaluation:
+                    if self.show_evaluation:
 
-                    try:
-                        result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+                            result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
-                        score = str(result["score"])
+                            score = str(result["score"])
 
-                        Log.debug(score)
+                            Log.debug(score)
 
-                        if "Mate" in score:
-                            
-                            mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+                            if "Mate" in score:
+                                
+                                mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
 
-                            self.update_evaluation(force=True, text=f" mate in {mate}")
-                        else:
-                            eval = score[11:24]
-                            eval = eval[1:eval.find(")")]
-                
-                            eval = int(eval)
+                                self.update_evaluation(force=True, text=f" mate in {mate}")
+                            else:
+                                eval = score[11:24]
+                                eval = eval[1:eval.find(")")]
+                    
+                                eval = int(eval)
 
-                            if "BLACK" in score:
-                                eval = eval * -1
+                                if "BLACK" in score:
+                                    eval = eval * -1
 
-                            self.update_evaluation(force=True, value=eval)
+                                self.update_evaluation(force=True, value=eval)
 
-                    except Exception as e:
-                        Log.exception(f"_evaluation_thread_instance error:{e}")
+                    else:
+                        self.update_evaluation(force=True, disabled=True)
 
-                else:
-                    self.update_evaluation(force=True, disabled=True)
+                time.sleep(.5)
 
-            time.sleep(.5)
+            sf_engine.quit()
 
-        sf_engine.quit()
+        except Exception as e:
+            Log.exception(f"_evaluation_thread_instance error:{e}")
 
     def _game_thread_instance(self):
         # The main thread handles the actual chess game functionality and calls back to
@@ -566,6 +568,12 @@ class Engine():
                             if bytearray(cs) == consts.BOARD_START_STATE:
                                 
                                 Log.info("STARTING A NEW GAME!")
+
+                                #all_objects = muppy.get_objects()
+                                #global_len = len(all_objects)
+                                #print(f"Global size:{global_len}")
+                                #sum1 = summary.summarize(all_objects)
+                                #summary.print_(sum1)
 
                                 self._need_starting_position_check = False
 
@@ -649,7 +657,7 @@ class Engine():
     def get_Stockfish_uci_move(self, _time = 1):
 
         try:
-            sf_engine = chess.engine.SimpleEngine.popen_uci(consts.STOCKFISH_ENGINE_PATH)
+            sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
             
             moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
 

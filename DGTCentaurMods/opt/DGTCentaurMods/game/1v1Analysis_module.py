@@ -28,7 +28,6 @@ from DGTCentaurMods.board import board
 
 import time
 import chess
-import chess.engine
 
 
 def key_callback(args):

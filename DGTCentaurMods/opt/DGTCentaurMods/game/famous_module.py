@@ -30,7 +30,6 @@ import pathlib
 import random
 import time
 import chess
-import chess.engine
 import chess.pgn
 import sys
 import os

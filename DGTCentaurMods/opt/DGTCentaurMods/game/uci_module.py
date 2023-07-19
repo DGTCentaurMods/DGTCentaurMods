@@ -21,94 +21,23 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import GameFactory, Log
+from DGTCentaurMods.game.classes import ChessEngine, GameFactory, Log
 from DGTCentaurMods.game.consts import consts, Enums, fonts
 from DGTCentaurMods.game.lib import common
 
 from DGTCentaurMods.display import epaper
 from DGTCentaurMods.board import board
 
-
 from random import randint
 
 import time
 import chess
-import chess.engine
+
 import sys
 import pathlib
 import configparser
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
-
-# Wrapper intercepts inner engine exceptions that could occur...
-class EngineWrapper():
-
-    __engine = None
-    __engine_options = None
-    
-    def __init__(self, engine_path):
-
-        self.__engine_path = engine_path
-
-    def __instanciate(self):
-
-        try:
-
-            self.__engine = None
-
-            self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
-            self.__engine.configure(self.__engine_options)
-
-        except Exception as e:
-            Log.exception(f"EngineWrapper.__instanciate error:{e}")
-            self.__engine = None
-
-    def configure(self, engine_options = None):
-
-        self.__engine_options = engine_options
-
-    def play(self, board, limit, info):
-
-        try:
-
-            if self.__engine == None:
-                self.__instanciate()
-
-            if self.__engine != None:
-                return self.__engine.play(board, limit=limit, info=info)
-            
-            return None
-
-        except Exception as e:
-            Log.exception(f"EngineWrapper.play error:{e}")
-
-            time.sleep(.5)
-
-            try:
-                # We try anyway to quit the current engine...
-                self.__engine.quit()
-            except:
-                pass
-
-            # Another try with a FRESH engine!
-            self.__instanciate()
-
-            try:
-                if self.__engine != None:
-                    self.__engine.play(board = board, limit = limit, info = info)
-            except Exception as e:
-                Log.exception(f"EngineWrapper.play error:{e}")
-
-    def quit(self):
-
-        try:
-            if self.__engine != None:
-                self.__engine.quit()
-
-        except Exception as e:
-            Log.exception(f"EngineWrapper.quit error:{e}")
-
-
 
 assert len(sys.argv)>1, "The first argument needs to be 'white' 'black' or 'random' for what the player is playing!"
 assert len(sys.argv)>2, "The second argument needs to be the engine name!"
@@ -132,14 +61,14 @@ if engine_name == "stockfish":
 
     # Only for Stockfish
     engine_elo = sys.argv[3]
-    engine = EngineWrapper(consts.STOCKFISH_ENGINE_PATH)
+    engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
 
     uci_options = {"UCI_LimitStrength": True, "UCI_Elo": engine_elo}
 
     engine_name = engine_name+'-'+engine_elo
 else:
 
-    engine = EngineWrapper(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name)
+    engine = ChessEngine.get(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name)
 
     if len(sys.argv) > 3:
         
