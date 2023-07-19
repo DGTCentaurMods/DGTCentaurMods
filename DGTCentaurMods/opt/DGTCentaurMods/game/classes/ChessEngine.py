@@ -89,7 +89,7 @@ class _ChessEngine():
 
             try:
                 if self.__engine != None:
-                    return self.__engine.analyze(board = board, limit = limit)
+                    return self.__engine.analyse(board = board, limit = limit)
             except Exception as e:
                 Log.debug(f"_ChessEngine.analyse error:{e}")
 
