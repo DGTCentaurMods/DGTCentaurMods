@@ -42,9 +42,7 @@ class _ChessEngine():
     def __instanciate(self):
 
         try:
-
             self.__engine = None
-
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
             
             Log.debug(f'_ChessEngine.__instanciate({id(self.__engine)})')
@@ -56,74 +54,65 @@ class _ChessEngine():
             Log.debug(f"_ChessEngine.__instanciate error:{e}")
             self.__engine = None
 
+    def __process(self, function_invoker):
+
+        # 3 retries
+        for _ in range(1,3):
+
+            result = function_invoker()
+
+            if result != None:
+                return result
+            
+            # Failure...
+            # We try anyway to quit the current engine...
+            try:
+                self.__engine.quit()
+            except:
+                pass
+
+            # Another try with a FRESH engine!
+            self.__engine == None
+
+            time.sleep(.5)
+
     def configure(self, engine_options = None):
 
         self.__engine_options = engine_options
 
-
     def analyse(self, board, limit):
 
-        try:
-
-            if self.__engine == None:
-                self.__instanciate()
-
-            if self.__engine != None:
-                return self.__engine.analyse(board, limit=limit)
-            
-            return None
-
-        except Exception as e:
-            Log.debug(f"_ChessEngine.analyse error:{e}")
-
-            time.sleep(.5)
-
+        def _analyse(board, limit):
             try:
-                # We try anyway to quit the current engine...
-                self.__engine.quit()
-            except:
-                pass
+                if self.__engine == None:
+                    self.__instanciate()
 
-            # Another try with a FRESH engine!
-            self.__instanciate()
-
-            try:
                 if self.__engine != None:
-                    return self.__engine.analyse(board = board, limit = limit)
+                    return self.__engine.analyse(board=board, limit=limit)
+
             except Exception as e:
                 Log.debug(f"_ChessEngine.analyse error:{e}")
 
+            return None
+        
+        return self.__process(lambda:_analyse(board=board, limit=limit))
+
     def play(self, board, limit, info):
 
-        try:
-
-            if self.__engine == None:
-                self.__instanciate()
-
-            if self.__engine != None:
-                return self.__engine.play(board, limit=limit, info=info)
-            
-            return None
-
-        except Exception as e:
-            Log.debug(f"_ChessEngine.play error:{e}")
-
-            time.sleep(.5)
-
+        def _play(board, limit, info):
             try:
-                # We try anyway to quit the current engine...
-                self.__engine.quit()
-            except:
-                pass
+                if self.__engine == None:
+                    self.__instanciate()
 
-            # Another try with a FRESH engine!
-            self.__instanciate()
-
-            try:
                 if self.__engine != None:
-                    self.__engine.play(board = board, limit = limit, info = info)
+                    return self.__engine.play(board=board, limit=limit, info=info)
+
             except Exception as e:
                 Log.debug(f"_ChessEngine.play error:{e}")
+
+            return None
+        
+        return self.__process(lambda:_play(board=board, limit=limit, info=info))
 
     def quit(self):
 
@@ -138,6 +127,7 @@ class _ChessEngine():
             Log.debug(f"_ChessEngine.quit error:{e}")
 
 
-def get(uci_path):
 
+
+def get(uci_path):
     return _ChessEngine(uci_path)
