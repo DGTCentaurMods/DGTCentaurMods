@@ -95,7 +95,7 @@ class EngineWrapper():
 
             try:
                 if self.__engine != None:
-                    self.__engine.play(gfe.get_board(), board, limit, info)
+                    self.__engine.play(board = board, limit = limit, info = info)
             except Exception as e:
                 Log.exception(f"EngineWrapper.play error:{e}")
 
