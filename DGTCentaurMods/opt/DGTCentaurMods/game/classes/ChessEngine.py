@@ -51,8 +51,9 @@ class _ChessEngine():
                 self.__engine.configure(self.__engine_options)
 
         except Exception as e:
-            Log.debug(f"_ChessEngine.__instanciate error:{e}")
+            Log.exception(f"_ChessEngine.__instanciate error:{e}")
             self.__engine = None
+            pass
 
     def __process(self, function_invoker):
 
@@ -91,7 +92,8 @@ class _ChessEngine():
                     return self.__engine.analyse(board=board, limit=limit)
 
             except Exception as e:
-                Log.debug(f"_ChessEngine.analyse error:{e}")
+                Log.exception(f"_ChessEngine.analyse error:{e}")
+                pass
 
             return None
         
@@ -108,7 +110,8 @@ class _ChessEngine():
                     return self.__engine.play(board=board, limit=limit, info=info)
 
             except Exception as e:
-                Log.debug(f"_ChessEngine.play error:{e}")
+                Log.exception(f"_ChessEngine.play error:{e}")
+                pass
 
             return None
         
@@ -124,10 +127,8 @@ class _ChessEngine():
                 self.__engine.quit()
 
         except Exception as e:
-            Log.debug(f"_ChessEngine.quit error:{e}")
-
-
-
+            Log.exception(f"_ChessEngine.quit error:{e}")
+            pass
 
 def get(uci_path):
     return _ChessEngine(uci_path)

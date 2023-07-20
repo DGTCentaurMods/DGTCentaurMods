@@ -19,56 +19,13 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from flask import Flask, render_template
-from flask_socketio import SocketIO
-
-appFlask = Flask(__name__)
-
-socketio = SocketIO(appFlask, cors_allowed_origins="*")
-
-if __name__ == '__main__':
-	print("Starting socketio server...")
-	socketio.run(appFlask, port=5000, host='0.0.0.0', allow_unsafe_werkzeug=True)
-
-@socketio.on('connect')
-def on_connect():
-    print("New client is connected!")
-
-	# We send back the stored FEN
-    # socketio.emit('message', {'fen': common.get_Centaur_FEN()})
-
-	# We ask the app to send the current PGN and FEN to all connected clients
-	# DONE FROM THE CLIENT
-    # socketio.emit('request', {'fen':True, 'pgn': True})
-    
-@socketio.on('message')
-def on_message(message):
-
-    # Broadcast to all connected clients
-    socketio.emit('message', message)
-    
-@socketio.on('request')
-def on_request(message):
-
-    # Broadcast to all connected clients
-    socketio.emit('request', message)
-
-    
-@appFlask.route("/")
-def index():
-	return render_template('2.0/index.html')
-
-
-
-
-
-# LEGACY WEB SITE - reachable thru http://localhost/legacy
-
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
+from chessboard import LiveBoard
 import centaurflask
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.sql import func
 from sqlalchemy import select
 from sqlalchemy import delete
@@ -80,10 +37,11 @@ import chess
 import chess.pgn
 import json
 
+#appFlask = Flask(__name__)
 appFlask.config['UCI_UPLOAD_EXTENSIONS'] = ['.txt']
 appFlask.config['UCI_UPLOAD_PATH'] = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
-@appFlask.route("/legacy")
-def legacy():
+@appFlask.route("/")
+def index():
 	fenlog = "/home/pi/centaur/fen.log"
 	if os.path.isfile(fenlog) == True:
 		with open(fenlog, "r") as f:
@@ -405,4 +363,3 @@ def generateVideoFrame():
 @appFlask.route('/video')
 def video_feed():
 	return Response(generateVideoFrame(),mimetype='multipart/x-mixed-replace; boundary=frame')
-

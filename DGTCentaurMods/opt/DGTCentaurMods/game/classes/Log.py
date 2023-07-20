@@ -51,7 +51,10 @@ class _Log:
             print("Logging initialized.")
             _Log._info("Logging started.")
 
-            logging.getLogger('chess.engine').setLevel(logging.INFO)
+            logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
+            logging.getLogger("requests").setLevel(logging.CRITICAL)
+            logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+            logging.getLogger("urllib3").propagate = False
 
         except Exception as e:
             print(f'[Log._init] {e}')

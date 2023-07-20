@@ -1,0 +1,22 @@
+.mainfont {
+	font-family: Courier, monospace;
+	font-size:200%;
+}
+
+textarea {
+	font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	width:100%;
+}
+
+.piece-417db:hover {
+	/*animation: filter-shake 5s;*/
+	-webkit-transform: rotate(-2deg);
+	transform: rotate(-2deg);
+	filter: sepia(100%);
+}
+
+.white-1e1d7{background-color:#e5e5e5;color: #131313}
+.black-3c85d{background-color:#b2b2b2;color: #131313}

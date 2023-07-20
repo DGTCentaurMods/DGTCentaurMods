@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.board import board
 from DGTCentaurMods.display import epaper
-from DGTCentaurMods.game.classes import ChessEngine, DAL, Log
+from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient
 from DGTCentaurMods.game.consts import Enums, fonts, consts
 from DGTCentaurMods.game.lib import common
 
@@ -30,6 +30,7 @@ from DGTCentaurMods.game.lib import common
 import threading
 import time
 import chess
+import chess.pgn
 import sys
 import inspect
 import re
@@ -42,6 +43,8 @@ class Engine():
     _new_evaluation_requested = False
 
     _previous_move_displayed = False
+
+    _chessboard = None
 
     show_evaluation = True
 
@@ -71,7 +74,6 @@ class Engine():
         self._dal.set_read_only(db_record_disabled)
 
         board.clearSerial()
-
 
     @staticmethod
     def __invoke_callback(callback, **args):
@@ -108,8 +110,9 @@ class Engine():
 
                 self.update_evaluation()
 
+                self.display_partial_PGN()
                 self.display_board()
-                self.display_current_PGN()
+                self.synchronize_client_boards()
 
             # Default exit key
             if key_index == board.BTNBACK:
@@ -274,8 +277,10 @@ class Engine():
                         board.led(field_index)
 
                         self.update_Centaur_FEN()
+
+                        self.display_partial_PGN()
                         self.display_board()
-                        self.display_current_PGN()
+                        self.synchronize_client_boards()
             
                         Engine.__invoke_callback(self._undo_callback_function,
                             uci_move=uci_move,
@@ -290,7 +295,7 @@ class Engine():
                     else:
                         
                         Log.info(f'Piece has been moved to "{square_name}".')
-                    
+
                         # Piece has been moved
                         from_name = common.Converters.to_square_name(self._source_square)
                         to_name = common.Converters.to_square_name(field_index)
@@ -365,7 +370,9 @@ class Engine():
                         
                         # Make the move
                         try:
-                            self._chessboard.push(chess.Move.from_uci(uci_move))
+                            move = chess.Move.from_uci(uci_move)
+
+                            self._chessboard.push(move)
                             san_move = self.get_last_san_move()
                         except:
                             san_move = None
@@ -405,8 +412,9 @@ class Engine():
                                     board.led(field_index)
 
                                     self.update_Centaur_FEN()
+                                    self.display_partial_PGN()
                                     self.display_board()
-                                    self.display_current_PGN()
+                                    self.synchronize_client_boards()
 
                                     self._check_last_move_outcome_and_switch()
                                 else:
@@ -505,7 +513,7 @@ class Engine():
         self._dal.delete_empty_games()
 
         self._chessboard = chess.Board(chess.STARTING_FEN)
-
+        
         ticks = -1
 
         try:
@@ -540,7 +548,8 @@ class Engine():
 
                             self.update_Centaur_FEN()
                             self.display_board()
-                            self.display_current_PGN()
+                            self.display_partial_PGN()
+                            self.synchronize_client_boards()
 
                             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
                             
@@ -578,14 +587,15 @@ class Engine():
                                 self._need_starting_position_check = False
 
                                 self._chessboard = chess.Board(chess.STARTING_FEN)
-
+                                
                                 self.__initialize()
                                 
                                 board.beep(board.SOUND_GENERAL)
 
                                 self.update_Centaur_FEN()
                                 self.display_board()
-                                self.display_current_PGN()
+                                self.display_partial_PGN()
+                                self.synchronize_client_boards()
 
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
@@ -631,6 +641,26 @@ class Engine():
         self._evaluation_thread_instance.daemon = True
         self._evaluation_thread_instance.start()
 
+        def _on_socket_request(data, socket):
+
+            try:
+            
+                response = {}
+
+                if "pgn" in data:
+                    response["pgn"] = self.get_current_pgn()
+
+                if "fen" in data:
+                    response["fen"] = self._chessboard.fen()
+
+                socket.send_message(response)
+
+            except Exception as e:
+                Log.exception(f"_on_socket_request:{e}")
+                pass
+
+        self._socket = SocketClient.get(on_socket_request=_on_socket_request)
+
         Log.debug("_game_thread_instance started.")
 
 
@@ -638,6 +668,8 @@ class Engine():
         # Stops the game manager
         board.ledsOff()
         self._thread_is_alive = False
+
+        self._socket.disconnect()
 
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
@@ -689,7 +721,42 @@ class Engine():
     def display_board(self):
         epaper.drawFen(self._chessboard.fen(), startrow=1.6)
 
-    def display_current_PGN(self, row=9.3, move_count=10):
+    def synchronize_client_boards(self):
+        # We send the new FEN to all connected clients
+
+        self._socket.send_message({
+            "pgn":self.get_current_pgn(), 
+            "fen":self._chessboard.fen()
+        })
+
+    def get_current_pgn(self):
+
+        # We always start to show a white move
+        current_turn = chess.WHITE
+        
+        current_pgn = ""
+        current_row_index = 1
+ 
+        for san in self._san_move_list:
+
+            # White move
+            if current_turn == chess.WHITE:
+                if (san != None):
+                    current_pgn = current_pgn + f"{current_row_index}. "+san
+
+            # Black move
+            else:
+                if san != None:
+                    current_pgn = current_pgn + ".."+ san + '\n'
+
+                current_row_index = current_row_index + 1
+
+            # We switch the color
+            current_turn = not current_turn
+
+        return current_pgn
+
+    def display_partial_PGN(self, row=9.3, move_count=10):
 
         # Maximum displayed moves
         move_count = 10
