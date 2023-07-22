@@ -103,6 +103,11 @@ def key_callback(args):
         retry_count=0
         show_uci_move_on_board(correct_uci_move)
 
+        gfe.send_to_client_boards({ 
+            "clear_board_graphic_moves":False,
+            "tip_uci_move":correct_uci_move,
+        })
+
         return True
 
     if key == board.BTNHELP:
@@ -115,6 +120,11 @@ def key_callback(args):
 
             if uci_move!= None:
                 show_uci_move_on_board(uci_move)
+
+                gfe.send_to_client_boards({ 
+                    "clear_board_graphic_moves":False,
+                    "tip_uci_move":uci_move,
+                })
 
             gfe.update_evaluation()
 
@@ -148,6 +158,10 @@ def event_callback(args):
 
         epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
 
+        gfe.send_to_client_boards({ 
+            "title":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+        })
+
         # We show the opponent moves and the first moves
         if gfe.get_board().turn != human_color or current_index<AUTO_MOVES_COUNT:
 
@@ -156,6 +170,11 @@ def event_callback(args):
             time.sleep(.5)
 
             show_uci_move_on_board(uci_move)
+
+            gfe.send_to_client_boards({ 
+                "clear_board_graphic_moves":False,
+                "computer_uci_move":uci_move,
+            })
 
 
 def move_callback(args):
@@ -184,6 +203,11 @@ def move_callback(args):
         else:
             if retry_count==0:
                 show_uci_move_on_board(correct_uci_move)
+
+                gfe.send_to_client_boards({ 
+                    "clear_board_graphic_moves":False,
+                    "tip_uci_move":correct_uci_move,
+                })
             else:
                 gfe.update_evaluation(force=True, text=random.choice(ERROR_MESSAGES))
                 retry_count = retry_count -1

@@ -21,6 +21,7 @@
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO
+from DGTCentaurMods.game.lib import common
 
 appFlask = Flask(__name__)
 
@@ -35,7 +36,7 @@ def on_connect():
     print("New client is connected!")
 
 	# We send back the stored FEN
-    # socketio.emit('message', {'fen': common.get_Centaur_FEN()})
+    socketio.emit('message', {'fen': common.get_Centaur_FEN()})
 
 	# We ask the app to send the current PGN and FEN to all connected clients
 	# DONE FROM THE CLIENT
@@ -56,7 +57,7 @@ def on_request(message):
     
 @appFlask.route("/")
 def index():
-	return render_template('2.0/index.html')
+	return render_template('2.0/index.html', data={"boardsize": 550, "iconsize": int(550/9)})
 
 
 

@@ -1,54 +1,71 @@
 <!doctype html>
 <html ng-app="dgt-centaur-mods">
 	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 		<script src="{{ url_for('static', filename='2.0/js/angular.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/angular-animate.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='2.0/js/angular-aria-1.5.5.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='2.0/js/angular-messages-1.5.5.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='2.0/js/angular-material-1.1.0.min.js') }}"></script>
-
-		<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script>
-		
-		<link rel="stylesheet" href="{{ url_for('static', filename='chessboardjs/css/chessboard-1.0.0.min.css') }}">
-		
-		 <script src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.js') }}"></script>
-
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		
-		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/bootstrap.min.css') }}">
-		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/bootstrap-theme.min.css') }}">
-
-		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/angular-material-1.1.0.min.css') }}">
-
-		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/index.css') }}">
-
-		<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
+		<script src="{{ url_for('static', filename='2.0/js/angular-aria.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/angular-messages.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/angular-material.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/jquery-3.5.1.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='chessboardjs/js/chessboard-1.0.0.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/chessboard.arrows.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/socket.io.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/index.js') }}"></script>
 
+		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/angular-material.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='chessboardjs/css/chessboard-1.0.0.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/index.css') }}">
+
+		<script type="text/ng-template" id="board.html">
+
+			<div layout="row" layout-align="center stretch">
+				<div id="board_wrapper[[item.index]]" style="position:relative;display:inline-block">
+
+					<canvas id="primary_canvas[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>
+					<canvas id="drawing_canvas[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>
+					<canvas id="moves_canvas_[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>
+
+					<div id="board[[item.index]]" style="width: {{ data.boardsize }}px;height: {{ data.boardsize }}px;z-index: -1;"></div>
+
+				</div>
+			</div>
+		</script>
+
 	</head>
-	<title>Chess-b0x</title>	
+	<title>DGTCentaurMods web 2.0</title>	
 	<body class="text-center mainfont">
 		<div>
 			<div ng-controller="MainController as main" class="container theme-showcase">
+			
+				<div layout="row">
+					<md-menu-bar>
+						<md-menu>DGTCentaurMods web 2.0</md-menu>
+						
+						<md-menu data-ng-repeat="menu in main.menuitems">
+							<md-button ng-click="main.openMenu($mdMenu, $event)" aria-label="[[ menu.label ]]">
+								[[ menu.label ]]
+							</md-button>
+							<md-menu-content>
+								<md-menu-item data-ng-repeat="item in menu.items"><md-button ng-click="main.executeMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]]</md-button></md-menu-item>
+							</md-menu-content>
+						</md-menu>
 
-				<div layout="row" layout-align="center">
-					<h1>DGTCentaurMods web 2.0</h1>
+					</md-menu-bar>
 				</div>
 
-				<div layout="col" layout-align="center">
-					<div flex="60" id="board1" style="max-width:600px;"></div>
-					<div flex="5"></div>
-					<div flex="45"><textarea style="height:600px;" ng-model="main.current_pgn"></textarea></div>
-				</div>
+				<div layout="column" layout-align="space-around center">
 
-				<div layout="row" layout-align="center">
-					<a target="_blank" href="https://lichess.org/analysis/[[main.current_fen]]">Open Lichess position analysis</a>
-				</div>
-
-				<div layout="row" layout-align="center">
-					<a href="/legacy">Go to legacy DGTCentaurMods site</a>
+					<div layout="row" layout-align="space-around center">
+						<div layout="column" layout-align="space-around center">
+							<board main="main" item="main.board" on-analyze="main.onAnalyze" on-lichess="main.onLichess" on-play="main.onFamousFreePlay" on-undo="main.onUndo" on-pgn="main.onPGN" on-fen="main.onFEN"></board>
+							<div>[[ main.board.title ]]</div>
+						</div>
+						<div flex="5"></div>
+						<div flex="45"><textarea style="height: {{ data.boardsize }}px;" ng-model="main.current_pgn"></textarea></div>
+					</div>
+					
 				</div>
 				
 			</div>

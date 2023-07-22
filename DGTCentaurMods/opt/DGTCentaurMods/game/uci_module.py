@@ -104,6 +104,10 @@ def key_callback(args):
 
             uci_move = gfe.get_Stockfish_uci_move()
 
+            gfe.send_to_client_boards({ 
+                "tip_uci_move":uci_move
+            })
+
             if uci_move!= None:
                 from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
                 to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
@@ -133,6 +137,10 @@ def event_callback(args):
         current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
 
         epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
+
+        gfe.send_to_client_boards({ 
+            "title":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+        })
 
         if gfe.get_board().turn == computer_color:
             

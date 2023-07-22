@@ -112,7 +112,7 @@ class Engine():
 
                 self.display_partial_PGN()
                 self.display_board()
-                self.synchronize_client_boards()
+                #self.synchronize_client_boards()
 
             # Default exit key
             if key_index == board.BTNBACK:
@@ -136,7 +136,7 @@ class Engine():
 
                 else:
                     # We read the last move that has been recorded
-                    previous_uci_move = self._dal.read_last_game_move().move
+                    previous_uci_move = self.get_last_uci_move()
 
                     if previous_uci_move:
                         from_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)
@@ -236,15 +236,17 @@ class Engine():
             if self._can_undo_moves and piece_color_is_consistent == False and current_action == Enums.PieceAction.LIFT:
                 
                 # We read the last move that has been recorded
-                previous_db_move = self._dal.read_last_game_move()
+                previous_uci_move = self.get_last_uci_move()
                
-                if previous_db_move and previous_db_move.move and previous_db_move.move[2:4] == square_name:
+                if previous_uci_move and previous_uci_move[2:4] == square_name:
                     Log.info(f'Takeback request : "{square_name}".')
                     
                     # The only legal square is the origin from the previous move
-                    self._legal_squares = [common.Converters.to_square_index(previous_db_move.move, Enums.SquareType.ORIGIN)]
+                    self._legal_squares = [common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)]
 
                     self._undo_requested = True
+
+                    del previous_uci_move
 
             if current_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
 
@@ -260,13 +262,13 @@ class Engine():
                     if self._undo_requested:
                         
                         # Undo the move
-                        uci_move = self._chessboard.pop()
+                        previous_uci_move = self._chessboard.pop().uci()
                         
-                        Log.debug(f'Undoing move "{uci_move}"...')
+                        Log.debug(f'Undoing move "{previous_uci_move}"...')
 
-                        san_move = self._san_move_list.pop()
+                        previous_san_move = self._san_move_list.pop()
                         
-                        Log.debug(f'Move "{uci_move}/{san_move}" will be removed from DB...')
+                        Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
 
                         self._dal.delete_last_game_move()
                         
@@ -280,17 +282,24 @@ class Engine():
 
                         self.display_partial_PGN()
                         self.display_board()
-                        self.synchronize_client_boards()
+                        self.synchronize_client_boards({ 
+                            "clear_board_graphic_moves":True,
+                            "uci_undo_move":previous_uci_move[2:4]+previous_uci_move[:2],
+                            "uci_move":self.get_last_uci_move(),
+                        })
             
                         Engine.__invoke_callback(self._undo_callback_function,
-                            uci_move=uci_move,
-                            san_move=san_move,
+                            uci_move=previous_uci_move,
+                            san_move=previous_san_move,
                             field_index=field_index)
             
                         Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
 
                         self._undo_requested = False
                         self.update_evaluation()
+
+                        del previous_uci_move
+                        del previous_san_move
                         
                     else:
                         
@@ -368,6 +377,8 @@ class Engine():
                         else:
                             uci_move = from_name + to_name + str_promotion
                         
+                        del player_uci_move
+
                         # Make the move
                         try:
                             move = chess.Move.from_uci(uci_move)
@@ -414,7 +425,11 @@ class Engine():
                                     self.update_Centaur_FEN()
                                     self.display_partial_PGN()
                                     self.display_board()
-                                    self.synchronize_client_boards()
+                                    self.synchronize_client_boards({ 
+                                        "clear_board_graphic_moves":True,
+                                        "uci_move":uci_move,
+                                        "san_move":san_move,
+                                        "field_index":field_index })
 
                                     self._check_last_move_outcome_and_switch()
                                 else:
@@ -440,7 +455,7 @@ class Engine():
             # Depending on the outcome we can update the game information for the result
             self._dal.terminate_game(str(self._chessboard.result()))
 
-            self.update_evaluation(force=True, text={
+            str_outcome = {
 
                     chess.Termination.CHECKMATE:"checkmate",
                     chess.Termination.STALEMATE:"stalemate",
@@ -453,7 +468,13 @@ class Engine():
                     chess.Termination.VARIANT_LOSS:"draw",
                     chess.Termination.VARIANT_DRAW:"draw",
         
-                }[outcome.termination])
+                }[outcome.termination]
+
+            self.update_evaluation(force=True, text=str_outcome)
+
+            self.send_to_client_boards({ 
+                "title":str_outcome
+            })
 
             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
 
@@ -474,6 +495,8 @@ class Engine():
 
                             score = str(result["score"])
 
+                            del result
+
                             Log.debug(score)
 
                             if "Mate" in score:
@@ -481,6 +504,8 @@ class Engine():
                                 mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
 
                                 self.update_evaluation(force=True, text=f" mate in {mate}")
+
+                                del mate
                             else:
                                 eval = score[11:24]
                                 eval = eval[1:eval.find(")")]
@@ -491,6 +516,8 @@ class Engine():
                                     eval = eval * -1
 
                                 self.update_evaluation(force=True, value=eval)
+
+                                del eval
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
@@ -523,9 +550,9 @@ class Engine():
                 # We might need to resume a game...
                 if ticks == -1:
 
-                    all_uci_moves = self._dal.read_uci_moves_history()
+                    uci_moves_history = self._dal.read_uci_moves_history()
 
-                    if len(all_uci_moves) > 0:
+                    if len(uci_moves_history) > 0:
 
                         Log.info("RESUMING LAST GAME!")
 
@@ -533,8 +560,12 @@ class Engine():
                         
                         try:
 
+                            last_uci_move = None
+
                             # We replay the previous game
-                            for uci_move in all_uci_moves:
+                            for uci_move in uci_moves_history:
+
+                                last_uci_move = uci_move
 
                                 if len(uci_move)>3:
                                     move = self._chessboard.parse_uci(uci_move)
@@ -544,12 +575,17 @@ class Engine():
 
                                     self._san_move_list.append(san_move)
                             
+                            del uci_moves_history
+                            
                             board.beep(board.SOUND_GENERAL)
 
                             self.update_Centaur_FEN()
                             self.display_board()
                             self.display_partial_PGN()
-                            self.synchronize_client_boards()
+
+                            self.synchronize_client_boards({ 
+                                "clear_board_graphic_moves":True,
+                                "uci_move":last_uci_move })
 
                             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
                             
@@ -570,13 +606,15 @@ class Engine():
                     else:
                         try:
                             board.pauseEvents()
-                            cs = board.getBoardState()
+                            board_state = bytearray(board.getBoardState())
                             board.unPauseEvents()
 
                             # In case of full undo we do not restart a game - no need
-                            if bytearray(cs) == consts.BOARD_START_STATE:
+                            if board_state == consts.BOARD_START_STATE:
                                 
                                 Log.info("STARTING A NEW GAME!")
+
+                                del board_state
 
                                 #all_objects = muppy.get_objects()
                                 #global_len = len(all_objects)
@@ -595,7 +633,9 @@ class Engine():
                                 self.update_Centaur_FEN()
                                 self.display_board()
                                 self.display_partial_PGN()
-                                self.synchronize_client_boards()
+                                self.synchronize_client_boards({ 
+                                    "clear_board_graphic_moves":True
+                                })
 
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
@@ -643,8 +683,13 @@ class Engine():
 
         def _on_socket_request(data, socket):
 
+            if (self._initialized == False):
+                pass
+
             try:
             
+                # Do the same than synchronize_client_boards()
+                #  but on demand from the client
                 response = {}
 
                 if "pgn" in data:
@@ -652,6 +697,10 @@ class Engine():
 
                 if "fen" in data:
                     response["fen"] = self._chessboard.fen()
+
+                if "uci_move" in data:
+                    response["uci_move"] = self.get_last_uci_move()
+                    response["turn"] = "white" if self._chessboard.turn else "black",
 
                 socket.send_message(response)
 
@@ -701,6 +750,9 @@ class Engine():
 
         return best_move
 
+    def get_last_uci_move(self):
+        return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()
+
     def get_last_san_move(self):
         try:
             move = self._chessboard.pop()
@@ -721,13 +773,23 @@ class Engine():
     def display_board(self):
         epaper.drawFen(self._chessboard.fen(), startrow=1.6)
 
-    def synchronize_client_boards(self):
-        # We send the new FEN to all connected clients
+    def send_to_client_boards(self, message={}):
+        # We send the message to all connected clients
+        if self._socket:
+            self._socket.send_message(message)
 
-        self._socket.send_message({
-            "pgn":self.get_current_pgn(), 
-            "fen":self._chessboard.fen()
-        })
+    def synchronize_client_boards(self, args={}):
+        # We send the new FEN to all connected clients
+        if self._socket:
+
+            message = {**{
+                "pgn":self.get_current_pgn(), 
+                "fen":self._chessboard.fen(),
+                "turn":"white" if self._chessboard.turn else "black",
+                "uci_move":self.get_last_uci_move()
+            }, **args}
+
+            self._socket.send_message(message)
 
     def get_current_pgn(self):
 
@@ -860,6 +922,11 @@ class Engine():
 
             # Then light it up!
             board.ledFromTo(from_num,to_num)
+
+            self.send_to_client_boards({ 
+                "clear_board_graphic_moves":False,
+                "computer_uci_move":uci_move,
+            })
  
         except Exception as e:
             Log.exception(f"computer_move error:{e}")
