@@ -1,6 +1,6 @@
 "use strict"
 
-angular.module("dgt-centaur-mods", ['ngMaterial'])
+angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'])
 
 // Only there because of Flask conflict
 .config(['$interpolateProvider', function($interpolateProvider) {
@@ -26,19 +26,19 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 })
 
 // Main page controller
-.controller("MainController", ['$scope','$rootScope', '$timeout', '$mdMenu', '$mdDialog',
-	function ($scope, $rootScope, $timeout, $mdMenu, $mdDialog) {
+.controller("MainController", ['$scope', '$rootScope', 'store','$timeout', '$mdDialog',
+	function ($scope, $rootScope, $store, $timeout, $mdDialog) {
 		var me = this
+
+		let _readStore = (id) => $store.get(id) == null ? true : $store.get(id)
 
 		me.board = {
 			index:1,
 			turn_caption:'',
 
-			previous_move:true,
-			kings_checks:true,
+			previous_move:_readStore('previous_move'),
+			kings_checks:_readStore('kings_checks'),
 		}
-
-		me.foobar = true
 
 		me.menuitems = [{
 				label:"Links", items: [
@@ -77,6 +77,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 					me.board[item.id] = true
 				} else {
 					me.board[item.id] = !me.board[item.id]
+					$store.set(item.id, me.board[item.id])
 				}
 			}
 		};
