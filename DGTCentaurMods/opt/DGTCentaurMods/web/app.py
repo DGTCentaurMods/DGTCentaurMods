@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
 @socketio.on('connect')
 def on_connect():
-    print("New client is connected!")
+    print("New client connected!")
 
 	# We send back the stored FEN
     socketio.emit('message', {'fen': common.get_Centaur_FEN()})
@@ -50,6 +50,10 @@ def on_connect():
 	# DONE FROM THE CLIENT
     # socketio.emit('request', {'fen':True, 'pgn': True})
     
+@socketio.on('disconnect')
+def on_disconnect():
+    print('Client disconnected!')
+
 @socketio.on('message')
 def on_message(message):
 
