@@ -32,21 +32,23 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 
 		me.board = {
 			index:1,
-			title:'',
+			turn_caption:'',
+
+			previous_move:true,
+			kings_checks:true,
 		}
+
+		me.foobar = true
 
 		me.menuitems = [{
 				label:"Links", items: [
 					{ label: "Open Lichess position analysis", action:() => me.onLichess() },
 					{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
-
 				]
 			}, { 
-				label:"sample 2", items: [
-					{ label: "submenu 1" },
-					{ label: "submenu 2" },
-					{ label: "submenu 3" },
-					{ label: "submenu 4" },
+				label:"Display settings", items: [
+					{ id:"previous_move", label: "display previous move", type:"checkbox"},
+					{ id:"kings_checks", label: "display kings checks", type:"checkbox"}
 				]
 			},
 		]
@@ -67,6 +69,16 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 
 		me.executeMenu = function(item, ev) {
 			if (item.action) item.action()
+		};
+
+		me.executeCheckboxMenu = function(item, ev) {
+			if (item.id) {
+				if (typeof me.board[item.id] !== "boolean") {
+					me.board[item.id] = true
+				} else {
+					me.board[item.id] = !me.board[item.id]
+				}
+			}
 		};
 
 		var buildChessboard = (q, options = {}) => {
@@ -135,10 +147,12 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 				if (message.pgn) me.current_pgn = message.pgn
 
 				if (message.uci_undo_move) {
+					Chessboard.drawGraphicArrow(me.chessboard, message.uci_undo_move.slice(0, 2), { color:'orange' })
 					Chessboard.drawGraphicArrow(me.chessboard, message.uci_undo_move, { color:'orange' })
 				}
 
-				if (message.uci_move) {
+				if (me.board.previous_move && message.uci_move) {
+					Chessboard.drawGraphicSquare(me.chessboard, message.uci_move.slice(0, 2), { color:"black" })
 					Chessboard.drawGraphicArrow(me.chessboard, message.uci_move, { color:"black" })
 				}
 
@@ -150,12 +164,23 @@ angular.module("dgt-centaur-mods", ['ngMaterial'])
 					Chessboard.drawGraphicArrow(me.chessboard, message.tip_uci_move, { color:"green" })
 				}
 
-				if (message.turn) {
-					me.board.title = "turn → "+message.turn
+				// checks
+				if (me.board.kings_checks && message.checkers && message.checkers.length>0 && message.kings && message.turn) {
+					
+					let kingSquare = message.kings[message.turn == "white"?0:1]
+					Chessboard.drawGraphicSquare(me.chessboard, kingSquare, { color:"red" })
+					
+					message.checkers.forEach(item => {	
+						Chessboard.drawGraphicArrow(me.chessboard, item+kingSquare, { color:"red" })
+					})
 				}
 
-				if (message.title) {
-					me.board.title = message.title
+				if (message.turn) {
+					me.board.turn_caption = "turn → "+message.turn
+				}
+
+				if (message.turn_caption) {
+					me.board.turn_caption = message.turn_caption
 				}
 
 				$scope.$apply()

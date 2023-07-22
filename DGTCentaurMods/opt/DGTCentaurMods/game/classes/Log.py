@@ -19,42 +19,38 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import logging
-import logging.handlers
-import os
+import os, logging, logging.handlers
 
+from logging import StreamHandler, Formatter, LogRecord
 from DGTCentaurMods.game.consts import consts
 
+__ID__ = consts.LOG_NAME
 
 class _Log:
 
     __initialized = False
+    __logger = None
 
     @staticmethod
     def _init():
 
         try:
 
-            if not os.path.exists(consts.LOG_DIR):
-                os.makedirs(consts.LOG_DIR)
+            if not os.path.exists(consts.LOG_FILENAME):
+                os.makedirs(consts.LOG_FILENAME)
 
-            handler = logging.handlers.WatchedFileHandler(consts.LOG_DIR+'/'+consts.LOG_NAME)
-            formatter = logging.Formatter(logging.BASIC_FORMAT)
+            handler = logging.handlers.WatchedFileHandler(consts.LOG_FILENAME)
+            formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s:%(message)s')
             handler.setFormatter(formatter)
             
-            root = logging.getLogger()
-            root.setLevel(consts.LOG_LEVEL)
-            root.addHandler(handler)
+            _Log.__logger = logging.getLogger(__ID__)
+            _Log.__logger.setLevel(consts.LOG_LEVEL)
+            _Log.__logger.addHandler(handler)
 
             _Log.__initialized = True
 
             print("Logging initialized.")
             _Log._info("Logging started.")
-
-            logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
-            logging.getLogger("requests").setLevel(logging.CRITICAL)
-            logging.getLogger("urllib3").setLevel(logging.CRITICAL)
-            logging.getLogger("urllib3").propagate = False
 
         except Exception as e:
             print(f'[Log._init] {e}')
@@ -64,21 +60,21 @@ class _Log:
         if _Log.__initialized == False:
             _Log._init()
 
-        logging.info(message)
+        _Log.__logger.info(message)
 
     @staticmethod
     def _exception(message):
         if _Log.__initialized == False:
             _Log._init()
 
-        logging.exception(message)
+        _Log.__logger.exception(message)
 
     @staticmethod
     def _debug(message):
         if _Log.__initialized == False:
             _Log._init()
 
-        logging.debug(message)
+        _Log.__logger.debug(message)
 
 
 def info(message):

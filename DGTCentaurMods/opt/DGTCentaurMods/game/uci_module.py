@@ -139,7 +139,7 @@ def event_callback(args):
         epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
 
         gfe.send_to_client_boards({ 
-            "title":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+            "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
         })
 
         if gfe.get_board().turn == computer_color:

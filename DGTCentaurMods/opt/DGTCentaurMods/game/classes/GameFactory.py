@@ -473,7 +473,7 @@ class Engine():
             self.update_evaluation(force=True, text=str_outcome)
 
             self.send_to_client_boards({ 
-                "title":str_outcome
+                "turn_caption":str_outcome
             })
 
             Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
@@ -786,7 +786,9 @@ class Engine():
                 "pgn":self.get_current_pgn(), 
                 "fen":self._chessboard.fen(),
                 "turn":"white" if self._chessboard.turn else "black",
-                "uci_move":self.get_last_uci_move()
+                "uci_move":self.get_last_uci_move(),
+                "checkers":list(map(lambda item:common.Converters.to_square_name(item), self._chessboard.checkers())),
+                "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
             }, **args}
 
             self._socket.send_message(message)

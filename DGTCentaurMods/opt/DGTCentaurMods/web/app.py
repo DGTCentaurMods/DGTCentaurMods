@@ -23,6 +23,14 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from DGTCentaurMods.game.lib import common
 
+import logging
+
+logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").propagate = False
+
 appFlask = Flask(__name__)
 
 socketio = SocketIO(appFlask, cors_allowed_origins="*")

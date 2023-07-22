@@ -19,7 +19,6 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.consts import consts, Enums
 from DGTCentaurMods.board import board
 
@@ -31,8 +30,6 @@ __conf = board.conf
 def get_Centaur_FEN():
 
     try:
-        Log.debug("Reading Centaur FEN...")
-
         f = open(consts.FENLOG, "r")
         fen = f.readline()
         f.close()
@@ -43,23 +40,17 @@ def get_Centaur_FEN():
 
 def update_Centaur_FEN(fen):
 
-    Log.debug("Updating Centaur FEN...")
-
     f = open(consts.FENLOG, "w")
     f.write(fen)
     f.close()
 
 def update_last_uci_command(command):
 
-    Log.debug("Updating last uci command...")
-
     __conf.update_value('system','last_uci',command)
 
 def get_last_uci_command():
 
     try:
-        Log.debug("Reading last uci command...")
-
         command = __conf.read_value('system', 'last_uci')
 
         return command

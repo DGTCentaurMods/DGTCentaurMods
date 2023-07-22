@@ -47,8 +47,15 @@
 							<md-button ng-click="main.openMenu($mdMenu, $event)" aria-label="[[ menu.label ]]">
 								[[ menu.label ]]
 							</md-button>
-							<md-menu-content>
-								<md-menu-item data-ng-repeat="item in menu.items"><md-button ng-click="main.executeMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]]</md-button></md-menu-item>
+							<md-menu-content width="3">
+								<div data-ng-repeat="item in menu.items" ng-switch on="item.type">
+									<md-menu-item ng-switch-when="checkbox">
+										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]] → [[ main.board[item.id]?' [YES]':' [NO]' ]]</md-button>
+									</md-menu-item>
+									<md-menu-item ng-switch-default>
+										<md-button ng-click="main.executeMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]]</md-button>
+									</md-menu-item>
+								</div>
 							</md-menu-content>
 						</md-menu>
 
@@ -59,11 +66,11 @@
 
 					<div layout="row" layout-align="space-around center">
 						<div layout="column" layout-align="space-around center">
-							<board main="main" item="main.board" on-analyze="main.onAnalyze" on-lichess="main.onLichess" on-play="main.onFamousFreePlay" on-undo="main.onUndo" on-pgn="main.onPGN" on-fen="main.onFEN"></board>
-							<div>[[ main.board.title ]]</div>
+							<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
+							<div>[[ main.board.turn_caption ]]</div>
 						</div>
 						<div flex="5"></div>
-						<div flex="45"><textarea style="height: {{ data.boardsize }}px;" ng-model="main.current_pgn"></textarea></div>
+						<div flex="45"><textarea readonly style="height: {{ data.boardsize }}px;" ng-model="main.current_pgn"></textarea></div>
 					</div>
 					
 				</div>
