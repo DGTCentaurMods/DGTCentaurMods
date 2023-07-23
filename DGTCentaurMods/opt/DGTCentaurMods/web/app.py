@@ -62,17 +62,34 @@ def on_message(message):
     
 @socketio.on('request')
 def on_request(message):
-
-    # Broadcast to all connected clients
-    socketio.emit('request', message)
-
     
+	# System request
+	if "sys_action" in message:
+		action = message["sys_action"]
+
+		if action == "shutdown":
+			os.system("pkill centaur")
+			time.sleep(.5)
+			os.system("sudo poweroff")
+
+		if action == "reboot":
+			os.system("pkill centaur")
+			time.sleep(.5)
+			os.system("sudo shutdown -r")
+
+		if action == "restart_service":
+			os.system("pkill centaur")
+			time.sleep(.5)
+			os.system("sudo systemctl restart DGTCentaurMods.service")
+
+	else:
+
+		# Broadcast to all connected clients
+		socketio.emit('request', message)
+
 @appFlask.route("/")
 def index():
 	return render_template('2.0/index.html', data={"boardsize": 550, "iconsize": int(550/9)})
-
-
-
 
 
 # LEGACY WEB SITE - reachable thru http://localhost/legacy

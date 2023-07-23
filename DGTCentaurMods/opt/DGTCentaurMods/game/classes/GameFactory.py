@@ -700,7 +700,6 @@ class Engine():
 
                 if "uci_move" in data:
                     response["uci_move"] = self.get_last_uci_move()
-                    response["turn"] = "white" if self._chessboard.turn else "black",
 
                 socket.send_message(response)
 
@@ -785,7 +784,6 @@ class Engine():
             message = {**{
                 "pgn":self.get_current_pgn(), 
                 "fen":self._chessboard.fen(),
-                "turn":"white" if self._chessboard.turn else "black",
                 "uci_move":self.get_last_uci_move(),
                 "checkers":list(map(lambda item:common.Converters.to_square_name(item), self._chessboard.checkers())),
                 "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
@@ -811,7 +809,7 @@ class Engine():
             # Black move
             else:
                 if san != None:
-                    current_pgn = current_pgn + ".."+ san + '\n'
+                    current_pgn = current_pgn + " "+ san + '\n'
 
                 current_row_index = current_row_index + 1
 
