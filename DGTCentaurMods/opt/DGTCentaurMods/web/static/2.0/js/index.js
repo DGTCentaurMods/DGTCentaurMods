@@ -75,26 +75,26 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			}, {
 				label:"System", items: [
 					{ label: "Power off board", action:() => {
-							me.socket.emit('request', {'sys_action':'shutdown'})
+							SOCKET.emit('request', {'sys_action':'shutdown'})
 							popupMessage('A shutdown request has been sent to the board!')
 
 						} 
 					},
 					{ label: "Reboot board", action:() => {
-							me.socket.emit('request', {'sys_action':'reboot'})
+							SOCKET.emit('request', {'sys_action':'reboot'})
 							popupMessage('A reboot request has been sent to the board!') 
 						}
 					},
 					{ label: "Restart service", action:() => {
-							me.socket.emit('request', {'sys_action':'restart_service'})
+							SOCKET.emit('request', {'sys_action':'restart_service'})
 							popupMessage('A service restart request has been sent to the board!') 
 						}
 					},
 					{ type: "divider"},
 					{ label: "Last log events", action:() => {
-						me.socket.emit('request', {'sys_action':'log_events'})
-					}
-				},
+							SOCKET.emit('request', {'sys_action':'log_events'})
+						}
+					},
 				]
 			}
 		]
@@ -194,7 +194,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 					const regexp = /score\ cp\ ([^ ]+)\ /gi
 					const matches = regexp.exec(event.data)
 
-					const MAX_VALUE = 600
+					const MAX_VALUE = 1500
 
 					if (matches && matches.length) {
 
@@ -228,7 +228,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			}
 		}
 
-		 var popupMessage = (message) => {
+		const popupMessage = (message) => {
 			$mdDialog.show(
 				$mdDialog.alert()
 				  .clickOutsideToClose(true)
@@ -238,150 +238,191 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				  .ok('Got it!'))
 		 }
 
+		const createUUID = () => {
+			var dt = new Date().getTime()
+			var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				var r = (dt + Math.random()*16)%16 | 0
+				dt = Math.floor(dt/16)
+				return (c=='x' ? r :(r&0x3|0x8)).toString(16)
+			})
+			return uuid
+		}
+
+		const socketBuilder = () => {
+
+			var _instance = null
+			var _uuid = createUUID()
+
+			var _emit = (id, message) => {
+				if (_instance != null) {
+					message.uuid = _uuid
+					_instance.emit(id, message)
+				}
+			}
+
+			return {
+
+				initialize: () => {
+					if (_instance == null) {
+						_instance = io()
+
+						_instance .on("error", (error) => {
+							console.log(error)
+						})
+			
+						_instance .on("connect", () => {
+							console.log("Connected to the server.")
+
+							// We ask the app to send us the current PGN, FEN and previous move
+							_emit('request', {'fen':true, 'pgn': true, 'uci_move': true})
+							
+						})
+			
+						_instance.on("disconnect", (reason) => {
+							console.log("Disonnected to the server.")
+							if (reason === "io server disconnect") {
+								// The disconnection was initiated by the server, you need to reconnect manually
+								_instance.connect()
+							}
+							// Else the socket will automatically try to reconnect
+						})
+			
+						// We receive data from the server app
+						_instance.on('message', function(message) {
+							//console.log(message)
+
+							// Message might be not for us...
+							if (message.uuid && message.uuid != _uuid) return
+			
+							// Shortcuts to make the code more readable...
+							const arrow = Chessboard.drawGraphicArrow
+							const square = Chessboard.drawGraphicSquare
+			
+							const socketmessages = {
+			
+								// We receive last log events
+								log_data: (value) => {
+									me.logData = value.join('\n')
+									$mdDialog.show({
+										contentElement: '#log_data',
+										parent: angular.element(document.body),
+										targetEvent: null,
+										clickOutsideToClose: true
+									})
+								},
+			
+								// We clear the graphics (not the user ones)
+								clear_board_graphic_moves: () => Chessboard.clearGraphicArrow(me.chessboard),
+								
+								// We receive a new postion
+								fen: (value) => {
+			
+									if (me.current_fen != value) {
+				
+										// We determinate from the FEN which color plays
+										me.board.turn = value.includes(' w ') ? 1 : 0
+				
+										me.board.turn_caption = "turn → "+(me.board.turn ? 'white' : 'black')
+				
+										me.chessboard.position(value)
+										me.current_fen = value
+				
+										// We trigger the evaluation on new FEN only
+										if (me.board.live_evaluation) {
+											stockfish.postMessage("position fen " + value)
+											stockfish.postMessage("go depth 12")
+										}
+									}
+								},
+			
+								// We receive the current PGN, formatted by the server
+								pgn: (value) => {
+									me.current_pgn = value
+			
+									let moves = (() => {
+										const c = new Chess()
+										c.load_pgn(value)
+										return c.history()
+									})()
+			
+									// We build the FEN history
+									history.fens = [DEFAULT_POSITION]
+			
+									var c = new Chess()
+			
+									moves.forEach(m => {
+										c.move(m)
+										history.fens.push(c.fen())
+									})
+			
+									history.index = history.fens.length-1
+								},
+			
+								// Last move has been taken back - we draw it
+								uci_undo_move: (value) => {
+									arrow(me.chessboard, value.slice(0, 2), { color:'orange' })
+									arrow(me.chessboard, value, { color:'orange' })
+								},
+			
+								// We draw the previous move
+								uci_move: (value) => {
+								
+									if (me.board.previous_move) {
+										square(me.chessboard, value.slice(0, 2), { color:"black" })
+										arrow(me.chessboard, value, { color:"black" })
+									}
+								},
+			
+								// We draw the computer move
+								computer_uci_move: (value) => arrow(me.chessboard, value, { color:"yellow" }),
+			
+								// We draw the hint
+								tip_uci_move: (value) => arrow(me.chessboard, value, { color:"green" }),
+							
+								// We draw the checks
+								checkers: (value) => {
+									if (me.board.kings_checks && value.length>0 && message.kings) {
+								
+										let kingSquare = message.kings[1 -me.board.turn]
+										square(me.chessboard, kingSquare, { color:"red" })
+										
+										value.forEach(item => {	
+											arrow(me.chessboard, item+kingSquare, { color:"red" })
+										})
+									}
+								},
+			
+								// We override the default turn caption
+								turn_caption: (value) => {
+									me.board.turn_caption = value
+								}
+							}
+			
+							for(var id in socketmessages) {
+								// Does the message contain the id?
+								// If yes we call the function
+								if (message[id]) socketmessages[id](message[id])
+							}
+			
+							$scope.$apply()
+						})
+					}
+					return _instance
+				},
+
+				emit: (id, message) => _emit(id, message)
+			}
+		}
+
+		const SOCKET = socketBuilder()
+
 		$timeout(() => {
 
 			me.chessboard = buildChessboard(me.board, { keyboard:true })
 
-			me.socket = io()
+			SOCKET.initialize()
 
-			me.socket.on("error", (error) => {
-				console.log(error)
-			})
-
-			me.socket.on("connect", () => {
-				console.log("Connected to the server.")
-			})
-
-			me.socket.on("disconnect", (reason) => {
-				console.log("Disonnected to the server.")
-				if (reason === "io server disconnect") {
-				  // The disconnection was initiated by the server, you need to reconnect manually
-				  me.socket.connect()
-				}
-				// Else the socket will automatically try to reconnect
-			})
-
-			// We receive data from the server app
-			me.socket.on('message', function(message) {
-				//console.log(message)
-
-				// Shortcuts to make the code more readable...
-				const arrow = Chessboard.drawGraphicArrow
-				const square = Chessboard.drawGraphicSquare
-
-				const socketmessages = {
-
-					// We receive last log events
-					log_data: (value) => {
-						me.logData = value.join('\n')
-						$mdDialog.show({
-							contentElement: '#log_data',
-							parent: angular.element(document.body),
-							targetEvent: null,
-							clickOutsideToClose: true
-						})
-					},
-
-					// We clear the graphics (not the user ones)
-					clear_board_graphic_moves: () => Chessboard.clearGraphicArrow(me.chessboard),
-					
-					// We receive a new postion
-					fen: (value) => {
-
-						if (me.current_fen != value) {
-	
-							// We determinate from the FEN which color plays
-							me.board.turn = value.includes(' w ') ? 1 : 0
-	
-							me.board.turn_caption = "turn → "+(me.board.turn ? 'white' : 'black')
-	
-							me.chessboard.position(value)
-							me.current_fen = value
-	
-							// We trigger the evaluation on new FEN only
-							if (me.board.live_evaluation) {
-								stockfish.postMessage("position fen " + value)
-								stockfish.postMessage("go depth 12")
-							}
-						}
-					},
-
-					// We receive the current PGN, formatted by the server
-					pgn: (value) => {
-						me.current_pgn = value
-
-						let moves = (() => {
-							const c = new Chess()
-							c.load_pgn(value)
-							return c.history()
-						})()
-
-						// We build the FEN history
-						history.fens = [DEFAULT_POSITION]
-
-						var c = new Chess()
-
-						moves.forEach(m => {
-							c.move(m)
-							history.fens.push(c.fen())
-						})
-
-						history.index = history.fens.length-1
-					},
-
-					// Last move has been taken back - we draw it
-					uci_undo_move: (value) => {
-						arrow(me.chessboard, value.slice(0, 2), { color:'orange' })
-						arrow(me.chessboard, value, { color:'orange' })
-					},
-
-					// We draw the previous move
-					uci_move: (value) => {
-					
-						if (me.board.previous_move) {
-							square(me.chessboard, value.slice(0, 2), { color:"black" })
-							arrow(me.chessboard, value, { color:"black" })
-						}
-					},
-
-					// We draw the computer move
-					computer_uci_move: (value) => arrow(me.chessboard, value, { color:"yellow" }),
-
-					// We draw the hint
-					tip_uci_move: (value) => arrow(me.chessboard, value, { color:"green" }),
-				
-					// We draw the checks
-					checkers: (value) => {
-						if (me.board.kings_checks && value.length>0 && message.kings) {
-					
-							let kingSquare = message.kings[1 -me.board.turn]
-							square(me.chessboard, kingSquare, { color:"red" })
-							
-							value.forEach(item => {	
-								arrow(me.chessboard, item+kingSquare, { color:"red" })
-							})
-						}
-					},
-
-					// We override the default turn caption
-					turn_caption: (value) => {
-						me.board.turn_caption = value
-					}
-				}
-
-				for(var id in socketmessages) {
-					// Does the message contain the id?
-					// If yes we call the function
-					if (message[id]) socketmessages[id](message[id])
-				}
-
-				$scope.$apply()
-			});
-
-			// We ask the app to send us the current PGN, FEN and previous move
-			me.socket.emit('request', {'fen':true, 'pgn': true, 'uci_move': true})
-
-			popupMessage('Welcome!This web interface is being tested!\nYou can come back to the legacy interface anytime using the menu.')
+			popupMessage('Welcome! This web interface is being tested! You can come back to the legacy interface anytime using the menu.')
 
 		}, 500)
 	}

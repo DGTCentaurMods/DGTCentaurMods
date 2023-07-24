@@ -24,6 +24,8 @@ import logging
 
 HOME_DIRECTORY = os.path.expanduser( '~' )
 
+WEB_NAME = "DGTCentaurMods web 2.0"
+
 LOG_NAME = "DGTCentaurMods"
 LOG_FILENAME = HOME_DIRECTORY+"/logs/"+LOG_NAME+".log"
 LOG_LEVEL = logging.DEBUG

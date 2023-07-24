@@ -66,8 +66,6 @@ logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").propagate = False
 
-WEB_NAME = "DGTCentaurMods web 2.0"
-
 appFlask = Flask(__name__)
 
 socketio = SocketIO(appFlask, cors_allowed_origins="*")
@@ -120,8 +118,12 @@ def on_request(message):
 			os.system("sudo systemctl restart DGTCentaurMods.service")
 
 		if action == "log_events":
-			message = {"log_data":tail(open(consts.LOG_FILENAME, "r"), 100)}
-			socketio.emit('message', message)
+			response = {"log_data":tail(open(consts.LOG_FILENAME, "r"), 100)}
+
+			if "uuid" in message:
+				response["uuid"] = message["uuid"]
+
+			socketio.emit('message', response)
 
 	else:
 
@@ -130,7 +132,7 @@ def on_request(message):
 
 @appFlask.route("/")
 def index():
-	return render_template('2.0/index.html', data={"title":WEB_NAME, "boardsize": 550, "iconsize": int(550/9)})
+	return render_template('2.0/index.html', data={"title":consts.WEB_NAME, "boardsize": 550, "iconsize": int(550/9)})
 
 
 # LEGACY WEB SITE - reachable thru http://localhost/legacy

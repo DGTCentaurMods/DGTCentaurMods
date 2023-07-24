@@ -493,31 +493,33 @@ class Engine():
 
                             result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
-                            score = str(result["score"])
+                            if result != None and result["score"]:
 
-                            del result
+                                score = str(result["score"])
 
-                            Log.debug(score)
+                                del result
 
-                            if "Mate" in score:
-                                
-                                mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+                                Log.debug(score)
 
-                                self.update_evaluation(force=True, text=f" mate in {mate}")
+                                if "Mate" in score:
+                                    
+                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
 
-                                del mate
-                            else:
-                                eval = score[11:24]
-                                eval = eval[1:eval.find(")")]
-                    
-                                eval = int(eval)
+                                    self.update_evaluation(force=True, text=f" mate in {mate}")
 
-                                if "BLACK" in score:
-                                    eval = eval * -1
+                                    del mate
+                                else:
+                                    eval = score[11:24]
+                                    eval = eval[1:eval.find(")")]
+                        
+                                    eval = int(eval)
 
-                                self.update_evaluation(force=True, value=eval)
+                                    if "BLACK" in score:
+                                        eval = eval * -1
 
-                                del eval
+                                    self.update_evaluation(force=True, value=eval)
+
+                                    del eval
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
