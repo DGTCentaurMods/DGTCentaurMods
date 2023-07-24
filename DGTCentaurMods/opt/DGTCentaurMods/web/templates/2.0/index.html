@@ -37,14 +37,14 @@
 		</script>
 
 	</head>
-	<title>DGTCentaurMods web 2.0</title>	
+	<title>{{ data.title }}</title>	
 	<body class="text-center mainfont">
 		<div>
 			<div ng-controller="MainController as main" class="container theme-showcase">
 			
 				<div layout="row">
 					<md-menu-bar>
-						<span class="app_title">DGTCentaurMods web 2.0</span>
+						<span class="app_title">{{ data.title }}</span>
 						
 						<md-menu data-ng-repeat="menu in main.menuitems">
 							<md-button ng-click="main.openMenu($mdMenu, $event)" aria-label="[[ menu.label ]]">
@@ -55,6 +55,7 @@
 									<md-menu-item ng-switch-when="checkbox">
 										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]] → [[ main.board[item.id]?' [YES]':' [NO]' ]]</md-button>
 									</md-menu-item>
+									<md-menu-item ng-switch-when="divider"></md-menu-item>
 									<md-menu-item ng-switch-default>
 										<md-button ng-click="main.executeMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]]</md-button>
 									</md-menu-item>
@@ -77,6 +78,19 @@
 						<div flex="45"><textarea readonly style="height: {{ data.boardsize }}px" ng-model="main.current_pgn"></textarea></div>
 					</div>
 				</div>
+
+				<div style="visibility: hidden">
+					<div class="md-dialog-container" id="log_data">
+					<md-dialog layout-padding>
+						<h2>♗ Last log events... ♗</h2>
+						<div layout="col" layout-align="space-around center">
+							<textarea class="logData" readonly ng-model="main.logData"></textarea>
+						</div>
+					</md-dialog>
+					</div>
+				</div>
+
+
 			</div>
 		</div>
 	</body>

@@ -16,6 +16,11 @@ textarea {
 	width:100%;
 }
 
+.logData {
+	height:400px;
+
+}
+
 .piece-417db:hover {
 	/*animation: filter-shake 5s;*/
 	-webkit-transform: rotate(-2deg);
