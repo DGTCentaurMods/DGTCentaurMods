@@ -122,6 +122,10 @@ class UpdateSystem:
         return version
 
     def checkForUpdate(self):
+
+        # Updates are disabled
+        return False
+    
         channel = self.getChannel()
         policy = self.getPolicy()
         print('Settings channel: '+channel)

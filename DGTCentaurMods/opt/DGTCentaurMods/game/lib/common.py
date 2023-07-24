@@ -20,12 +20,8 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.consts import consts, Enums
-from DGTCentaurMods.board import board
 
-
-
-# Get the config
-__conf = board.conf
+import configparser
 
 def get_Centaur_FEN():
 
@@ -40,22 +36,42 @@ def get_Centaur_FEN():
 
 def update_Centaur_FEN(fen):
 
-    f = open(consts.FENLOG, "w")
-    f.write(fen)
-    f.close()
+    try:
+        f = open(consts.FENLOG, "w")
+        f.write(fen)
+        f.close()
+    except:
+        pass
 
 def update_last_uci_command(command):
 
-    __conf.update_value('system','last_uci',command)
+    # TODO: initial centaur.py script needs a full rewrite
+    try:
+        # Get the config
+        conf = configparser.ConfigParser()
+        conf.read_dict({'system':{ 'last_uci': ''}})
+        conf.read(consts.CONFIG_FILE)
+        conf.set('system', 'last_uci', command)
+    
+        with open(consts.CONFIG_FILE, 'w') as f:
+            conf.write(f)
+    except:
+        pass
 
 def get_last_uci_command():
 
+    # TODO: initial centaur.py script needs a full rewrite
     try:
-        command = __conf.read_value('system', 'last_uci')
+         # Get the config
+        conf = configparser.ConfigParser()
+        conf.read_dict({'system':{ 'last_uci': ''}})
+        conf.read(consts.CONFIG_FILE)
 
-        return command
+        return conf.get('system', 'last_uci')
     except:
-        return None
+        pass
+    
+    return None
     
 class Converters:
 

@@ -18,7 +18,10 @@ textarea {
 
 .logData {
 	height:400px;
+}
 
+.is_current {
+	background-color: lightyellow;
 }
 
 .piece-417db:hover {

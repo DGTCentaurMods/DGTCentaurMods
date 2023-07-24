@@ -46,8 +46,6 @@ class _DAL(Singleton):
 
     def set_read_only(self, value):
 
-        Log.debug(f"__read_only={value}")
-
         self.__read_only = value
 
     def __init__(self):
@@ -67,7 +65,7 @@ class _DAL(Singleton):
                     # Get the max game id as that is this game id and fill it into game
                     self._db_game_id = session.query(func.max(models.Game.id)).scalar()
             
-            Log.debug(f"_db_game_id={self._db_game_id}")
+            #Log.debug(f"_db_game_id={self._db_game_id}")
 
         except Exception as e:
             Log.exception(f'[__read_current_game_id] {e}')
@@ -241,6 +239,79 @@ class _DAL(Singleton):
 
         return True
 
+    def get_all_games(self):
+
+        # We read all the games that have been recorded
+        try:
+
+            with Session(bind=models.engine) as session:
+
+                results = []
+
+                for row in session.execute(
+                    select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round, models.Game.white, models.Game.black, models.Game.result, models.Game.id)
+                        .order_by(models.Game.id.desc())).all():
+                    
+                    # TODO remove the mapping and write a proper serializer outside of the DAL
+                    results.append({
+                        "id":row["id"], 
+                        "created_at":str(row["created_at"]), 
+                        "source":row["source"], 
+                        "event":row["event"],
+                        "site":row["site"],
+                        "round":row["round"],
+                        "white":row["white"], 
+                        "black":row["black"]})
+
+                return results
+                
+    
+        except Exception as e:
+            Log.exception(f'[get_all_games] {e}')
+
+    def remove_game_by_id(self, id):
+
+        try:
+            with Session(bind=models.engine) as session:
+
+                session.execute(text("delete from gamemove where gameid="+str(id)))
+                session.commit()
+
+                session.execute(text("delete from game where id="+str(id)))
+                session.commit()
+
+                #session.execute(delete(models.GameMove).where(models.GameMove.gameid == id))
+                #session.commit()
+
+                return True
+
+        except Exception as e:
+            Log.exception(f'[remove_game_by_id] {e}')
+            pass
+
+        return False
+
+
+    def read_game_moves_by_id(self, id):
+
+        # We read the last move that has been recorded
+        try:
+            with Session(bind=models.engine) as session:
+
+                results = []
+
+                for row in session.execute(
+                    select(models.GameMove.move)
+                        .filter(models.GameMove.gameid == id)
+                        .order_by(models.GameMove.id.asc())).all():
+                    
+                    # TODO remove the mapping and write a proper serializer outside of the DAL
+                    results.append(row["move"])
+
+                return results
+    
+        except Exception as e:
+            Log.exception(f'[read_game_moves_by_id] {e}')
 
     def read_last_game_move(self):
 

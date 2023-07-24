@@ -46,6 +46,8 @@ class Engine():
 
     _chessboard = None
 
+    _san_move_list = []
+
     show_evaluation = True
 
     def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
@@ -795,28 +797,31 @@ class Engine():
 
     def get_current_pgn(self):
 
-        # We always start to show a white move
-        current_turn = chess.WHITE
-        
         current_pgn = ""
-        current_row_index = 1
- 
-        for san in self._san_move_list:
 
-            # White move
-            if current_turn == chess.WHITE:
-                if (san != None):
-                    current_pgn = current_pgn + f"{current_row_index}. "+san
+        if len(self._san_move_list) > 0:
 
-            # Black move
-            else:
-                if san != None:
-                    current_pgn = current_pgn + " "+ san + '\n'
+            # We always start to show a white move
+            current_turn = chess.WHITE
 
-                current_row_index = current_row_index + 1
+            current_row_index = 1
+    
+            for san in self._san_move_list:
 
-            # We switch the color
-            current_turn = not current_turn
+                # White move
+                if current_turn == chess.WHITE:
+                    if (san != None):
+                        current_pgn = current_pgn + f"{current_row_index}. "+san
+
+                # Black move
+                else:
+                    if san != None:
+                        current_pgn = current_pgn + " "+ san + '\n'
+
+                    current_row_index = current_row_index + 1
+
+                # We switch the color
+                current_turn = not current_turn
 
         return current_pgn
 

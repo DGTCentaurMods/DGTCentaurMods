@@ -22,11 +22,14 @@
 import os
 import logging
 
+MAIN_ID = "DGTCentaurMods"
+
 HOME_DIRECTORY = os.path.expanduser( '~' )
+CONFIG_FILE = "/opt/"+MAIN_ID+"/config/centaur.ini"
 
-WEB_NAME = "DGTCentaurMods web 2.0"
+WEB_NAME = MAIN_ID+" web 2.0"
 
-LOG_NAME = "DGTCentaurMods"
+LOG_NAME = MAIN_ID
 LOG_FILENAME = HOME_DIRECTORY+"/logs/"+LOG_NAME+".log"
 LOG_LEVEL = logging.DEBUG
 

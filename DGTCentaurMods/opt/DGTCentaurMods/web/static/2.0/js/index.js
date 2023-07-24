@@ -42,12 +42,15 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			index:0
 		}
 
+		me.currentGame = { id: -1 }
+
 		// Board data
 		me.board = {
 			index:1,
 			turn_caption:'-',
 			turn:1,
 			eval:50,
+			synchronized:true,
 		}
 
 		// Each display menu item is connected to a boolean main.board property
@@ -63,15 +66,16 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// Menu items
 		me.menuitems = [{
 				label:"Links", items: [
-					{ label: "Open Lichess position analysis", action:() => me.onLichess() },
-					{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
+					{ label: "Open Lichess position analysis", action:() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank") },
+					{ label: "Open Lichess PGN import page", action:() => window.open("https://lichess.org/paste", "_blank") },
+					//{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
 				]
 			}, { 
 				label:"Display settings", items: displaySettings 
 			}, { 
-				label:"Previous games", items: [
-					{ label: "Not available yet!", action:() => null },
-				] 
+				label:"Previous games", items: [], action:() => {
+					SOCKET.emit('request', {'data':'previous_games'})
+				} 
 			}, {
 				label:"System", items: [
 					{ label: "Power off board", action:() => {
@@ -99,27 +103,18 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			}
 		]
 
-		// Lichess analysis page
-		me.onLichess = () => {
-			window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")
-			return
-		}
-
-		// Legacy web site
-		me.onLegacy = () => {
-			window.location = "/legacy"
-			return
-		}
-
 		// Main menus function
-		me.openMenu = function($menu, ev) {
-			$menu.open(ev);
-		};
+		me.openMenu = function($menu, menu, ev) {
+			if (menu.action) {
+				menu.action()
+			} else
+				$menu.open(ev)
+		}
 
 		// Sub menus function
 		me.executeMenu = function(item, ev) {
 			if (item.action) item.action()
-		};
+		}
 
 		// Checkbox menus function
 		me.executeCheckboxMenu = function(item, ev) {
@@ -128,7 +123,25 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				me.board[item.id] = !me.board[item.id]
 				$store.set(item.id, me.board[item.id])
 			}
-		};
+		}
+
+		me.onGameLoad = function(game, iscurrent) {
+			if (iscurrent) {
+				// We ask the app to send us the current PGN, FEN and previous move
+				SOCKET.emit('request', {'fen':true, 'pgn': true, 'uci_move': true})
+			}
+			else {
+				SOCKET.emit('request', {'data':'game_moves', 'id':game.id})
+				me.currentGame = game
+				me.board.synchronized = false
+			}
+			$mdDialog.cancel()
+		}
+
+		me.onGameRemove = function(game) {
+			SOCKET.emit('request', {'data':'remove_game', 'id':game.id})
+			$mdDialog.cancel()
+		}
 
 		// Chessboard builder
 		// If needed, we could display several boards in the same page...
@@ -147,16 +160,18 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				document.onkeydown = function (e) {
 					switch (e.code) {
 						case "ArrowRight":
-							if (history.index<history.fens.length-1)
+							if (history.index<history.fens.length-1) {
 								history.index++
 								me.chessboard.position(history.fens[history.index])
+							}
 
 							e.preventDefault()
 							break;
 						case "ArrowLeft":
-							if (history.index>0)
+							if (history.index>0) {
 								history.index--
 								me.chessboard.position(history.fens[history.index])
+							}
 
 							e.preventDefault()
 							break;
@@ -299,6 +314,57 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							const square = Chessboard.drawGraphicSquare
 			
 							const socketmessages = {
+
+								popup: (value) => {
+									popupMessage(value)
+								},
+
+								// Previous games have been resquested
+								previous_games: (value) => {
+
+									me.games = value
+									$mdDialog.show({
+										contentElement: '#previous_games',
+										parent: angular.element(document.body),
+										targetEvent: null,
+										clickOutsideToClose: true
+									})
+
+								},
+
+								// Game moves have been resquested
+								game_moves: (moves) => {
+
+									// We build the FEN history
+									history.fens = [DEFAULT_POSITION]
+
+									let c = new Chess(DEFAULT_POSITION)
+
+									let pgn = ""
+									let index = 0
+
+									moves.forEach(m => {
+										if (m) {
+											const move = c.move(m, { sloppy:true })
+											if (move.color == 'w') {
+												++index
+												pgn = pgn + index + '. ' + move.san
+											}
+											else {
+												pgn = pgn + ' ' + move.san + '\n'
+											}
+											history.fens.push(c.fen())
+										}
+									})
+
+									me.current_pgn = pgn
+			
+									history.index = 0
+
+									me.chessboard.position(DEFAULT_POSITION)
+
+									Chessboard.clearGraphicArrow(me.chessboard)
+								},
 			
 								// We receive last log events
 								log_data: (value) => {
@@ -317,7 +383,9 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								// We receive a new postion
 								fen: (value) => {
 			
-									if (me.current_fen != value) {
+									if (me.current_fen != value || me.board.synchronized == false) {
+
+										me.board.synchronized = true
 				
 										// We determinate from the FEN which color plays
 										me.board.turn = value.includes(' w ') ? 1 : 0
@@ -421,9 +489,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			me.chessboard = buildChessboard(me.board, { keyboard:true })
 
 			SOCKET.initialize()
-
-			popupMessage('Welcome! This web interface is being tested! You can come back to the legacy interface anytime using the menu.')
-
+			
 		}, 500)
 	}
 ])

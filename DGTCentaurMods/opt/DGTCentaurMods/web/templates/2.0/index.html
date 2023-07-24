@@ -47,7 +47,7 @@
 						<span class="app_title">{{ data.title }}</span>
 						
 						<md-menu data-ng-repeat="menu in main.menuitems">
-							<md-button ng-click="main.openMenu($mdMenu, $event)" aria-label="[[ menu.label ]]">
+							<md-button ng-click="main.openMenu($mdMenu, menu, $event)" aria-label="[[ menu.label ]]">
 								[[ menu.label ]]
 							</md-button>
 							<md-menu-content width="3">
@@ -71,8 +71,9 @@
 					<div layout="row" layout-align="space-around center">
 						<div layout="column" layout-align="space-around center">
 							<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
-							<div>[[ main.board.turn_caption ]]</div>
-							<md-progress-linear data-ng-show="main.board.live_evaluation" md-mode="determinate" value="[[main.board.eval]]"></md-progress-linear>
+							<div data-ng-show="main.board.synchronized">[[ main.board.turn_caption ]]</div>
+							<md-progress-linear data-ng-show="main.board.synchronized && main.board.live_evaluation" md-mode="determinate" value="[[main.board.eval]]"></md-progress-linear>
+							<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn"><div>&#9842; archive view &#9842;</div></div>
 						</div>
 						<div flex="5"></div>
 						<div flex="45"><textarea readonly style="height: {{ data.boardsize }}px" ng-model="main.current_pgn"></textarea></div>
@@ -82,11 +83,32 @@
 				<div style="visibility: hidden">
 					<div class="md-dialog-container" id="log_data">
 					<md-dialog layout-padding>
-						<h2>♗ Last log events... ♗</h2>
+						<h3>Last log events...</h3>
 						<div layout="col" layout-align="space-around center">
 							<textarea class="logData" readonly ng-model="main.logData"></textarea>
 						</div>
 					</md-dialog>
+					</div>
+					<div class="md-dialog-container" id="previous_games">
+						<md-dialog layout-padding>
+							<h3>Previous games...</h3>
+							<div layout="col" layout-align="space-around center">
+								<md-content>
+									<md-list>
+										<md-list-item ng-class="{'is_current':main.currentGame.id == item.id}" class="md-3-line" data-ng-repeat="item in main.games">
+											<div class="md-list-item-text">
+												<h3>[[ item.created_at ]]</h3>
+												<h4>[[ item.event ]]</h4>
+												<p>[[ item.white ]] vs [[ item.black ]] [[ item.result ]]</p>
+											</div>
+											<md-button data-ng-click="main.onGameLoad(item, $first)" class="md-secondary">Load</md-button>
+											<md-button ng-if="!$first" data-ng-click="main.onGameRemove(item)" class="md-secondary md-warn">Remove</md-button>
+											<md-divider ng-if="!$last"></md-divider>
+										</md-list-item>
+									</md-list>
+								</md-content>
+							</div>
+						</md-dialog>
 					</div>
 				</div>
 
