@@ -22,15 +22,18 @@
 import os
 import logging
 
+from logging.handlers import RotatingFileHandler
+
 MAIN_ID = "DGTCentaurMods"
 
 HOME_DIRECTORY = os.path.expanduser( '~' )
-CONFIG_FILE = "/opt/"+MAIN_ID+"/config/centaur.ini"
+CONFIG_FILE = f"/opt/{MAIN_ID}/config/centaur.ini"
 
 WEB_NAME = MAIN_ID+" web 2.0"
 
 LOG_NAME = MAIN_ID
-LOG_FILENAME = HOME_DIRECTORY+"/logs/"+LOG_NAME+".log"
+LOG_DIRECTORY = HOME_DIRECTORY+"/logs"
+LOG_FILENAME = f"{HOME_DIRECTORY}/logs/{LOG_NAME}.log"
 LOG_LEVEL = logging.DEBUG
 
 BOARD_START_STATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')

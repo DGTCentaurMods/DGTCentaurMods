@@ -21,7 +21,8 @@
 
 import os, logging, logging.handlers
 
-from logging import StreamHandler, Formatter, LogRecord
+from logging.handlers import RotatingFileHandler
+
 from DGTCentaurMods.game.consts import consts
 
 __ID__ = consts.LOG_NAME
@@ -36,16 +37,20 @@ class _Log:
 
         try:
 
-            if not os.path.exists(consts.LOG_FILENAME):
-                os.makedirs(consts.LOG_FILENAME)
+            if not os.path.exists(os.path.dirname(consts.LOG_FILENAME)):
+                os.makedirs(os.path.dirname(consts.LOG_FILENAME))
 
             handler = logging.handlers.WatchedFileHandler(consts.LOG_FILENAME)
             formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s:%(message)s')
             handler.setFormatter(formatter)
+
+             # Add a rotating handler
+            rotating_handler = RotatingFileHandler(consts.LOG_FILENAME, 'a+', maxBytes=1000000, backupCount=5)
             
             _Log.__logger = logging.getLogger(__ID__)
             _Log.__logger.setLevel(consts.LOG_LEVEL)
             _Log.__logger.addHandler(handler)
+            _Log.__logger.addHandler(rotating_handler)
 
             _Log.__initialized = True
 
