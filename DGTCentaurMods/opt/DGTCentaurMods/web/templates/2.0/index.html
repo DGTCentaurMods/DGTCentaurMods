@@ -80,8 +80,8 @@
 					<div class="pgnarea" style="overflow-y: scroll; height: {{ data.boardsize-6 }}px">
 						<div data-ng-repeat="item in main.board.history.pgnlist()">
 							<span ng-class="{ 'currentmove':item.index == main.board.history.index() || item.index+1 == main.board.history.index()}">[[$index+1]].</span>&nbsp;
-							<span class="clickable" data-ng-click="main.board.history.go(item.index+0)" ng-class="{ 'currentmove':item.index+0 == main.board.history.index() }">[[item.wsan]]</span>&nbsp;
-							<span class="clickable" data-ng-click="main.board.history.go(item.index+1)" ng-class="{ 'currentmove':item.index+1 == main.board.history.index() }">[[item.bsan]]</span>
+							<span class="clickable" data-ng-click="main.board.history.go(main.chessboard, item.index+0)" ng-class="{ 'currentmove':item.index+0 == main.board.history.index() }">[[item.wsan]]</span>&nbsp;
+							<span class="clickable" data-ng-click="main.board.history.go(main.chessboard, item.index+1)" ng-class="{ 'currentmove':item.index+1 == main.board.history.index() }">[[item.bsan]]</span>
 						</div>
 					</div>
 				
