@@ -14,7 +14,9 @@
 		<script src="{{ url_for('static', filename='2.0/js/angular-storage.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/socket.io.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/chess.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/ng-scrollable.js') }}"></script>
 
+		<script src="{{ url_for('static', filename='2.0/js/history.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/index.js') }}"></script>
 
 		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/angular-material.min.css') }}">
@@ -66,18 +68,23 @@
 					</md-menu-bar>
 				</div>
 
-				<div layout="column" layout-align="space-around center">
-
-					<div layout="row" layout-align="space-around center">
-						<div layout="column" layout-align="space-around center">
-							<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
-							<div data-ng-show="main.board.synchronized">[[ main.board.turn_caption ]]</div>
-							<md-progress-linear data-ng-show="main.board.synchronized && main.board.live_evaluation" md-mode="determinate" value="[[main.board.eval]]"></md-progress-linear>
-							<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn"><div>&#9842; archive view &#9842;</div></div>
-						</div>
-						<div flex="5"></div>
-						<div flex="45"><textarea readonly style="height: {{ data.boardsize }}px" ng-model="main.current_pgn"></textarea></div>
+				<div layout="row" layout-align="center stretch">
+				
+					<div layout="column" layout-align="space-around center">
+						<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
+						<div data-ng-show="main.board.synchronized">[[ main.board.turn_caption ]]</div>
+						<md-progress-linear data-ng-show="main.board.synchronized && main.board.live_evaluation" md-mode="determinate" value="[[main.board.eval]]"></md-progress-linear>
+						<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn"><div>&#9842; archive view &#9842;</div></div>
 					</div>
+					<div></div>
+					<div class="pgnarea" style="overflow-y: scroll; height: {{ data.boardsize-6 }}px">
+						<div data-ng-repeat="item in main.board.history.pgnlist()">
+							<span ng-class="{ 'currentmove':item.index == main.board.history.index() || item.index+1 == main.board.history.index()}">[[$index+1]].</span>&nbsp;
+							<span class="clickable" data-ng-click="main.board.history.go(item.index+0)" ng-class="{ 'currentmove':item.index+0 == main.board.history.index() }">[[item.wsan]]</span>&nbsp;
+							<span class="clickable" data-ng-click="main.board.history.go(item.index+1)" ng-class="{ 'currentmove':item.index+1 == main.board.history.index() }">[[item.bsan]]</span>
+						</div>
+					</div>
+				
 				</div>
 
 				<div style="visibility: hidden">

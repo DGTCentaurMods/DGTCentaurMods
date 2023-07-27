@@ -1,6 +1,6 @@
 "use strict"
 
-angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'])
+angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate', 'dgt-centaur-mods.lib'])
 
 // Only there because of Flask conflict
 .config(['$interpolateProvider', function($interpolateProvider) {
@@ -25,23 +25,22 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 	};
 })
 
-// Main page controller
-.controller("MainController", ['$scope', '$rootScope', 'store','$timeout', '$mdDialog',
-	function ($scope, $rootScope, $store, $timeout, $mdDialog) {
-		const me = this
+.filter('html', function($sce) {
+	return function(value) {
+		//value = (value || '').replace('@@', '#')
+		return $sce.trustAsHtml(value)
+	}
+})
 
-		const DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+// Main page controller
+.controller("MainController", ['$scope', '$rootScope', 'store','$timeout', '$mdDialog', '$history',
+	function ($scope, $rootScope, $store, $timeout, $mdDialog, $history) {
+		const me = this
 
 		const stockfish = new Worker('static/stockfish/stockfish.js')
 
 		stockfish._lasteval = 0
 		
-		// FEN history (built from PGN)
-		const history = {
-			fens:[],
-			index:0
-		}
-
 		me.currentGame = { id: -1 }
 
 		// Board data
@@ -51,6 +50,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			turn:1,
 			eval:50,
 			synchronized:true,
+
+			history: $history
 		}
 
 		// Each display menu item is connected to a boolean main.board property
@@ -160,19 +161,13 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				document.onkeydown = function (e) {
 					switch (e.code) {
 						case "ArrowRight":
-							if (history.index<history.fens.length-1) {
-								history.index++
-								me.chessboard.position(history.fens[history.index])
-							}
-
+							me.board.history.forward(me.chessboard)
+							$scope.$apply()
 							e.preventDefault()
 							break;
 						case "ArrowLeft":
-							if (history.index>0) {
-								history.index--
-								me.chessboard.position(history.fens[history.index])
-							}
-
+							me.board.history.backward(me.chessboard)
+							$scope.$apply()
 							e.preventDefault()
 							break;
 						default:
@@ -333,35 +328,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								},
 
 								// Game moves have been resquested
-								game_moves: (moves) => {
+								game_moves: (uciMoves) => {
 
-									// We build the FEN history
-									history.fens = [DEFAULT_POSITION]
-
-									let c = new Chess(DEFAULT_POSITION)
-
-									let pgn = ""
-									let index = 0
-
-									moves.forEach(m => {
-										if (m) {
-											const move = c.move(m, { sloppy:true })
-											if (move.color == 'w') {
-												++index
-												pgn = pgn + index + '. ' + move.san
-											}
-											else {
-												pgn = pgn + ' ' + move.san + '\n'
-											}
-											history.fens.push(c.fen())
-										}
-									})
-
-									me.current_pgn = pgn
-			
-									history.index = 0
-
-									me.chessboard.position(DEFAULT_POSITION)
+									me.board.history.initFromMoves(uciMoves)
+									me.board.history.go(me.chessboard, 0)
 
 									Chessboard.clearGraphicArrow(me.chessboard)
 								},
@@ -380,7 +350,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								// We clear the graphics (not the user ones)
 								clear_board_graphic_moves: () => Chessboard.clearGraphicArrow(me.chessboard),
 								
-								// We receive a new postion
+								// We receive a new position
 								fen: (value) => {
 			
 									if (me.current_fen != value || me.board.synchronized == false) {
@@ -404,26 +374,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								},
 			
 								// We receive the current PGN, formatted by the server
-								pgn: (value) => {
-									me.current_pgn = value
-			
-									let moves = (() => {
-										const c = new Chess()
-										c.load_pgn(value)
-										return c.history()
-									})()
-			
-									// We build the FEN history
-									history.fens = [DEFAULT_POSITION]
-			
-									var c = new Chess()
-			
-									moves.forEach(m => {
-										c.move(m)
-										history.fens.push(c.fen())
-									})
-			
-									history.index = history.fens.length-1
+								pgn: (pgn) => {
+
+									me.board.history.initFromPGN(pgn)
+									me.board.history.go(me.chessboard, -1)
 								},
 			
 								// Last move has been taken back - we draw it

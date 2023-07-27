@@ -48,13 +48,28 @@ md-progress-linear {
 }
 
 md-progress-linear.md-default-theme .md-container, md-progress-linear .md-container {
-    background-color: black;
+	background-color: black;
 	height: 21px;
 }
 
 md-progress-linear .md-container .md-bar {
-    width: 100%;
-    height: 21px;
+	width: 100%;
+	height: 21px;
 	background-color: white;
 }
 
+.pgnarea {
+	border-color: black;
+	border-width: 2px;
+	border-style:outset;
+	width: 200px;
+}
+
+.clickable {
+	cursor: pointer;
+}
+
+.currentmove {
+	background-color: yellow;
+	font-weight: bolder;
+}
