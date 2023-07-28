@@ -99,7 +99,13 @@ def on_message(message):
     
 @socketio.on('request')
 def on_request(message):
-    
+
+	response = {}
+	
+	# We send back the UUID if the request contains one
+	if "uuid" in message:
+		response["uuid"] = message["uuid"]
+
 	# System request
 	if "sys_action" in message:
 		action = message["sys_action"]
@@ -120,11 +126,7 @@ def on_request(message):
 			os.system("sudo systemctl restart DGTCentaurMods.service")
 
 		if action == "log_events":
-			response = {"log_data":tail(open(consts.LOG_FILENAME, "r"), 100)}
-
-			if "uuid" in message:
-				response["uuid"] = message["uuid"]
-
+			response["log_data"] = tail(open(consts.LOG_FILENAME, "r"), 100)
 			socketio.emit('message', response)
 
 	else:
@@ -135,11 +137,11 @@ def on_request(message):
 			_dal = DAL.get()
 
 			if action == "previous_games":
-				response = {"previous_games": _dal.get_all_games()}
+				response["previous_games"] = _dal.get_all_games()
 				socketio.emit('message', response)
 
 			if action == "game_moves":
-				response = {"game_moves": _dal.read_game_moves_by_id(message["id"])}
+				response["game_moves"] = _dal.read_game_moves_by_id(message["id"])
 				socketio.emit('message', response)
 
 			if action == "remove_game":
@@ -147,9 +149,11 @@ def on_request(message):
 				print(f'Request from client:{action}({message["id"]})')
 
 				if _dal.remove_game_by_id(message["id"]):
-					socketio.emit('message',  {"popup":"The game has been successfuly removed!"})
+					response["popup"] = "The game has been successfuly removed!"
 				else:
-					socketio.emit('message', {"popup":"An error occured during the delete process!"})
+					response["popup"] = "An error occured during the delete process!"
+
+				socketio.emit('message', response)
 
 		else:
 
