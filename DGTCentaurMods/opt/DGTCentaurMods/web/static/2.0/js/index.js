@@ -69,6 +69,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				label:"Links", items: [
 					{ label: "Open Lichess position analysis", action:() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank") },
 					{ label: "Open Lichess PGN import page", action:() => window.open("https://lichess.org/paste", "_blank") },
+					{ label: "View current PGN", action:() => me.viewCurrentPGN() },
 					//{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
 				]
 			}, { 
@@ -124,6 +125,15 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				me.board[item.id] = !me.board[item.id]
 				$store.set(item.id, me.board[item.id])
 			}
+		}
+
+		me.viewCurrentPGN = function() {
+
+			let data = new Blob([me.board.history.pgn()], {type: 'text/plain'})
+
+			let pgnURL = window.URL.createObjectURL(data)
+			window.open(pgnURL)
+			window.URL.revokeObjectURL(pgnURL)
 		}
 
 		me.onGameLoad = function(game, iscurrent) {
