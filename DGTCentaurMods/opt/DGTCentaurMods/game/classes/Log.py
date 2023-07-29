@@ -40,22 +40,25 @@ class _Log:
             if not os.path.exists(os.path.dirname(consts.LOG_FILENAME)):
                 os.makedirs(os.path.dirname(consts.LOG_FILENAME))
 
-            handler = logging.handlers.WatchedFileHandler(consts.LOG_FILENAME)
-            formatter = logging.Formatter('%(asctime)s %(name)s - %(levelname)s:%(message)s')
-            handler.setFormatter(formatter)
+            _Log.__logger  = logging.getLogger(__ID__)
+
+            _Log.__logger.setLevel(consts.LOG_LEVEL)
 
              # Add a rotating handler
-            rotating_handler = RotatingFileHandler(consts.LOG_FILENAME, 'a+', maxBytes=1000000, backupCount=5)
-            
-            _Log.__logger = logging.getLogger(__ID__)
-            _Log.__logger.setLevel(consts.LOG_LEVEL)
-            _Log.__logger.addHandler(handler)
-            _Log.__logger.addHandler(rotating_handler)
+            file_handler = RotatingFileHandler(consts.LOG_FILENAME, 'a+', maxBytes=1000000, backupCount=5)
 
+            file_handler.setFormatter(
+                logging.Formatter(
+                "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S"
+            ))
+
+            _Log.__logger.addHandler(file_handler)
             _Log.__initialized = True
 
             print("Logging initialized.")
-            _Log._info("Logging started.")
+
+            _Log.__logger.info("Logging started.")
+
 
         except Exception as e:
             print(f'[Log._init] {e}')
@@ -76,6 +79,7 @@ class _Log:
 
     @staticmethod
     def _debug(message):
+
         if _Log.__initialized == False:
             _Log._init()
 
