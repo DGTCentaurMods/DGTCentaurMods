@@ -16,8 +16,9 @@ textarea {
 	width:100%;
 }
 
-.logData {
-	height:400px;
+.logEvents {
+	height:600px;
+	width:800px;
 }
 
 .is_current {

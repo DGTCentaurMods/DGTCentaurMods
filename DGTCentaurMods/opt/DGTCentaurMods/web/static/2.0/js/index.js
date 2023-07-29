@@ -337,10 +337,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								},
 			
 								// We receive last log events
-								log_data: (value) => {
-									me.logData = value.join('\n')
+								log_events: (value) => {
+									me.logEvents = value.join('\n')
 									$mdDialog.show({
-										contentElement: '#log_data',
+										contentElement: '#log_events',
 										parent: angular.element(document.body),
 										targetEvent: null,
 										clickOutsideToClose: true

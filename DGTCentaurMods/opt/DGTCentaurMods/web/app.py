@@ -126,7 +126,7 @@ def on_request(message):
 			os.system("sudo systemctl restart DGTCentaurMods.service")
 
 		if action == "log_events":
-			response["log_data"] = tail(open(consts.LOG_FILENAME, "r"), 100)
+			response["log_events"] = tail(open(consts.LOG_FILENAME, "r"), 100)
 			socketio.emit('message', response)
 
 	else:
