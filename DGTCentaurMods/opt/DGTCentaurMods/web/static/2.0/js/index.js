@@ -83,7 +83,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 		// Menu items
 		me.menuitems = [{
-				id:"play", label:"Play", items: playMenu, disabled: false
+				id:"play", label:"Play", items: playMenu, disabled: true
 
 			}, {
 				label:"Links", items: [
@@ -317,7 +317,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							console.log("Connected to the server.")
 
 							// We ask the app to send us the current PGN, FEN and previous move
-							_emit('request', {'fen':true, 'pgn': true, 'uci_move': true})
+							_emit('request', {'fen':true, 'pgn': true, 'uci_move': true, 'web_menu': true})
 							
 						})
 			

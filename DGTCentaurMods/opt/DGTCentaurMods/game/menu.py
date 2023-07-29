@@ -24,8 +24,11 @@ class Menu:
 
                 UCI_MODULE_PATH = consts.OPT_DIRECTORY + "/game/uci_module.py"
 
+                if "web_menu" in data:
+                    self.initializeWebMenu()
+
                 if "pong" in data:
-                    # Browser is connected
+                    # Browser is connected (server ping)
                     self._browser_connected = True
                     #socket.send_message(response)
 
@@ -41,7 +44,7 @@ class Menu:
                         last_uci = common.get_last_uci_command()
                         subprocess.call([sys.executable, UCI_MODULE_PATH]+last_uci.split())
                         self._processing = False
-                        self._socket.send_message({ "enable_menu":"play" })
+                        self.initializeWebMenu()
 
                     if action[:8] == "uci_maia":
                         self._processing = True
@@ -50,7 +53,7 @@ class Menu:
                         args.pop(0)
                         subprocess.call([sys.executable, UCI_MODULE_PATH]+args)
                         self._processing = False
-                        self._socket.send_message({ "enable_menu":"play" })
+                        self.initializeWebMenu()
 
             except Exception as e:
                 Log.exception(f"_on_socket_request:{e}")
@@ -65,6 +68,12 @@ class Menu:
         epd.init()
         epd.Clear(0xff)
 
+    def initializeWebMenu(self):
+        self._socket.send_message({ "enable_menu":"play" })
+
+    def disconnect(self):
+        self._socket.disconnect()
+
     def browser_connected(self):
         return self._browser_connected
 
@@ -76,7 +85,12 @@ time.sleep(1)
 
 if menu.browser_connected():
     Log.info("At least one browser is connected, legacy menu is disabled.")
+    menu.initializeWebMenu()
     while True:
         time.sleep(.5)
 else:
+    menu.disconnect()
+
+    del menu
+
     subprocess.call([sys.executable, consts.OPT_DIRECTORY + "/game/menu.legacy.py"])
