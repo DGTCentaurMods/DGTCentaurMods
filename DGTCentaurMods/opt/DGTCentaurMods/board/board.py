@@ -26,6 +26,7 @@ import sys
 import os
 from DGTCentaurMods.display import epd2in9d, epaper
 from DGTCentaurMods.board import centaur
+from DGTCentaurMods.game.classes import Log
 import time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
@@ -929,7 +930,9 @@ def eventsThread(keycallback, fieldcallback, tout):
                                     newsquare = rotateFieldHex(fieldHex)
                                     fieldcallback((newsquare + 1) * -1)
                                     to = time.time() + tout
-                except:
+                except Exception as e:
+                    print(e)
+                    Log.exception(e)
                     pass
            
             try:
@@ -987,8 +990,11 @@ def eventsThread(keycallback, fieldcallback, tout):
                     else:
                         beep(SOUND_POWER_OFF)
                         shutdown()
-            except:
-                pass
+            except Exception as e:
+                print(e)
+                Log.exception(e)
+            pass
+
             try:
                 # Sending 152 to the controller provides us with battery information
                 # Do this every 30 seconds and fill in the globals
@@ -1014,8 +1020,10 @@ def eventsThread(keycallback, fieldcallback, tout):
                                 chargerconnected = 1
                             else:
                                 chargerconnected = 0
-            except:
-                pass
+            except Exception as e:
+                print(e)
+                Log.exception(e)
+            pass
             time.sleep(0.05)
             if buttonPress != 0:
                 to = time.time() + tout
