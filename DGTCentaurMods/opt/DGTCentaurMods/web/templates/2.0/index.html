@@ -53,6 +53,16 @@
 							</md-button>
 							<md-menu-content width="3">
 								<div data-ng-repeat="item in menu.items" ng-switch on="item.type">
+									<md-menu-item ng-switch-when="subitem">
+										<md-menu>
+											<md-button ng-click="main.openMenu($mdMenu, menu, $event)" aria-label="[[ item.label ]]">
+												[[ item.label ]]
+											</md-button>
+											<md-menu-content width="3">
+												<md-button data-ng-repeat="sitem in item.items" ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
+											</md-menu-content>
+										</md-menu>
+									</md-menu-item>
 									<md-menu-item ng-switch-when="checkbox">
 										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ item.label ]] → [[ main.board[item.id]?' [YES]':' [NO]' ]]</md-button>
 									</md-menu-item>

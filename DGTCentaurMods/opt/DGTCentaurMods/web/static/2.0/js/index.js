@@ -72,19 +72,31 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				.ok('WHITE')
 				.cancel('BLACK')
 
-		const playMenu = [{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) }];
+		const playMaiaMenu = [];
+		const playSfMenu = [];
 
 		[1100,1200,1300,1400,1500,1600,1700,1800,1900].forEach(
-			elo => playMenu.push({ label: "Play against Maia "+elo, action:() => 
+			elo => playMaiaMenu.push({ label: "Maia "+elo, action:() => 
 				$mdDialog.show(colorWindow)
 					.then(() => SOCKET.emit('request', {'menu':'uci_maia white maia Elo@'+elo}),
 						  () => SOCKET.emit('request', {'menu':'uci_maia black maia Elo@'+elo}))
+				}));
+
+		[1350,1400,1500,1600,1700,1800,2000,2200,2400,2600,2850].forEach(
+			elo => playSfMenu.push({ label: "Stockfish "+elo, action:() => 
+				$mdDialog.show(colorWindow)
+					.then(() => SOCKET.emit('request', {'menu':'uci_maia white stockfish '+elo}),
+							() => SOCKET.emit('request', {'menu':'uci_maia black stockfish '+elo}))
 				}))
 
 		// Menu items
 		me.menuitems = [{
-				id:"play", label:"Play", items: playMenu, disabled: true
-
+				id:"play", label:"Play", items: [
+					{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) },
+					{ label: "Play Maia", type: "subitem", items:playMaiaMenu },
+					{ label: "Play Stockfish", type: "subitem", items:playSfMenu },
+				],
+				disabled: true
 			}, {
 				label:"Links", items: [
 					{ label: "Open Lichess position analysis", action:() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank") },
