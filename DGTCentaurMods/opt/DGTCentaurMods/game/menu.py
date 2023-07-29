@@ -46,7 +46,7 @@ class Menu:
                         self._processing = False
                         self.initializeWebMenu({ "popup":"The current game has been paused!" })
 
-                    if action[:8] == "uci_maia":
+                    if action[:10] == "uci_module":
                         self._processing = True
                         self._socket.send_message({ "disable_menu":"play", "popup":"The board is being initialized..." })
                         args = action.split()

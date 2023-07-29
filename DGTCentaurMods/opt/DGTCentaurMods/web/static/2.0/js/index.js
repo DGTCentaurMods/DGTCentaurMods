@@ -78,15 +78,15 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		[1100,1200,1300,1400,1500,1600,1700,1800,1900].forEach(
 			elo => playMaiaMenu.push({ label: "Maia "+elo, action:() => 
 				$mdDialog.show(colorWindow)
-					.then(() => SOCKET.emit('request', {'menu':'uci_maia white maia Elo@'+elo}),
-						  () => SOCKET.emit('request', {'menu':'uci_maia black maia Elo@'+elo}))
+					.then(() => SOCKET.emit('request', {'menu':'uci_module white maia Elo@'+elo}),
+						  () => SOCKET.emit('request', {'menu':'uci_module black maia Elo@'+elo}))
 				}));
 
 		[1350,1400,1500,1600,1700,1800,2000,2200,2400,2600,2850].forEach(
 			elo => playSfMenu.push({ label: "Stockfish "+elo, action:() => 
 				$mdDialog.show(colorWindow)
-					.then(() => SOCKET.emit('request', {'menu':'uci_maia white stockfish '+elo}),
-							() => SOCKET.emit('request', {'menu':'uci_maia black stockfish '+elo}))
+					.then(() => SOCKET.emit('request', {'menu':'uci_module white stockfish '+elo}),
+							() => SOCKET.emit('request', {'menu':'uci_module black stockfish '+elo}))
 				}))
 
 		// Menu items
