@@ -694,7 +694,7 @@ class Engine():
             
                 # Do the same than synchronize_client_boards()
                 #  but on demand from the client
-                response = {}
+                response = {"disable_menu":"play"}
 
                 if "pgn" in data:
                     response["pgn"] = self.get_current_pgn()
@@ -786,6 +786,7 @@ class Engine():
         if self._socket:
 
             message = {**{
+                "disable_menu":"play",
                 "pgn":self.get_current_pgn(), 
                 "fen":self._chessboard.fen(),
                 "uci_move":self.get_last_uci_move(),

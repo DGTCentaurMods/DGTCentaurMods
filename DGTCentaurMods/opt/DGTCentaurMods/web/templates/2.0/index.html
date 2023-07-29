@@ -47,7 +47,7 @@
 					<md-menu-bar>
 						<span class="app_title">{{ data.title }}</span>
 						
-						<md-menu data-ng-repeat="menu in main.menuitems">
+						<md-menu data-ng-repeat="menu in main.menuitems | filter:{ disabled: false }">
 							<md-button ng-click="main.openMenu($mdMenu, menu, $event)" aria-label="[[ menu.label ]]">
 								[[ menu.label ]]
 							</md-button>

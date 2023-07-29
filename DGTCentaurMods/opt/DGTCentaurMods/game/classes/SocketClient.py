@@ -19,15 +19,10 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.board import board
-from DGTCentaurMods.display import epaper
-from DGTCentaurMods.game.classes import ChessEngine, DAL, Log
-from DGTCentaurMods.game.consts import Enums, fonts, consts
-from DGTCentaurMods.game.lib import common
+
+from DGTCentaurMods.game.classes import Log
 
 import socketio
-
-
 
 class _SocketClient():
 

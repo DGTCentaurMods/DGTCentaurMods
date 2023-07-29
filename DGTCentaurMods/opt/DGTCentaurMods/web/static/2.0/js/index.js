@@ -64,20 +64,42 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// We read the cookies data and stores the values within me.board
 		displaySettings.forEach((item) => me.board[item.id] = $store.get(item.id) == null ? item.default : $store.get(item.id))
 
+
+		const colorWindow = $mdDialog.confirm()
+				.title(document.title)
+				.textContent('What color do you play?')
+				.ariaLabel('couleur')
+				.ok('WHITE')
+				.cancel('BLACK')
+
+		const playMenu = [{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) }];
+
+		[1100,1200,1300,1400,1500,1600,1700,1800,1900].forEach(
+			elo => playMenu.push({ label: "Play against Maia "+elo, action:() => 
+				$mdDialog.show(colorWindow)
+					.then(() => SOCKET.emit('request', {'menu':'uci_maia white maia Elo@'+elo}),
+						  () => SOCKET.emit('request', {'menu':'uci_maia black maia Elo@'+elo}))
+				}))
+
 		// Menu items
 		me.menuitems = [{
+				id:"play", label:"Play", items: playMenu, disabled: false
+
+			}, {
 				label:"Links", items: [
 					{ label: "Open Lichess position analysis", action:() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank") },
 					{ label: "Open Lichess PGN import page", action:() => window.open("https://lichess.org/paste", "_blank") },
 					{ label: "View current PGN", action:() => me.viewCurrentPGN() },
 					//{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
-				]
+				],
+				disabled: false
 			}, { 
-				label:"Display settings", items: displaySettings 
+				label:"Display settings", items: displaySettings, disabled: false
 			}, { 
 				label:"Previous games", items: [], action:() => {
 					SOCKET.emit('request', {'data':'previous_games'})
-				} 
+				},
+				disabled: false
 			}, {
 				label:"System", items: [
 					{ label: "Power off board", action:() => {
@@ -101,7 +123,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							SOCKET.emit('request', {'sys_action':'log_events'})
 						}
 					},
-				]
+				],
+				disabled: false
 			}
 		]
 
@@ -319,6 +342,22 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							const square = Chessboard.drawGraphicSquare
 			
 							const socketmessages = {
+
+								enable_menu: (value) => {
+									const menu = me.menuitems.filter(item => item.id == value)
+									if (menu && menu[0]) menu[0].disabled = false
+									$scope.$apply()
+								},
+
+								disable_menu: (value) => {
+									const menu = me.menuitems.filter(item => item.id == value)
+									if (menu && menu[0]) menu[0].disabled = true
+									$scope.$apply()
+								},
+
+								ping: () => {
+									SOCKET.emit('request', {'pong':true})
+								},
 
 								popup: (value) => {
 									popupMessage(value)

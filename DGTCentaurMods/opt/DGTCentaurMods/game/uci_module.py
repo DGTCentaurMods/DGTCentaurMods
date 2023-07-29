@@ -39,6 +39,8 @@ import configparser
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
 
+Log.debug(sys.argv)
+
 assert len(sys.argv)>1, "The first argument needs to be 'white' 'black' or 'random' for what the player is playing!"
 assert len(sys.argv)>2, "The second argument needs to be the engine name!"
 assert len(sys.argv)>3, "The third argument needs to be the engine parameter!"

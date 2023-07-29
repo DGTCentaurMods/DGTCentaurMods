@@ -22,12 +22,11 @@
 import os
 import logging
 
-from logging.handlers import RotatingFileHandler
-
 MAIN_ID = "DGTCentaurMods"
 
 HOME_DIRECTORY = os.path.expanduser( '~' )
-CONFIG_FILE = f"/opt/{MAIN_ID}/config/centaur.ini"
+OPT_DIRECTORY = f"/opt/{MAIN_ID}"
+CONFIG_FILE = OPT_DIRECTORY + "/config/centaur.ini"
 
 WEB_NAME = MAIN_ID+" web 2.0"
 
