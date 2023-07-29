@@ -825,7 +825,9 @@ def getBatteryLevel():
             print(resp.hex())
             vall = resp[5] & 31
             return vall
-    
+        else:
+            # fix for when battery returns as None on first attempt
+            return getBatteryLevel()
 
 #
 # Miscellaneous functions - do they belong in this file?
