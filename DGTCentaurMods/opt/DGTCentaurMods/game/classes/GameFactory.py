@@ -786,6 +786,7 @@ class Engine():
         if self._socket:
 
             message = {**{
+                # By default the play menu is disabled
                 "disable_menu":"play",
                 "pgn":self.get_current_pgn(), 
                 "fen":self._chessboard.fen(),

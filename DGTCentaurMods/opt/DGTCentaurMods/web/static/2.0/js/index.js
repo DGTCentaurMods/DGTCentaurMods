@@ -94,30 +94,11 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				.ok('WHITE')
 				.cancel('BLACK')
 
-		const playMaiaMenu = [];
-		const playSfMenu = [];
-
-		[1100,1200,1300,1400,1500,1600,1700,1800,1900].forEach(
-			elo => playMaiaMenu.push({ label: "Maia "+elo, action:() => 
-				$mdDialog.show(colorWindow)
-					.then(() => SOCKET.emit('request', {'menu':'uci_module white maia Elo@'+elo}),
-						  () => SOCKET.emit('request', {'menu':'uci_module black maia Elo@'+elo}))
-				}));
-
-		[1350,1400,1500,1600,1700,1800,2000,2200,2400,2600,2850].forEach(
-			elo => playSfMenu.push({ label: "Stockfish "+elo, action:() => 
-				$mdDialog.show(colorWindow)
-					.then(() => SOCKET.emit('request', {'menu':'uci_module white stockfish '+elo}),
-							() => SOCKET.emit('request', {'menu':'uci_module black stockfish '+elo}))
-				}))
-
 		// Menu items
-		me.menuitems = [{
+		const MENUITEMS = [{
 				id:"play", label:"Play", items: [
 					{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) },
 					{ label: "Play 1 vs 1", action:() => SOCKET.emit('request', {'menu':'1vs1_module'}) },
-					{ label: "Play Maia", type: "subitem", items:playMaiaMenu },
-					{ label: "Play Stockfish", type: "subitem", items:playSfMenu },
 				],
 				disabled: true
 			}, {
@@ -162,6 +143,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				disabled: false
 			}
 		]
+
+		me.menuitems = angular.copy(MENUITEMS)
 
 		// Main menus function
 		me.openMenu = function($menu, menu, ev) {
@@ -383,16 +366,47 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									$scope.$apply()
 								},
 
+								update_menu: (value) => {
+
+									me.menuitems = angular.copy(MENUITEMS)
+
+									const menu = me.menuitems.filter(item => item.id == value.id)
+									if (menu && menu[0]) {
+
+										const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+
+										// We dynamically build the play menuitems
+										if (value.id == "play") {
+
+											value.engines.forEach(engine => {
+
+												const options = []
+												
+												engine.options.forEach(option => {
+													// We receive only a number in case of Stockfish...
+													if (option.length < 5) option += ' ELO'
+													options.push({ label: '⭐ '+capitalize(option.replaceAll('___', ' ')), action:() => 
+													$mdDialog.show(colorWindow)
+														.then(() => SOCKET.emit('request', {'menu':'uci_module white '+engine.id+' '+option}),
+															  () => SOCKET.emit('request', {'menu':'uci_module black '+engine.id+' '+option}))
+													})
+												})
+
+												menu[0].items.push({ label: "Play "+capitalize(engine.id), type: "subitem", items:options })
+											})
+										}
+										
+									}
+								},
+
 								enable_menu: (value) => {
 									const menu = me.menuitems.filter(item => item.id == value)
 									if (menu && menu[0]) menu[0].disabled = false
-									$scope.$apply()
 								},
 
 								disable_menu: (value) => {
 									const menu = me.menuitems.filter(item => item.id == value)
 									if (menu && menu[0]) menu[0].disabled = true
-									$scope.$apply()
 								},
 
 								ping: () => {

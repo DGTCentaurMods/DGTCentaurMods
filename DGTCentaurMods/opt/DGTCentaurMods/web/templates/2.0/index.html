@@ -61,7 +61,9 @@
 												[[ item.label ]]
 											</md-button>
 											<md-menu-content width="3">
-												<md-button data-ng-repeat="sitem in item.items" ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
+												<md-menu-item data-ng-repeat="sitem in item.items">
+													<md-button ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
+												</md-menu-item>
 											</md-menu-content>
 										</md-menu>
 									</md-menu-item>
@@ -115,9 +117,8 @@
 									<md-list>
 										<md-list-item ng-class="{'is_current':main.currentGame.id == item.id}" class="md-3-line" data-ng-repeat="item in main.games">
 											<div class="md-list-item-text">
-												<h3>[[ item.created_at ]]</h3>
-												<h4>[[ item.event ]]</h4>
-												<p>[[ item.white ]] vs [[ item.black ]] [[ item.result ]]</p>
+												<h3>[[ item.white ]] vs [[ item.black ]] [[ item.result ]]</h3>
+												<h4>[[ item.created_at ]]</h4>
 											</div>
 											<md-button data-ng-click="main.onGameLoad(item, $first)" class="md-secondary">Load</md-button>
 											<md-button ng-if="!$first" data-ng-click="main.onGameRemove(item)" class="md-secondary md-warn">Remove</md-button>

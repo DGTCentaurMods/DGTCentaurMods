@@ -24,7 +24,9 @@ from DGTCentaurMods.game.consts import consts
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.display import epd2in9d
 
-import time, sys
+from pathlib import Path
+
+import time, sys, os, configparser
 import subprocess
 
 class Menu:
@@ -80,7 +82,7 @@ class Menu:
                     if action[:10] == "uci_module":
                         self.start_child_module()
 
-                        args = action.split()
+                        args = list(map(lambda arg:arg.replace('___', ' '), action.split()))
                         args.pop(0)
                         subprocess.call([sys.executable, UCI_MODULE_PATH]+args)
                         
@@ -101,6 +103,25 @@ class Menu:
 
     def initialize_web_menu(self, message={}):
         message["enable_menu"] = "play"
+
+        ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
+
+        def get_sections(uci_file):
+            parser = configparser.ConfigParser()
+            parser.read(uci_file)
+            # We replace section name spaces by '___' to avoid string to be later split
+            return list(map(lambda section:section.replace(' ','___'), parser.sections()))
+
+        # We read the available engines + their options
+        engines = list(map(lambda f:{"id":Path(f.name).stem, "options":get_sections(f.path)}, 
+                           filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
+        
+        # Stockfish has no configuration file (we might create one...)
+        engines.append({ "id":"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
+
+        # ...and we send back them to the browser
+        message["update_menu"] = { "id":"play", "engines":engines }
+
         self._socket.send_message(message)
 
     def start_child_module(self):

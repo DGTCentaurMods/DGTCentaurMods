@@ -85,6 +85,8 @@ else:
         for item in config.items(uci_options_desc):
             uci_options[item[0]] = item[1]
 
+        engine_name = engine_name+'-'+uci_options_desc
+
 
 engine.configure(uci_options)
 
