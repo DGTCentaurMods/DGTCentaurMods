@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import GameFactory
-from DGTCentaurMods.game.consts import consts, Enums, fonts
+from DGTCentaurMods.game.consts import Enums, fonts
 from DGTCentaurMods.game.lib import common
 
 from DGTCentaurMods.display import epaper

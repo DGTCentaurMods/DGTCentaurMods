@@ -29,24 +29,23 @@ import subprocess
 
 class Menu:
 
-    _processing = False
+    _module_is_running = False
     _browser_connected = False
 
     def __init__(self):
 
         def _on_socket_request(data, socket):
 
-            if (self._processing):
+            # If a module is running, we ignore the socket requests
+            if (self._module_is_running):
                 return
 
             try:
             
                 #response = {}
 
-                UCI_MODULE_PATH = consts.OPT_DIRECTORY + "/game/uci_module.py"
-
                 if "web_menu" in data:
-                    self.initializeWebMenu()
+                    self.initialize_web_menu()
 
                 if "pong" in data:
                     # Browser is connected (server ping)
@@ -55,26 +54,37 @@ class Menu:
 
                 if "menu" in data:
 
+                    GAME_PATH = consts.OPT_DIRECTORY + "/game/"
+                    UCI_MODULE_PATH = GAME_PATH + "uci_module.py"
+
                     action = data["menu"]
 
                     Log.debug(action)
 
+                    if action == "1vs1_module":
+
+                        self.start_child_module()
+                   
+                        subprocess.call([sys.executable, f"{GAME_PATH}{action}.py"])
+                        
+                        self.end_child_module()
+
                     if action == "uci_resume":
-                        self._processing = True
-                        self._socket.send_message({ "disable_menu":"play", "popup":"The board is being initialized..." })
+                        self.start_child_module()
+
                         last_uci = common.get_last_uci_command()
                         subprocess.call([sys.executable, UCI_MODULE_PATH]+last_uci.split())
-                        self._processing = False
-                        self.initializeWebMenu({ "popup":"The current game has been paused!" })
+                        
+                        self.end_child_module()
 
                     if action[:10] == "uci_module":
-                        self._processing = True
-                        self._socket.send_message({ "disable_menu":"play", "popup":"The board is being initialized..." })
+                        self.start_child_module()
+
                         args = action.split()
                         args.pop(0)
                         subprocess.call([sys.executable, UCI_MODULE_PATH]+args)
-                        self._processing = False
-                        self.initializeWebMenu({ "popup":"The current game has been paused!" })
+                        
+                        self.end_child_module()
 
             except Exception as e:
                 Log.exception(f"_on_socket_request:{e}")
@@ -89,9 +99,18 @@ class Menu:
         epd.init()
         epd.Clear(0xff)
 
-    def initializeWebMenu(self, message={}):
+    def initialize_web_menu(self, message={}):
         message["enable_menu"] = "play"
         self._socket.send_message(message)
+
+    def start_child_module(self):
+        self._module_is_running = True
+        self._socket.send_message({ "disable_menu":"play", "popup":"The board is being initialized..." })
+
+    def end_child_module(self):
+        self._module_is_running = False
+        self._socket.send_message({ "enable_menu":"play", "popup":"The current game has been paused!" })
+
 
     def disconnect(self):
         self._socket.disconnect()
@@ -107,7 +126,7 @@ time.sleep(1)
 
 if menu.browser_connected():
     Log.info("At least one browser is connected, legacy menu is disabled.")
-    menu.initializeWebMenu({ "popup":"Legacy menu has been disabled!" })
+    menu.initialize_web_menu({ "popup":"Legacy menu has been disabled!" })
     while True:
         time.sleep(.5)
 else:

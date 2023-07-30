@@ -114,6 +114,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		me.menuitems = [{
 				id:"play", label:"Play", items: [
 					{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) },
+					{ label: "Play 1 vs 1", action:() => SOCKET.emit('request', {'menu':'1vs1_module'}) },
 					{ label: "Play Maia", type: "subitem", items:playMaiaMenu },
 					{ label: "Play Stockfish", type: "subitem", items:playSfMenu },
 				],

@@ -289,7 +289,7 @@ while True:
             epaper.loadingScreen()
             board.pauseEvents()
             statusbar.stop()
-            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/1v1Analysis_module.py ")
+            os.system(str(sys.executable) + " " + str(pathlib.Path(__file__).parent.resolve()) + "/../game/1vs1_module.py ")
             epaper.quickClear()
             board.unPauseEvents()               
     if result == "settings":
