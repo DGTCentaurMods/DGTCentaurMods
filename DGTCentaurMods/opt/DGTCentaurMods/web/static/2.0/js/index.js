@@ -66,6 +66,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 		// Board data
 		me.board = {
+			loading:false,
 			index:1,
 			turn_caption:'-',
 			turn:1,
@@ -377,6 +378,11 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			
 							const socketmessages = {
 
+								loading_screen: (value) => {
+									me.board.loading = value
+									$scope.$apply()
+								},
+
 								enable_menu: (value) => {
 									const menu = me.menuitems.filter(item => item.id == value)
 									if (menu && menu[0]) menu[0].disabled = false
@@ -459,6 +465,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								// We receive the current PGN, formatted by the server
 								pgn: (pgn) => {
 
+									me.board.loading = false
 									me.board.history.initFromPGN(pgn)
 									me.board.history.go(me.chessboard, -1)
 								},

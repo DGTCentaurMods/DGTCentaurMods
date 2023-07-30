@@ -27,6 +27,8 @@
 			<div layout="row" layout-align="center stretch">
 				<div id="board_wrapper[[item.index]]" style="position:relative;display:inline-block">
 
+					<img ng-hide="main.board.loading == false" class="board_canvas loading_image fade-out" ng-src="{{ url_for('static', filename='2.0/images/anya-taylor-joy.gif') }}" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}"/>
+
 					<canvas id="primary_canvas[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>
 					<canvas id="drawing_canvas[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>
 					<canvas id="moves_canvas_[[item.index]]" width="{{ data.boardsize-2 }}" height="{{ data.boardsize-2 }}" class="board_canvas" style="pointer-events: none;z-index: 1;opacity:.7">></canvas>

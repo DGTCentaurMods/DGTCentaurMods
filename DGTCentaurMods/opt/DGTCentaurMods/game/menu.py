@@ -105,7 +105,7 @@ class Menu:
 
     def start_child_module(self):
         self._module_is_running = True
-        self._socket.send_message({ "disable_menu":"play", "popup":"The board is being initialized..." })
+        self._socket.send_message({ "disable_menu":"play", "loading_screen":True, "popup":"The board is being initialized..." })
 
     def end_child_module(self):
         self._module_is_running = False

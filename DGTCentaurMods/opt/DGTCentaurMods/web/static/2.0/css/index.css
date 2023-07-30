@@ -2,6 +2,18 @@
 	padding:0px;position:absolute;left:0;top:0;
 }
 
+.loading_image {
+	z-index: 10
+}
+
+.fade-out.ng-hide {
+	opacity: 0;
+}
+
+.fade-out.ng-hide-add, .fade-out.ng-hide-remove {
+	transition: all linear 0.5s;
+}
+
 .mainfont {
 	font-family: Courier, monospace;
 	font-size:130%;
