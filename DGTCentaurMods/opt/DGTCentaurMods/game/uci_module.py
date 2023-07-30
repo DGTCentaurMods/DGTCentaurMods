@@ -1,7 +1,5 @@
-# Play any uci engine without DGT Centaur Adaptive Play
-#
 # This file is part of the DGTCentaur Mods open source software
-# ( https://github.com/EdNekebno/DGTCentaur )
+# ( https://github.com/Alistair-Crompton/DGTCentaurMods )
 #
 # DGTCentaur Mods is free software: you can redistribute
 # it and/or modify it under the terms of the GNU General Public
@@ -16,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this file.  If not, see
 #
-# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+# https://github.com/Alistair-Crompton/DGTCentaurMods/blob/master/LICENSE.md
 #
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
@@ -30,12 +28,7 @@ from DGTCentaurMods.board import board
 
 from random import randint
 
-import time
-import chess
-
-import sys
-import pathlib
-import configparser
+import sys, time, chess, configparser, pathlib
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
 
@@ -59,18 +52,23 @@ common.update_last_uci_command(("black" if computer_color else "white")+' '+engi
 uci_options_desc = "Default"
 uci_options = {}
 
+# Async chess engine result
+# The result should never be outdated since we test it before trigerring the callback...
+def on_taskengine_done(result):
+    gfe.set_computer_move(str(result.move))
+
 if engine_name == "stockfish":
 
     # Only for Stockfish
     engine_elo = sys.argv[3]
-    engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
+    engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH, on_taskengine_done = on_taskengine_done)
 
     uci_options = {"UCI_LimitStrength": True, "UCI_Elo": engine_elo}
 
     engine_name = engine_name+'-'+engine_elo
 else:
 
-    engine = ChessEngine.get(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name)
+    engine = ChessEngine.get(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + engine_name, on_taskengine_done = on_taskengine_done)
 
     if len(sys.argv) > 3:
         
@@ -146,10 +144,11 @@ def event_callback(args):
 
         if gfe.get_board().turn == computer_color:
             
-            engine_move = engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
-            
-            gfe.set_computer_move(str(engine_move.move)) 
+            #engine_move = engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
+            #gfe.set_computer_move(str(engine_move.move))
 
+            # Async request
+            engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
 
 def move_callback(args):
 
@@ -169,8 +168,6 @@ def undo_callback(args):
     assert "field_index" in args, "args needs to contain 'field_index' key!"
 
     return
-
-
 
 
 # Activate the epaper

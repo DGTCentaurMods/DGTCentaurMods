@@ -1,5 +1,5 @@
 # This file is part of the DGTCentaur Mods open source software
-# ( https://github.com/EdNekebno/DGTCentaur )
+# ( https://github.com/Alistair-Crompton/DGTCentaurMods )
 #
 # DGTCentaur Mods is free software: you can redistribute
 # it and/or modify it under the terms of the GNU General Public
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this file.  If not, see
 #
-# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+# https://github.com/Alistair-Crompton/DGTCentaurMods/blob/master/LICENSE.md
 #
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
@@ -533,7 +533,7 @@ class Engine():
         except Exception as e:
             Log.exception(f"_evaluation_thread_instance error:{e}")
 
-    def _game_thread_instance(self):
+    def _game_thread_instance_worker(self):
         # The main thread handles the actual chess game functionality and calls back to
         # eventCallback with game events and
         # moveCallback with the actual moves made
@@ -677,7 +677,7 @@ class Engine():
 
         self._thread_is_alive = True
 
-        self._game_thread_instance = threading.Thread(target=self._game_thread_instance)
+        self._game_thread_instance = threading.Thread(target=self._game_thread_instance_worker)
         self._game_thread_instance.daemon = True
         self._game_thread_instance.start()
 
