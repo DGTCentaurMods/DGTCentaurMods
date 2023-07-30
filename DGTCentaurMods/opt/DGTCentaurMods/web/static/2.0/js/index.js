@@ -506,6 +506,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			
 								// We override the default turn caption
 								turn_caption: (value) => {
+									me.board.loading = false
 									me.board.turn_caption = value
 								}
 							}
