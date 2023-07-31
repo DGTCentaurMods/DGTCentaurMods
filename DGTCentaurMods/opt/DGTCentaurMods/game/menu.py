@@ -26,7 +26,7 @@ from DGTCentaurMods.display import epd2in9d
 
 from pathlib import Path
 
-import time, sys, os, configparser
+import time, sys, os, configparser, re
 import subprocess
 
 class Menu:
@@ -54,37 +54,27 @@ class Menu:
                     self._browser_connected = True
                     #socket.send_message(response)
 
-                if "menu" in data:
+                if "execute" in data:
 
-                    GAME_PATH = consts.OPT_DIRECTORY + "/game/"
-                    UCI_MODULE_PATH = GAME_PATH + "uci_module.py"
+                    GAME_PATH = consts.OPT_DIRECTORY + "/game"
 
-                    action = data["menu"]
+                    command = data["execute"]
 
-                    Log.debug(action)
+                    Log.debug(command)
 
-                    if action == "1vs1_module":
+                    if re.search('1vs1_module|uci_module|famous_module', command) != None:
 
                         self.start_child_module()
                    
-                        subprocess.call([sys.executable, f"{GAME_PATH}{action}.py"])
+                        os.system(f"{sys.executable} {GAME_PATH}/{command}")
                         
                         self.end_child_module()
 
-                    if action == "uci_resume":
+                    if command.startswith("uci_resume"):
                         self.start_child_module()
 
                         last_uci = common.get_last_uci_command()
-                        subprocess.call([sys.executable, UCI_MODULE_PATH]+last_uci.split())
-                        
-                        self.end_child_module()
-
-                    if action[:10] == "uci_module":
-                        self.start_child_module()
-
-                        args = list(map(lambda arg:arg.replace('___', ' '), action.split()))
-                        args.pop(0)
-                        subprocess.call([sys.executable, UCI_MODULE_PATH]+args)
+                        os.system(f"{sys.executable} {GAME_PATH}/uci_module.py "+last_uci)
                         
                         self.end_child_module()
 
@@ -105,12 +95,13 @@ class Menu:
         message["enable_menu"] = "play"
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
+        PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
 
         def get_sections(uci_file):
             parser = configparser.ConfigParser()
             parser.read(uci_file)
-            # We replace section name spaces by '___' to avoid string to be later split
-            return list(map(lambda section:section.replace(' ','___'), parser.sections()))
+
+            return list(map(lambda section:section, parser.sections()))
 
         # We read the available engines + their options
         engines = list(map(lambda f:{"id":Path(f.name).stem, "options":get_sections(f.path)}, 
@@ -119,8 +110,12 @@ class Menu:
         # Stockfish has no configuration file (we might create one...)
         engines.append({ "id":"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
 
+
+        famous_pgns = list(map(lambda f:Path(f.name).stem, 
+                           filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
+
         # ...and we send back them to the browser
-        message["update_menu"] = { "id":"play", "engines":engines }
+        message["update_menu"] = { "id":"play", "engines":engines, "famous_pgns":famous_pgns }
 
         self._socket.send_message(message)
 

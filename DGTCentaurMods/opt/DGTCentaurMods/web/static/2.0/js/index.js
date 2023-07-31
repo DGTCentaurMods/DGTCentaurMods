@@ -97,8 +97,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// Menu items
 		const MENUITEMS = [{
 				id:"play", label:"Play", items: [
-					{ label: "Resume last game", action:() => SOCKET.emit('request', {'menu':'uci_resume'}) },
-					{ label: "Play 1 vs 1", action:() => SOCKET.emit('request', {'menu':'1vs1_module'}) },
+					{ label: "Resume last game", action:() => SOCKET.emit('request', {'execute':'uci_resume.py'}) },
+					{ label: "Play 1 vs 1", action:() => SOCKET.emit('request', {'execute':'1vs1_module.py'}) },
 				],
 				disabled: true
 			}, {
@@ -378,6 +378,19 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 										// We dynamically build the play menuitems
 										if (value.id == "play") {
 
+											let pgns = []
+
+											value.famous_pgns.forEach(pgn => {
+
+												pgns.push({ label: '⭐ '+capitalize(pgn), action:() => 
+													SOCKET.emit('request', {'execute':'famous_module.py "'+pgn+'.pgn"'})})
+
+											})
+
+											pgns.sort()
+
+											menu[0].items.push({ label: "Play famous games", type: "subitem", items:pgns })
+
 											value.engines.forEach(engine => {
 
 												const options = []
@@ -385,10 +398,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 												engine.options.forEach(option => {
 													// We receive only a number in case of Stockfish...
 													if (option.length < 5) option += ' ELO'
-													options.push({ label: '⭐ '+capitalize(option.replaceAll('___', ' ')), action:() => 
+													options.push({ label: '⭐ '+capitalize(option), action:() => 
 													$mdDialog.show(colorWindow)
-														.then(() => SOCKET.emit('request', {'menu':'uci_module white '+engine.id+' '+option}),
-															  () => SOCKET.emit('request', {'menu':'uci_module black '+engine.id+' '+option}))
+														.then(() => SOCKET.emit('request', {'execute':'uci_module.py white '+engine.id+' "'+option+'"'}),
+															  () => SOCKET.emit('request', {'execute':'uci_module.py black '+engine.id+' "'+option+'"'}))
 													})
 												})
 
