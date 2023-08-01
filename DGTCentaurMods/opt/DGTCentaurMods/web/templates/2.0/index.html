@@ -54,7 +54,7 @@
 								[[ menu.label ]]
 							</md-button>
 							<md-menu-content width="3">
-								<div data-ng-repeat="item in menu.items" ng-switch on="item.type">
+								<div data-ng-repeat="item in menu.items track by $index" ng-switch on="item.type">
 									<md-menu-item ng-switch-when="subitem">
 										<md-menu>
 											<md-button ng-click="main.openMenu($mdMenu, menu, $event)" aria-label="[[ item.label ]]">

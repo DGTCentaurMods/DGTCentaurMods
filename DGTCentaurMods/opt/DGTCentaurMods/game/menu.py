@@ -26,8 +26,57 @@ from DGTCentaurMods.display import epd2in9d
 
 from pathlib import Path
 
-import time, sys, os, configparser, re
+import time, sys, os, configparser, re, copy
 import subprocess
+
+
+# Menu items
+# Proto version, shared between web & ePaper
+MENU_ITEMS = [
+
+    {   "id":"play", 
+        "label":"Play", 
+        "items": [
+            {"label": "Resume last game", 
+             "action": { "type": "socket_execute", "value": "uci_resume.py"} },
+            {"label": "Play 1 vs 1", 
+             "action":{ "type": "socket_execute", "value": "1vs1_module.py"} },
+        ],
+        "disabled": True }, 
+    
+    { "label":"Links", "only_web":True, "items": [
+            {"label": "Open Lichess position analysis", 
+             "action" :{ "type": "js", "value": '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
+            {"label": "Open Lichess PGN import page", 
+             "action":{ "type": "js", "value": '() => window.open("https://lichess.org/paste", "_blank")' }},
+            {"label": "View current PGN", 
+             "action":{ "type": "js", "value": '() => me.viewCurrentPGN()' }},
+        ],
+        "disabled": False }, 
+    
+    { "label":"Display settings", "only_web":True, "action":{"type": "js_variable", "value": "displaySettings"}, "disabled": False }, 
+    
+    { "label":"Previous games", "only_web":True, "items": [], "action":{ "type": "socket_data", "value": "previous_games"}, "disabled": False }, 
+    
+    { "label":"System", "items": [
+            { "label": "Power off board",
+              "action":{ "type": "socket_sys", "message": "A shutdown request has been sent to the board!", "value": "shutdown"}
+            },
+            { "label": "Reboot board",
+              "action":{ "type": "socket_sys", "message": "A reboot request has been sent to the board!", "value": "reboot"}
+            },
+            { "label": "Restart service",
+              "action":{ "type": "socket_sys", "message": "A restart request has been sent to the board!", "value": "restart_service"}
+            },
+            { "type": "divider" },
+            { "label": "Last log events",
+              "action":{ "type": "socket_sys", "message": None, "value": "log_events"}
+            },
+        ],
+        "disabled": False }
+    ]
+
+
 
 class Menu:
 
@@ -91,8 +140,12 @@ class Menu:
         epd.init()
         epd.Clear(0xff)
 
-    def initialize_web_menu(self, message={}):
-        message["enable_menu"] = "play"
+    # Add engines and famous PGNs to proto menu
+    def build_menu_items(self):
+
+        result = copy.deepcopy(MENU_ITEMS)
+        
+        play_item = next(filter(lambda item:item["id"] == "play", result))
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
         PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
@@ -110,13 +163,35 @@ class Menu:
         # Stockfish has no configuration file (we might create one...)
         engines.append({ "id":"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
 
-
         famous_pgns = list(map(lambda f:Path(f.name).stem, 
                            filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
 
-        # ...and we send back them to the browser
-        message["update_menu"] = { "id":"play", "engines":engines, "famous_pgns":famous_pgns }
 
+        # Famous PGN menu item
+        play_item["items"].append({ "label": "Play famous games", "type": "subitem", 
+                                   "items":list(map(lambda pgn: { "label": "⭐ "+pgn.capitalize(), "action": { "type": "socket_execute", "value": "famous_module.py "+pgn+".pgn" }},famous_pgns)) })
+
+        # Engines menu items
+        for engine in engines:
+
+            engine_menu = { "label": "Play "+engine["id"].capitalize(), "type": "subitem", "items":[] }
+
+            play_item["items"].append(engine_menu)
+            
+            for option in engine["options"]:
+                    
+                engine_menu["items"].append({
+                        "label": "⭐ "+option.capitalize(),
+                        "action": { "type": "socket_execute", "dialogbox": "color", "value": "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
+
+        return result
+
+
+    def initialize_web_menu(self, message={}):
+        message["enable_menu"] = "play"
+
+        message["update_menu"] = self.build_menu_items()
+        
         self._socket.send_message(message)
 
     def start_child_module(self):
@@ -136,6 +211,7 @@ class Menu:
 
 
 menu = Menu()
+
 menu.clear_screen()
 
 time.sleep(1)

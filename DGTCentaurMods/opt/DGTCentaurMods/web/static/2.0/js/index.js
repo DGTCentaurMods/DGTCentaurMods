@@ -86,65 +86,21 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// We read the cookies data and stores the values within me.board
 		displaySettings.forEach((item) => me.board[item.id] = $store.get(item.id) == null ? item.default : $store.get(item.id))
 
-
-		const colorWindow = $mdDialog.confirm()
-				.title(document.title)
-				.textContent('What color do you play?')
-				.ariaLabel('couleur')
-				.ok('WHITE')
-				.cancel('BLACK')
-
-		// Menu items
-		const MENUITEMS = [{
-				id:"play", label:"Play", items: [
-					{ label: "Resume last game", action:() => SOCKET.emit('request', {'execute':'uci_resume.py'}) },
-					{ label: "Play 1 vs 1", action:() => SOCKET.emit('request', {'execute':'1vs1_module.py'}) },
-				],
-				disabled: true
-			}, {
-				label:"Links", items: [
-					{ label: "Open Lichess position analysis", action:() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank") },
-					{ label: "Open Lichess PGN import page", action:() => window.open("https://lichess.org/paste", "_blank") },
-					{ label: "View current PGN", action:() => me.viewCurrentPGN() },
-					//{ label: "Go to legacy DGTCentaurMods site", action:() => me.onLegacy() },
-				],
-				disabled: false
-			}, { 
-				label:"Display settings", items: displaySettings, disabled: false
-			}, { 
-				label:"Previous games", items: [], action:() => {
-					SOCKET.emit('request', {'data':'previous_games'})
-				},
-				disabled: false
-			}, {
-				label:"System", items: [
-					{ label: "Power off board", action:() => {
-							SOCKET.emit('request', {'sys_action':'shutdown'})
-							popupMessage('A shutdown request has been sent to the board!')
-
-						} 
-					},
-					{ label: "Reboot board", action:() => {
-							SOCKET.emit('request', {'sys_action':'reboot'})
-							popupMessage('A reboot request has been sent to the board!') 
-						}
-					},
-					{ label: "Restart service", action:() => {
-							SOCKET.emit('request', {'sys_action':'restart_service'})
-							popupMessage('A service restart request has been sent to the board!') 
-						}
-					},
-					{ type: "divider"},
-					{ label: "Last log events", action:() => {
-							SOCKET.emit('request', {'sys_action':'log_events'})
-						}
-					},
-				],
-				disabled: false
+		// Dialogboxes that the menu can use
+		const dialogBoxes = {
+			color: {
+				box:$mdDialog.confirm()
+					.title(document.title)
+					.textContent('What color do you play?')
+					.ariaLabel('couleur')
+					.ok('WHITE')
+					.cancel('BLACK'),
+				yValue: "white",
+				nValue: "black"
 			}
-		]
+		}
 
-		me.menuitems = angular.copy(MENUITEMS)
+		me.menuitems = []
 
 		// Main menus function
 		me.openMenu = function($menu, menu, ev) {
@@ -366,50 +322,102 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									$scope.$apply()
 								},
 
-								update_menu: (value) => {
+								update_menu: (menuitems) => {
 
-									me.menuitems = angular.copy(MENUITEMS)
+									console.log(menuitems)
 
-									const menu = me.menuitems.filter(item => item.id == value.id)
-									if (menu && menu[0]) {
+									const menuInitializers = {
+										'js_variable': (item, value) => {
+											try {
+												item.items = eval(value)
+												delete item.action
+											} catch (error) {
+												console.error("ERROR while building JS_VARIABLE item!")
+												console.error(item)
+											}
+										},
+	
+										'socket_data': (item, value) => {
+											item.action = () => SOCKET.emit('request', {'data':value})
+										},
 
-										const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+										'socket_execute': (item, value) => {
 
-										// We dynamically build the play menuitems
-										if (value.id == "play") {
+											// Should we show a dialog box before executing the command?
+											// Each button returns a specific value
+											if (item.action.dialogbox) {
 
-											let pgns = []
+												const id = item.action.dialogbox
 
-											value.famous_pgns.forEach(pgn => {
+												const yCommand = value.replaceAll('{value}', dialogBoxes[id].yValue)
+												const nCommand = value.replaceAll('{value}', dialogBoxes[id].nValue)
 
-												pgns.push({ label: '⭐ '+capitalize(pgn), action:() => 
-													SOCKET.emit('request', {'execute':'famous_module.py "'+pgn+'.pgn"'})})
+												item.action = () => $mdDialog.show(dialogBoxes[id].box).then(
+													item.action = () => SOCKET.emit('request', {'execute':yCommand}),
+													item.action = () => SOCKET.emit('request', {'execute':nCommand}))
 
-											})
+											} else {
+												item.action = () => SOCKET.emit('request', {'execute':value})
+											}
+										},
 
-											pgns.sort()
+										'socket_sys': (item, value) => {
+											item.action = () => {
+												SOCKET.emit('request', {'sys_action':value})
+												if (item.action.message) popupMessage(item.action.message)
+											}
+										},
 
-											menu[0].items.push({ label: "Play famous games", type: "subitem", items:pgns })
+										'js': (item, value) => {
+											try {
+												item.action = eval(value)
+											} catch (error) {
+												console.error("ERROR while building JS item!")
+												console.error(item)
+											}
+										},
+									}
 
-											value.engines.forEach(engine => {
+									var result = []
 
-												const options = []
-												
-												engine.options.forEach(option => {
-													// We receive only a number in case of Stockfish...
-													if (option.length < 5) option += ' ELO'
-													options.push({ label: '⭐ '+capitalize(option), action:() => 
-													$mdDialog.show(colorWindow)
-														.then(() => SOCKET.emit('request', {'execute':'uci_module.py white '+engine.id+' "'+option+'"'}),
-															  () => SOCKET.emit('request', {'execute':'uci_module.py black '+engine.id+' "'+option+'"'}))
+									// Menu level 1
+									menuitems.forEach(menuitem => {
+
+										// Menuitem that directly triggers action
+										if (menuitem.action) {
+											const mi_action = menuitem.action || {};
+
+											if (mi_action.type && menuInitializers[mi_action.type])
+												menuInitializers[mi_action.type](menuitem, mi_action.value)
+										}
+										else {
+
+											// Menu level 2
+											(menuitem.items || []).forEach(item => {
+
+												// Item that directly triggers action
+												if (item.action) {
+													const i_action = item.action || {};
+
+													if (i_action.type && menuInitializers[i_action.type])
+														menuInitializers[i_action.type](item, i_action.value)
+												}
+												else {
+
+													// Menu level 3
+													(item.items || []).forEach(subitem => {
+														const si_action = subitem.action || {};
+
+														if (si_action.type && menuInitializers[si_action.type])
+															menuInitializers[si_action.type](subitem, si_action.value)
+
 													})
-												})
-
-												menu[0].items.push({ label: "Play "+capitalize(engine.id), type: "subitem", items:options })
+												}
 											})
 										}
-										
-									}
+										result.push(menuitem)
+									})
+									me.menuitems = result
 								},
 
 								enable_menu: (value) => {
