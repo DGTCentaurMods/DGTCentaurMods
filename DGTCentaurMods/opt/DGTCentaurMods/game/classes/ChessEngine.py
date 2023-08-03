@@ -79,12 +79,12 @@ class _ChessEngine():
                             self.__on_taskengine_done(result)
 
                         else:
-                            Log.debug("_ChessEngine.__engine_worker : Async operation cancelled.")
+                            Log.debug("Async engine operation cancelled by user!")
 
                     self.__q.task_done()
 
                 except Exception as e:
-                    Log.exception(f"_ChessEngine.__engine_worker error:{e}")
+                    Log.exception(_ChessEngine.__engine_worker, e)
                     pass
 
             time.sleep(.5)
@@ -95,13 +95,13 @@ class _ChessEngine():
             self.__engine = None
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
             
-            Log.debug(f'_ChessEngine.__instanciate({id(self.__engine)})')
+            Log.debug(f'{_ChessEngine.__instanciate.__name__}({id(self.__engine)})')
             
             if self.__engine_options != None:
                 self.__engine.configure(self.__engine_options)
 
         except Exception as e:
-            Log.exception(f"_ChessEngine.__instanciate error:{e}")
+            Log.exception(_ChessEngine.__instanciate, e)
             self.__engine = None
             pass
 
@@ -142,7 +142,7 @@ class _ChessEngine():
                     return self.__engine.analyse(board=board, limit=limit)
 
             except Exception as e:
-                Log.exception(f"_ChessEngine.analyse error:{e}")
+                Log.info(f"{_ChessEngine.analyse.__name__}:{e}")
                 pass
 
             return None
@@ -167,7 +167,7 @@ class _ChessEngine():
                     return self.__engine.play(board=board, limit=limit, info=info)
 
             except Exception as e:
-                Log.exception(f"_ChessEngine.play error:{e}")
+                Log.info(f"{_ChessEngine.play.__name__}:{e}")
                 pass
 
             return None
@@ -187,7 +187,7 @@ class _ChessEngine():
         try:
             if self.__engine != None:
 
-                Log.debug(f'_ChessEngine.quit({id(self.__engine)})')
+                Log.debug(f'{_ChessEngine.quit.__name__}({id(self.__engine)})')
                 self.__engine.quit()
             
             self.__destroyed = True
@@ -196,7 +196,7 @@ class _ChessEngine():
                 self.__worker.join()
 
         except Exception as e:
-            Log.exception(f"_ChessEngine.quit error:{e}")
+            Log.exception(_ChessEngine.quit, e)
             pass
 
 def get(uci_path, on_taskengine_done = None):

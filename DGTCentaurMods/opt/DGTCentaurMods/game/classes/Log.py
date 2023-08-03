@@ -71,11 +71,11 @@ class _Log:
         _Log.__logger.info(message)
 
     @staticmethod
-    def _exception(message):
+    def _exception(source, message):
         if _Log.__initialized == False:
             _Log._init()
 
-        _Log.__logger.exception(message)
+        _Log.__logger.exception(f"{source.__name__} -> {message}")
 
     @staticmethod
     def _debug(message):
@@ -89,8 +89,8 @@ class _Log:
 def info(message):
     _Log._info(message)
 
-def exception(message):
-    _Log._exception(message)
+def exception(source, message):
+    _Log._exception(source, message)
 
 def debug(message):
     _Log._debug(message)

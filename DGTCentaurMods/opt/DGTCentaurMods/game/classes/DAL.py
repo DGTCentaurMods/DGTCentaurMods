@@ -21,6 +21,7 @@
 
 from DGTCentaurMods.db import models
 from DGTCentaurMods.game.classes import Log
+from DGTCentaurMods.game.lib import common
 
 from sqlalchemy import func, select, delete
 from sqlalchemy.orm import Session
@@ -29,15 +30,7 @@ from sqlalchemy import text
 import time
 import chess
 
-class Singleton:
-    _self = None
-
-    def __new__(cls):
-        if cls._self is None:
-            cls._self = super().__new__(cls)
-        return cls._self
-
-class _DAL(Singleton):
+class _DAL(common.Singleton):
 
     FAKE_GAME_ID = -999
     FAKE_GAME_MOVE_ID =-888
@@ -68,7 +61,7 @@ class _DAL(Singleton):
             #Log.debug(f"_db_game_id={self._db_game_id}")
 
         except Exception as e:
-            Log.exception(f'[__read_current_game_id] {e}')
+            Log.exception(_DAL.__read_current_game_id, e)
 
 
     def read_uci_moves_history(self):
@@ -88,7 +81,7 @@ class _DAL(Singleton):
 
                 result = result.scalars().all()
 
-                Log.debug(f"read_uci_moves_history result={result}")
+                #Log.debug(f"read_uci_moves_history result={result}")
 
                 for uci_move in result:
                     self._inserted_moves.append(
@@ -101,7 +94,7 @@ class _DAL(Singleton):
                 return result
 
         except Exception as e:
-            Log.exception(f'[read_uci_moves_history] {e}')
+            Log.exception(_DAL.read_uci_moves_history, e)
 
     def delete_empty_games(self):
         try:
@@ -114,7 +107,7 @@ class _DAL(Singleton):
                 session.commit()
 
         except Exception as e:
-            Log.exception(f'[delete_empty_games] {e}')
+            Log.exception(_DAL.delete_empty_games, e)
 
     def insert_new_game(self, source, event, site, round, white, black):
 
@@ -152,7 +145,7 @@ class _DAL(Singleton):
                 self.__read_current_game_id()
 
         except Exception as e:
-            Log.exception(f'[insert_new_game] {e}')
+            Log.exception(_DAL.insert_new_game, e)
 
     def terminate_game(self, result):
 
@@ -167,7 +160,7 @@ class _DAL(Singleton):
                 session.commit()
 
         except Exception as e:
-            Log.exception(f'[terminate_game] {e}')
+            Log.exception(_DAL.terminate_game, e)
 
     def delete_last_game_move(self):
 
@@ -186,7 +179,7 @@ class _DAL(Singleton):
                 self._inserted_moves.pop()
 
         except Exception as e:
-            Log.exception(f'[delete_last_game_move] {e}')
+            Log.exception(_DAL.delete_last_game_move, e)
 
     def insert_new_game_move(self, uci_move, fen):
 
@@ -234,7 +227,7 @@ class _DAL(Singleton):
                 break
 
         if e:
-            Log.exception(f'[insert_new_game_move] {e}')
+            Log.exception(_DAL.insert_new_game_move, e)
             return False
 
         return True
@@ -267,7 +260,7 @@ class _DAL(Singleton):
                 
     
         except Exception as e:
-            Log.exception(f'[get_all_games] {e}')
+            Log.exception(_DAL.get_all_games, e)
 
     def remove_game_by_id(self, id):
 
@@ -286,7 +279,7 @@ class _DAL(Singleton):
                 return True
 
         except Exception as e:
-            Log.exception(f'[remove_game_by_id] {e}')
+            Log.exception(_DAL.remove_game_by_id, e)
             pass
 
         return False
@@ -311,7 +304,7 @@ class _DAL(Singleton):
                 return results
     
         except Exception as e:
-            Log.exception(f'[read_game_moves_by_id] {e}')
+            Log.exception(_DAL.read_game_moves_by_id, e)
 
     def read_last_game_move(self):
 
@@ -330,7 +323,7 @@ class _DAL(Singleton):
                         .limit(1)).scalar()
     
         except Exception as e:
-            Log.exception(f'[read_last_game_move] {e}')
+            Log.exception(_DAL.read_last_game_move, e)
 
 
 def get():

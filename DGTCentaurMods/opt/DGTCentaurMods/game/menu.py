@@ -19,16 +19,20 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import Log, SocketClient
+from DGTCentaurMods.game.classes import Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.game.consts import consts
 from DGTCentaurMods.game.lib import common
-from DGTCentaurMods.display import epd2in9d
 
 from pathlib import Path
 
 import time, sys, os, configparser, re, copy
 import subprocess
 
+import importlib, shlex
+
+
+CENTAUR_BOARD = CentaurBoard.get()
+SCREEN = CentaurScreen.get()
 
 # Menu items
 # Proto version, shared between web & ePaper
@@ -105,40 +109,53 @@ class Menu:
 
                 if "execute" in data:
 
-                    GAME_PATH = consts.OPT_DIRECTORY + "/game"
-
                     command = data["execute"]
 
                     Log.debug(command)
 
-                    if re.search('1vs1_module|uci_module|famous_module', command) != None:
+                    match = re.search('1vs1_module|uci_resume|uci_module|famous_module', command)
+
+                    if match != None:
+
+                        script = match.group()
 
                         self.start_child_module()
+
+                        module = importlib.import_module(name=script, package="DGTCentaurMods.game")
                    
-                        os.system(f"{sys.executable} {GAME_PATH}/{command}")
-                        
-                        self.end_child_module()
+                        args = shlex.split(command)
+                        args.pop(0)
 
-                    if command.startswith("uci_resume"):
-                        self.start_child_module()
+                        if (len(args)):
+                            module.main(*args)
+                        else:
+                            module.main()
 
-                        last_uci = common.get_last_uci_command()
-                        os.system(f"{sys.executable} {GAME_PATH}/uci_module.py "+last_uci)
+                        del args
+                        del script
+                        del module
+
+                        importlib.invalidate_caches()
+
+                        #os.system(f"{sys.executable} {GAME_PATH}/{command}")
                         
                         self.end_child_module()
 
             except Exception as e:
-                Log.exception(f"_on_socket_request:{e}")
+                Log.exception(_on_socket_request, e)
                 pass
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
         self._socket.send_message({ "ping":True, "popup":"The service is up and running!" })
 
-    def clear_screen(self):
-        epd = epd2in9d.EPD()
-        epd.init()
-        epd.Clear(0xff)
+        CENTAUR_BOARD.subscribe_events(self._key_callback, self._field_callback)
+
+    def _key_callback(self, key_index):
+        print(key_index)
+    
+    def _field_callback(self, field_index):
+        return
 
     # Add engines and famous PGNs to proto menu
     def build_menu_items(self):
@@ -212,14 +229,40 @@ class Menu:
 
 menu = Menu()
 
-menu.clear_screen()
+
+                    
+
+#menu.clear_screen()
+"""
+CentaurScreen.initEpaper()
+
+
+CentaurScreen.writeText(2, "TEST")
+
+CentaurScreen.drawFen("rnb1k1nr/pp1p1p2/2p1p1p1/q3P2p/1bPP1Q2/2N2N2/PP1B1PPP/R3KB1R b KQkq - 1 9")
+
+CentaurScreen.drawEvaluationBar(value=34)
+
+time.sleep(4)
+
+CentaurScreen.clearArea()
+
+CentaurScreen.writeText(4, "TEST")
+
+#CentaurScreen.stopEpaper()
+
+CentaurScreen.drawFen("rnb1k1nr/pp1p1p2/2p1p1p1/q3P2p/1bPP1Q2/2N2N2/PP1B1PPP/R3KB1R b KQkq - 1 9")
+
+
+exit()
 
 time.sleep(1)
+"""
 
-if menu.browser_connected():
+if True or menu.browser_connected():
     Log.info("At least one browser is connected, legacy menu is disabled.")
     menu.initialize_web_menu({ "popup":"Legacy menu has been disabled!" })
-    while True:
+    while True and CENTAUR_BOARD.serial():
         time.sleep(.5)
 else:
     menu.disconnect()

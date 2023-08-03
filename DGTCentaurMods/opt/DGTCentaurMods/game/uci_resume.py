@@ -19,25 +19,17 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import logging
+from DGTCentaurMods.game.lib import common
 
-from pathlib import Path
+import importlib, shlex
 
-MAIN_ID = "DGTCentaurMods"
+def main():
 
-HOME_DIRECTORY = str(Path.home())
-OPT_DIRECTORY = f"/opt/{MAIN_ID}"
-CONFIG_FILE = OPT_DIRECTORY + "/config/centaur.ini"
+    uci_module = importlib.import_module(name="uci_module", package="DGTCentaurMods.game")
+    last_uci = common.get_last_uci_command()
 
-WEB_NAME = MAIN_ID+" web 2.0"
+    # We unpack the last_uci args
+    uci_module.main(*shlex.split(last_uci))
 
-LOG_NAME = MAIN_ID
-LOG_DIRECTORY = HOME_DIRECTORY+"/logs"
-LOG_FILENAME = f"{LOG_DIRECTORY}/{LOG_NAME}.log"
-LOG_LEVEL = logging.DEBUG
-
-BOARD_START_STATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
-
-FENLOG = HOME_DIRECTORY+"/centaur/fen.log"
-
-STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
+if __name__ == '__main__':
+    main()

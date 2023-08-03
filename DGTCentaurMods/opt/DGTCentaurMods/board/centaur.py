@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.display import epaper
+#from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
@@ -252,8 +252,8 @@ class UpdateSystem:
         print('Put the board in update mode')
         import shutil
 
-        epaper.writeText(3, '    System will')
-        epaper.writeText(4, '       update')
+        #epaper.writeText(3, '    System will')
+        #epaper.writeText(4, '       update')
         shutil.copy('update/update.py','/tmp')
         shutil.copytree('update/lib','/tmp/lib')
         print('Keep the info on the screen')

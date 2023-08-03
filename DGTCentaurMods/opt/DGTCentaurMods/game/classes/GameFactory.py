@@ -19,21 +19,22 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.board import board
-from DGTCentaurMods.display import epaper
-from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient
+from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.game.consts import Enums, fonts, consts
 from DGTCentaurMods.game.lib import common
 
 #from pympler import muppy, summary
 
-import threading
-import time
+from threading import Thread, Event
+import time, asyncio
 import chess
 import chess.pgn
 import sys
 import inspect
 import re
+
+CENTAUR_BOARD = CentaurBoard.get()
+SCREEN = CentaurScreen.get()
 
 # Game manager class
 class Engine():
@@ -48,14 +49,16 @@ class Engine():
 
     _san_move_list = []
 
+    _socket = None
+
     show_evaluation = True
 
     def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
 
-        epaper.writeText(3,"Please place", font=fonts.FONT_Typewriter, align_center=True)
-        epaper.writeText(4,"pieces in", font=fonts.FONT_Typewriter, align_center=True)
-        epaper.writeText(5,"starting", font=fonts.FONT_Typewriter, align_center=True)
-        epaper.writeText(6,"position!", font=fonts.FONT_Typewriter, align_center=True)
+        SCREEN.write_text(3,"Please place")
+        SCREEN.write_text(4,"pieces in")
+        SCREEN.write_text(5,"starting")
+        SCREEN.write_text(6,"position!")
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
@@ -75,22 +78,22 @@ class Engine():
 
         self._dal.set_read_only(db_record_disabled)
 
-        board.clearSerial()
+        #CENTAUR_BOARD.clear_serial()
 
     @staticmethod
     def __invoke_callback(callback, **args):
         if callback != None:
             try:
-                Log.debug(f"callback [{callback.__name__}({args})]")
+                Log.debug(f"{Engine.__invoke_callback.__name__}[{callback.__name__}({args})]")
                 return callback(args)
             except Exception as e:
-                Log.exception(f"callback error:{e}")
+                Log.exception(Engine.__invoke_callback, e)
         else:
             return True
 
     def __initialize(self):
 
-        board.ledsOff()
+        CENTAUR_BOARD.leds_off()
 
         self._source_square = -1
         self._legal_squares = []
@@ -107,7 +110,7 @@ class Engine():
             # Key has not been handled by the client!
 
             # Default tick key
-            if key_index == board.BTNTICK:
+            if key_index == CentaurBoard.BTNTICK:
                 self.show_evaluation = not self.show_evaluation
 
                 self.update_evaluation()
@@ -117,14 +120,14 @@ class Engine():
                 #self.synchronize_client_boards()
 
             # Default exit key
-            if key_index == board.BTNBACK:
+            if key_index == CentaurBoard.BTNBACK:
                 
                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
 
                 self.stop()
         
             # Default down key: show previous move
-            if key_index == board.BTNDOWN:
+            if key_index == CentaurBoard.BTNDOWN:
 
                 if self._previous_move_displayed:
                      
@@ -134,7 +137,7 @@ class Engine():
                         self.set_computer_move()
                           
                      else:
-                        board.ledsOff()
+                        CENTAUR_BOARD.leds_off()
 
                 else:
                     # We read the last move that has been recorded
@@ -144,7 +147,7 @@ class Engine():
                         from_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)
                         to_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.TARGET)
 
-                        board.ledFromTo(from_num,to_num)
+                        CENTAUR_BOARD.led_from_to(from_num,to_num)
 
                         self._previous_move_displayed = True
                 
@@ -227,7 +230,7 @@ class Engine():
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
-                board.beep(board.SOUND_WRONG_MOVE)
+                CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
 
                 self._source_square = -1
 
@@ -277,8 +280,8 @@ class Engine():
                         self._legal_squares = []
                         self._source_square = -1
 
-                        board.beep(board.SOUND_WRONG_MOVE)
-                        board.led(field_index)
+                        CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+                        CENTAUR_BOARD.led(field_index)
 
                         self.update_Centaur_FEN()
 
@@ -311,141 +314,119 @@ class Engine():
                         from_name = common.Converters.to_square_name(self._source_square)
                         to_name = common.Converters.to_square_name(field_index)
                         
-                        player_uci_move = from_name + to_name
-                        
+                        def finalize_move(player_uci_move, promoted_piece = ""):
+            
+                            if self._is_computer_move:
+                                
+                                # Has the computer move been overrided?
+                                if self._can_force_moves and player_uci_move != self._computer_uci_move[0:4]:
+                                    
+                                    # computermove is replaced since we can override it!
+                                    self._computer_uci_move = player_uci_move + promoted_piece
+                            
+                                    Log.info(f'New computermove : "{self._computer_uci_move}".')
+                                
+                                uci_move = self._computer_uci_move
+                            else:
+                                uci_move = from_name + to_name + promoted_piece
+                           
+                            # Make the move
+                            try:
+                                move = chess.Move.from_uci(uci_move)
+
+                                self._chessboard.push(move)
+                                san_move = self.get_last_san_move()
+                            except:
+                                san_move = None
+
+                            if san_move == None:
+                                CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+
+                                Log.debug(f'INVALID move "{uci_move}"')
+
+                                self._source_square = -1
+
+                                # Could be a reset request...
+                                self._need_starting_position_check = True
+
+                            else:
+
+                                # We invoke the client callback
+                                # If the callback returns True, the move is accepted
+                                if Engine.__invoke_callback(self._move_callback_function, 
+                                        uci_move=uci_move,
+                                        san_move=san_move,
+                                        field_index=field_index):
+
+                                    self.update_evaluation()
+
+                                    # We record the move
+                                    if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
+                                        Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
+
+                                        self._legal_squares = []
+                                        self._source_square = -1
+                                        self._is_computer_move = False
+
+                                        self._san_move_list.append(san_move)
+
+                                        CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
+                                        CENTAUR_BOARD.led(field_index)
+
+                                        self.update_Centaur_FEN()
+                                        self.display_partial_PGN()
+                                        self.display_board()
+                                        self.synchronize_client_boards({ 
+                                            "clear_board_graphic_moves":True,
+                                            "uci_move":uci_move,
+                                            "san_move":san_move,
+                                            "field_index":field_index })
+
+                                        self._check_last_move_outcome_and_switch()
+                                    else:
+                                        Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
+                                        self.stop()
+
+                                else:
+                                    Log.debug(f'Client rejected the move "{uci_move}/{san_move}...')
+
+                                    # Move has been rejected by the client...
+                                    self._chessboard.pop()
+
                         # Promotion
                         # If this is a WPAWN and squarerow is 7
                         # or a BPAWN and squarerow is 0
                         piece_name = str(self._chessboard.piece_at(self._source_square))
-                        str_promotion = ""
                         
-                        if ((field_index // 8) == 7 and piece_name == "P") or ((field_index // 8) == 0 and piece_name == "p"):
-
+                        if (((field_index // 8) == 7 and piece_name == "P") or ((field_index // 8) == 0 and piece_name == "p") and
+                            
                             # Promotion menu display if player is human or if player overrides computer move
-                            if self._is_computer_move == False or (self._is_computer_move == True and player_uci_move != self._computer_uci_move[0:4]):
-                                
-                                board.promotionOptionsToBuffer(7)
-                                board.displayScreenBufferPartial()
-    
-                                board.pauseEvents()
 
-                                button_pressed = 0
-                                while button_pressed == 0:
-                                    board.sendPacket(b'\x83', b'')
-                                    try:
-                                        resp = board.ser.read(1000)
-                                    except:
-                                        
-                                        if piece_name == "p":
-                                            board.sendPacket(b'\x83', b'')
-                                        else:
-                                            board.sendPacket(b'\xb1', b'')
-                                            
-                                    resp = bytearray(resp)
-                                    board.sendPacket(b'\x94', b'')
-                                    try:
-                                        resp = board.ser.read(1000)
-                                    except:
-                                        board.sendPacket(b'\x94', b'')
-                                    resp = bytearray(resp)
-                                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0501000000007d47"):
-                                        button_pressed = board.BTNBACK
-                                        str_promotion = "n"
-                                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0510000000007d17"):
-                                        button_pressed = board.BTNTICK
-                                        str_promotion = "b"
-                                    if (resp.hex()[:-2] == "b10011" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a0508000000007d3c"):
-                                        button_pressed = board.BTNUP
-                                        str_promotion = "q"
-                                    if (resp.hex()[:-2] == "b10010" + "{:02x}".format(board.addr1) + "{:02x}".format(board.addr2) + "00140a05020000000061"):
-                                        button_pressed = board.BTNDOWN
-                                        str_promotion = "r"
+                            (self._is_computer_move == False or (self._is_computer_move == True and player_uci_move != self._computer_uci_move[0:4]))):
 
-                                    time.sleep(0.1)
+                            SCREEN.draw_promotion_window()
 
-                                board.unPauseEvents()
-                                
-                        if self._is_computer_move:
-                            
-                            # Has the computer move been overrided?
-                            if self._can_force_moves and player_uci_move != self._computer_uci_move[0:4]:
-                                
-                                # computermove is replaced since we can override it!
-                                self._computer_uci_move = player_uci_move + str_promotion
-                        
-                                Log.info(f'New computermove : "{self._computer_uci_move}".')
-                            
-                            uci_move = self._computer_uci_move
-                        else:
-                            uci_move = from_name + to_name + str_promotion
-                        
-                        del player_uci_move
+                            def wait_for_promotion_input():
 
-                        # Make the move
-                        try:
-                            move = chess.Move.from_uci(uci_move)
+                                def _key_callback(key_index):
 
-                            self._chessboard.push(move)
-                            san_move = self.get_last_san_move()
-                        except:
-                            san_move = None
+                                    promoted_piece = ({CentaurBoard.BTNBACK:"n", CentaurBoard.BTNTICK:"b", CentaurBoard.BTNUP:"q", CentaurBoard.BTNDOWN:"r", CentaurBoard.BTNHELP:None, CentaurBoard.BTNPLAY: None, CentaurBoard.BTNLONGPLAY: None}[key_index])
 
-                        if san_move == None:
-                            board.beep(board.SOUND_WRONG_MOVE)
+                                    CENTAUR_BOARD.unsubscribe_events()
 
-                            Log.debug(f'INVALID move "{uci_move}"')
-
-                            self._source_square = -1
-
-                            # Could be a reset request...
-                            self._need_starting_position_check = True
-
-                        else:
-
-                            # We invoke the client callback
-                            # If the callback returns True, the move is accepted
-                            if Engine.__invoke_callback(self._move_callback_function, 
-                                    uci_move=uci_move,
-                                    san_move=san_move,
-                                    field_index=field_index):
-
-                                self.update_evaluation()
-
-                                # We record the move
-                                if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
-                                    Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
-
-                                    self._legal_squares = []
-                                    self._source_square = -1
-                                    self._is_computer_move = False
-
-                                    self._san_move_list.append(san_move)
-
-                                    board.beep(board.SOUND_GENERAL)
-                                    board.led(field_index)
-
-                                    self.update_Centaur_FEN()
-                                    self.display_partial_PGN()
                                     self.display_board()
-                                    self.synchronize_client_boards({ 
-                                        "clear_board_graphic_moves":True,
-                                        "uci_move":uci_move,
-                                        "san_move":san_move,
-                                        "field_index":field_index })
 
-                                    self._check_last_move_outcome_and_switch()
-                                else:
-                                    Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
-                                    self.stop()
+                                    finalize_move(from_name + to_name, promoted_piece)
 
-                            else:
-                                Log.debug(f'Client rejected the move "{uci_move}/{san_move}...')
+                                CENTAUR_BOARD.subscribe_events(_key_callback, None)
 
-                                # Move has been rejected by the client...
-                                self._chessboard.pop()
+                            wait_for_promotion_input()
+                        else:
+                            finalize_move(from_name + to_name)
+
         
         except Exception as e:
-            Log.exception(f"__field_callback error:{e}")
+            Log.exception(Engine.__field_callback, e)
 
     def _check_last_move_outcome_and_switch(self):
         # Check the outcome
@@ -531,15 +512,15 @@ class Engine():
             sf_engine.quit()
 
         except Exception as e:
-            Log.exception(f"_evaluation_thread_instance error:{e}")
+            Log.exception(Engine._evaluation_thread_instance, e)
 
     def _game_thread_instance_worker(self):
         # The main thread handles the actual chess game functionality and calls back to
         # eventCallback with game events and
         # moveCallback with the actual moves made
 
-        board.ledsOff()
-        board.subscribeEvents(self.__key_callback, self.__field_callback)
+        CENTAUR_BOARD.leds_off()
+        CENTAUR_BOARD.subscribe_events(self.__key_callback, self.__field_callback)
 
         self._dal.delete_empty_games()
 
@@ -581,7 +562,7 @@ class Engine():
                             
                             del uci_moves_history
                             
-                            board.beep(board.SOUND_GENERAL)
+                            CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
 
                             self.update_Centaur_FEN()
                             self.display_board()
@@ -600,7 +581,7 @@ class Engine():
                             self._initialized = True
 
                         except Exception as e:
-                            Log.exception(f"__game_thread error (while resuming game):{e}")
+                            Log.exception(Engine._game_thread_instance_worker, e)
 
                 # Detect if a new game has begun
                 if self._need_starting_position_check:
@@ -609,9 +590,8 @@ class Engine():
                         ticks = ticks + 1
                     else:
                         try:
-                            board.pauseEvents()
-                            board_state = bytearray(board.getBoardState())
-                            board.unPauseEvents()
+
+                            board_state = bytearray(CENTAUR_BOARD.get_board_state())
 
                             # In case of full undo we do not restart a game - no need
                             if board_state == consts.BOARD_START_STATE:
@@ -632,7 +612,7 @@ class Engine():
                                 
                                 self.__initialize()
                                 
-                                board.beep(board.SOUND_GENERAL)
+                                CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
 
                                 self.update_Centaur_FEN()
                                 self.display_board()
@@ -665,7 +645,7 @@ class Engine():
                 time.sleep(.1)
 
         except Exception as e:
-            Log.exception(f"__game_thread error:{e}")
+            Log.exception(Engine._game_thread_instance_worker, e)
 
     
     def start(self):
@@ -677,11 +657,11 @@ class Engine():
 
         self._thread_is_alive = True
 
-        self._game_thread_instance = threading.Thread(target=self._game_thread_instance_worker)
+        self._game_thread_instance = Thread(target=self._game_thread_instance_worker)
         self._game_thread_instance.daemon = True
         self._game_thread_instance.start()
 
-        self._evaluation_thread_instance = threading.Thread(target=self._evaluation_thread_instance)
+        self._evaluation_thread_instance = Thread(target=self._evaluation_thread_instance)
         self._evaluation_thread_instance.daemon = True
         self._evaluation_thread_instance.start()
 
@@ -708,17 +688,17 @@ class Engine():
                 socket.send_message(response)
 
             except Exception as e:
-                Log.exception(f"_on_socket_request:{e}")
+                Log.exception(Engine._on_socket_request, e)
                 pass
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
-        Log.debug("_game_thread_instance started.")
+        Log.info(f"{Engine.__name__} thread started.")
 
 
     def stop(self):
         # Stops the game manager
-        board.ledsOff()
+        CENTAUR_BOARD.leds_off()
         self._thread_is_alive = False
 
         self._socket.disconnect()
@@ -726,7 +706,9 @@ class Engine():
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
 
-        Log.debug("_game_thread_instance has been stopped.")
+        CENTAUR_BOARD.unsubscribe_events()
+
+        Log.info(f"{Engine.__name__} thread has been stopped.")
 
     def cancel_evaluation(self):
         self._new_evaluation_requested = False
@@ -734,7 +716,7 @@ class Engine():
     def update_evaluation(self, value=None, force=False, text=None, disabled=False):
         if force:
             self._new_evaluation_requested = False
-            epaper.drawEvaluationBar(text=text, value=value, disabled=disabled, font=fonts.FONT_Typewriter_small)
+            SCREEN.draw_evaluation_bar(text=text, value=value, disabled=disabled)
         else:
             self._new_evaluation_requested = True
 
@@ -774,7 +756,8 @@ class Engine():
         common.update_Centaur_FEN(self._chessboard.fen())
 
     def display_board(self):
-        epaper.drawFen(self._chessboard.fen(), startrow=1.6)
+
+        SCREEN.draw_fen(self._chessboard.fen(), startrow=1.6)
 
     def send_to_client_boards(self, message={}):
         # We send the message to all connected clients
@@ -851,16 +834,16 @@ class Engine():
             # White move
             if current_turn == chess.WHITE:
                 if (san == None):
-                    epaper.writeText(row, ' '*20, font=fonts.FONT_Typewriter)
+                    SCREEN.write_text(row, ' '*20, align_center=False)
                 else:
                     current_row_move = f"{current_row_index}. "+san
-                    epaper.writeText(row, current_row_move, font=fonts.FONT_Typewriter)
+                    SCREEN.write_text(row, current_row_move, align_center=False)
 
             # Black move
             else:
                 if san != None:
                     current_row_move = current_row_move + ".."+san
-                    epaper.writeText(row, current_row_move, font=fonts.FONT_Typewriter)
+                    SCREEN.write_text(row, current_row_move, align_center=False)
 
                 row = row + 1
                 current_row_index = current_row_index + 1
@@ -908,6 +891,9 @@ class Engine():
             
         try:
 
+            if self._thread_is_alive == False:
+                return
+
             if uci_move == None:
                 uci_move = self._computer_uci_move
 
@@ -930,7 +916,7 @@ class Engine():
             to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
             # Then light it up!
-            board.ledFromTo(from_num,to_num)
+            CENTAUR_BOARD.led_from_to(from_num,to_num)
 
             self.send_to_client_boards({ 
                 "clear_board_graphic_moves":False,
@@ -938,7 +924,7 @@ class Engine():
             })
  
         except Exception as e:
-            Log.exception(f"computer_move error:{e}")
+            Log.exception(Engine.set_computer_move, e)
 
 """""
 def clockThread():

@@ -23,6 +23,14 @@ from DGTCentaurMods.game.consts import consts, Enums
 
 import os, configparser
 
+class Singleton:
+    _self = None
+
+    def __new__(cls):
+        if cls._self is None:
+            cls._self = super().__new__(cls)
+        return cls._self
+
 def tail(f, lines=1, _buffer=4098):
     """Tail a file and get X lines from the end"""
     # place holder for the lines found

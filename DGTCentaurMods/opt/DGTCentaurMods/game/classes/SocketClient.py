@@ -45,7 +45,7 @@ class _SocketClient():
             self.__socket = sio
 
         except:
-            Log.exception("_SocketClient:Unable to connect to SOCKETIO SERVER!")
+            Log.exception(_SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
             pass
 
     def send_message(self, message):
@@ -55,7 +55,7 @@ class _SocketClient():
                 self.__socket.emit('message', message)
 
         except Exception as e:
-            Log.exception(f"_SocketClient.send_message:{e}")
+            Log.exception(_SocketClient.send_message, e)
             pass
 
     def disconnect(self):
@@ -64,7 +64,7 @@ class _SocketClient():
                 self.__socket.disconnect()
 
         except Exception as e:
-            Log.exception(f"_SocketClient.disconnect:{e}")
+            Log.exception(_SocketClient.disconnect, e)
             pass
 
 
