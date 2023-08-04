@@ -158,7 +158,7 @@ class CentaurScreen(common.Singleton):
 
     def clear_area(self, x1 = 0, y1 = 0, x2 = SCREEN_WIDTH, y2 = SCREEN_HEIGHT):
 
-        self.drawRectangle(x1,y1,x2,y2,255,255)
+        self.draw_rectangle(x1,y1,x2,y2,255,255)
 
     def draw_fen(self, fen, startrow=2):
 

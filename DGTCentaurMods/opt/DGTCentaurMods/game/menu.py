@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import Log, SocketClient, CentaurScreen, CentaurBoard
-from DGTCentaurMods.game.consts import consts
+from DGTCentaurMods.game.consts import consts, fonts
 from DGTCentaurMods.game.lib import common
 
 from pathlib import Path
@@ -84,9 +84,18 @@ class Menu:
 
     _browser_connected = False
 
+    def homeScreen(self):
+        SCREEN.clear_area()
+        SCREEN.write_text(9,"Welcome!")
+        SCREEN.write_text(11,"The menu is", font=fonts.FONT_Typewriter_small)
+        SCREEN.write_text(12,"not yet", font=fonts.FONT_Typewriter_small)
+        SCREEN.write_text(13,"implemented!", font=fonts.FONT_Typewriter_small)
+
+        SCREEN.draw_fen(common.get_Centaur_FEN())
+
     def __init__(self):
 
-        SCREEN.write_text(3,"Welcome!")
+        self.homeScreen()
 
         def _on_socket_request(data, socket):
 
@@ -208,6 +217,8 @@ class Menu:
 
     def start_child_module(self):
 
+        SCREEN.clear_area()
+
         if self._socket != None:
             self._socket.send_message({ "disable_menu":"play", "loading_screen":True })
 
@@ -215,6 +226,8 @@ class Menu:
 
         if self._socket != None:
             self._socket.send_message({ "enable_menu":"play", "popup":"The current game has been paused!" })
+
+        self.homeScreen()
 
     def disconnect(self):
 
