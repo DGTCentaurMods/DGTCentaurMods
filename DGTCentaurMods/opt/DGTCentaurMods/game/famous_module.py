@@ -19,12 +19,10 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import GameFactory, Log
+from DGTCentaurMods.game.classes import GameFactory, Log, CentaurBoard, CentaurScreen
 from DGTCentaurMods.game.consts import Enums, fonts
 from DGTCentaurMods.game.lib import common
 
-from DGTCentaurMods.display import epaper
-from DGTCentaurMods.board import board
 
 import pathlib
 import random
@@ -34,227 +32,234 @@ import chess.pgn
 import sys
 import os
 
-assert len(sys.argv)>1, "The first argument needs to be the PGN file!"
+exit_requested = False
 
-FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
-MAX_RETRIES = 2
-AUTO_MOVES_COUNT = 4
+SCREEN = CentaurScreen.get()
+CENTAUR_BOARD = CentaurBoard.get()
 
-ERROR_MESSAGES = (
-    "wrong move!",
-    "bad move!",
-    "try again!")
+def main(pgn):
 
-retry_count = MAX_RETRIES
+    FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
+    MAX_RETRIES = 2
+    AUTO_MOVES_COUNT = 4
 
-# Expect the first argument to be the PGN file name
-pgn_file = FAMOUS_PGNS_DIR+sys.argv[1]
+    ERROR_MESSAGES = (
+        "wrong move!",
+        "bad move!",
+        "try again!")
 
-if not os.path.exists(pgn_file):
-    Log.exception(f"'{pgn_file}' does not exist!")
-    exit()
+    retry_count = MAX_RETRIES
 
-try:
-    pgn = open(pgn_file)
+    # Expect the first argument to be the PGN file name
+    pgn_file = FAMOUS_PGNS_DIR+sys.argv[1]
 
-    # We only read the first game of the file
-    game = chess.pgn.read_game(pgn)
+    if not os.path.exists(pgn_file):
+        Log.exception(f"'{pgn_file}' does not exist!")
+        exit()
 
-except Exception as e:
-    Log.exception(f"PGN error:{e}")
-    exit()
+    try:
+        pgn = open(pgn_file)
 
-Log.debug(game.headers)
+        # We only read the first game of the file
+        game = chess.pgn.read_game(pgn)
 
-assert "Event" in game.headers, "PGN header needs to contain 'Event' section!"
-assert "White" in game.headers, "PGN header needs to contain 'White' section!"
-assert "Black" in game.headers, "PGN header needs to contain 'Black' section!"
-assert "Player" in game.headers, "PGN header needs to contain 'Player' section!"
+    except Exception as e:
+        Log.exception(f"PGN error:{e}")
+        exit()
 
-player_names = { "white":game.headers["White"], "black":game.headers["Black"], }
-human_color = chess.WHITE if game.headers["Player"] == "White" else chess.BLACK
+    Log.debug(game.headers)
 
-Log.debug(f"human_color={human_color}")
+    assert "Event" in game.headers, "PGN header needs to contain 'Event' section!"
+    assert "White" in game.headers, "PGN header needs to contain 'White' section!"
+    assert "Black" in game.headers, "PGN header needs to contain 'Black' section!"
+    assert "Player" in game.headers, "PGN header needs to contain 'Player' section!"
 
-moves_history = tuple(game.mainline_moves())
-current_index = 0
+    player_names = { "white":game.headers["White"], "black":game.headers["Black"], }
+    human_color = chess.WHITE if game.headers["Player"] == "White" else chess.BLACK
 
-assert len(moves_history)>10, f"PGN must count at least 10 moves! (has {len(moves_history)})"
+    Log.debug(f"human_color={human_color}")
 
-def show_uci_move_on_board(uci_move):
-    from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
-    to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
+    moves_history = tuple(game.mainline_moves())
+    current_index = 0
 
-    board.ledFromTo(from_num,to_num)
+    assert len(moves_history)>10, f"PGN must count at least 10 moves! (has {len(moves_history)})"
 
-def key_callback(args):
+    def show_uci_move_on_board(uci_move):
+        from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
+        to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
-    assert "key" in args, "key_callback args needs to contain the 'key' entry!"
+        CENTAUR_BOARD.led_from_to(from_num,to_num)
 
-    global exit_requested
+    def key_callback(args):
 
-    key = args["key"]
+        assert "key" in args, "key_callback args needs to contain the 'key' entry!"
 
-    if key == board.BTNUP:
+        global exit_requested
 
-        global retry_count
+        key = args["key"]
 
-        correct_uci_move = moves_history[current_index].uci().strip()
-        retry_count=0
-        show_uci_move_on_board(correct_uci_move)
+        if key == CentaurBoard.BTNUP:
 
-        gfe.send_to_client_boards({ 
-            "clear_board_graphic_moves":False,
-            "tip_uci_move":correct_uci_move,
-        })
+            global retry_count
 
-        return True
+            correct_uci_move = moves_history[current_index].uci().strip()
+            retry_count=0
+            show_uci_move_on_board(correct_uci_move)
 
-    if key == board.BTNHELP:
+            gfe.send_to_client_boards({ 
+                "clear_board_graphic_moves":False,
+                "tip_uci_move":correct_uci_move,
+            })
 
-        if gfe.get_board().turn == human_color:
+            return True
 
-            gfe.update_evaluation(force=True, text="thinking...")
+        if key == CentaurBoard.BTNHELP:
 
-            uci_move = gfe.get_Stockfish_uci_move()
+            if gfe.get_board().turn == human_color:
 
-            if uci_move!= None:
+                gfe.update_evaluation(force=True, text="thinking...")
+
+                uci_move = gfe.get_Stockfish_uci_move()
+
+                if uci_move!= None:
+                    show_uci_move_on_board(uci_move)
+
+                    gfe.send_to_client_boards({ 
+                        "clear_board_graphic_moves":False,
+                        "tip_uci_move":uci_move,
+                    })
+
+                gfe.update_evaluation()
+
+            return True
+        
+        # Key has not been handled, Factory will handle it!
+        return False
+
+
+    def event_callback(args):
+
+        assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+
+        global current_index
+        global exit_requested
+
+        if args["event"] == Enums.Event.QUIT:
+            exit_requested = True
+
+        if args["event"] == Enums.Event.NEW_GAME:
+            current_index = 0
+
+            SCREEN.write_text(9.5,game.headers["Event"], font=fonts.FONT_Typewriter_small, border=True)
+            SCREEN.write_text(11,game.headers["White"], font=fonts.FONT_Typewriter_small, border=True)
+            SCREEN.write_text(12,game.headers["Black"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
+            SCREEN.write_text(13,"You play "+("white" if human_color else "black")+"!", font=fonts.FONT_Typewriter_small, border=True)
+            
+        if args["event"] == Enums.Event.PLAY:
+
+            current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
+
+            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True)
+
+            gfe.send_to_client_boards({ 
+                "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+            })
+
+            # We show the opponent moves and the first moves
+            if gfe.get_board().turn != human_color or current_index<AUTO_MOVES_COUNT:
+
+                uci_move = moves_history[current_index].uci().strip()
+
+                time.sleep(.5)
+
                 show_uci_move_on_board(uci_move)
 
                 gfe.send_to_client_boards({ 
                     "clear_board_graphic_moves":False,
-                    "tip_uci_move":uci_move,
+                    "computer_uci_move":uci_move,
                 })
 
-            gfe.update_evaluation()
 
-        return True
-    
-    # Key has not been handled, Factory will handle it!
-    return False
+    def move_callback(args):
 
+        global current_index
+        global retry_count
 
-def event_callback(args):
+        # field_index, san_move, uci_move are available
+        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
+        assert "san_move" in args, "args needs to contain 'san_move' key!"
+        assert "field_index" in args, "args needs to contain 'field_index' key!"
 
-    assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+        uci_move = args["uci_move"]
+        field_index = args["field_index"]
 
-    global current_index
-    global exit_requested
+        correct_uci_move = moves_history[current_index].uci().strip()
 
-    if args["event"] == Enums.Event.QUIT:
-        exit_requested = True
+        success = correct_uci_move == uci_move
 
-    if args["event"] == Enums.Event.NEW_GAME:
-        current_index = 0
+        if not success:
+            CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
 
-        epaper.writeText(9.5,game.headers["Event"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-        epaper.writeText(11,game.headers["White"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-        epaper.writeText(12,game.headers["Black"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-        epaper.writeText(13,"You play "+("white" if human_color else "black")+"!", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-        
-    if args["event"] == Enums.Event.PLAY:
-
-        current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
-
-        epaper.writeText(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-
-        gfe.send_to_client_boards({ 
-            "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
-        })
-
-        # We show the opponent moves and the first moves
-        if gfe.get_board().turn != human_color or current_index<AUTO_MOVES_COUNT:
-
-            uci_move = moves_history[current_index].uci().strip()
-
-            time.sleep(.5)
-
-            show_uci_move_on_board(uci_move)
-
-            gfe.send_to_client_boards({ 
-                "clear_board_graphic_moves":False,
-                "computer_uci_move":uci_move,
-            })
-
-
-def move_callback(args):
-
-    global current_index
-    global retry_count
-
-    # field_index, san_move, uci_move are available
-    assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-    assert "san_move" in args, "args needs to contain 'san_move' key!"
-    assert "field_index" in args, "args needs to contain 'field_index' key!"
-
-    uci_move = args["uci_move"]
-    field_index = args["field_index"]
-
-    correct_uci_move = moves_history[current_index].uci().strip()
-
-    success = correct_uci_move == uci_move
-
-    if not success:
-        board.beep(board.SOUND_WRONG_MOVE)
-
-        if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
-            # We do nothing...
-            pass
-        else:
-            if retry_count==0:
-                show_uci_move_on_board(correct_uci_move)
-
-                gfe.send_to_client_boards({ 
-                    "clear_board_graphic_moves":False,
-                    "tip_uci_move":correct_uci_move,
-                })
+            if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
+                # We do nothing...
+                pass
             else:
-                gfe.update_evaluation(force=True, text=random.choice(ERROR_MESSAGES))
-                retry_count = retry_count -1
-                board.led(field_index)
+                if retry_count==0:
+                    show_uci_move_on_board(correct_uci_move)
 
-    else:
-        current_index = current_index +1
-        retry_count = MAX_RETRIES
+                    gfe.send_to_client_boards({ 
+                        "clear_board_graphic_moves":False,
+                        "tip_uci_move":correct_uci_move,
+                    })
+                else:
+                    gfe.update_evaluation(force=True, text=random.choice(ERROR_MESSAGES))
+                    retry_count = retry_count -1
+                    CENTAUR_BOARD.led(field_index)
 
-    return success
+        else:
+            current_index = current_index +1
+            retry_count = MAX_RETRIES
 
-def undo_callback(args):
+        return success
 
-    global current_index
+    def undo_callback(args):
 
-    # field_index, san_move, uci_move are available
-    assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-    assert "san_move" in args, "args needs to contain 'san_move' key!"
-    assert "field_index" in args, "args needs to contain 'field_index' key!"
+        global current_index
 
-    current_index = current_index -1
+        # field_index, san_move, uci_move are available
+        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
+        assert "san_move" in args, "args needs to contain 'san_move' key!"
+        assert "field_index" in args, "args needs to contain 'field_index' key!"
 
-    return
+        current_index = current_index -1
+
+        return
+
+    exit_requested = False
+
+    # Subscribe to the game manager
+    gfe = GameFactory.Engine(
+        
+        event_callback = event_callback,
+        move_callback = move_callback,
+        key_callback = key_callback,
+        undo_callback = undo_callback,
+
+        flags = Enums.BoardOption.DB_RECORD_DISABLED | Enums.BoardOption.CAN_UNDO_MOVES,
+        
+    )
+
+    gfe.start()
+
+    while exit_requested == False:
+        time.sleep(0.1)
+
+if __name__ == '__main__':
+
+    Log.debug(sys.argv)
+
+    assert len(sys.argv)>1, "The first argument needs to be the PGN file!"
+
+    main(sys.argv[1])
 
 
-# Activate the epaper
-epaper.initEpaper()
-
-statusbar = epaper.statusBar()
-statusbar.start()
-statusbar.print()
-
-exit_requested = False
-
-# Subscribe to the game manager
-gfe = GameFactory.Engine(
-     
-    event_callback = event_callback,
-    move_callback = move_callback,
-    key_callback = key_callback,
-    undo_callback = undo_callback,
-
-    flags = Enums.BoardOption.DB_RECORD_DISABLED | Enums.BoardOption.CAN_UNDO_MOVES,
-    
-)
-
-gfe.start()
-
-while exit_requested == False:
-    time.sleep(0.1)

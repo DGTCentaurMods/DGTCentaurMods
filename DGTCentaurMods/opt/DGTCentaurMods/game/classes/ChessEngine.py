@@ -108,7 +108,7 @@ class _ChessEngine():
     def __process(self, function_invoker):
 
         # 3 retries
-        for _ in range(1,3):
+        for _ in range(0,3):
 
             result = function_invoker()
 
