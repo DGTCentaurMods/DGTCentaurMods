@@ -32,6 +32,7 @@ import sys, time, chess, configparser
 exit_requested = False
 
 SCREEN = CentaurScreen.get()
+CENTAUR_BOARD = CentaurBoard.get()
 
 def main(color, engine_name, engine_parameters):
 
@@ -91,7 +92,7 @@ def main(color, engine_name, engine_parameters):
 
         key = args["key"]
 
-        if key == CentaurBoard.BTNHELP:
+        if key == Enums.Btn.HELP:
 
             if gfe.get_board().turn != computer_color:
 
@@ -107,7 +108,7 @@ def main(color, engine_name, engine_parameters):
                     from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
                     to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
-                    CentaurBoard.get().led_from_to(from_num,to_num)
+                    CENTAUR_BOARD.led_from_to(from_num,to_num)
 
                 gfe.update_evaluation()
             

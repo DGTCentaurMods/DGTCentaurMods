@@ -22,6 +22,23 @@
 from flags import Flags
 from enum import Enum
 
+class Sound(enum):
+    GENERAL = 1
+    FACTORY = 2
+    POWER_OFF = 3
+    POWER_ON = 4
+    WRONG = 5
+    WRONG_MOVE = 6
+
+class Btn(enum):
+    BACK = 1
+    TICK = 2
+    UP = 3
+    DOWN = 4
+    HELP = 5
+    PLAY = 6
+    LONGPLAY = 7
+
 class Event(Enum):
     NEW_GAME = 1
     RESUME_GAME = 2,

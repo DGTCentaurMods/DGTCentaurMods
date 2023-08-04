@@ -26,21 +26,8 @@ import time, threading, serial
 from DGTCentaurMods.board import centaur
 from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.lib import common
+from DGTCentaurMods.game.consts import Enums
 
-SOUND_GENERAL = 1
-SOUND_FACTORY = 2
-SOUND_POWER_OFF = 3
-SOUND_POWER_ON = 4
-SOUND_WRONG = 5
-SOUND_WRONG_MOVE = 6
-
-BTNBACK = 1
-BTNTICK = 2
-BTNUP = 3
-BTNDOWN = 4
-BTNHELP = 5
-BTNPLAY = 6
-BTNLONGPLAY = 7
 
 def _rotate_field(index):
     R = (index // 8)
@@ -218,17 +205,17 @@ class CentaurBoard(common.Singleton):
         if centaur.get_sound() == "off":
             return
        
-        if (beeptype == SOUND_GENERAL):
+        if (beeptype == Enums.Sound.GENERAL):
             self.send_packet(b'\xb1\x00\x08',b'\x4c\x08')
-        if (beeptype == SOUND_FACTORY):
+        if (beeptype == Enums.Sound.FACTORY):
             self.send_packet(b'\xb1\x00\x08', b'\x4c\x40')
-        if (beeptype == SOUND_POWER_OFF):
+        if (beeptype == Enums.Sound.POWER_OFF):
             self.send_packet(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
-        if (beeptype == SOUND_POWER_ON):
+        if (beeptype == Enums.Sound.POWER_ON):
             self.send_packet(b'\xb1\x00\x0a', b'\x48\x08\x4c\x08')
-        if (beeptype == SOUND_WRONG):
+        if (beeptype == Enums.Sound.WRONG):
             self.send_packet(b'\xb1\x00\x0a', b'\x4e\x0c\x48\x10')
-        if (beeptype == SOUND_WRONG_MOVE):
+        if (beeptype == Enums.Sound.WRONG_MOVE):
             self.send_packet(b'\xb1\x00\x08', b'\x48\x08')
 
 
@@ -481,7 +468,7 @@ class CentaurBoard(common.Singleton):
                             + "00140a0501000000007d47"):
 
                             self.time_limit = time.time() + timeout
-                            button_pressed = BTNBACK
+                            button_pressed = Enums.Btn.BACK
 
                         if (response.hex()[:-2] == "b10011" 
                             + "{:02x}".format(self.address_1) 
@@ -489,7 +476,7 @@ class CentaurBoard(common.Singleton):
                             + "00140a0510000000007d17"):
 
                             self.time_limit = time.time() + timeout
-                            button_pressed = BTNTICK
+                            button_pressed = Enums.Btn.TICK
 
                         if (response.hex()[:-2] == "b10011" 
                             + "{:02x}".format(self.address_1) 
@@ -497,7 +484,7 @@ class CentaurBoard(common.Singleton):
                             + "00140a0508000000007d3c"):
 
                             self.time_limit = time.time() + timeout
-                            button_pressed = BTNUP
+                            button_pressed = Enums.Btn.UP
 
                         if (response.hex()[:-2] == "b10010" 
                             + "{:02x}".format(self.address_1) 
@@ -505,7 +492,7 @@ class CentaurBoard(common.Singleton):
                             + "00140a05020000000061"):
 
                             self.time_limit = time.time() + timeout
-                            button_pressed = BTNDOWN
+                            button_pressed = Enums.Btn.DOWN
 
                         if (response.hex()[:-2] == "b10010" 
                             + "{:02x}".format(self.address_1) 
@@ -513,7 +500,7 @@ class CentaurBoard(common.Singleton):
                             + "00140a0540000000006d"):
 
                             self.time_limit = time.time() + timeout
-                            button_pressed = BTNHELP
+                            button_pressed = Enums.Btn.HELP
                     
                     if (response.hex()[:-2] == "b10010" 
                         + "{:02x}".format(self.address_1) 
@@ -558,7 +545,7 @@ class CentaurBoard(common.Singleton):
                                     break
                                 break
                         else:
-                            self.beep(SOUND_POWER_OFF)
+                            self.beep(Enums.Sound.POWER_OFF)
                             #shutdown()
                 except Exception as e:
                     print(e)

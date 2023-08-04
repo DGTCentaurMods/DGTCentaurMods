@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
-from DGTCentaurMods.game.consts import Enums, fonts, consts
+from DGTCentaurMods.game.consts import Enums, consts
 from DGTCentaurMods.game.lib import common
 
 #from pympler import muppy, summary
@@ -110,7 +110,7 @@ class Engine():
             # Key has not been handled by the client!
 
             # Default tick key
-            if key_index == CentaurBoard.BTNTICK:
+            if key_index == Enums.Btn.TICK:
                 self.show_evaluation = not self.show_evaluation
 
                 self.update_evaluation()
@@ -120,14 +120,14 @@ class Engine():
                 #self.synchronize_client_boards()
 
             # Default exit key
-            if key_index == CentaurBoard.BTNBACK:
+            if key_index == Enums.Btn.BACK:
                 
                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
 
                 self.stop()
         
             # Default down key: show previous move
-            if key_index == CentaurBoard.BTNDOWN:
+            if key_index == Enums.Btn.DOWN:
 
                 if self._previous_move_displayed:
                      
@@ -230,7 +230,7 @@ class Engine():
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
-                CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                 self._source_square = -1
 
@@ -280,7 +280,7 @@ class Engine():
                         self._legal_squares = []
                         self._source_square = -1
 
-                        CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+                        CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
                         CENTAUR_BOARD.led(field_index)
 
                         self.update_Centaur_FEN()
@@ -340,7 +340,7 @@ class Engine():
                                 san_move = None
 
                             if san_move == None:
-                                CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+                                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                                 Log.debug(f'INVALID move "{uci_move}"')
 
@@ -370,7 +370,7 @@ class Engine():
 
                                         self._san_move_list.append(san_move)
 
-                                        CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
+                                        CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
                                         CENTAUR_BOARD.led(field_index)
 
                                         self.update_Centaur_FEN()
@@ -402,23 +402,39 @@ class Engine():
                             
                             # Promotion menu display if player is human or if player overrides computer move
 
-                            (self._is_computer_move == False or (self._is_computer_move == True and player_uci_move != self._computer_uci_move[0:4]))):
+                            (self._is_computer_move == False or (self._is_computer_move == True and (from_name + to_name) != self._computer_uci_move[0:4]))):
 
                             SCREEN.draw_promotion_window()
 
                             def wait_for_promotion_input():
 
-                                def _key_callback(key_index):
+                                def _promote_key_callback(key_index):
 
-                                    promoted_piece = ({CentaurBoard.BTNBACK:"n", CentaurBoard.BTNTICK:"b", CentaurBoard.BTNUP:"q", CentaurBoard.BTNDOWN:"r", CentaurBoard.BTNHELP:None, CentaurBoard.BTNPLAY: None, CentaurBoard.BTNLONGPLAY: None}[key_index])
+                                    promoted_piece = ({
 
-                                    CENTAUR_BOARD.unsubscribe_events()
+                                        Enums.Btn.BACK:"n", 
+                                        Enums.Btn.TICK:"b", 
+                                        Enums.Btn.UP:"q", 
+                                        Enums.Btn.DOWN:"r", 
 
-                                    self.display_board()
+                                        Enums.Btn.HELP:None, 
+                                        Enums.Btn.PLAY: None, 
+                                        Enums.Btn.LONGPLAY: None
+                                    
+                                    }[key_index])
 
-                                    finalize_move(from_name + to_name, promoted_piece)
+                                    if promoted_piece != None:
 
-                                CENTAUR_BOARD.subscribe_events(_key_callback, None)
+                                        # Back to original callbacks
+                                        CENTAUR_BOARD.unsubscribe_events()
+
+                                        self.display_board()
+
+                                        finalize_move(from_name + to_name, promoted_piece)
+
+                                # We temporary disable the board field callback
+                                # and we add a new temporary board key callback
+                                CENTAUR_BOARD.subscribe_events(_promote_key_callback, None)
 
                             wait_for_promotion_input()
                         else:
@@ -562,7 +578,7 @@ class Engine():
                             
                             del uci_moves_history
                             
-                            CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
+                            CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
 
                             self.update_Centaur_FEN()
                             self.display_board()
@@ -612,7 +628,7 @@ class Engine():
                                 
                                 self.__initialize()
                                 
-                                CENTAUR_BOARD.beep(CentaurBoard.SOUND_GENERAL)
+                                CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
 
                                 self.update_Centaur_FEN()
                                 self.display_board()

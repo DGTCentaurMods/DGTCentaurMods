@@ -40,7 +40,7 @@ def main():
 
         key = args["key"]
 
-        if key == CentaurBoard.BTNHELP:
+        if key == Enums.Btn.HELP:
 
             gfe.update_evaluation(force=True, text="thinking...")
 

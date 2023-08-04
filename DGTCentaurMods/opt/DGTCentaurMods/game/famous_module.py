@@ -98,7 +98,7 @@ def main(pgn):
 
         key = args["key"]
 
-        if key == CentaurBoard.BTNUP:
+        if key == Enums.Btn.UP:
 
             global retry_count
 
@@ -113,7 +113,7 @@ def main(pgn):
 
             return True
 
-        if key == CentaurBoard.BTNHELP:
+        if key == Enums.Btn.HELP:
 
             if gfe.get_board().turn == human_color:
 
@@ -198,7 +198,7 @@ def main(pgn):
         success = correct_uci_move == uci_move
 
         if not success:
-            CENTAUR_BOARD.beep(CentaurBoard.SOUND_WRONG_MOVE)
+            CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
             if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
                 # We do nothing...
