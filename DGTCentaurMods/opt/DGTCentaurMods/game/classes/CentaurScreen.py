@@ -45,6 +45,7 @@ CHESS_SHEET_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/chesssprites.b
 class CentaurScreen(common.Singleton):
 
     _buffer = None
+    _buffer_copy = None
     _thread_worker = None
     _api = None
 
@@ -132,6 +133,14 @@ class CentaurScreen(common.Singleton):
     def kill(self):
         self._thread_is_alive = False
 
+    def save_screen(self):
+        
+        self._buffer_copy = self._buffer.copy()
+
+    def restore_screen(self):
+
+        self._buffer = self._buffer_copy.copy()
+
     def write_text(self, row, text, font=MAIN_FONT, align_center=True, border=False):
 
         buffer_copy = self._buffer.copy()
@@ -151,10 +160,10 @@ class CentaurScreen(common.Singleton):
         
         self._buffer = buffer_copy.copy()
 
-    def draw_rectangle(self, x1, y1, x2, y2, fill, outline):
+    def draw_rectangle(self, x1, y1, x2, y2, fill=None, outline=None, width=1):
 
         draw = ImageDraw.Draw(self._buffer)
-        draw.rectangle([(x1, y1), (x2, y2)], fill=fill, outline=outline)
+        draw.rectangle([(x1, y1), (x2, y2)], fill=fill, outline=outline, width=width)
 
     def clear_area(self, x1 = 0, y1 = 0, x2 = SCREEN_WIDTH, y2 = SCREEN_HEIGHT):
 

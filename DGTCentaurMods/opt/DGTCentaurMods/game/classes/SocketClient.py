@@ -59,6 +59,16 @@ class _SocketClient(common.Singleton):
             Log.exception(_SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
             pass
 
+    def send_request(self, message):
+
+        try:
+            if self.__socket != None:
+                self.__socket.emit('request', message)
+
+        except Exception as e:
+            Log.exception(_SocketClient.send_request, e)
+            pass
+
     def send_message(self, message):
 
         try:
