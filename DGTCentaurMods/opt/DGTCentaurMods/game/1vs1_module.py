@@ -32,11 +32,13 @@ CENTAUR_BOARD = CentaurBoard.get()
 
 def main():
 
+    global exit_requested
+
+    exit_requested = False
+
     def key_callback(args):
 
         assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        global exit_requested
 
         key = args["key"]
 

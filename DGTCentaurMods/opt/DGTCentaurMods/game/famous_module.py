@@ -37,21 +37,27 @@ exit_requested = False
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
 
+FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
+MAX_RETRIES = 2
+AUTO_MOVES_COUNT = 4
+
+ERROR_MESSAGES = (
+    "wrong move!",
+    "bad move!",
+    "try again!")
+
+retry_count = MAX_RETRIES
+current_index = 0
+
 def main(pgn):
 
-    FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
-    MAX_RETRIES = 2
-    AUTO_MOVES_COUNT = 4
+    global current_index
+    global exit_requested
 
-    ERROR_MESSAGES = (
-        "wrong move!",
-        "bad move!",
-        "try again!")
-
-    retry_count = MAX_RETRIES
+    exit_requested = False
 
     # Expect the first argument to be the PGN file name
-    pgn_file = FAMOUS_PGNS_DIR+sys.argv[1]
+    pgn_file = FAMOUS_PGNS_DIR+pgn
 
     if not os.path.exists(pgn_file):
         Log.exception(f"'{pgn_file}' does not exist!")
@@ -80,7 +86,7 @@ def main(pgn):
     Log.debug(f"human_color={human_color}")
 
     moves_history = tuple(game.mainline_moves())
-    current_index = 0
+
 
     assert len(moves_history)>10, f"PGN must count at least 10 moves! (has {len(moves_history)})"
 
@@ -93,8 +99,6 @@ def main(pgn):
     def key_callback(args):
 
         assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        global exit_requested
 
         key = args["key"]
 

@@ -430,6 +430,10 @@ class CentaurBoard(common.Singleton):
             pass
 
     def _read_keys(self, timeout):
+
+        A1_HEX = "{:02x}".format(self.address_1)
+        A2_HEX = "{:02x}".format(self.address_2)
+        
         try:
             button = Enums.Btn.NONE
             
@@ -442,9 +446,6 @@ class CentaurBoard(common.Singleton):
             response = bytearray(self.ask_serial(b'\x94', b''))
         
             if not self._stand_by:
-
-                A1_HEX = "{:02x}".format(self.address_1)
-                A2_HEX = "{:02x}".format(self.address_2)
 
                 if (response.hex()[:-2] == "b10011" 
                     + A1_HEX

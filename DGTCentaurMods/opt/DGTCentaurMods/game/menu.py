@@ -26,10 +26,8 @@ from DGTCentaurMods.game.lib import common
 from pathlib import Path
 
 import time, sys, os, configparser, re, copy
-import subprocess
 
 import importlib, shlex
-
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
@@ -84,22 +82,21 @@ MENU_ITEMS = [
 
 class Menu:
 
-    _module_is_running = False
     _browser_connected = False
 
     def __init__(self):
 
+        SCREEN.write_text(3,"Welcome!")
+
         def _on_socket_request(data, socket):
 
-            # If a module is running, we ignore the socket requests
-            if (self._module_is_running):
-                return
-
+            #Log.debug(data)
             try:
             
                 #response = {}
 
                 if "web_menu" in data:
+
                     self.initialize_web_menu()
 
                 if "pong" in data:
@@ -121,9 +118,11 @@ class Menu:
 
                         self.start_child_module()
 
-                        module = importlib.import_module(name=script, package="DGTCentaurMods.game")
+                        module = importlib.import_module(name=script, package="{consts.MAIN_ID}.game")
                    
                         args = shlex.split(command)
+
+                        # We remove the script name
                         args.pop(0)
 
                         if (len(args)):
@@ -131,14 +130,9 @@ class Menu:
                         else:
                             module.main()
 
-                        del args
-                        del script
                         del module
 
-                        importlib.invalidate_caches()
-
-                        #os.system(f"{sys.executable} {GAME_PATH}/{command}")
-                        
+                        #importlib.invalidate_caches()
                         self.end_child_module()
 
             except Exception as e:
@@ -147,7 +141,7 @@ class Menu:
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
-        self._socket.send_message({ "ping":True, "popup":"The service is up and running!" })
+        self._socket.send_message({ "ping":True, "enable_menu":"play", "loading_screen":False, "popup":"The service is up and running!" })
 
         CENTAUR_BOARD.subscribe_events(self._key_callback, self._field_callback)
 
@@ -186,7 +180,7 @@ class Menu:
 
         # Famous PGN menu item
         play_item["items"].append({ "label": "Play famous games", "type": "subitem", 
-                                   "items":list(map(lambda pgn: { "label": "⭐ "+pgn.capitalize(), "action": { "type": "socket_execute", "value": "famous_module.py "+pgn+".pgn" }},famous_pgns)) })
+                                   "items":list(map(lambda pgn: { "label": "⭐ "+pgn.capitalize(), "action": { "type": "socket_execute", "value": f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
 
         # Engines menu items
         for engine in engines:
@@ -205,6 +199,7 @@ class Menu:
 
 
     def initialize_web_menu(self, message={}):
+
         message["enable_menu"] = "play"
 
         message["update_menu"] = self.build_menu_items()
@@ -212,61 +207,27 @@ class Menu:
         self._socket.send_message(message)
 
     def start_child_module(self):
-        self._module_is_running = True
-        self._socket.send_message({ "disable_menu":"play", "loading_screen":True, "popup":"The board is being initialized..." })
+
+        if self._socket != None:
+            self._socket.send_message({ "disable_menu":"play", "loading_screen":True })
 
     def end_child_module(self):
-        self._module_is_running = False
-        self._socket.send_message({ "enable_menu":"play", "popup":"The current game has been paused!" })
 
+        if self._socket != None:
+            self._socket.send_message({ "enable_menu":"play", "popup":"The current game has been paused!" })
 
     def disconnect(self):
-        self._socket.disconnect()
+
+        if self._socket != None:
+            self._socket.disconnect()
 
     def browser_connected(self):
         return self._browser_connected
 
 
-menu = Menu()
+Menu()
 
-
-                    
-
-#menu.clear_screen()
-"""
-CentaurScreen.initEpaper()
-
-
-CentaurScreen.writeText(2, "TEST")
-
-CentaurScreen.drawFen("rnb1k1nr/pp1p1p2/2p1p1p1/q3P2p/1bPP1Q2/2N2N2/PP1B1PPP/R3KB1R b KQkq - 1 9")
-
-CentaurScreen.drawEvaluationBar(value=34)
-
-time.sleep(4)
-
-CentaurScreen.clearArea()
-
-CentaurScreen.writeText(4, "TEST")
-
-#CentaurScreen.stopEpaper()
-
-CentaurScreen.drawFen("rnb1k1nr/pp1p1p2/2p1p1p1/q3P2p/1bPP1Q2/2N2N2/PP1B1PPP/R3KB1R b KQkq - 1 9")
-
-
-exit()
-
-time.sleep(1)
-"""
-
-if True or menu.browser_connected():
-    Log.info("At least one browser is connected, legacy menu is disabled.")
-    menu.initialize_web_menu({ "popup":"Legacy menu has been disabled!" })
-    while True and CENTAUR_BOARD.serial():
-        time.sleep(.5)
-else:
-    menu.disconnect()
-
-    del menu
-
-    subprocess.call([sys.executable, consts.OPT_DIRECTORY + "/game/menu.legacy.py"])
+while True:
+    time.sleep(.5)
+    
+#subprocess.call([sys.executable, consts.OPT_DIRECTORY + "/game/menu.legacy.py"])

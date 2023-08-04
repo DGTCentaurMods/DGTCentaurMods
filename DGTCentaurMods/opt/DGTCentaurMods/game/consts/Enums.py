@@ -22,7 +22,7 @@
 from flags import Flags
 from enum import Enum
 
-class Sound(enum):
+class Sound(Enum):
     GENERAL = 1
     FACTORY = 2
     POWER_OFF = 3
@@ -30,7 +30,7 @@ class Sound(enum):
     WRONG = 5
     WRONG_MOVE = 6
 
-class Btn(enum):
+class Btn(Enum):
     NONE = 0
     BACK = 1
     TICK = 2

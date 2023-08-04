@@ -36,6 +36,10 @@ CENTAUR_BOARD = CentaurBoard.get()
 
 def main(color, engine_name, engine_parameters):
 
+    global exit_requested
+
+    exit_requested = False
+
     # Expect the first argument to be 'white' 'black' or 'random' for what the player is playing
     computer_color = {
         "white"  : chess.BLACK, 
@@ -87,8 +91,6 @@ def main(color, engine_name, engine_parameters):
     def key_callback(args):
 
         assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        global exit_requested
 
         key = args["key"]
 
