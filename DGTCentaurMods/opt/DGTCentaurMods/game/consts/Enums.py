@@ -31,6 +31,7 @@ class Sound(enum):
     WRONG_MOVE = 6
 
 class Btn(enum):
+    NONE = 0
     BACK = 1
     TICK = 2
     UP = 3

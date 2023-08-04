@@ -21,7 +21,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import time, threading, serial
+import os, time, threading, serial
 
 from DGTCentaurMods.board import centaur
 from DGTCentaurMods.game.classes import Log
@@ -34,12 +34,6 @@ def _rotate_field(index):
     C = (index % 8)
     new_index = (7 - R) * 8 + C
     return new_index
-
-def _rotate_field_hex(field_hex):
-    R = field_hex // 8
-    C = field_hex % 8
-    field = (7 - R) * 8 + C
-    return field
 
 def _checksum(bytes_array):
     csum = 0
@@ -60,6 +54,18 @@ class CentaurBoard(common.Singleton):
     _events_worker = None
 
     _callbacks_queue = []
+
+    _battery_level = 0
+
+    _stand_by = False
+
+    _timeout_disabled = False
+    _events_enabled = True
+
+    _power_connected = False
+
+    _last_battery_check = time.time()
+
 
     def initialize(self):
 
@@ -83,12 +89,10 @@ class CentaurBoard(common.Singleton):
 
             print('Sending payload 1...')
             self.write_serial(b'\x4d')
-
             self.read_serial()
 
             print('Sending payload 2...')
             self.write_serial(b'\x4e')
-
             self.read_serial()
 
             print('Serial is open. Waiting for response...')
@@ -103,7 +107,6 @@ class CentaurBoard(common.Singleton):
             while len(response) < 4 and time.time() < timeout:
 
                 self.write_serial(b'\x87\x00\x00\x07')
-
                 response = self.read_serial()
                 
                 if len(response) > 3:
@@ -136,7 +139,7 @@ class CentaurBoard(common.Singleton):
     def serial(self):
         return self._SERIAL
 
-    def read_serial(self, length = 10000):
+    def read_serial(self, length = 10000) -> bytes:
         try:
             bytes = self._SERIAL.read(length)
         except:
@@ -153,7 +156,7 @@ class CentaurBoard(common.Singleton):
         self._SERIAL.write(bytearray(bytes))
         #print("->"+"".join("\\x%02x" % i for i in bytes))
 
-    def build_packet(self, command, data):
+    def build_packet(self, command, data) -> bytearray:
 
         result = bytearray(command 
                            + self.address_1.to_bytes(1,byteorder='big') 
@@ -163,6 +166,11 @@ class CentaurBoard(common.Singleton):
         result.append(_checksum(result))
 
         return result
+    
+    def ask_serial(self, command, data) -> bytes:
+
+        self.send_packet(command, data)
+        return self.read_serial()
 
     def send_packet(self, command, data):
         self.write_serial(self.build_packet(command, data))
@@ -182,15 +190,13 @@ class CentaurBoard(common.Singleton):
         response_2 = b''
         
         while True:
-            self.send_packet(b'\x83', b'')
-            expected_1 = self.build_packet(b'\x85\x00\x06', b'')
-            
-            response_1 = self.read_serial()
 
-            self.send_packet(b'\x94', b'')
+            expected_1 = self.build_packet(b'\x85\x00\x06', b'')
+            response_1 = self.ask_serial(b'\x83', b'')
+
+
             expected_2 = self.build_packet(b'\xb1\x00\x06', b'')
-            
-            response_2 = self.read_serial()
+            response_2 = self.ask_serial(b'\x94', b'')
 
             # If board is idle, return True
             if expected_1 == response_1 and expected_2 == response_2:
@@ -301,12 +307,12 @@ class CentaurBoard(common.Singleton):
         # Get the board data
 
         self.pause_events()
-                            
 
         response = []
         while (len(response) < 64):
-            self.send_packet(b'\xf0\x00\x07', b'\x7f')
-            response = self.read_serial()
+
+            response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
+
             if (len(response) < 64):
                 time.sleep(0.5)
 
@@ -365,472 +371,263 @@ class CentaurBoard(common.Singleton):
         self._key_callback = callbacks["key_callback"]
 
     def pause_events(self):
-        self._events_running = False
+        self._events_enabled = False
 
     def unpause_events(self):
-        self._events_running = True
+        self._events_enabled = True
+        self.time_limit = time.time() + self._events_timeout
+
+    def shutdown(self):
+
+        self.beep(Enums.Sound.POWER_OFF)
+        
+        self.led_from_to(7,7)
+
+        os.system("(sleep 5 && sudo poweroff)")
+
+    def _read_fields(self, timeout):
+        try:
+            expected = bytearray(b'\x85\x00\x06'
+                                    + self.address_1.to_bytes(1, byteorder='big') 
+                                    + self.address_2.to_bytes(1, byteorder='big'))
+            
+            expected.append(_checksum(expected))
+            
+            response = bytearray(self.ask_serial(b'\x83', b''))
+            
+            if (response != expected):
+                if (len(response) > 1 and response[0] == 133 and response[1] == 0):
+                    for x in range(0, len(response) - 1):
+                        
+                        if (response[x] == 64):
+
+                            # Calculate the square to 0(a1)-63(h8) so that
+                            # all functions match
+
+                            new_square = _rotate_field(response[x + 1])
+                            
+                            if self._field_callback:
+                                self._field_callback(new_square + 1)
+                            
+                            self.time_limit = time.time() + timeout
+                        
+                        if (response[x] == 65):
+
+                            # Calculate the square to 0(a1)-63(h8) so that
+                            # all functions match
+
+                            new_square = _rotate_field(response[x + 1])
+                            
+                            if self._field_callback:
+                                self._field_callback((new_square + 1) * -1)
+                            
+                            self.time_limit = time.time() + timeout
+
+        
+        except Exception as e:
+            print(e)
+            Log.exception(CentaurBoard._read_fields, e)
+            pass
+
+    def _read_keys(self, timeout):
+        try:
+            button = Enums.Btn.NONE
+            
+            expected = bytearray(b'\xb1\x00\x06' 
+                                    + self.address_1.to_bytes(1, byteorder='big') 
+                                    + self.address_2.to_bytes(1, byteorder='big'))
+        
+            expected.append(_checksum(expected))
+            
+            response = bytearray(self.ask_serial(b'\x94', b''))
+        
+            if not self._stand_by:
+
+                A1_HEX = "{:02x}".format(self.address_1)
+                A2_HEX = "{:02x}".format(self.address_2)
+
+                if (response.hex()[:-2] == "b10011" 
+                    + A1_HEX
+                    + A2_HEX 
+                    + "00140a0501000000007d47"):
+
+                    self.time_limit = time.time() + timeout
+                    button = Enums.Btn.BACK
+
+                if (response.hex()[:-2] == "b10011" 
+                    + A1_HEX
+                    + A2_HEX 
+                    + "00140a0510000000007d17"):
+
+                    self.time_limit = time.time() + timeout
+                    button = Enums.Btn.TICK
+
+                if (response.hex()[:-2] == "b10011" 
+                    + A1_HEX
+                    + A2_HEX 
+                    + "00140a0508000000007d3c"):
+
+                    self.time_limit = time.time() + timeout
+                    button = Enums.Btn.UP
+
+                if (response.hex()[:-2] == "b10010" 
+                    + A1_HEX
+                    + A2_HEX 
+                    + "00140a05020000000061"):
+
+                    self.time_limit = time.time() + timeout
+                    button = Enums.Btn.DOWN
+
+                if (response.hex()[:-2] == "b10010" 
+                    + A1_HEX
+                    + A2_HEX 
+                    + "00140a0540000000006d"):
+
+                    self.time_limit = time.time() + timeout
+                    button = Enums.Btn.HELP
+            
+            if (response.hex()[:-2] == "b10010" 
+                + A1_HEX
+                + A2_HEX 
+                + "00140a0504000000002a"):
+
+                breaktime = time.time() + 0.5
+
+                while time.time() < breaktime:
+                    
+                    expected = bytearray(b'\xb1\x00\x06' 
+                                            + self.address_1.to_bytes(1, byteorder='big') 
+                                            + self.address_2.to_bytes(1, byteorder='big'))
+                    expected.append(_checksum(expected))
+                    
+                    response = bytearray(self.ask_serial(b'\x94', b''))
+                    
+                    if response.hex().startswith("b10011" 
+                                                    + A1_HEX
+                                                    + A2_HEX 
+                                                    + "00140a0500040"):
+                
+                        if self._stand_by == False:
+
+                            Log.info("Standby mode invoked...")
+
+                            #epaper.standbyScreen(True)
+
+                            self._stand_by = True
+
+                            self._stand_by_thread = threading.Timer(600,self.shutdown)
+                            self._stand_by_thread.start()
+                            
+                            self.time_limit = time.time() + 100000
+                            break
+                        else:
+
+                            Log.info("Standby mode cancelled...")
+                            self.clear_serial()
+                            
+                            #epaper.standbyScreen(False)
+
+                            self._stand_by_thread.cancel()
+
+                            self._stand_by = False
+                            self.time_limit = time.time() + timeout
+                            break
+
+                else:
+                    self.beep(Enums.Sound.POWER_OFF)
+                    self.shutdown()
+
+            if button != Enums.Btn.NONE:
+                self.time_limit = time.time() + timeout
+                
+                if self._key_callback:
+                    self._key_callback(button)
+
+        except Exception as e:
+            print(e)
+            Log.exception(CentaurBoard._read_keys, e)
+            pass
+
+    def _read_battery(self, timeout):
+        try:
+
+            # Every 30 seconds check the battery details
+            if time.time() - self._last_battery_check > 30:
+                
+                response = b''
+                timeout = time.time() + 4
+
+                while len(response) < 7 and time.time() < timeout:
+                    
+                    # Sending the board a packet starting with 152 gives battery info
+                    try:
+                        response = self.ask_serial(bytearray([152]), b'')
+                    except:
+                        pass
+
+                if len(response) < 7:
+                    pass
+                else:
+                    if response[0] == 181:
+                        self._last_battery_check = time.time()
+                        self._battery_level = response[5] & 31
+                        vall = (response[5] >> 5) & 7
+                        if vall == 1 or vall == 2:
+                            self._power_connected = True
+                        else:
+                            self._power_connected = False
+        except Exception as e:
+            print(e)
+            Log.exception(CentaurBoard._read_battery, e)
+        pass
 
     def events_board_thread(self, timeout = 60 * 15):
 
-        self._stand_by = False
-        self._hold_timeout = False
-        self._events_paused = False
-
-        self._events_running = True
-
-        chargerconnected = 1
-        batterylastchecked = time.time()
-
         self.time_limit = time.time() + timeout
+        self._events_timeout = timeout
 
         while time.time() < self.time_limit:
 
             loopstart = time.time()
-            if self._events_running:
+
+            if self._events_enabled:
                 # Hold and restart timeout on charger attached
-                if chargerconnected == 1:
+                if self._power_connected:
                     self.time_limit = time.time() + 100000
-                    self._hold_timeout = True
-                if chargerconnected == 0 and self._hold_timeout:
-                    self.time_limit = time.time() + timeout
-                    self._hold_timeout = False
+                    self._timeout_disabled = True
 
-                # Reset timeout on unPauseEvents
-                if self._events_paused:
-                    self.time_limit = time.time() + timeout
-                    self._events_paused = False
-
-                button_pressed = 0
+                else:
+                
+                    if self._timeout_disabled:
+                        self.time_limit = time.time() + timeout
+                        self._timeout_disabled = False
 
                 if not self._stand_by:
-                    # Hold fields activity on standby
-                    try:
 
-                        self.send_packet(b'\x83', b'')
-                        
-                        expected = bytearray(b'\x85\x00\x06'
-                                             + self.address_1.to_bytes(1, byteorder='big') 
-                                             + self.address_2.to_bytes(1, byteorder='big'))
-                        
-                        expected.append(_checksum(expected))
-                        
-                        response = bytearray(self.read_serial())
-                        
-                        if (bytearray(response) != expected):
-                            if (len(response) > 1 and response[0] == 133 and response[1] == 0):
-                                for x in range(0, len(response) - 1):
-                                    
-                                    if (response[x] == 64):
-                                        # Calculate the square to 0(a1)-63(h8) so that
-                                        # all functions match
-                                        field_hex = response[x + 1]
-                                        new_square = _rotate_field_hex(field_hex)
-                                        
-                                        if self._field_callback:
-                                            self._field_callback(new_square + 1)
-                                        
-                                        self.time_limit = time.time() + timeout
-                                    
-                                    if (response[x] == 65):
-                                        # Calculate the square to 0(a1)-63(h8) so that
-                                        # all functions match
-                                        field_hex = response[x + 1]
-                                        new_square = _rotate_field_hex(field_hex)
-                                        
-                                        if self._field_callback:
-                                            self._field_callback((new_square + 1) * -1)
-                                        
-                                        self.time_limit = time.time() + timeout
-
-                    
-                    except Exception as e:
-                        print(e)
-                        Log.exception(CentaurBoard.events_board_thread, e)
-                        pass
+                    # FIELDS HANDLING
+                    self._read_fields(timeout)
             
-                try:
-                    self.send_packet(b'\x94', b'')
-                    
-                    expected = bytearray(b'\xb1\x00\x06' 
-                                         + self.address_1.to_bytes(1, byteorder='big') 
-                                         + self.address_2.to_bytes(1, byteorder='big'))
+                # KEYS HANDLING
+                self._read_keys(timeout)
                 
-                    expected.append(_checksum(expected))
-                    
-                    response = bytearray(self.read_serial())
-                
-                    if not self._stand_by:
+                # BATTERY HANDLING
+                self._read_battery(timeout)
 
-                        #Disable these buttons on standby
-                        if (response.hex()[:-2] == "b10011" 
-                            + "{:02x}".format(self.address_1) 
-                            + "{:02x}".format(self.address_2) 
-                            + "00140a0501000000007d47"):
-
-                            self.time_limit = time.time() + timeout
-                            button_pressed = Enums.Btn.BACK
-
-                        if (response.hex()[:-2] == "b10011" 
-                            + "{:02x}".format(self.address_1) 
-                            + "{:02x}".format(self.address_2) 
-                            + "00140a0510000000007d17"):
-
-                            self.time_limit = time.time() + timeout
-                            button_pressed = Enums.Btn.TICK
-
-                        if (response.hex()[:-2] == "b10011" 
-                            + "{:02x}".format(self.address_1) 
-                            + "{:02x}".format(self.address_2) 
-                            + "00140a0508000000007d3c"):
-
-                            self.time_limit = time.time() + timeout
-                            button_pressed = Enums.Btn.UP
-
-                        if (response.hex()[:-2] == "b10010" 
-                            + "{:02x}".format(self.address_1) 
-                            + "{:02x}".format(self.address_2) 
-                            + "00140a05020000000061"):
-
-                            self.time_limit = time.time() + timeout
-                            button_pressed = Enums.Btn.DOWN
-
-                        if (response.hex()[:-2] == "b10010" 
-                            + "{:02x}".format(self.address_1) 
-                            + "{:02x}".format(self.address_2) 
-                            + "00140a0540000000006d"):
-
-                            self.time_limit = time.time() + timeout
-                            button_pressed = Enums.Btn.HELP
-                    
-                    if (response.hex()[:-2] == "b10010" 
-                        + "{:02x}".format(self.address_1) 
-                        + "{:02x}".format(self.address_2) 
-                        + "00140a0504000000002a"):
-
-                        breaktime = time.time() + 0.5
-
-                        while time.time() < breaktime:
-                            self.send_packet(b'\x94', b'')
-                            
-                            expected = bytearray(b'\xb1\x00\x06' 
-                                                 + self.address_1.to_bytes(1, byteorder='big') 
-                                                 + self.address_2.to_bytes(1, byteorder='big'))
-                            expected.append(_checksum(expected))
-                            
-                            response = self.read_serial()
-                            response = bytearray(response)
-                            
-                            if response.hex().startswith("b10011" 
-                                                         + "{:02x}".format(self.address_1) 
-                                                         + "{:02x}".format(self.address_2) 
-                                                         + "00140a0500040"):
-                        
-                                print('Play btn pressed. Stanby is:',self._stand_by)
-                                if self._stand_by == False:
-                                    print('Calling standbyScreen()')
-                                    #epaper.standbyScreen(True)
-                                    self._stand_by = True
-                                    print('Starting shutdown countdown')
-                                    #sd = threading.Timer(600,shutdown)
-                                    #sd.start()
-                                    self.time_limit = time.time() + 100000
-                                    break
-                                else:
-                                    self.clear_serial()
-                                    #epaper.standbyScreen(False)
-                                    print('Cancel shutdown')
-                                    #sd.cancel()
-                                    self._stand_by = False
-                                    self.time_limit = time.time() + timeout
-                                    break
-                                break
-                        else:
-                            self.beep(Enums.Sound.POWER_OFF)
-                            #shutdown()
-                except Exception as e:
-                    print(e)
-                    Log.exception(CentaurBoard.events_board_thread, e)
-                pass
-
-                try:
-                    # Sending 152 to the controller provides us with battery information
-                    # Do this every 30 seconds and fill in the globals
-                    if time.time() - batterylastchecked > 15:
-                        # Every 5 seconds check the battery details
-                        response = ""
-                        timeout = time.time() + 4
-                        while len(response) < 7 and time.time() < timeout:
-                            # Sending the board a packet starting with 152 gives battery info
-                            self.send_packet(bytearray([152]), b'')
-                            try:
-                                response = self.read_serial()
-                            except:
-                                pass
-                        if len(response) < 7:
-                            pass
-                        else:        
-                            if response[0] == 181:                            
-                                batterylastchecked = time.time()
-                                batterylevel = response[5] & 31
-                                vall = (response[5] >> 5) & 7                            
-                                if vall == 1 or vall == 2:
-                                    chargerconnected = 1
-                                else:
-                                    chargerconnected = 0
-                except Exception as e:
-                    print(e)
-                    Log.exception(CentaurBoard.events_board_thread, e)
-                pass
                 time.sleep(0.05)
-                if button_pressed != 0:
-                    self.time_limit = time.time() + timeout
-                   
-                    if self._key_callback:
-                        self._key_callback(button_pressed)
+
             else:
-                # If pauseEvents() hold timeout in the thread
                 self.time_limit = time.time() + 100000
-                self._events_paused = True
 
             if time.time() - loopstart > 30:
                 self.time_limit = time.time() + timeout
+
             time.sleep(0.05)
         else:
 
-            if self._events_running:
-
-                print('Timeout. Shutting down...')
-                #shutdown()
-
-
+            if self._events_enabled:
+                self.shutdown()
 
 
 def get():
     return CentaurBoard().initialize()
-
-"""
-FOOBAR.clear_serial()
-FOOBAR.clear_board_data()
-
-FOOBAR.print_board_state()
-
-FOOBAR.led(32)
-FOOBAR.led_flash()
-FOOBAR.led(33)
-FOOBAR.led_flash()
-FOOBAR.led_from_to(2,41)
-FOOBAR.led_array([1,2,3,4,5,22,23,24])
-
-FOOBAR.leds_off()
-
-ser = FOOBAR.serial()
-"""
-
-
-def shutdown():
-    """
-    update = centaur.UpdateSystem()
-    beep(SOUND_POWER_OFF)
-    package = '/tmp/dgtcentaurmods_armhf.deb'
-    if os.path.exists(package):
-        ledArray([0,1,2,3,4,5,6,7],6)
-        epaper.clearScreen()
-        update.updateInstall()
-        return
-    print('Normal shutdown')
-    epaper.clearScreen()
-    time.sleep(1)
-    ledFromTo(7,7)
-    epaper.writeText(3, "     Shutting")
-    epaper.writeText(4, "       down")
-    time.sleep(3)
-    epaper.stopEpaper()
-    os.system("sudo poweroff")
-    """
-
-
-
-
-
-#
-# Board response - functions related to get something from the board
-#
-
-"""
-def waitMove():
-    # Wait for a player to lift a piece and set it down somewhere different
-    lifted = -1
-    placed = -1
-    moves = []
-    while placed == -1:
-        ser.read(100000)
-        sendPacket(b'\x83', b'')
-        expect = buildPacket(b'\x85\x00\x06', b'')
-        resp = ser.read(10000)
-        resp = bytearray(resp)
-        if (bytearray(resp) != expect):
-            if (resp[0] == 133 and resp[1] == 0):
-                for x in range(0, len(resp) - 1):
-                    if (resp[x] == 64):
-                        # Calculate the square to 0(a1)-63(h8) so that
-                        # all functions match
-                        fieldHex = resp[x + 1]
-                        newsquare = _rotate_field_hex(fieldHex)
-                        lifted = newsquare
-                        print(lifted)
-                        moves.append((newsquare+1) * -1)
-                    if (resp[x] == 65):
-                        # Calculate the square to 0(a1)-63(h8) so that
-                        # all functions match
-                        fieldHex = resp[x + 1]
-                        newsquare = _rotate_field_hex(fieldHex)
-                        placed = newsquare
-                        moves.append(newsquare + 1)
-                        print(placed)
-        sendPacket(b'\x94', b'')
-        expect = buildPacket(b'\xb1\x00\x06', b'')
-        resp = ser.read(10000)
-        resp = bytearray(resp)
-    print(moves)
-    return moves
-
-def poll():
-    # We need to continue poll the board to get data from it
-    # Perhaps there's a packet length in here somewhere but
-    # I haven't noticed it yet, therefore we need to process
-    # the data as it comes
-    ser.read(100000)
-    sendPacket(b'\x83', b'')
-    expect = buildPacket(b'\x85\x00\x06', b'')
-    resp = ser.read(10000)
-    resp = bytearray(resp)
-    if (bytearray(resp) != expect):
-        if (resp[0] == 133 and resp[1] == 0):
-            for x in range(0, len(resp) - 1):
-                if (resp[x] == 64):
-                    print("PIECE LIFTED")
-                    # Calculate the square to 0(a1)-63(h8) so that
-                    # all functions match
-                    fieldHex = resp[x + 1]
-                    newsquare = _rotate_field_hex(fieldHex)
-                    print(newsquare)
-                if (resp[x] == 65):
-                    print("PIECE PLACED")
-                    # Calculate the square to 0(a1)-63(h8) so that
-                    # all functions match
-                    fieldHex = resp[x + 1]
-                    newsquare = _rotate_field_hex(fieldHex)
-                    print(newsquare)
-    sendPacket(b'\x94', b'')
-    expect = buildPacket(b'\xb1\x00\x06', b'')
-    resp = ser.read(10000)
-    resp = bytearray(resp)
-    if (resp != expect):
-        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a0501000000007d47"):
-            print("BACK BUTTON")
-        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a0510000000007d17"):
-            print("TICK BUTTON")
-        if (resp.hex()[:-2] == "b10011" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a0508000000007d3c"):
-            print("UP BUTTON")
-        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a05020000000061"):
-            print("DOWN BUTTON")
-        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a0540000000006d"):
-            print("HELP BUTTON")
-        if (resp.hex()[:-2] == "b10010" + "{:02x}".format(address_1) + "{:02x}".format(address_2) + "00140a0504000000002a"):
-            print("PLAY BUTTON")
-
-
-
-def getChargingState():
-    # Returns if the board is plugged into the charger or not
-    # 0 = not plugged in, 1 = plugged in, -1 = error in checking
-    resp = ""
-    timeout = time.time() + 5
-    while len(resp) < 7 and time.time() < timeout:
-        # Sending the board a packet starting with 152 gives battery info
-        sendPacket(bytearray([152]), b'')
-        try:
-            resp = ser.read(1000)
-        except:
-            pass
-        if len(resp) < 7:
-            pass
-        else:  
-            if resp[0] == 181:
-                print("connected state")
-                print(resp.hex())                
-                vall = (resp[5] >> 5) & 7
-                print(vall)
-                if vall == 1:
-                    return 1
-                else:
-                    return 0
-    return - 1
-
-def getBatteryLevel():
-    # Returns a number 0 - 20 representing battery level of the board
-    # 20 is fully charged. The board dies somewhere around a low of 1
-    resp = ""
-    timeout = time.time() + 5
-    while len(resp) < 7 and time.time() < timeout:
-        # Sending the board a packet starting with 152 gives battery info
-        sendPacket(bytearray([152]), b'')
-        try:
-            resp = ser.read(1000)
-        except:
-            pass
-    if len(resp) < 7:
-        return -1
-    else:        
-        if resp[0] == 181:
-            print(resp.hex())
-            vall = resp[5] & 31
-            return vall
-        else:
-            # fix for when battery returns as None on first attempt
-            return getBatteryLevel()
-
-#
-# Miscellaneous functions - do they belong in this file?
-#
-
-def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
-    try:
-        socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-        return True
-    except socket.error as ex:
-        print(ex)
-        return False
-
-
-
-
-
-
-# This section is the start of a new way of working with the board functions where those functions are
-# the board returning some kind of data
-import threading
-eventsthreadpointer = None
-eventsrunning = 1
-
-def temp():
-    '''
-    Get CPU temperature
-    '''
-    temp = os.popen("vcgencmd measure_temp | cut -d'=' -f2").read().strip()
-    return temp
-
-"""
-
-
-
-
-
-
-    
-
-
-
-
 
