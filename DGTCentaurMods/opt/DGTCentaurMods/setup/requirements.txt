@@ -31,6 +31,6 @@ Werkzeug==2.0.2
 wrapt==1.13.1
 zeroconf==0.36.8
 zipp==3.6.0
-py-flags
-Flask-SocketIO
-python-socketio
+py-flags=1.1.4
+Flask-SocketIO=5.3.5
+python-socketio=5.8.0
