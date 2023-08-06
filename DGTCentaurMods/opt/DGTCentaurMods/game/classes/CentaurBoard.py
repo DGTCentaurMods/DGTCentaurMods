@@ -23,7 +23,6 @@
 
 import os, time, threading, serial
 
-from DGTCentaurMods.board import centaur
 from DGTCentaurMods.game.classes import Log, CentaurScreen
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import Enums
@@ -209,9 +208,6 @@ class CentaurBoard(common.Singleton):
 
 
     def beep(self, beeptype):
-
-        if centaur.get_sound() == "off":
-            return
        
         if (beeptype == Enums.Sound.GENERAL):
             self.send_packet(b'\xb1\x00\x08',b'\x4c\x08')
