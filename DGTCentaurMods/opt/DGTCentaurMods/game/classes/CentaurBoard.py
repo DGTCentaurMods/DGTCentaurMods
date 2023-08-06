@@ -381,11 +381,13 @@ class CentaurBoard(common.Singleton):
 
     def shutdown(self):
 
+        SCREEN.loading_screen("Bye!")
+
         self.beep(Enums.Sound.POWER_OFF)
         
         self.led_from_to(7,7)
 
-        os.system("(sleep 5 && sudo poweroff)")
+        os.system("(sleep 1 && sudo poweroff)")
 
     def _read_fields(self, timeout):
         try:

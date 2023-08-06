@@ -73,6 +73,8 @@ class CentaurScreen(common.Singleton):
             self._api.Clear(0xff)
             time.sleep(2)
 
+            self.loading_screen("Welcome!")
+
             self.screen_thread_worker = threading.Thread(target=self.screen_thread, args=())
             self.screen_thread_worker.daemon = True
             self.screen_thread_worker.start()
@@ -166,6 +168,13 @@ class CentaurScreen(common.Singleton):
     def restore_screen(self):
 
         self._buffer = self._buffer_copy.copy()
+
+    def loading_screen(self, text=None):
+
+        logo = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg")
+        self._buffer.paste(logo,(0,ROW_HEIGHT))
+        if text:
+            self.write_text(10,text)
 
     def write_text(self, row, text, font=MAIN_FONT, centered=True, bordered=False):
 
@@ -306,63 +315,3 @@ class CentaurScreen(common.Singleton):
 
 def get():
     return CentaurScreen().initialize()
-
-class statusBar():
-    def __init__(self):
-        return
-
-    def drawBatteryIndicator():
-        batteryindicator = "battery1"
-        if board.batterylevel >= 6:
-            batteryindicator = "battery2"
-        if board.batterylevel >= 12:
-            batteryindicator = "battery3"
-        if board.batterylevel >= 18:
-            batteryindicator = "battery4"            
-        if board.chargerconnected > 0:
-            batteryindicator = "batteryc"
-            if board.batterylevel == 20:
-                batteryindicator = "batterycf"    
-        if board.batterylevel >= 0:
-            img = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/" + batteryindicator + ".bmp")
-            screen_buffer.paste(img,(98, 2))        
-            #drawImagePartial(13,0,img)  
-
-    def build(self):
-    # This currently onlt shows the time but we can prepare it as an Image to
-    # put it on top of the screen
-        self.clock = time.strftime("%H:%M")
-        self.bar = self.clock
-        #self.bar = self.clock+"      "+board.temp()
-        #self.bar = self.clock+"   " + str(board.chargerconnected) + "   " + str(board.batterylevel)            
-        return self.bar          
-
-    def display(self):
-        while self.is_running:
-            bar = self.build()
-            writeText(0,bar)
-            #drawBatteryIndicator()
-            time.sleep(30)
-
-    def print(self):
-    #Get the latest status bar if needed.
-        #if self.is_running:
-        bar = self.build()
-        writeText(0,bar)
-        #drawBatteryIndicator()
-        return
-
-    def init(self):
-        pass
-        #print("Starting status bar update thread")
-        #self.statusbar = threading.Thread(target=self.display, args=())
-        #self.statusbar.daemon = True
-        #self.statusbar.start()
-
-    def start(self):
-        self.is_running = True
-        self.init()
-
-    def stop(self):
-        print("Kill status bar thread")
-        self.is_running = False

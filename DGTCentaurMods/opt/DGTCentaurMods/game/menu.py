@@ -274,7 +274,6 @@ class Menu:
                             self._menu["current_value"] = value
 
                         else:
-                            SCREEN.clear_area()
                             self._socket.send_request({'execute':value})
 
         if key_index == Enums.Btn.BACK:
