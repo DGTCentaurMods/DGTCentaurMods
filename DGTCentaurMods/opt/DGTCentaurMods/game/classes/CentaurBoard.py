@@ -24,10 +24,12 @@
 import os, time, threading, serial
 
 from DGTCentaurMods.board import centaur
-from DGTCentaurMods.game.classes import Log
+from DGTCentaurMods.game.classes import Log, CentaurScreen
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import Enums
 
+
+SCREEN = CentaurScreen.get()
 
 def _rotate_field(index):
     R = (index // 8)
@@ -577,6 +579,10 @@ class CentaurBoard(common.Singleton):
                             self._power_connected = True
                         else:
                             self._power_connected = False
+
+                        # TODO: implement battery change event
+                        SCREEN.set_battery_value(-1 if self._power_connected else self._battery_level)
+
         except Exception as e:
             print(e)
             Log.exception(CentaurBoard._read_battery, e)

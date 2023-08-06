@@ -56,6 +56,8 @@ class CentaurScreen(common.Singleton):
     _screen_reversed = False
     _screen_enabled = True
 
+    _battery_value = -1 # -1 means "charging"
+
     def initialize(self):
 
         if self._api == None:
@@ -78,6 +80,9 @@ class CentaurScreen(common.Singleton):
             print("Centaur screen initialized.")
 
         return self
+    
+    def set_battery_value(self, value):
+        self._battery_value = value
 
     def screen_thread(self):
 
@@ -91,7 +96,28 @@ class CentaurScreen(common.Singleton):
             if self._screen_enabled:
 
                 clock = time.strftime("%H:%M")
-                self.write_text(0, clock)
+                self.write_text(0, clock, centered=False)
+
+                bi = "batteryc"
+
+                if self._battery_value >= 0:
+                    bi = "battery1"
+
+                if self._battery_value >= 6:
+                    bi = "battery2"
+                
+                if self._battery_value >= 12:
+                    bi = "battery3"
+
+                if self._battery_value >= 18:
+                    bi = "battery4"
+
+                if self._battery_value == 20:
+                    bi = "batterycf"
+
+                img = Image.open(consts.OPT_DIRECTORY + f"/resources/{bi}.bmp")
+                buffer_copy.paste(img,(98, 2)) 
+
 
                 buffer_bytes = buffer_copy.tobytes()
 
@@ -141,7 +167,7 @@ class CentaurScreen(common.Singleton):
 
         self._buffer = self._buffer_copy.copy()
 
-    def write_text(self, row, text, font=MAIN_FONT, align_center=True, border=False):
+    def write_text(self, row, text, font=MAIN_FONT, centered=True, bordered=False):
 
         buffer_copy = self._buffer.copy()
         image = Image.new(B_W_MODE, (SCREEN_WIDTH, ROW_HEIGHT), 255)
@@ -150,10 +176,10 @@ class CentaurScreen(common.Singleton):
 
         _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
 
-        if border:
+        if bordered:
             draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+2)],radius=8,fill="white",outline='black', width=1)
 
-        offset_x = int((SCREEN_WIDTH-text_width)/2 if align_center else 0)
+        offset_x = int((SCREEN_WIDTH-text_width)/2 if centered else 0)
         draw.text((offset_x, 0), text=text, font=font, fill=0)
 
         buffer_copy.paste(image, box=(0, int(row * ROW_HEIGHT)))
@@ -254,7 +280,7 @@ class CentaurScreen(common.Singleton):
             text = "evaluation disabled"
 
         if text:
-            self.write_text(row, text, font=font, align_center=True, border=True)
+            self.write_text(row, text, font=font, centered=True, bordered=True)
             return
         
         draw = ImageDraw.Draw(self._buffer)

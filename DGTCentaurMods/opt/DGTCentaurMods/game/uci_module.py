@@ -134,7 +134,7 @@ def main(color, engine_name, engine_parameters):
 
             current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
 
-            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True, align_center=True)
+            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True, centered=True)
 
             gfe.send_to_client_boards({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"

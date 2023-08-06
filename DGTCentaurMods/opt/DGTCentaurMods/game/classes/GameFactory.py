@@ -850,16 +850,16 @@ class Engine():
             # White move
             if current_turn == chess.WHITE:
                 if (san == None):
-                    SCREEN.write_text(row, ' '*20, align_center=False)
+                    SCREEN.write_text(row, ' '*20, centered=False)
                 else:
                     current_row_move = f"{current_row_index}. "+san
-                    SCREEN.write_text(row, current_row_move, align_center=False)
+                    SCREEN.write_text(row, current_row_move, centered=False)
 
             # Black move
             else:
                 if san != None:
                     current_row_move = current_row_move + ".."+san
-                    SCREEN.write_text(row, current_row_move, align_center=False)
+                    SCREEN.write_text(row, current_row_move, centered=False)
 
                 row = row + 1
                 current_row_index = current_row_index + 1

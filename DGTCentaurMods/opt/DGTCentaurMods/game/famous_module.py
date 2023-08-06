@@ -154,16 +154,16 @@ def main(pgn):
         if args["event"] == Enums.Event.NEW_GAME:
             current_index = 0
 
-            SCREEN.write_text(9.5,game.headers["Event"], font=fonts.FONT_Typewriter_small, border=True)
-            SCREEN.write_text(11,game.headers["White"], font=fonts.FONT_Typewriter_small, border=True)
-            SCREEN.write_text(12,game.headers["Black"], font=fonts.FONT_Typewriter_small, border=True, align_center=True)
-            SCREEN.write_text(13,"You play "+("white" if human_color else "black")+"!", font=fonts.FONT_Typewriter_small, border=True)
+            SCREEN.write_text(9.5,game.headers["Event"], font=fonts.FONT_Typewriter_small, bordered=True)
+            SCREEN.write_text(11,game.headers["White"], font=fonts.FONT_Typewriter_small, bordered=True)
+            SCREEN.write_text(12,game.headers["Black"], font=fonts.FONT_Typewriter_small, bordered=True, centered=True)
+            SCREEN.write_text(13,"You play "+("white" if human_color else "black")+"!", font=fonts.FONT_Typewriter_small, bordered=True)
             
         if args["event"] == Enums.Event.PLAY:
 
             current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
 
-            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, border=True)
+            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True)
 
             gfe.send_to_client_boards({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
