@@ -502,7 +502,7 @@ class CentaurBoard(common.Singleton):
 
                             Log.info("Standby mode invoked...")
 
-                            #epaper.standbyScreen(True)
+                            SocketClient.get().send_request({"standby":True})
 
                             self._stand_by = True
 
@@ -515,6 +515,8 @@ class CentaurBoard(common.Singleton):
 
                             Log.info("Standby mode cancelled...")
                             self.clear_serial()
+
+                            SocketClient.get().send_request({"standby":False})
                             
                             if self._stand_by_thread:
                                 self._stand_by_thread.cancel()
@@ -524,7 +526,6 @@ class CentaurBoard(common.Singleton):
                             break
 
                 else:
-                    self.beep(Enums.Sound.POWER_OFF)
                     self.shutdown()
 
             if button != Enums.Btn.NONE:
@@ -537,6 +538,10 @@ class CentaurBoard(common.Singleton):
             print(e)
             Log.exception(CentaurBoard._read_keys, e)
             pass
+
+    def shutdown(self):
+        self.beep(Enums.Sound.POWER_OFF)
+        SocketClient.get().send_request({"sys":"shutdown"})
 
     def _read_battery(self, timeout):
         try:

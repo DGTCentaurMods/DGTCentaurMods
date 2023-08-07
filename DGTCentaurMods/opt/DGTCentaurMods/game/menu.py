@@ -145,6 +145,12 @@ class Menu:
             
                 #response = {}
 
+                if "standby" in data:
+                    if data["standby"]:
+                        SCREEN.loading_screen("Paused!")
+                    else:
+                        self.draw_menu(True)
+
                 if "battery" in  data:
                     SCREEN.set_battery_value(data["battery"])
 
@@ -158,12 +164,13 @@ class Menu:
                     #socket.send_message(response)
 
                 if "sys" in data:
-
-                    # The system actions are executed on server side
-                    # We only handle the UI here (as the browser does)
+                   
                     command = data["sys"]
 
                     Log.debug(command)
+
+                    # The system actions are executed on server side
+                    # We only handle the UI here (as the browser does)
 
                     if command=="reboot":
                         SCREEN.loading_screen("Rebooting!")
