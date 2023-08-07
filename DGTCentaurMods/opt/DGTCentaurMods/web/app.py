@@ -28,7 +28,7 @@ from DGTCentaurMods.game.classes import DAL
 
 import os, time, logging
 
-logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
+#logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
@@ -49,10 +49,6 @@ def on_connect():
 	# We send back the stored FEN
     socketio.emit('message', {'fen': common.get_Centaur_FEN()})
 
-	# We ask the app to send the current PGN and FEN to all connected clients
-	# DONE FROM THE CLIENT
-    # socketio.emit('request', {'fen':True, 'pgn': True})
-    
 @socketio.on('disconnect')
 def on_disconnect():
     print('Client disconnected!')
@@ -73,18 +69,22 @@ def on_request(message):
 		response["uuid"] = message["uuid"]
 
 	# System request
-	if "sys_action" in message:
-		action = message["sys_action"]
+	if "sys" in message:
+		action = message["sys"]
 
 		if action == "shutdown":
+			# We relay the message to the app
+			socketio.emit('request', message)
 			os.system("pkill centaur")
 			time.sleep(.5)
 			os.system("sudo poweroff")
 
 		if action == "reboot":
+			# We relay the message to the app
+			socketio.emit('request', message)
 			os.system("pkill centaur")
 			time.sleep(.5)
-			os.system("sudo shutdown -r")
+			os.system("sudo reboot")
 
 		if action == "restart_service":
 			os.system("pkill centaur")

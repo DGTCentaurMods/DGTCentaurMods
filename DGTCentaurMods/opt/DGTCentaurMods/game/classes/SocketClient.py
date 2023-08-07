@@ -34,16 +34,15 @@ class _SocketClient(common.Singleton):
     def initialize(self, on_socket_request):
 
         try:
-            self.__callbacks_queue.append(self._on_socket_request)
-            self._on_socket_request = on_socket_request
+            if on_socket_request:
+                self.__callbacks_queue.append(self._on_socket_request)
+                self._on_socket_request = on_socket_request
 
             # If the one socket already exists, we use the same one
             if self.__socket == None:
 
                 sio = socketio.Client()
                 sio.connect('http://localhost')
-
-                Log.debug(f"{str(_SocketClient.__init__)}[{sio.get_sid()}]")
 
                 @sio.on('request')
                 def request(data):
@@ -87,7 +86,6 @@ class _SocketClient(common.Singleton):
                 self._on_socket_request = self.__callbacks_queue.pop()
 
                 if self._on_socket_request == None:
-                    Log.debug(f"{str(_SocketClient.disconnect)}[{self.__socket.get_sid()}]")
                     self.__socket.disconnect()
 
                 else:
@@ -100,5 +98,5 @@ class _SocketClient(common.Singleton):
             pass
 
 
-def get(on_socket_request):
+def get(on_socket_request=None):
     return _SocketClient().initialize(on_socket_request)

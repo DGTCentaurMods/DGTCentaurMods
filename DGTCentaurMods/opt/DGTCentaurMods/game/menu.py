@@ -145,6 +145,9 @@ class Menu:
             
                 #response = {}
 
+                if "battery" in  data:
+                    SCREEN.set_battery_value(data["battery"])
+
                 if "web_menu" in data:
 
                     self.initialize_web_menu()
@@ -153,6 +156,24 @@ class Menu:
                     # Browser is connected (server ping)
                     self._browser_connected = True
                     #socket.send_message(response)
+
+                if "sys" in data:
+
+                    # The system actions are executed on server side
+                    # We only handle the UI here (as the browser does)
+                    command = data["sys"]
+
+                    Log.debug(command)
+
+                    if command=="reboot":
+                        SCREEN.loading_screen("Rebooting!")
+                    
+                    if command=="shutdown":
+                        SCREEN.loading_screen("Bye!")
+
+                    if command=="restart_service":
+                        SCREEN.loading_screen("Reloading!")
+                    
 
                 if "execute" in data:
 
@@ -243,15 +264,15 @@ class Menu:
                     value = node[index]["action"]["value"]
                     item_type = node[index]["action"]["type"]
 
-                    if item_type == 'socket_sys':
-                         self._socket.send_request({'sys_action':value})
-
                     if item_type == 'color':
 
                         value = self._menu["current_value"].replace("{value}", value)
 
-                        SCREEN.clear_area()
                         self._socket.send_request({'execute':value})
+
+                    if item_type == 'socket_sys':
+                        # The server will excute the command
+                        self._socket.send_request({'sys':value})
 
                     if item_type == 'socket_execute':
 
@@ -349,7 +370,7 @@ class Menu:
 
     def start_child_module(self):
 
-        SCREEN.clear_area()
+        CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
 
         if self._socket != None:
             self._socket.send_message({ "disable_menu":"play", "loading_screen":True })
@@ -357,7 +378,7 @@ class Menu:
     def end_child_module(self):
 
         if self._socket != None:
-            self._socket.send_message({ "enable_menu":"play", "popup":"The current game has been paused!" })
+            self._socket.send_message({ "web_menu":True, "enable_menu":"play" })
 
         self.home_screen()
 

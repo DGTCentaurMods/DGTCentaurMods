@@ -366,7 +366,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 											const message = item.action.message
 
 											item.action = () => {
-												SOCKET.emit('request', {'sys_action':value})
+												SOCKET.emit('request', {'sys':value})
 												if (message) popupMessage(message)
 											}
 										},

@@ -23,12 +23,10 @@
 
 import os, time, threading, serial
 
-from DGTCentaurMods.game.classes import Log, CentaurScreen
+from DGTCentaurMods.game.classes import Log, SocketClient
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import Enums
 
-
-SCREEN = CentaurScreen.get()
 
 def _rotate_field(index):
     R = (index // 8)
@@ -65,7 +63,9 @@ class CentaurBoard(common.Singleton):
 
     _power_connected = False
 
-    _last_battery_check = time.time()
+    _stand_by_thread = None
+
+    _last_battery_check = time.time()-18 # Little starting delay before first check
 
 
     def initialize(self):
@@ -375,16 +375,6 @@ class CentaurBoard(common.Singleton):
         self._events_enabled = True
         self.time_limit = time.time() + self._events_timeout
 
-    def shutdown(self):
-
-        SCREEN.loading_screen("Bye!")
-
-        self.beep(Enums.Sound.POWER_OFF)
-        
-        self.led_from_to(7,7)
-
-        os.system("(sleep 1 && sudo poweroff)")
-
     def _read_fields(self, timeout):
         try:
             expected = bytearray(b'\x85\x00\x06'
@@ -526,9 +516,8 @@ class CentaurBoard(common.Singleton):
                             Log.info("Standby mode cancelled...")
                             self.clear_serial()
                             
-                            #epaper.standbyScreen(False)
-
-                            self._stand_by_thread.cancel()
+                            if self._stand_by_thread:
+                                self._stand_by_thread.cancel()
 
                             self._stand_by = False
                             self.time_limit = time.time() + timeout
@@ -554,7 +543,7 @@ class CentaurBoard(common.Singleton):
 
             # Every 30 seconds check the battery details
             if time.time() - self._last_battery_check > 30:
-                
+
                 response = b''
                 timeout = time.time() + 4
 
@@ -570,6 +559,7 @@ class CentaurBoard(common.Singleton):
                     pass
                 else:
                     if response[0] == 181:
+
                         self._last_battery_check = time.time()
                         self._battery_level = response[5] & 31
                         vall = (response[5] >> 5) & 7
@@ -578,9 +568,8 @@ class CentaurBoard(common.Singleton):
                         else:
                             self._power_connected = False
 
-                        # TODO: implement battery change event
-                        SCREEN.set_battery_value(-1 if self._power_connected else self._battery_level)
-
+                        SocketClient.get().send_request({"battery":-1 if self._power_connected else self._battery_level})
+                       
         except Exception as e:
             print(e)
             Log.exception(CentaurBoard._read_battery, e)

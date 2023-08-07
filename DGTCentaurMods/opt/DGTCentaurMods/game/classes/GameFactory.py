@@ -535,6 +535,8 @@ class Engine():
         # eventCallback with game events and
         # moveCallback with the actual moves made
 
+        SCREEN.clear_area()
+
         CENTAUR_BOARD.leds_off()
         CENTAUR_BOARD.subscribe_events(self.__key_callback, self.__field_callback)
 

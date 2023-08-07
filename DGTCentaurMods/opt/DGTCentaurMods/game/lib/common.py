@@ -21,7 +21,11 @@
 
 from DGTCentaurMods.game.consts import consts, Enums
 
+from threading import Thread
+
 import os, configparser
+import subprocess
+import time
 
 class Singleton:
     _self = None
@@ -112,6 +116,14 @@ def get_last_uci_command():
         pass
     
     return None
+
+def delayed_command(command, delay):
+    def _start_delayed(args, delay):
+        time.sleep(delay)
+        subprocess.run(args)
+
+    t = Thread(target=_start_delayed, kwargs={'args': [{command}], 'delay': delay})
+    t.start()
     
 class Converters:
 
