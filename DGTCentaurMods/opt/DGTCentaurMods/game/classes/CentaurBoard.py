@@ -65,9 +65,9 @@ class CentaurBoard(common.Singleton):
 
     _stand_by_thread = None
 
-    _last_battery_check = time.time()-18 # Little starting delay before first check
+    _socket = None
 
-    _socket = SocketClient.get()
+    _last_battery_check = time.time()-18 # Little starting delay before first check
 
     def initialize(self):
 
@@ -125,6 +125,8 @@ class CentaurBoard(common.Singleton):
             time.sleep(2)
 
             self.clear_serial()
+
+            self._socket = SocketClient.get()
 
             self._events_worker = threading.Thread(target=self.events_board_thread)
             self._events_worker.daemon = True
@@ -504,7 +506,8 @@ class CentaurBoard(common.Singleton):
                             Log.info("Standby mode invoked...")
 
                             self.beep(Enums.Sound.POWER_OFF)
-                            self._socket.send_request({"standby":True})
+                            if self._socket:
+                                self._socket.send_request({"standby":True})
 
                             self._stand_by = True
 
@@ -519,8 +522,8 @@ class CentaurBoard(common.Singleton):
 
                             Log.info("Standby mode cancelled...")
                             self.clear_serial()
-
-                            self._socket.send_request({"standby":False})
+                            if self._socket:
+                                self._socket.send_request({"standby":False})
                             
                             if self._stand_by_thread:
                                 self._stand_by_thread.cancel()
@@ -544,8 +547,10 @@ class CentaurBoard(common.Singleton):
             pass
 
     def shutdown(self):
-        self.beep(Enums.Sound.POWER_OFF)
-        self._socket.send_request({"sys":"shutdown"})
+        
+        if self._socket:
+            self.beep(Enums.Sound.POWER_OFF)
+            self._socket.send_request({"sys":"shutdown"})
 
     def _read_battery(self, timeout):
         try:
