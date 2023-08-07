@@ -696,14 +696,27 @@ class Engine():
 
                 if "pgn" in data:
                     response["pgn"] = self.get_current_pgn()
+                    socket.send_message(response)
 
                 if "fen" in data:
                     response["fen"] = self._chessboard.fen()
+                    socket.send_message(response)
 
                 if "uci_move" in data:
                     response["uci_move"] = self.get_last_uci_move()
+                    socket.send_message(response)
 
-                socket.send_message(response)
+
+                if "standby" in data:
+                    if data["standby"]:
+                        SCREEN.loading_screen("Paused!")
+                    else:
+                        self.display_partial_PGN()
+                        self.display_board()
+                        self.synchronize_client_boards({ 
+                            "clear_board_graphic_moves":True,
+                            "uci_move":self.get_last_uci_move(),
+                        })
 
             except Exception as e:
                 Log.exception(Engine._on_socket_request, e)
