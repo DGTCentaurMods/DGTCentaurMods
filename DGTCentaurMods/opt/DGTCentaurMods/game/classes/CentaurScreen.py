@@ -73,9 +73,9 @@ class CentaurScreen(common.Singleton):
             self._api.Clear(0xff)
             time.sleep(2)
 
-            self.loading_screen("Welcome!")
+            self.home_screen("Welcome!")
 
-            self.screen_thread_worker = threading.Thread(target=self.screen_thread, args=())
+            self.screen_thread_worker = threading.Thread(target=self._screen_thread, args=())
             self.screen_thread_worker.daemon = True
             self.screen_thread_worker.start()
 
@@ -86,7 +86,7 @@ class CentaurScreen(common.Singleton):
     def set_battery_value(self, value):
         self._battery_value = value
 
-    def screen_thread(self):
+    def _screen_thread(self):
 
         self._api.display(self._api.getbuffer(self._buffer))
 
@@ -100,26 +100,14 @@ class CentaurScreen(common.Singleton):
                 clock = time.strftime("%H:%M")
                 self.write_text(0, clock, centered=False)
 
+                # Connected battery
                 bi = "batteryc"
 
                 if self._battery_value >= 0:
-                    bi = "battery1"
-
-                if self._battery_value >= 6:
-                    bi = "battery2"
-                
-                if self._battery_value >= 12:
-                    bi = "battery3"
-
-                if self._battery_value >= 18:
-                    bi = "battery4"
-
-                if self._battery_value == 20:
-                    bi = "batterycf"
+                    bi = "battery" + str(int(self._battery_value / 5))
 
                 img = Image.open(consts.OPT_DIRECTORY + f"/resources/{bi}.bmp")
                 buffer_copy.paste(img,(98, 2)) 
-
 
                 buffer_bytes = buffer_copy.tobytes()
 
@@ -138,28 +126,11 @@ class CentaurScreen(common.Singleton):
 
     def pause(self):
         self._screen_enabled = False
+        #self._api.sleep()
 
     def unpause(self):
         self._screen_enabled = True
-
-    def stop(self):
-
-        image = Image.new(B_W_MODE, (SCREEN_WIDTH, SCREEN_HEIGHT), 255)
-
-        image.paste(MAIN_SCREEN_IMAGE,(0,0))
-
-        self._buffer = image.copy()
-
-        time.sleep(3)
-        self._thread_is_alive = False
-
-        self.screen_thread.join()
-
-        time.sleep(2)
-        self._api.sleep()
-
-    def kill(self):
-        self._thread_is_alive = False
+        #self._api.TurnOnDisplay()
 
     def save_screen(self):
         
@@ -169,7 +140,7 @@ class CentaurScreen(common.Singleton):
 
         self._buffer = self._buffer_copy.copy()
 
-    def loading_screen(self, text=None):
+    def home_screen(self, text=None):
 
         logo = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg")
         self._buffer.paste(logo,(0,ROW_HEIGHT))

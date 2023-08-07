@@ -51,9 +51,11 @@ class Engine():
 
     _socket = None
 
-    show_evaluation = True
+    _show_evaluation = True
 
     def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
+
+        SCREEN.clear_area()
 
         SCREEN.write_text(3,"Please place")
         SCREEN.write_text(4,"pieces in")
@@ -111,7 +113,7 @@ class Engine():
 
             # Default tick key
             if key_index == Enums.Btn.TICK:
-                self.show_evaluation = not self.show_evaluation
+                self._show_evaluation = not self._show_evaluation
 
                 self.update_evaluation()
 
@@ -287,7 +289,7 @@ class Engine():
 
                         self.display_partial_PGN()
                         self.display_board()
-                        self.synchronize_client_boards({ 
+                        self.update_web_ui({ 
                             "clear_board_graphic_moves":True,
                             "uci_undo_move":previous_uci_move[2:4]+previous_uci_move[:2],
                             "uci_move":self.get_last_uci_move(),
@@ -376,7 +378,7 @@ class Engine():
                                         self.update_Centaur_FEN()
                                         self.display_partial_PGN()
                                         self.display_board()
-                                        self.synchronize_client_boards({ 
+                                        self.update_web_ui({ 
                                             "clear_board_graphic_moves":True,
                                             "uci_move":uci_move,
                                             "san_move":san_move,
@@ -488,7 +490,7 @@ class Engine():
 
                     self._new_evaluation_requested = False
 
-                    if self.show_evaluation:
+                    if self._show_evaluation:
 
                             result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
@@ -535,8 +537,6 @@ class Engine():
         # eventCallback with game events and
         # moveCallback with the actual moves made
 
-        SCREEN.clear_area()
-
         CENTAUR_BOARD.leds_off()
         CENTAUR_BOARD.subscribe_events(self.__key_callback, self.__field_callback)
 
@@ -579,24 +579,29 @@ class Engine():
                                     self._san_move_list.append(san_move)
                             
                             del uci_moves_history
+
+                            if self._chessboard.is_game_over():
+                                self._need_starting_position_check = True
+                                Log.info("LAST GAME WAS FINISHED!")
                             
-                            CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+                            else:
+                                CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
 
-                            self.update_Centaur_FEN()
-                            self.display_board()
-                            self.display_partial_PGN()
+                                self.update_Centaur_FEN()
+                                self.display_board()
+                                self.display_partial_PGN()
 
-                            self.synchronize_client_boards({ 
-                                "clear_board_graphic_moves":True,
-                                "uci_move":last_uci_move })
+                                self.update_web_ui({ 
+                                    "clear_board_graphic_moves":True,
+                                    "uci_move":last_uci_move })
 
-                            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
+                                
+                                self.update_evaluation()
+
+                                self._check_last_move_outcome_and_switch()
                             
-                            self.update_evaluation()
-
-                            self._check_last_move_outcome_and_switch()
-                        
-                            self._initialized = True
+                                self._initialized = True
 
                         except Exception as e:
                             Log.exception(Engine._game_thread_instance_worker, e)
@@ -635,7 +640,7 @@ class Engine():
                                 self.update_Centaur_FEN()
                                 self.display_board()
                                 self.display_partial_PGN()
-                                self.synchronize_client_boards({ 
+                                self.update_web_ui({ 
                                     "clear_board_graphic_moves":True
                                 })
 
@@ -709,11 +714,11 @@ class Engine():
 
                 if "standby" in data:
                     if data["standby"]:
-                        SCREEN.loading_screen("Paused!")
+                        SCREEN.home_screen("Game paused!")
                     else:
                         self.display_partial_PGN()
                         self.display_board()
-                        self.synchronize_client_boards({ 
+                        self.update_web_ui({ 
                             "clear_board_graphic_moves":True,
                             "uci_move":self.get_last_uci_move(),
                         })
@@ -795,7 +800,7 @@ class Engine():
         if self._socket:
             self._socket.send_message(message)
 
-    def synchronize_client_boards(self, args={}):
+    def update_web_ui(self, args={}):
         # We send the new FEN to all connected clients
         if self._socket:
 
@@ -882,39 +887,6 @@ class Engine():
             # We switch the color
             current_turn = not current_turn
 
-    """""
-    def resignGame(sideresigning):
-        # Take care of updating the data for a resigned game and callback to the program with the
-        # winner. sideresigning = 1 for white, 2 for black
-        resultstr = ""
-        if sideresigning == 1:
-            resultstr = "0-1"
-        else:
-            resultstr = "1-0"
-        tg = session.query(models.Game).filter(models.Game.id == db_game_id).first()
-        tg.result = resultstr
-        session.flush()
-        session.commit()
-        event_callback_function("Termination.RESIGN")
-        
-    def getResult():
-        # Looks up the result of the last game and returns it
-        gamedata = session.execute(
-            select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round,
-            models.Game.white, models.Game.black, models.Game.result, models.Game.id).
-            order_by(models.Game.id.desc())
-        ).first()
-        return str(gamedata["result"])
-
-    def drawGame():
-        # Take care of updating the data for a drawn game
-        tg = session.query(models.Game).filter(models.Game.id == db_game_id).first()
-        tg.result = "1/2-1/2"
-        session.flush()
-        session.commit()
-        event_callback_function("Termination.DRAW")
-    """""
-
     def get_board(self):
         return self._chessboard
 
@@ -956,47 +928,3 @@ class Engine():
  
         except Exception as e:
             Log.exception(Engine.set_computer_move, e)
-
-"""""
-def clockThread():
-    # This thread just decrements the clock and updates the epaper
-    global whitetime
-    global blacktime
-    global current_turn
-    global kill
-    global chessboard
-    while kill == 0:
-        time.sleep(2) # epaper refresh rate means we can only have an accuracy of around 2 seconds :(
-        if whitetime > 0 and current_turn == 1 and chessboard.fen() != chess.STARTING_FEN:
-            whitetime = whitetime - 2
-        if blacktime > 0 and current_turn == 0:
-            blacktime = blacktime - 2
-        wmin = whitetime // 60
-        wsec = whitetime % 60
-        bmin = blacktime // 60
-        bsec = blacktime % 60
-        timestr = "{:02d}".format(wmin) + ":" + "{:02d}".format(wsec) + "       " + "{:02d}".format(
-            bmin) + ":" + "{:02d}".format(bsec)
-        epaper.writeText(13, timestr)
-
-whitetime = 0
-blacktime = 0
-def setClock(white,black):
-    # Set the clock
-    global whitetime
-    global blacktime
-    whitetime = white
-    blacktime = black
-
-def startClock():
-    # Start the clock. It writes to line 13
-    wmin = whitetime // 60
-    wsec = whitetime % 60
-    bmin = blacktime // 60
-    bsec = blacktime % 60
-    timestr = "{:02d}".format(wmin) + ":" + "{:02d}".format(wsec) + "       " + "{:02d}".format(bmin) + ":" + "{:02d}".format(bsec)
-    epaper.writeText(13,timestr)
-    clockthread = threading.Thread(target=clockThread, args=())
-    clockthread.daemon = True
-    clockthread.start()
-"""""

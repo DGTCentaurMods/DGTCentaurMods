@@ -47,8 +47,6 @@ class _DAL(common.Singleton):
 
     def __read_current_game_id(self):
 
-        self._inserted_moves = []
-
         try:
             if self.__read_only:
                 self._db_game_id = _DAL.FAKE_GAME_ID
@@ -68,8 +66,6 @@ class _DAL(common.Singleton):
 
         try:
 
-            self._inserted_moves = []
-
             if self.__read_only:
                 return[]
 
@@ -79,19 +75,7 @@ class _DAL(common.Singleton):
                 result = session.execute(select(models.GameMove.move).where(
                     models.GameMove.gameid == self._db_game_id).order_by(models.GameMove.id))
 
-                result = result.scalars().all()
-
-                #Log.debug(f"read_uci_moves_history result={result}")
-
-                for uci_move in result:
-                    self._inserted_moves.append(
-                        models.GameMove(
-                            id=_DAL.FAKE_GAME_MOVE_ID,
-                            gameid=self._db_game_id,
-                            move=uci_move
-                        ))
-
-                return result
+                return result.scalars().all()
 
         except Exception as e:
             Log.exception(_DAL.read_uci_moves_history, e)
@@ -101,8 +85,6 @@ class _DAL(common.Singleton):
             with Session(bind=models.engine) as session:
 
                 session.execute(text("delete from gamemove where id in (select id from gamemove group by gameid having count(gameid)<2)"))
-                session.commit()
-                
                 session.execute(text("delete from game where id in (select g.id from game g left join gamemove gm on g.id=gm.gameid group by g.id having count(g.id)<2)"))
                 session.commit()
 
@@ -164,19 +146,16 @@ class _DAL(common.Singleton):
 
     def delete_last_game_move(self):
 
-        last_move = self.read_last_game_move()
-
         if self.__read_only:
-            self._inserted_moves.pop()
             return
 
         try:
+            last_move = self.read_last_game_move()
+
             with Session(bind=models.engine) as session:
                 stmt = delete(models.GameMove).where(models.GameMove.id == last_move.id)
                 session.execute(stmt)
                 session.commit()
-
-                self._inserted_moves.pop()
 
         except Exception as e:
             Log.exception(_DAL.delete_last_game_move, e)
@@ -184,13 +163,6 @@ class _DAL(common.Singleton):
     def insert_new_game_move(self, uci_move, fen):
 
         if self.__read_only:
-
-            self._inserted_moves.append(
-                models.GameMove(
-                    id=_DAL.FAKE_GAME_MOVE_ID,
-                    gameid=_DAL.FAKE_GAME_ID,
-                    move=uci_move
-                ))
 
             return True
 
@@ -204,13 +176,6 @@ class _DAL(common.Singleton):
                         
                 session.add(game_move)
                 session.commit()
-
-                self._inserted_moves.append(
-                    models.GameMove(
-                        id=_DAL.FAKE_GAME_MOVE_ID,
-                        gameid=self._db_game_id,
-                        move=uci_move
-                    ))
 
         # Try 5 times
         for _ in range(0, 5):
@@ -313,8 +278,7 @@ class _DAL(common.Singleton):
 
             if self.__read_only:
 
-                # We return a fake gamemove in case of readonly mode
-                return self._inserted_moves[-1]
+                return None
 
             with Session(bind=models.engine) as session:
                 return session.execute(

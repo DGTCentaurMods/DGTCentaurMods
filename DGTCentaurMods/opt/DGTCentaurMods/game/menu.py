@@ -32,47 +32,58 @@ import importlib, shlex
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
 
+CURRENT_INDEX = "current_index"
+CURRENT_NODE = "current_node"
+CURRENT_VALUE = "current_value"
+NODE_INDEXES = "node_indexes"
+ITEMS = "items"
+NODES = "nodes"
+ACTION = "action"
+LABEL = "label"
+VALUE = "value"
+TYPE = "type"
+
 # Menu items
 # Proto version, shared between web & ePaper
 MENU_ITEMS = [
 
     {   "id":"play", 
-        "label":"Play", 
-        "items": [
-            {"label": "Resume last game", "short_label": "Resume",
-             "action": { "type": "socket_execute", "value": "uci_resume.py"} },
-            {"label": "Play 1 vs 1", 
-             "action":{ "type": "socket_execute", "value": "1vs1_module.py"} },
+        LABEL:"Play", 
+        ITEMS: [
+            {LABEL: "Resume last game", "short_label": "Resume",
+             ACTION: { TYPE: "socket_execute", VALUE: "uci_resume.py"} },
+            {LABEL: "Play 1 vs 1", 
+             ACTION:{ TYPE: "socket_execute", VALUE: "1vs1_module.py"} },
         ],
         "disabled": True }, 
     
-    { "label":"Links", "only_web":True, "items": [
-            {"label": "Open Lichess position analysis", 
-             "action" :{ "type": "js", "value": '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
-            {"label": "Open Lichess PGN import page", 
-             "action":{ "type": "js", "value": '() => window.open("https://lichess.org/paste", "_blank")' }},
-            {"label": "View current PGN", 
-             "action":{ "type": "js", "value": '() => me.viewCurrentPGN()' }},
+    { LABEL:"Links", "only_web":True, ITEMS: [
+            {LABEL: "Open Lichess position analysis", 
+             ACTION :{ TYPE: "js", VALUE: '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
+            {LABEL: "Open Lichess PGN import page", 
+             ACTION:{ TYPE: "js", VALUE: '() => window.open("https://lichess.org/paste", "_blank")' }},
+            {LABEL: "View current PGN", 
+             ACTION:{ TYPE: "js", VALUE: '() => me.viewCurrentPGN()' }},
         ],
         "disabled": False }, 
     
-    { "label":"Display settings", "only_web":True, "action":{"type": "js_variable", "value": "displaySettings"}, "disabled": False }, 
+    { LABEL:"Display settings", "only_web":True, ACTION:{TYPE: "js_variable", VALUE: "displaySettings"}, "disabled": False }, 
     
-    { "label":"Previous games", "only_web":True, "items": [], "action":{ "type": "socket_data", "value": "previous_games"}, "disabled": False }, 
+    { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"}, "disabled": False }, 
     
-    { "label":"System", "items": [
-            { "label": "Power off board", "short_label": "Power off",
-              "action":{ "type": "socket_sys", "message": "A shutdown request has been sent to the board!", "value": "shutdown"}
+    { LABEL:"System", ITEMS: [
+            { LABEL: "Power off board", "short_label": "Power off",
+              ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
             },
-            { "label": "Reboot board", "short_label": "Reboot",
-              "action":{ "type": "socket_sys", "message": "A reboot request has been sent to the board!", "value": "reboot"}
+            { LABEL: "Reboot board", "short_label": "Reboot",
+              ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
-            { "label": "Restart service", "only_web":True,
-              "action":{ "type": "socket_sys", "message": "A restart request has been sent to the board!", "value": "restart_service"}
+            { LABEL: "Restart service", "only_web":True,
+              ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
             },
-            { "type": "divider", "only_web":True },
-            { "label": "Last log events", "only_web":True,
-              "action":{ "type": "socket_sys", "message": None, "value": "log_events"}
+            { TYPE: "divider", "only_web":True },
+            { LABEL: "Last log events", "only_web":True,
+              ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
         ],
         "disabled": False }
@@ -95,7 +106,7 @@ class Menu:
 
         # TODO to be optimized...
 
-        is_root = len(self._menu["nodes"]) == 0
+        is_root = len(self._menu[NODES]) == 0
 
         current_row = 10 if is_root else 2
         current_index = 0
@@ -108,7 +119,7 @@ class Menu:
         if is_root:
             SCREEN.draw_fen(common.get_Centaur_FEN())
 
-        current_items = self._menu["current_node"]+([{"label":""}]*10)
+        current_items = self._menu[CURRENT_NODE]+([{LABEL:""}]*10)
 
         current_item_row = current_row
 
@@ -118,10 +129,10 @@ class Menu:
             if "only_web" in item and item["only_web"] == True:
                 continue
 
-            SCREEN.write_text(current_row, item["short_label" if "short_label" in item else "label"])
+            SCREEN.write_text(current_row, item["short_label" if "short_label" in item else LABEL])
             
             # Current selected item?
-            if current_index == self._menu["current_index"]:
+            if current_index == self._menu[CURRENT_INDEX]:
                 current_item_row = current_row
 
             current_index = current_index +1
@@ -147,8 +158,10 @@ class Menu:
 
                 if "standby" in data:
                     if data["standby"]:
-                        SCREEN.loading_screen("Paused!")
+                        SCREEN.home_screen("Paused!")
+                        #SCREEN.pause()
                     else:
+                        #SCREEN.unpause()
                         self.draw_menu(True)
 
                 if "battery" in  data:
@@ -173,13 +186,13 @@ class Menu:
                     # We only handle the UI here (as the browser does)
 
                     if command=="reboot":
-                        SCREEN.loading_screen("Rebooting!")
+                        SCREEN.home_screen("Rebooting!")
                     
                     if command=="shutdown":
-                        SCREEN.loading_screen("Bye!")
+                        SCREEN.home_screen("Bye!")
 
                     if command=="restart_service":
-                        SCREEN.loading_screen("Reloading!")
+                        SCREEN.home_screen("Reloading!")
                     
 
                 if "execute" in data:
@@ -222,13 +235,13 @@ class Menu:
         self._socket.send_message({ "ping":True, "enable_menu":"play", "loading_screen":False, "popup":"The service is up and running!" })
 
         self._menu = {
-            "current_index": 0,
-            "nodes": [],
-            "node_indexes": [],
-            "items": list(filter(lambda item:"only_web" not in item or item["only_web"] == False, self.build_menu_items()))
+            CURRENT_INDEX: 0,
+            NODES: [],
+            NODE_INDEXES: [],
+            ITEMS: list(filter(lambda item:"only_web" not in item or item["only_web"] == False, self._build_menu_items()))
         }
 
-        self._menu["current_node"] = self._menu["items"]
+        self._menu[CURRENT_NODE] = self._menu[ITEMS]
 
         self.home_screen()
 
@@ -241,39 +254,41 @@ class Menu:
 
         clear_area = False
 
-        node = self._menu["current_node"]
-        index = self._menu["current_index"]
+        m = self._menu
+
+        node = m[CURRENT_NODE]
+        index = m[CURRENT_INDEX]
 
         if key_index == Enums.Btn.UP:
             if index>0:
-                self._menu["current_index"] = index-1
+                m[CURRENT_INDEX] = index-1
             else:
-                self._menu["current_index"] = len(node)-1
+                m[CURRENT_INDEX] = len(node)-1
 
         if key_index == Enums.Btn.DOWN:
             if index<len(node)-1:
-                self._menu["current_index"] = index+1
+                m[CURRENT_INDEX] = index+1
             else:
-                self._menu["current_index"] = 0
+                m[CURRENT_INDEX] = 0
 
         if key_index == Enums.Btn.TICK:
 
-            if "items" in node[index]:
-                self._menu["current_node"] = node[index]["items"]
-                self._menu["current_index"] = 0
-                self._menu["nodes"].append(node)
-                self._menu["node_indexes"].append(index)
+            if ITEMS in node[index]:
+                m[CURRENT_NODE] = node[index][ITEMS]
+                m[CURRENT_INDEX] = 0
+                m[NODES].append(node)
+                m[NODE_INDEXES].append(index)
 
             else:
 
-                if "action" in node[index] and "value" in node[index]["action"]:
+                if ACTION in node[index] and VALUE in node[index][ACTION]:
 
-                    value = node[index]["action"]["value"]
-                    item_type = node[index]["action"]["type"]
+                    value = node[index][ACTION][VALUE]
+                    item_type = node[index][ACTION][TYPE]
 
                     if item_type == 'color':
 
-                        value = self._menu["current_value"].replace("{value}", value)
+                        value = m[CURRENT_VALUE].replace("{value}", value)
 
                         self._socket.send_request({'execute':value})
 
@@ -283,35 +298,35 @@ class Menu:
 
                     if item_type == 'socket_execute':
 
-                        if "dialogbox" in node[index]["action"]:
+                        if "dialogbox" in node[index][ACTION]:
 
                             # TODO align the design with the generic JS version
-                            self._menu["current_node"] = [
-                                { "label": "Play white",
-                                "action":{ "type": "color", "value": "white"}
+                            m[CURRENT_NODE] = [
+                                { LABEL: "Play white",
+                                ACTION:{ TYPE: "color", VALUE: "white"}
                                 },
-                                { "label": "Play black",
-                                "action":{ "type": "color", "value": "black"}
+                                { LABEL: "Play black",
+                                ACTION:{ TYPE: "color", VALUE: "black"}
                                 },
                             ]
-                            self._menu["current_index"] = 0
-                            self._menu["nodes"].append(node)
+                            m[CURRENT_INDEX] = 0
+                            m[NODES].append(node)
 
-                            self._menu["node_indexes"].append(index)
+                            m[NODE_INDEXES].append(index)
 
-                            self._menu["current_value"] = value
+                            m[CURRENT_VALUE] = value
 
                         else:
                             self._socket.send_request({'execute':value})
 
         if key_index == Enums.Btn.BACK:
-            nodes = self._menu["nodes"]
+            nodes = m[NODES]
             if len(nodes) >0:
 
                 clear_area = True
 
-                self._menu["current_node"] = nodes.pop()
-                self._menu["current_index"] = self._menu["node_indexes"].pop()
+                m[CURRENT_NODE] = nodes.pop()
+                m[CURRENT_INDEX] = m[NODE_INDEXES].pop()
 
 
         self.draw_menu(clear_area)
@@ -321,7 +336,7 @@ class Menu:
         return
 
     # Add engines and famous PGNs to proto menu
-    def build_menu_items(self):
+    def _build_menu_items(self):
 
         result = copy.deepcopy(MENU_ITEMS)
         
@@ -348,21 +363,21 @@ class Menu:
 
 
         # Famous PGN menu item
-        play_item["items"].append({ "label": "Play famous games", "short_label": "Famous games", "type": "subitem", 
-                                   "items":list(map(lambda pgn: { "label": "⭐ "+pgn.capitalize(), "short_label":pgn.capitalize(), "action": { "type": "socket_execute", "value": f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
+        play_item[ITEMS].append({ LABEL: "Play famous games", "short_label": "Famous games", TYPE: "subitem", 
+                                   ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), "short_label":pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
 
         # Engines menu items
         for engine in engines:
 
-            engine_menu = { "label": "Play "+engine["id"].capitalize(), "short_label": engine["id"].capitalize(), "type": "subitem", "items":[] }
+            engine_menu = { LABEL: "Play "+engine["id"].capitalize(), "short_label": engine["id"].capitalize(), TYPE: "subitem", ITEMS:[] }
 
-            play_item["items"].append(engine_menu)
+            play_item[ITEMS].append(engine_menu)
             
             for option in engine["options"]:
                     
-                engine_menu["items"].append({
-                        "label": "⭐ "+option.capitalize(), "short_label":option.capitalize(),
-                        "action": { "type": "socket_execute", "dialogbox": "color", "value": "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
+                engine_menu[ITEMS].append({
+                        LABEL: "⭐ "+option.capitalize(), "short_label":option.capitalize(),
+                        ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
 
         return result
 
@@ -371,7 +386,7 @@ class Menu:
 
         message["enable_menu"] = "play"
 
-        message["update_menu"] = self.build_menu_items()
+        message["update_menu"] = self._build_menu_items()
         
         self._socket.send_message(message)
 
