@@ -31,6 +31,7 @@ class _Log:
 
     __initialized = False
     __logger = None
+    __last_info = None
 
     @staticmethod
     def _init():
@@ -68,7 +69,9 @@ class _Log:
         if _Log.__initialized == False:
             _Log._init()
 
-        _Log.__logger.info(message)
+        if message != _Log.__last_info:
+            _Log.__logger.info(message)
+            _Log.__last_info = message
 
     @staticmethod
     def _exception(source, message):
