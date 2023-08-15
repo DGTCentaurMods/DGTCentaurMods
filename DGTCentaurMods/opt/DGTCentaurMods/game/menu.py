@@ -55,8 +55,7 @@ MENU_ITEMS = [
              ACTION: { TYPE: "socket_execute", VALUE: "uci_resume.py"} },
             {LABEL: "Play 1 vs 1", 
              ACTION:{ TYPE: "socket_execute", VALUE: "1vs1_module.py"} },
-        ],
-        "disabled": True }, 
+        ] }, 
     
     { LABEL:"Links", "only_web":True, ITEMS: [
             {LABEL: "Open Lichess position analysis", 
@@ -65,12 +64,11 @@ MENU_ITEMS = [
              ACTION:{ TYPE: "js", VALUE: '() => window.open("https://lichess.org/paste", "_blank")' }},
             {LABEL: "View current PGN", 
              ACTION:{ TYPE: "js", VALUE: '() => me.viewCurrentPGN()' }},
-        ],
-        "disabled": False }, 
+        ]}, 
     
-    { LABEL:"Display settings", "only_web":True, ACTION:{TYPE: "js_variable", VALUE: "displaySettings"}, "disabled": False }, 
+    { LABEL:"Display settings", "only_web":True, ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} }, 
     
-    { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"}, "disabled": False }, 
+    { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
     
     { LABEL:"System", ITEMS: [
             { LABEL: "Power off board", SHORT_LABEL: "Power off",
@@ -86,10 +84,9 @@ MENU_ITEMS = [
             { LABEL: "Last log events", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
-        ],
-        "disabled": False },
+        ] },
 
-    { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"}, "disabled": False },
+    { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
 ]
 
 
@@ -239,7 +236,7 @@ class Menu:
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
-        self._socket.send_message({ "ping":True, "enable_menu":"play", "loading_screen":False, "popup":"The service is up and running!" })
+        self._socket.send_message({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 
         self._menu = {
             CURRENT_INDEX: 0,
@@ -391,23 +388,21 @@ class Menu:
 
     def initialize_web_menu(self, message={}):
 
-        message["enable_menu"] = "play"
-
         message["update_menu"] = self._build_menu_items()
         
-        self._socket.send_message(message)
+        if self._socket != None:
+            self._socket.send_message(message)
 
     def start_child_module(self):
 
         CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
 
         if self._socket != None:
-            self._socket.send_message({ "disable_menu":"play", "loading_screen":True })
+            self._socket.send_message({ "loading_screen":True })
 
     def end_child_module(self):
 
-        if self._socket != None:
-            self._socket.send_message({ "web_menu":True, "enable_menu":"play" })
+        self.initialize_web_menu()
 
         self.home_screen()
 

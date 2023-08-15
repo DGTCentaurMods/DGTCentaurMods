@@ -72,6 +72,10 @@ def on_request(message):
 	if "sys" in message:
 		action = message["sys"]
 
+		if action == "homescreen":
+			# We relay the message to the app
+			socketio.emit('request', message)
+
 		if action == "centaur":
 
 			os.system(f"sudo systemctl stop {consts.MAIN_ID}.service")

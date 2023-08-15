@@ -670,6 +670,13 @@ class Engine():
         except Exception as e:
             Log.exception(Engine._game_thread_instance_worker, e)
 
+
+    def initialize_web_menu(self):
+        if self._socket:
+            self._socket.send_message({
+                "update_menu": [{
+                "label":"Back to menu", 
+                "action": { "type": "socket_sys", "value": "homescreen"}}]})
     
     def start(self):
 
@@ -697,7 +704,7 @@ class Engine():
             
                 # Do the same than synchronize_client_boards()
                 #  but on demand from the client
-                response = {"disable_menu":"play"}
+                response = {}
 
                 if "pgn" in data:
                     response["pgn"] = self.get_current_pgn()
@@ -711,6 +718,14 @@ class Engine():
                     response["uci_move"] = self.get_last_uci_move()
                     socket.send_message(response)
 
+                if "web_menu" in data:
+                    self.initialize_web_menu()
+
+                if "sys" in data:
+
+                    if data["sys"] == "homescreen":
+                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
+                        self.stop()
 
                 if "standby" in data:
                     if data["standby"]:
@@ -729,6 +744,8 @@ class Engine():
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
+        self.initialize_web_menu()
+
         Log.info(f"{Engine.__name__} thread started.")
 
 
@@ -737,7 +754,8 @@ class Engine():
         CENTAUR_BOARD.leds_off()
         self._thread_is_alive = False
 
-        self._socket.disconnect()
+        if self._socket:
+            self._socket.disconnect()
 
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
@@ -805,8 +823,6 @@ class Engine():
         if self._socket:
 
             message = {**{
-                # By default the play menu is disabled
-                "disable_menu":"play",
                 "pgn":self.get_current_pgn(), 
                 "fen":self._chessboard.fen(),
                 "uci_move":self.get_last_uci_move(),
