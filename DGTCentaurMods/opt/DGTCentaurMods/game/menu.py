@@ -40,6 +40,7 @@ ITEMS = "items"
 NODES = "nodes"
 ACTION = "action"
 LABEL = "label"
+SHORT_LABEL = "short_label"
 VALUE = "value"
 TYPE = "type"
 
@@ -50,7 +51,7 @@ MENU_ITEMS = [
     {   "id":"play", 
         LABEL:"Play", 
         ITEMS: [
-            {LABEL: "Resume last game", "short_label": "Resume",
+            {LABEL: "Resume last game", SHORT_LABEL: "Resume",
              ACTION: { TYPE: "socket_execute", VALUE: "uci_resume.py"} },
             {LABEL: "Play 1 vs 1", 
              ACTION:{ TYPE: "socket_execute", VALUE: "1vs1_module.py"} },
@@ -72,10 +73,10 @@ MENU_ITEMS = [
     { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"}, "disabled": False }, 
     
     { LABEL:"System", ITEMS: [
-            { LABEL: "Power off board", "short_label": "Power off",
+            { LABEL: "Power off board", SHORT_LABEL: "Power off",
               ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
             },
-            { LABEL: "Reboot board", "short_label": "Reboot",
+            { LABEL: "Reboot board", SHORT_LABEL: "Reboot",
               ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
             { LABEL: "Restart service", "only_web":True,
@@ -86,8 +87,10 @@ MENU_ITEMS = [
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
         ],
-        "disabled": False }
-    ]
+        "disabled": False },
+
+    { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"}, "disabled": False },
+]
 
 
 
@@ -129,7 +132,7 @@ class Menu:
             if "only_web" in item and item["only_web"] == True:
                 continue
 
-            SCREEN.write_text(current_row, item["short_label" if "short_label" in item else LABEL])
+            SCREEN.write_text(current_row, item[SHORT_LABEL if SHORT_LABEL in item else LABEL])
             
             # Current selected item?
             if current_index == self._menu[CURRENT_INDEX]:
@@ -193,6 +196,10 @@ class Menu:
 
                     if command=="restart_service":
                         SCREEN.home_screen("Reloading!")
+
+                    if command=="centaur":
+                        SCREEN.home_screen("Loading Centaur!")
+                        CENTAUR_BOARD.pause_events()
                     
 
                 if "execute" in data:
@@ -363,20 +370,20 @@ class Menu:
 
 
         # Famous PGN menu item
-        play_item[ITEMS].append({ LABEL: "Play famous games", "short_label": "Famous games", TYPE: "subitem", 
-                                   ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), "short_label":pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
+        play_item[ITEMS].append({ LABEL: "Play famous games", SHORT_LABEL: "Famous games", TYPE: "subitem", 
+                                   ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), SHORT_LABEL:pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
 
         # Engines menu items
         for engine in engines:
 
-            engine_menu = { LABEL: "Play "+engine["id"].capitalize(), "short_label": engine["id"].capitalize(), TYPE: "subitem", ITEMS:[] }
+            engine_menu = { LABEL: "Play "+engine["id"].capitalize(), SHORT_LABEL: engine["id"].capitalize(), TYPE: "subitem", ITEMS:[] }
 
             play_item[ITEMS].append(engine_menu)
             
             for option in engine["options"]:
                     
                 engine_menu[ITEMS].append({
-                        LABEL: "⭐ "+option.capitalize(), "short_label":option.capitalize(),
+                        LABEL: "⭐ "+option.capitalize(), SHORT_LABEL:option.capitalize(),
                         ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
 
         return result

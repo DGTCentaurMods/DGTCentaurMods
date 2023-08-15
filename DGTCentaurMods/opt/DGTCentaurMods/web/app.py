@@ -72,24 +72,32 @@ def on_request(message):
 	if "sys" in message:
 		action = message["sys"]
 
+		if action == "centaur":
+
+			os.system(f"sudo systemctl stop {consts.MAIN_ID}.service")
+
+			time.sleep(.5)
+			os.chdir(f"{consts.HOME_DIRECTORY}/centaur")
+			os.system("sudo ./centaur")
+
 		if action == "shutdown":
 			# We relay the message to the app
 			socketio.emit('request', message)
-			os.system("pkill centaur")
+			os.system("sudo pkill centaur")
 			time.sleep(.5)
 			os.system("sudo poweroff")
 
 		if action == "reboot":
 			# We relay the message to the app
 			socketio.emit('request', message)
-			os.system("pkill centaur")
+			os.system("sudo pkill centaur")
 			time.sleep(.5)
 			os.system("sudo reboot")
 
 		if action == "restart_service":
-			os.system("pkill centaur")
+			os.system("sudo pkill centaur")
 			time.sleep(.5)
-			os.system("sudo systemctl restart DGTCentaurMods.service")
+			os.system(f"sudo systemctl restart {consts.MAIN_ID}.service")
 
 		if action == "log_events":
 			response["log_events"] = common.tail(open(consts.LOG_FILENAME, "r"), 100)

@@ -147,6 +147,7 @@ class CentaurBoard(common.Singleton):
         try:
             bytes = self._SERIAL.read(length)
         except:
+            Log.info("Serial returned no data...")
             return b''
         
         #bytes = self._SERIAL.read(length)
@@ -157,8 +158,11 @@ class CentaurBoard(common.Singleton):
         return bytes
 
     def write_serial(self, bytes):
-        self._SERIAL.write(bytearray(bytes))
-        #print("->"+"".join("\\x%02x" % i for i in bytes))
+        try:
+            self._SERIAL.write(bytearray(bytes))
+            #print("->"+"".join("\\x%02x" % i for i in bytes))
+        except:
+            Log.info(f"Unable to write to serial '{bytes}'...")
 
     def build_packet(self, command, data) -> bytearray:
 
