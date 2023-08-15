@@ -465,13 +465,20 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			
 								// We receive last log events
 								log_events: (value) => {
-									me.logEvents = value.join('\n')
+									/*me.logEvents = value.join('\n')
 									$mdDialog.show({
 										contentElement: '#log_events',
 										parent: angular.element(document.body),
 										targetEvent: null,
 										clickOutsideToClose: true
-									})
+									})*/
+
+									const logEvents = value.join('')
+									const data = new Blob([logEvents], {type: 'text/plain'})
+									const url = window.URL.createObjectURL(data)
+
+									window.open(url)
+									window.URL.revokeObjectURL(url)
 								},
 			
 								// We clear the graphics (not the user ones)

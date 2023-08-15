@@ -100,7 +100,7 @@ def on_request(message):
 			os.system(f"sudo systemctl restart {consts.MAIN_ID}.service")
 
 		if action == "log_events":
-			response["log_events"] = common.tail(open(consts.LOG_FILENAME, "r"), 100)
+			response["log_events"] = common.tail(open(consts.LOG_FILENAME, "r"), 500)
 			socketio.emit('message', response)
 
 	else:
