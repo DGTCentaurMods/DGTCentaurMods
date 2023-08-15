@@ -144,11 +144,17 @@ class CentaurBoard(common.Singleton):
         return self._SERIAL
 
     def read_serial(self, length = 10000) -> bytes:
+
+        bytes = b''
+
         try:
             bytes = self._SERIAL.read(length)
         except:
-            Log.info("Serial returned no data...")
-            return b''
+            Log.info("Serial returned no data (Board may be disconnected)...")
+
+            pass
+
+        return bytes
         
         #bytes = self._SERIAL.read(length)
 
@@ -618,14 +624,15 @@ class CentaurBoard(common.Singleton):
 
                     # FIELDS HANDLING
                     self._read_fields(timeout)
+                    time.sleep(.15)
             
                 # KEYS HANDLING
                 self._read_keys(timeout)
+                time.sleep(.15)
                 
                 # BATTERY HANDLING
                 self._read_battery(timeout)
-
-                time.sleep(0.05)
+                time.sleep(.15)
 
             else:
                 self.time_limit = time.time() + 100000
