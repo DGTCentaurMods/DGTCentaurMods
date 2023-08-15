@@ -70,7 +70,8 @@ MENU_ITEMS = [
     
     { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
     
-    { LABEL:"System", ITEMS: [
+    {   "id":"system", 
+        LABEL:"System", ITEMS: [
             { LABEL: "Power off board", SHORT_LABEL: "Power off",
               ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
             },
@@ -84,6 +85,10 @@ MENU_ITEMS = [
             { LABEL: "Last log events", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
+            { TYPE: "divider", "only_web":True },
+
+            { "id":"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], "only_web":True }
+
         ] },
 
     { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
@@ -344,7 +349,9 @@ class Menu:
 
         result = copy.deepcopy(MENU_ITEMS)
         
-        play_item = next(filter(lambda item:item["id"] == "play", result))
+        play_item = next(filter(lambda item:"id" in item and item["id"] == "play", result))
+        sys_item = next(filter(lambda item:"id" in item and item["id"] == "system", result))
+        uci_item = next(filter(lambda item:"id" in item and item["id"] == "uci", sys_item[ITEMS]))
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
         PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
@@ -382,7 +389,18 @@ class Menu:
                 engine_menu[ITEMS].append({
                         LABEL: "⭐ "+option.capitalize(), SHORT_LABEL:option.capitalize(),
                         ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
+                
 
+        # UCI editor menu items
+        for engine in engines:
+
+            if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
+
+                editor_menu = { LABEL: "Edit UCI of "+engine["id"].capitalize(), "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine["id"]+".uci"} }
+
+                uci_item[ITEMS].append(editor_menu)
+
+           
         return result
 
 

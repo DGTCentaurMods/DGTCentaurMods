@@ -21,7 +21,7 @@
 
 "use strict"
 
-angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate', 'dgt-centaur-mods.lib'])
+angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate', 'ivl.angular-codearea', 'dgt-centaur-mods.lib'])
 
 // Only there because of Flask conflict
 .config(['$interpolateProvider', function($interpolateProvider) {
@@ -67,6 +67,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// Board data
 		me.board = {
 			loading:false,
+
 			index:1,
 			turn_caption:'-',
 			turn:1,
@@ -74,6 +75,19 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			synchronized:true,
 
 			history: $history
+		}
+
+		me.editor = {
+			text:"",
+			visible:false,
+		
+			save: () => {
+				SOCKET.emit('request', {'write':{
+					text:me.editor.text,
+					filename:me.editor.filename,
+				}})
+				me.editor.visible = false
+			}
 		}
 
 		// Each display menu item is connected to a boolean main.board property
@@ -104,6 +118,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 		// Main menus function
 		me.openMenu = function($menu, menu, ev) {
+
 			if (menu.action) {
 				menu.action()
 			} else
@@ -324,7 +339,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 								update_menu: (menuitems) => {
 
-									console.log(menuitems)
+									//console.log(menuitems)
 
 									const menuInitializers = {
 										'js_variable': (item, value) => {
@@ -339,6 +354,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 	
 										'socket_data': (item, value) => {
 											item.action = () => SOCKET.emit('request', {'data':value})
+										},
+
+										'socket_read': (item, value) => {
+											item.action = () => SOCKET.emit('request', {'read':value})
 										},
 
 										'socket_execute': (item, value) => {
@@ -553,7 +572,13 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								turn_caption: (value) => {
 									me.board.loading = false
 									me.board.turn_caption = value
-								}
+								},
+
+								editor: (value) => {
+									me.editor.filename = value.filename
+									me.editor.text = value.text
+									me.editor.visible = true
+								},
 							}
 			
 							for(var id in socketmessages) {

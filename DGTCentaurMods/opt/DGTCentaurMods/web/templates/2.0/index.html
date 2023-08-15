@@ -14,6 +14,7 @@
 		<script src="{{ url_for('static', filename='2.0/js/angular-storage.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/socket.io.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/chess.js') }}"></script>
+		<script src="{{ url_for('static', filename='2.0/js/angular-codearea.js') }}"></script>
 
 		<script src="{{ url_for('static', filename='2.0/js/history.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/index.js') }}"></script>
@@ -21,6 +22,7 @@
 		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/angular-material.min.css') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='chessboardjs/css/chessboard-1.0.0.min.css') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/index.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='2.0/css/angular-codearea.css') }}">
 
 		<script type="text/ng-template" id="board.html">
 
@@ -44,8 +46,9 @@
 	<body class="text-center mainfont">
 		<div>
 			<div ng-controller="MainController as main" class="container theme-showcase">
-			
-				<div layout="row">
+				
+				<div layout="row" data-ng-show="!main.editor.visible">
+
 					<md-menu-bar>
 						<span class="app_title">{{ data.title }}</span>
 						
@@ -81,7 +84,7 @@
 					</md-menu-bar>
 				</div>
 
-				<div layout="row" layout-align="center stretch">
+				<div data-ng-show="!main.editor.visible" layout="row" layout-align="center stretch">
 				
 					<div layout="column" layout-align="space-around center">
 						<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
@@ -98,6 +101,19 @@
 						</div>
 					</div>
 				
+				</div>
+
+				<div data-ng-show="main.editor.visible">
+
+					<md-toolbar>
+						<div class="md-toolbar-tools">
+							<h2>[[main.editor.filename]]</h2>
+							<md-button class="md-raised md-primary" ng-click="main.editor.save()" aria-label="Save">Save</md-button>
+							<md-button class="md-raised md-warn" ng-click="main.editor.visible = false" aria-label="Cancel">Cancel</md-button>
+						</div>
+					</md-toolbar>
+					
+					<ivl-codearea ng-model="main.editor.text" syntax="uci"></ivl-codearea>
 				</div>
 
 				<div style="visibility: hidden">

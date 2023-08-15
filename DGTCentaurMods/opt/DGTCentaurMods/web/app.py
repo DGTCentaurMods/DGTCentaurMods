@@ -109,6 +109,37 @@ def on_request(message):
 
 	else:
 
+		if "read" in message:
+			action = message["read"]
+
+			if action[-4:] == ".uci":
+
+				f = open(f"{consts.OPT_DIRECTORY}/engines/{action}", "r")
+				response["editor"] = {
+					"text":f.read(),
+					"filename":action
+				}
+				f.close()
+
+				socketio.emit('message', response)
+
+		if "write" in message:
+
+			action = message["write"]
+
+			filename = None if "filename" not in action else action["filename"]
+
+			if filename and filename[-4:] == ".uci":
+
+				f = open(f"{consts.OPT_DIRECTORY}/engines/{filename}", "w")
+
+				f.write(action["text"])
+				f.close()
+
+				response["popup"] = "File has been successfuly updated!"
+
+				socketio.emit('message', response)
+
 		if "data" in message:
 			action = message["data"]
 

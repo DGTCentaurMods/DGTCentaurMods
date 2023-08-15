@@ -1,0 +1,42 @@
+.codearea {
+  overflow: auto;
+  position: relative;
+  margin: 20px;
+}
+
+.codearea > textarea {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  margin: 0px;
+  border: 0px;
+  padding: 0px;
+  background: 0;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  font-family: monospace;
+  color: rgba(0, 0, 0, 0.3);
+  word-break: break-all;
+  overflow: hidden;
+}
+
+.codearea > pre {
+  margin: 0px;
+  border: 0px;
+  padding: 0px;
+  color: black;
+  font-size: 14px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.codearea .comment { color: blue; }
+.codearea .keyword { font-weight: bold; color: green; }
+.codearea .function { color: cyan; }
+.codearea .string { color: red; }
+.codearea .number { color: red; }
