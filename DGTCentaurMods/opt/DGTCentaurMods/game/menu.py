@@ -66,9 +66,12 @@ MENU_ITEMS = [
              ACTION:{ TYPE: "js", VALUE: '() => me.viewCurrentPGN()' }},
         ]}, 
     
-    { LABEL:"Display settings", "only_web":True, ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} }, 
+    { LABEL:"Settings", "only_web":True, ITEMS: [
+        { LABEL:"🌈 Web display", "only_web":True, ITEMS: [], TYPE: "subitem", ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} },
+        { LABEL:"🎵 Board sounds", "only_web":True, ACTION:{ TYPE: "socket_data", VALUE: "sounds_settings"}}, 
+    ]},
     
-    { LABEL:"Previous games", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
+    { LABEL:"Previous games", "only_web":True, ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
     
     {   "id":"system", 
         LABEL:"System", ITEMS: [
@@ -78,11 +81,11 @@ MENU_ITEMS = [
             { LABEL: "Reboot board", SHORT_LABEL: "Reboot",
               ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
-            { LABEL: "Restart service", "only_web":True,
+            { LABEL: "⚡ Restart service", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
             },
             { TYPE: "divider", "only_web":True },
-            { LABEL: "Last log events", "only_web":True,
+            { LABEL: "📋 Last log events", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
             { TYPE: "divider", "only_web":True },

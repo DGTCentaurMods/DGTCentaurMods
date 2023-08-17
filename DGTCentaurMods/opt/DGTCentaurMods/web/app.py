@@ -149,6 +149,21 @@ def on_request(message):
 				response["previous_games"] = _dal.get_all_games()
 				socketio.emit('message', response)
 
+			if action == "sounds_settings_set":
+
+				if "value" in message:
+					common.update_sound_settings(message["value"]["id"], message["value"]["value"])
+
+			if action == "sounds_settings":
+				
+				# We read the sounds settings
+				for s in consts.SOUNDS_SETTINGS:
+					s["value"] = common.get_sound_settings(s["id"])
+
+				response["sounds_settings"] = consts.SOUNDS_SETTINGS
+
+				socketio.emit('message', response)
+
 			if action == "game_moves":
 				response["game_moves"] = _dal.read_game_moves_by_id(message["id"])
 				socketio.emit('message', response)

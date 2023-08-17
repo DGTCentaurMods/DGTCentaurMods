@@ -29,6 +29,7 @@ class Sound(Enum):
     POWER_ON = 4
     WRONG = 5
     WRONG_MOVE = 6
+    BEEP = 7
 
 class Btn(Enum):
     NONE = 0

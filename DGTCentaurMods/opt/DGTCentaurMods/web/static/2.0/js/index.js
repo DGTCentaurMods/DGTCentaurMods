@@ -74,7 +74,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			eval:50,
 			synchronized:true,
 
-			history: $history
+			history: $history,
 		}
 
 		me.editor = {
@@ -146,6 +146,13 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			let pgnURL = window.URL.createObjectURL(data)
 			window.open(pgnURL)
 			window.URL.revokeObjectURL(pgnURL)
+		}
+
+		me.updateAppSettings = function(operation, value) {
+
+			$timeout(() => {
+				SOCKET.emit('request', {'data':operation, 'value':value})
+			}, 500)
 		}
 
 		me.onGameLoad = function(game, iscurrent) {
@@ -458,6 +465,20 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 								popup: (value) => {
 									popupMessage(value)
+								},
+
+								// Previous games have been resquested
+								sounds_settings: (value) => {
+
+									me.board.sounds = value
+
+									$mdDialog.show({
+										contentElement: '#sounds_settings',
+										parent: angular.element(document.body),
+										targetEvent: null,
+										clickOutsideToClose: true
+									})
+
 								},
 
 								// Previous games have been resquested

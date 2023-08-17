@@ -64,8 +64,13 @@
 												[[ item.label ]]
 											</md-button>
 											<md-menu-content width="3">
-												<md-menu-item data-ng-repeat="sitem in item.items">
-													<md-button ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
+												<md-menu-item data-ng-repeat="sitem in item.items" ng-switch on="sitem.type">
+													<md-menu-item ng-switch-when="checkbox">
+														<md-button ng-click="main.executeCheckboxMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]] → [[ main.board[sitem.id]?' [YES]':' [NO]' ]]</md-button>
+													</md-menu-item>
+													<md-menu-item ng-switch-default>
+														<md-button ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
+													</md-menu-item>
 												</md-menu-item>
 											</md-menu-content>
 										</md-menu>
@@ -117,11 +122,13 @@
 				</div>
 
 				<div style="visibility: hidden">
-					<div class="md-dialog-container" id="log_events">
+					<div class="md-dialog-container" id="sounds_settings">
 					<md-dialog layout-padding>
-						<h3>Last log events...</h3>
-						<div layout="col" layout-align="space-around center">
-							<textarea class="logEvents" readonly ng-model="main.logEvents"></textarea>
+						<h3>Board sounds</h3>
+						<div class="md-dense" layout="column" layout-align="center start">
+					
+							<md-checkbox data-ng-repeat="item in main.board.sounds" ng-click="main.updateAppSettings('sounds_settings_set', item)" ng-model="item.value">[[item.label]]</md-checkbox>
+
 						</div>
 					</md-dialog>
 					</div>

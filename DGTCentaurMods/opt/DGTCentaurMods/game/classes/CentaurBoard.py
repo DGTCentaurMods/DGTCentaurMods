@@ -184,7 +184,12 @@ class CentaurBoard(common.Singleton):
     def ask_serial(self, command, data) -> bytes:
 
         self.send_packet(command, data)
-        return self.read_serial()
+        time.sleep(.01)
+
+        result = self.read_serial()
+        time.sleep(.01)
+
+        return result
 
     def send_packet(self, command, data):
         self.write_serial(self.build_packet(command, data))
@@ -234,6 +239,8 @@ class CentaurBoard(common.Singleton):
             self.send_packet(b'\xb1\x00\x0a', b'\x4e\x0c\x48\x10')
         if (beeptype == Enums.Sound.WRONG_MOVE):
             self.send_packet(b'\xb1\x00\x08', b'\x48\x08')
+        if (beeptype == Enums.Sound.BEEP):
+            self.send_packet(b'\xb1\x00\x08', b'\x41\x08')
 
 
     def led_array(self, inarray, speed = 3, intensity=5):
@@ -324,8 +331,8 @@ class CentaurBoard(common.Singleton):
 
             response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
 
-            if (len(response) < 64):
-                time.sleep(0.5)
+            #if (len(response) < 64):
+            #    time.sleep(.1)
 
         response = response = response[6:(64 * 2) + 6]
         
@@ -425,7 +432,6 @@ class CentaurBoard(common.Singleton):
                                 self._field_callback((new_square + 1) * -1)
                             
                             self.time_limit = time.time() + timeout
-
         
         except Exception as e:
             print(e)
@@ -490,6 +496,7 @@ class CentaurBoard(common.Singleton):
                     self.time_limit = time.time() + timeout
                     button = Enums.Btn.HELP
             
+            """
             if (response.hex()[:-2] == "b10010" 
                 + A1_HEX
                 + A2_HEX 
@@ -545,6 +552,8 @@ class CentaurBoard(common.Singleton):
                 else:
                     self.shutdown()
 
+            """
+
             if button != Enums.Btn.NONE:
                 self.time_limit = time.time() + timeout
                 
@@ -579,21 +588,18 @@ class CentaurBoard(common.Singleton):
                     except:
                         pass
 
-                if len(response) < 7:
-                    pass
-                else:
-                    if response[0] == 181:
+                if len(response) > 6 and response[0] == 181:
 
-                        self._last_battery_check = time.time()
-                        self._battery_level = response[5] & 31
-                        vall = (response[5] >> 5) & 7
-                        if vall == 1 or vall == 2:
-                            self._power_connected = True
-                        else:
-                            self._power_connected = False
+                    self._last_battery_check = time.time()
+                    self._battery_level = response[5] & 31
+                    vall = (response[5] >> 5) & 7
+                    if vall == 1 or vall == 2:
+                        self._power_connected = True
+                    else:
+                        self._power_connected = False
 
-                        SocketClient.get().send_request({"battery":-1 if self._power_connected else self._battery_level})
-                       
+                    SocketClient.get().send_request({"battery":-1 if self._power_connected else self._battery_level})
+        
         except Exception as e:
             print(e)
             Log.exception(CentaurBoard._read_battery, e)
@@ -624,15 +630,12 @@ class CentaurBoard(common.Singleton):
 
                     # FIELDS HANDLING
                     self._read_fields(timeout)
-                    time.sleep(.15)
             
                 # KEYS HANDLING
                 self._read_keys(timeout)
-                time.sleep(.15)
                 
                 # BATTERY HANDLING
                 self._read_battery(timeout)
-                time.sleep(.15)
 
             else:
                 self.time_limit = time.time() + 100000
@@ -640,7 +643,6 @@ class CentaurBoard(common.Singleton):
             if time.time() - loopstart > 30:
                 self.time_limit = time.time() + timeout
 
-            time.sleep(0.05)
         else:
 
             if self._events_enabled:

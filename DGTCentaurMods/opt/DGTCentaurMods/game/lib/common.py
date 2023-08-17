@@ -87,9 +87,36 @@ def update_Centaur_FEN(fen):
     except:
         pass
 
+def update_sound_settings(id, value):
+
+    try:
+        # Get the config
+        conf = configparser.ConfigParser()
+        conf.read_dict({'sounds':{ id: '1'}})
+        conf.read(consts.CONFIG_FILE)
+        conf.set('sounds', id, '1' if value else '0')
+    
+        with open(consts.CONFIG_FILE, 'w') as f:
+            conf.write(f)
+    except:
+        pass
+
+def get_sound_settings(id):
+
+    try:
+        # Get the config
+        conf = configparser.ConfigParser()
+        conf.read_dict({'sounds':{ id: '1'}})
+        conf.read(consts.CONFIG_FILE)
+
+        return conf.get('sounds', id) == '1'
+    except:
+        pass
+    
+    return True
+
 def update_last_uci_command(command):
 
-    # TODO: initial centaur.py script needs a full rewrite
     try:
         # Get the config
         conf = configparser.ConfigParser()
@@ -104,7 +131,6 @@ def update_last_uci_command(command):
 
 def get_last_uci_command():
 
-    # TODO: initial centaur.py script needs a full rewrite
     try:
          # Get the config
         conf = configparser.ConfigParser()

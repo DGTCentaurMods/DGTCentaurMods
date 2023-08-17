@@ -232,7 +232,8 @@ class Engine():
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
-                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+                if common.get_sound_settings(consts.SOUND_BAD_MOVES):
+                    CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                 self._source_square = -1
 
@@ -282,7 +283,9 @@ class Engine():
                         self._legal_squares = []
                         self._source_square = -1
 
-                        CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+                        if common.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
+                            CENTAUR_BOARD.beep(Enums.Sound.WRONG)
+
                         CENTAUR_BOARD.led(field_index)
 
                         self.update_Centaur_FEN()
@@ -342,7 +345,8 @@ class Engine():
                                 san_move = None
 
                             if san_move == None:
-                                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+                                if common.get_sound_settings(consts.SOUND_BAD_MOVES):
+                                    CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                                 Log.debug(f'INVALID move "{uci_move}"')
 
@@ -372,7 +376,9 @@ class Engine():
 
                                         self._san_move_list.append(san_move)
 
-                                        CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+                                        if common.get_sound_settings(consts.SOUND_GOOD_MOVES):
+                                            CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+
                                         CENTAUR_BOARD.led(field_index)
 
                                         self.update_Centaur_FEN()
@@ -675,7 +681,7 @@ class Engine():
         if self._socket:
             self._socket.send_message({
                 "update_menu": [{
-                "label":"Back to menu", 
+                "label":"← Back to main menu", 
                 "action": { "type": "socket_sys", "value": "homescreen"}}]})
     
     def start(self):
@@ -934,6 +940,9 @@ class Engine():
             from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
             to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
+            if common.get_sound_settings(consts.SOUND_COMPUTER_MOVES):
+                CENTAUR_BOARD.beep(Enums.Sound.BEEP)
+   
             # Then light it up!
             CENTAUR_BOARD.led_from_to(from_num,to_num)
 

@@ -41,3 +41,15 @@ BOARD_START_STATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01
 FENLOG = HOME_DIRECTORY+"/centaur/fen.log"
 
 STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
+
+
+SOUND_GOOD_MOVES = "good_moves"
+SOUND_BAD_MOVES = "bad_moves"
+SOUND_TAKEBACK_MOVES = "takeback_moves"
+SOUND_COMPUTER_MOVES = "computer_moves"
+
+SOUNDS_SETTINGS = [
+    { "id":SOUND_GOOD_MOVES, "label":"Good moves" },
+    { "id":SOUND_BAD_MOVES,"label":"Bad moves" },
+    { "id":SOUND_TAKEBACK_MOVES,"label":"Tackbacks" },
+    { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" }]
