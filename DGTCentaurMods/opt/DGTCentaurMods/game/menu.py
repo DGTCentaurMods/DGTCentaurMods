@@ -416,8 +416,6 @@ class Menu:
 
     def start_child_module(self):
 
-        CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
-
         if self._socket != None:
             self._socket.send_message({ "loading_screen":True })
 

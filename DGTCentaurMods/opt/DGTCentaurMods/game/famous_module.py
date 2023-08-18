@@ -202,7 +202,7 @@ def main(pgn):
         success = correct_uci_move == uci_move
 
         if not success:
-            if common.get_sound_settings(consts.SOUND_BAD_MOVES):
+            if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
                 CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
             if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:

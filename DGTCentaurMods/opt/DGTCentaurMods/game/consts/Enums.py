@@ -23,13 +23,13 @@ from flags import Flags
 from enum import Enum
 
 class Sound(Enum):
-    GENERAL = 1
-    FACTORY = 2
-    POWER_OFF = 3
-    POWER_ON = 4
-    WRONG = 5
-    WRONG_MOVE = 6
-    BEEP = 7
+    MUSIC = 1
+    WRONG_MOVE = 2
+    CORRECT_MOVE = 3
+    TAKEBACK_MOVE = 4,
+    COMPUTER_MOVE = 5,
+    POWER_OFF = 6,
+
 
 class Btn(Enum):
     NONE = 0

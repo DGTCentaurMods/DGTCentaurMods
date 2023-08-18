@@ -1,7 +1,5 @@
-# DGT Centaur board control functions
-#
 # This file is part of the DGTCentaur Mods open source software
-# ( https://github.com/EdNekebno/DGTCentaur )
+# ( https://github.com/Alistair-Crompton/DGTCentaurMods )
 #
 # DGTCentaur Mods is free software: you can redistribute
 # it and/or modify it under the terms of the GNU General Public
@@ -16,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this file.  If not, see
 #
-# https://github.com/EdNekebno/DGTCentaur/blob/master/LICENSE.md
+# https://github.com/Alistair-Crompton/DGTCentaurMods/blob/master/LICENSE.md
 #
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
@@ -87,15 +85,15 @@ class CentaurBoard(common.Singleton):
             # We send an initial 0x4d to ask the board to provide its address
             print('Detecting board address...')
 
-            self.read_serial()
+            self.read_from_serial()
 
             print('Sending payload 1...')
-            self.write_serial(b'\x4d')
-            self.read_serial()
+            self.write_to_serial(b'\x4d')
+            self.read_from_serial()
 
             print('Sending payload 2...')
-            self.write_serial(b'\x4e')
-            self.read_serial()
+            self.write_to_serial(b'\x4e')
+            self.read_from_serial()
 
             print('Serial is open. Waiting for response...')
 
@@ -104,12 +102,12 @@ class CentaurBoard(common.Singleton):
             self.address_1 = 00
             self.address_2 = 00
 
-            timeout = time.time() + 60
+            timeout = time.time() + 5
 
             while len(response) < 4 and time.time() < timeout:
 
-                self.write_serial(b'\x87\x00\x00\x07')
-                response = self.read_serial()
+                self.write_to_serial(b'\x87\x00\x00\x07')
+                response = self.read_from_serial()
                 
                 if len(response) > 3:
 
@@ -143,7 +141,7 @@ class CentaurBoard(common.Singleton):
     def serial(self):
         return self._SERIAL
 
-    def read_serial(self, length = 10000) -> bytes:
+    def read_from_serial(self, length = 10000) -> bytes:
 
         bytes = b''
 
@@ -163,7 +161,7 @@ class CentaurBoard(common.Singleton):
         
         return bytes
 
-    def write_serial(self, bytes):
+    def write_to_serial(self, bytes):
         try:
             self._SERIAL.write(bytearray(bytes))
             #print("->"+"".join("\\x%02x" % i for i in bytes))
@@ -186,21 +184,21 @@ class CentaurBoard(common.Singleton):
         self.send_packet(command, data)
         time.sleep(.01)
 
-        result = self.read_serial()
+        result = self.read_from_serial()
         time.sleep(.01)
 
         return result
 
     def send_packet(self, command, data):
-        self.write_serial(self.build_packet(command, data))
+        self.write_to_serial(self.build_packet(command, data))
 
     def leds_off(self):
         self.send_packet(b'\xb0\x00\x07', b'\x00')
     
     def clear_board_data(self):
-        self.read_serial()
+        self.read_from_serial()
         self.send_packet(b'\x83', b'')
-        self.read_serial()
+        self.read_from_serial()
 
     def clear_serial(self):
         print('Checking and clear the serial line...')
@@ -226,21 +224,24 @@ class CentaurBoard(common.Singleton):
 
 
     def beep(self, beeptype):
+    
+        if (beeptype == Enums.Sound.CORRECT_MOVE):
+            self.send_packet(b'\xb1\x00\x0a', b'\x48\x05\x52\x05')
+
+        if (beeptype == Enums.Sound.TAKEBACK_MOVE):
+            self.send_packet(b'\xb1\x00\x0a', b'\x52\x05\x48\x05')
+
+        if (beeptype == Enums.Sound.WRONG_MOVE):
+            self.send_packet(b'\xb1\x00\x0a', b'\x30\x04\x29\x04')
+
+        if (beeptype == Enums.Sound.COMPUTER_MOVE):
+            self.send_packet(b'\xb1\x00\x08', b'\x68\x05')
        
-        if (beeptype == Enums.Sound.GENERAL):
-            self.send_packet(b'\xb1\x00\x08',b'\x4c\x08')
-        if (beeptype == Enums.Sound.FACTORY):
-            self.send_packet(b'\xb1\x00\x08', b'\x4c\x40')
+        if (beeptype == Enums.Sound.MUSIC):
+            self.send_packet(b'\xb1\x00\x10', b'\x40\x10\x44\x08\x45\x08\x47\x10\x45\x08')
+
         if (beeptype == Enums.Sound.POWER_OFF):
             self.send_packet(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
-        if (beeptype == Enums.Sound.POWER_ON):
-            self.send_packet(b'\xb1\x00\x0a', b'\x48\x08\x4c\x08')
-        if (beeptype == Enums.Sound.WRONG):
-            self.send_packet(b'\xb1\x00\x0a', b'\x4e\x0c\x48\x10')
-        if (beeptype == Enums.Sound.WRONG_MOVE):
-            self.send_packet(b'\xb1\x00\x08', b'\x48\x08')
-        if (beeptype == Enums.Sound.BEEP):
-            self.send_packet(b'\xb1\x00\x08', b'\x41\x08')
 
 
     def led_array(self, inarray, speed = 3, intensity=5):
@@ -259,7 +260,7 @@ class CentaurBoard(common.Singleton):
 
         message.append(_checksum(message))
 
-        self.write_serial(message)
+        self.write_to_serial(message)
 
 
     def led_from_to(self, lfrom, lto, intensity=5):
@@ -280,7 +281,7 @@ class CentaurBoard(common.Singleton):
         message.pop()
         message.append(_checksum(message))
         
-        self.write_serial(message)
+        self.write_to_serial(message)
 
 
     def led(self, num, intensity=5):
@@ -304,7 +305,7 @@ class CentaurBoard(common.Singleton):
                 message.pop()
                 message.append(_checksum(message))
                 
-                self.write_serial(message)
+                self.write_to_serial(message)
                 
                 break
 

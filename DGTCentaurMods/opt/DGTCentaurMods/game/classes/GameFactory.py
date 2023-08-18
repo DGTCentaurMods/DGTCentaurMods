@@ -232,7 +232,7 @@ class Engine():
 
             if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
-                if common.get_sound_settings(consts.SOUND_BAD_MOVES):
+                if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
                     CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                 self._source_square = -1
@@ -284,7 +284,7 @@ class Engine():
                         self._source_square = -1
 
                         if common.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
-                            CENTAUR_BOARD.beep(Enums.Sound.WRONG)
+                            CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
 
                         CENTAUR_BOARD.led(field_index)
 
@@ -345,7 +345,7 @@ class Engine():
                                 san_move = None
 
                             if san_move == None:
-                                if common.get_sound_settings(consts.SOUND_BAD_MOVES):
+                                if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
                                     CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                                 Log.debug(f'INVALID move "{uci_move}"')
@@ -376,8 +376,8 @@ class Engine():
 
                                         self._san_move_list.append(san_move)
 
-                                        if common.get_sound_settings(consts.SOUND_GOOD_MOVES):
-                                            CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+                                        if common.get_sound_settings(consts.SOUND_CORRECT_MOVES):
+                                            CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
 
                                         CENTAUR_BOARD.led(field_index)
 
@@ -591,7 +591,8 @@ class Engine():
                                 Log.info("LAST GAME WAS FINISHED!")
                             
                             else:
-                                CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+                                if common.get_sound_settings(consts.SOUND_MUSIC):
+                                    CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
                                 self.update_Centaur_FEN()
                                 self.display_board()
@@ -641,7 +642,8 @@ class Engine():
                                 
                                 self.__initialize()
                                 
-                                CENTAUR_BOARD.beep(Enums.Sound.GENERAL)
+                                if common.get_sound_settings(consts.SOUND_MUSIC):
+                                    CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
                                 self.update_Centaur_FEN()
                                 self.display_board()
@@ -941,7 +943,7 @@ class Engine():
             to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
             if common.get_sound_settings(consts.SOUND_COMPUTER_MOVES):
-                CENTAUR_BOARD.beep(Enums.Sound.BEEP)
+                CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
    
             # Then light it up!
             CENTAUR_BOARD.led_from_to(from_num,to_num)
