@@ -70,7 +70,7 @@ def tail(f, lines=1, _buffer=4098):
 def get_Centaur_FEN():
 
     try:
-        f = open(consts.FENLOG, "r")
+        f = open(consts.FEN_LOG, "r")
         fen = f.readline()
         f.close()
 
@@ -81,7 +81,7 @@ def get_Centaur_FEN():
 def update_Centaur_FEN(fen):
 
     try:
-        f = open(consts.FENLOG, "w")
+        f = open(consts.FEN_LOG, "w")
         f.write(fen)
         f.close()
     except:

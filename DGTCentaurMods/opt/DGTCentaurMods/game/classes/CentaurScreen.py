@@ -27,7 +27,7 @@ from DGTCentaurMods.game.lib import common
 
 from PIL import Image, ImageDraw
 
-import threading, pathlib, time
+import threading, time
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 296
@@ -147,7 +147,8 @@ class CentaurScreen(common.Singleton):
         if text:
             self.write_text(10,text)
 
-    def write_text(self, row, text, font=MAIN_FONT, centered=True, bordered=False):
+
+    def write_text(self, row, text, font=MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
 
         buffer_copy = self._buffer.copy()
         image = Image.new(B_W_MODE, (SCREEN_WIDTH, ROW_HEIGHT), 255)
@@ -156,11 +157,20 @@ class CentaurScreen(common.Singleton):
 
         _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
 
-        if bordered:
-            draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+2)],radius=8,fill="white",outline='black', width=1)
+        if option != None:
+            offset_x = 15
+        else:
+            if bordered:
+                draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+2)],radius=radius,fill="white",outline='black', width=1)
 
-        offset_x = int((SCREEN_WIDTH-text_width)/2 if centered else 0)
+            offset_x = int((SCREEN_WIDTH-text_width)/2 if centered else 0)
+
         draw.text((offset_x, 0), text=text, font=font, fill=0)
+
+        if option != None:
+            draw.ellipse((0, 0, 10, 10), fill = 'white', outline ='black', width=1)
+            if option:
+                draw.ellipse((2, 2, 8, 8), fill = 'black', outline ='black', width=1)
 
         buffer_copy.paste(image, box=(0, int(row * ROW_HEIGHT)))
         
@@ -174,6 +184,7 @@ class CentaurScreen(common.Singleton):
     def clear_area(self, x1 = 0, y1 = 0, x2 = SCREEN_WIDTH, y2 = SCREEN_HEIGHT):
 
         self.draw_rectangle(x1,y1,x2,y2,255,255)
+        time.sleep(.2)
 
     def draw_fen(self, fen, startrow=2):
 
@@ -225,14 +236,15 @@ class CentaurScreen(common.Singleton):
         except Exception as e:
             Log.exception(CentaurScreen.draw_promotion_window, e)
 
-    def draw_board(self, pieces, startrow=2):
+    def draw_board(self, pieces, start_row=2, is_keyboard=False):
 
         try:
+
             for square in range(0,64):
                 
                 index = (square - 63) * -1
 
-                row = int(((startrow * ROW_HEIGHT) + 8) + (16 * (index // 8)))
+                row = int(((start_row * ROW_HEIGHT) + 8) + (16 * (index // 8)))
                 col = int((square % 8) * 16)
 
                 r = square // 8
@@ -245,9 +257,12 @@ class CentaurScreen(common.Singleton):
 
                     offset_y = offset_y + 16
 
-                offset_x = {" ":0,"P":16,"R":32,"N":48,"B":64,"Q":80,"K":96,"p":112,"r":128,"n":144,"b":160,"q":176,"k":192} [pieces[square]]
-                
+                offset_x = 0 if is_keyboard else {" ":0,"P":16,"R":32,"N":48,"B":64,"Q":80,"K":96,"p":112,"r":128,"n":144,"b":160,"q":176,"k":192} [pieces[square]]
+
                 piece_image = CHESS_SHEET_IMAGE.crop((offset_x, offset_y, offset_x+16, offset_y+16))
+
+                if is_keyboard and index<len(pieces):
+                    ImageDraw.Draw(piece_image).text((4, 0), pieces[index], font=fonts.FONT_Typewriter_small, fill=0)
 
                 self._buffer.paste(piece_image,(col,row))
                 

@@ -95,6 +95,7 @@ MENU_ITEMS = [
         ] },
 
     { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
+    { LABEL:"WIFI", "only_board":True, ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
 ]
 
 
@@ -213,7 +214,7 @@ class Menu:
 
                     Log.debug(command)
 
-                    match = re.search('1vs1_module|uci_resume|uci_module|famous_module', command)
+                    match = re.search('1vs1_module|uci_resume|uci_module|famous_module|wifi_module', command)
 
                     if match != None:
 
@@ -257,7 +258,7 @@ class Menu:
 
         self.home_screen()
 
-        CENTAUR_BOARD.subscribe_events(self._key_callback, self._field_callback)
+        CENTAUR_BOARD.subscribe_events(self._key_callback, None, self._socket)
 
     def _key_callback(self, key_index):
         #print(key_index)
@@ -343,9 +344,6 @@ class Menu:
 
         self.draw_menu(clear_area)
 
-    
-    def _field_callback(self, field_index):
-        return
 
     # Add engines and famous PGNs to proto menu
     def _build_menu_items(self):
@@ -409,7 +407,7 @@ class Menu:
 
     def initialize_web_menu(self, message={}):
 
-        message["update_menu"] = self._build_menu_items()
+        message["update_menu"] = list(filter(lambda item:"only_board" not in item or item["only_board"] == False, self._build_menu_items()))
         
         if self._socket != None:
             self._socket.send_message(message)

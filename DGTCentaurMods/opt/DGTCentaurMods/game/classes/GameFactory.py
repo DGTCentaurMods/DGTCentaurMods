@@ -157,7 +157,7 @@ class Engine():
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
-    def __field_callback(self, field_index):
+    def __field_callback(self, field_index, field_action):
 
         if self._initialized == False:
             return
@@ -168,19 +168,15 @@ class Engine():
             # We do not need to check the reset if a piece is lifted
             self._need_starting_position_check = False
 
-            current_action = Enums.PieceAction.LIFT if field_index >= 0 else Enums.PieceAction.PLACE
-
-            field_index = abs(field_index) -1
-            
             # Check the piece colour against the current turn
             piece_color_is_consistent = self._chessboard.turn == self._chessboard.color_at(field_index)
             
             square_name = common.Converters.to_square_name(field_index)
       
-            Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{current_action}")
+            Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{field_action}")
 
             # Legal squares construction from the lifted piece
-            if current_action == Enums.PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
+            if field_action == Enums.PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
   
                 self._source_square = field_index
 
@@ -205,10 +201,10 @@ class Engine():
             
             # We cancel the current taking back process if a second piece has been lifted
             # Otherwise we can't capture properly...
-            if current_action == Enums.PieceAction.LIFT:
+            if field_action == Enums.PieceAction.LIFT:
                 self._undo_requested = False
                         
-            if self._is_computer_move and current_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
+            if self._is_computer_move and field_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
                 # If this is a computer move then the piece lifted should equal the start of computermove
                 # otherwise set legalsquares so they can just put the piece back down! If it is the correct piece then
                 # adjust legalsquares so to only include the target square
@@ -230,7 +226,7 @@ class Engine():
                         # Only one choice possible
                         self._legal_squares = [common.Converters.to_square_index(self._computer_uci_move, Enums.SquareType.TARGET)]
 
-            if current_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
+            if field_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
                 if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
                     CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
@@ -241,7 +237,7 @@ class Engine():
                 self._need_starting_position_check = True
 
             # Taking back process
-            if self._can_undo_moves and piece_color_is_consistent == False and current_action == Enums.PieceAction.LIFT:
+            if self._can_undo_moves and piece_color_is_consistent == False and field_action == Enums.PieceAction.LIFT:
                 
                 # We read the last move that has been recorded
                 previous_uci_move = self.get_last_uci_move()
@@ -256,7 +252,7 @@ class Engine():
 
                     del previous_uci_move
 
-            if current_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
+            if field_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
 
                 if field_index == self._source_square:
                     # Piece has simply been placed back

@@ -21,7 +21,7 @@
 
 import os, time, threading, serial
 
-from DGTCentaurMods.game.classes import Log, SocketClient
+from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import Enums
 
@@ -123,8 +123,6 @@ class CentaurBoard(common.Singleton):
             time.sleep(2)
 
             self.clear_serial()
-
-            self._socket = SocketClient.get()
 
             self._events_worker = threading.Thread(target=self.events_board_thread)
             self._events_worker.daemon = True
@@ -372,7 +370,7 @@ class CentaurBoard(common.Singleton):
         print("+---+---+---+---+---+---+---+---+")
 
     
-    def subscribe_events(self, key_callback, field_callback):
+    def subscribe_events(self, key_callback, field_callback, socket = None):
 
         # We backup the current callbacks
         # In order to restore them in the next unsubscribe_events call
@@ -380,6 +378,9 @@ class CentaurBoard(common.Singleton):
 
         self._field_callback = field_callback
         self._key_callback = key_callback
+
+        if socket:
+            self._socket = socket
 
     def unsubscribe_events(self):
 
@@ -398,41 +399,31 @@ class CentaurBoard(common.Singleton):
 
     def _read_fields(self, timeout):
         try:
-            expected = bytearray(b'\x85\x00\x06'
-                                    + self.address_1.to_bytes(1, byteorder='big') 
-                                    + self.address_2.to_bytes(1, byteorder='big'))
-            
-            expected.append(_checksum(expected))
-            
-            response = bytearray(self.ask_serial(b'\x83', b''))
-            
-            if (response != expected):
-                if (len(response) > 1 and response[0] == 133 and response[1] == 0):
-                    for x in range(0, len(response) - 1):
+            if self._field_callback:
+
+                expected = bytearray(b'\x85\x00\x06'
+                                        + self.address_1.to_bytes(1, byteorder='big') 
+                                        + self.address_2.to_bytes(1, byteorder='big'))
+                
+                expected.append(_checksum(expected))
+                
+                response = self.ask_serial(b'\x83', b'')
+                
+                if (response != expected):
+
+                    if len(response) > 1 and response[0:2] == bytes(b'\x85\x00'):
                         
-                        if (response[x] == 64):
+                        for x in range(2, len(response) -1):
 
-                            # Calculate the square to 0(a1)-63(h8) so that
-                            # all functions match
-
-                            new_square = _rotate_field(response[x + 1])
+                            b = response[x:x+1]
                             
-                            if self._field_callback:
-                                self._field_callback(new_square + 1)
-                            
-                            self.time_limit = time.time() + timeout
-                        
-                        if (response[x] == 65):
-
-                            # Calculate the square to 0(a1)-63(h8) so that
-                            # all functions match
-
-                            new_square = _rotate_field(response[x + 1])
-                            
-                            if self._field_callback:
-                                self._field_callback((new_square + 1) * -1)
-                            
-                            self.time_limit = time.time() + timeout
+                            if b == b'\x40' or b == b'\x41':
+                                
+                                self._field_callback(_rotate_field(response[x+1]), 
+                                    { 64:Enums.PieceAction.LIFT, 65:Enums.PieceAction.PLACE }[response[x]])
+                                
+                                self.time_limit = time.time() + timeout
+                                break
         
         except Exception as e:
             print(e)
@@ -453,7 +444,7 @@ class CentaurBoard(common.Singleton):
         
             expected.append(_checksum(expected))
             
-            response = bytearray(self.ask_serial(b'\x94', b''))
+            response = self.ask_serial(b'\x94', b'')
         
             if not self._stand_by:
 
@@ -512,7 +503,7 @@ class CentaurBoard(common.Singleton):
                                             + self.address_2.to_bytes(1, byteorder='big'))
                     expected.append(_checksum(expected))
                     
-                    response = bytearray(self.ask_serial(b'\x94', b''))
+                    response = self.ask_serial(b'\x94', b'')
                     
                     if response.hex().startswith("b10011" 
                                                     + A1_HEX
@@ -599,7 +590,8 @@ class CentaurBoard(common.Singleton):
                     else:
                         self._power_connected = False
 
-                    SocketClient.get().send_request({"battery":-1 if self._power_connected else self._battery_level})
+                    if self._socket:
+                        self._socket.send_request({"battery":-1 if self._power_connected else self._battery_level})
         
         except Exception as e:
             print(e)

@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from PIL import ImageFont
-import pathlib
+from DGTCentaurMods.game.consts import consts
 
-FONT_Typewriter = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../../resources/Typewriter Medium.ttf", 16)
-FONT_Typewriter_small = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../../resources/Typewriter Medium.ttf", 11)
+FONT_Typewriter = ImageFont.truetype(consts.FONT_FILE, 16)
+FONT_Typewriter_small = ImageFont.truetype(consts.FONT_FILE, 11)
