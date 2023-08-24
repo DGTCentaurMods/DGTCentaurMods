@@ -45,6 +45,9 @@ class CentaurBoard(common.Singleton):
     _BAUD_RATE = 1000000
     _TIMEOUT = .2
 
+    _IDLE_BOARD_RESPONSE = b''
+    _IDLE_KEYS_RESPONSE = b''
+
     _key_callback = None
     _field_callback = None
 
@@ -113,6 +116,9 @@ class CentaurBoard(common.Singleton):
 
                     self.address_1 = response[3]
                     self.address_2 = response[4]
+
+                    self._IDLE_KEYS_RESPONSE = self.build_packet(b'\xb1\x00\x06', b'')
+                    self._IDLE_BOARD_RESPONSE = self.build_packet(b'\x85\x00\x06', b'')
 
                     print("Discovered new address:" + hex(self.address_1) + hex(self.address_2))
                     break
@@ -401,15 +407,9 @@ class CentaurBoard(common.Singleton):
         try:
             if self._field_callback:
 
-                expected = bytearray(b'\x85\x00\x06'
-                                        + self.address_1.to_bytes(1, byteorder='big') 
-                                        + self.address_2.to_bytes(1, byteorder='big'))
-                
-                expected.append(_checksum(expected))
-                
                 response = self.ask_serial(b'\x83', b'')
                 
-                if (response != expected):
+                if response != self._IDLE_BOARD_RESPONSE:
 
                     if len(response) > 1 and response[0:2] == bytes(b'\x85\x00'):
                         
@@ -438,15 +438,9 @@ class CentaurBoard(common.Singleton):
         try:
             button = Enums.Btn.NONE
             
-            expected = bytearray(b'\xb1\x00\x06' 
-                                    + self.address_1.to_bytes(1, byteorder='big') 
-                                    + self.address_2.to_bytes(1, byteorder='big'))
-        
-            expected.append(_checksum(expected))
-            
             response = self.ask_serial(b'\x94', b'')
         
-            if not self._stand_by:
+            if not self._stand_by and response != self._IDLE_KEYS_RESPONSE:
 
                 if (response.hex()[:-2] == "b10011" 
                     + A1_HEX
