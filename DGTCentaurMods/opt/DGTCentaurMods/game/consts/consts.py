@@ -55,5 +55,5 @@ SOUNDS_SETTINGS = [
     { "id":SOUND_MUSIC, "label":"Starting music" },
     { "id":SOUND_CORRECT_MOVES, "label":"Correct moves" },
     { "id":SOUND_WRONG_MOVES,"label":"Wrong moves" },
-    { "id":SOUND_TAKEBACK_MOVES,"label":"Tackbacks" },
+    { "id":SOUND_TAKEBACK_MOVES,"label":"Takebacks" },
     { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" }]
