@@ -86,12 +86,16 @@ MENU_ITEMS = [
             { LABEL: "⚡ Restart service", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
             },
+            
             { TYPE: "divider", "only_web":True },
+            
             { LABEL: "📋 Last log events", "only_web":True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
+
             { TYPE: "divider", "only_web":True },
 
+            { LABEL: "Edit configuration file", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
             { "id":"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], "only_web":True }
 
         ] },

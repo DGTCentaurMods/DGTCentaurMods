@@ -124,6 +124,17 @@ def on_request(message):
 
 				socketio.emit('message', response)
 
+			if action == "centaur.ini":
+
+				f = open(consts.CONFIG_FILE, "r")
+				response["editor"] = {
+					"text":f.read(),
+					"filename":action
+				}
+				f.close()
+
+				socketio.emit('message', response)
+
 		if "write" in message:
 
 			action = message["write"]
@@ -138,6 +149,17 @@ def on_request(message):
 				f.close()
 
 				response["popup"] = "File has been successfuly updated!"
+
+				socketio.emit('message', response)
+
+			if filename and filename == "centaur.ini":
+
+				f = open(consts.CONFIG_FILE, "w")
+
+				f.write(action["text"])
+				f.close()
+
+				response["popup"] = "Configuration file has been successfuly updated!"
 
 				socketio.emit('message', response)
 
