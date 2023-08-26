@@ -6,7 +6,7 @@ Before=poweroff.target halt.target shutdown.target
 Requires=poweroff.target
 
 [Service]
-ExecStart=python3 board/shutdown.py
+ExecStart=python3 scripts/shutdown.py
 Environment="PYTHONPATH=/opt"
 WorkingDirectory=/opt/DGTCentaurMods
 Type=oneshot

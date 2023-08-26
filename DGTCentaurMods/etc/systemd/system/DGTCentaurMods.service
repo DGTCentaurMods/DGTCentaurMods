@@ -8,8 +8,6 @@ ExecStartPre=/bin/sleep 4
 ExecStart=python3 game/menu.py
 WorkingDirectory=/opt/DGTCentaurMods
 Environment="PYTHONPATH=/opt"
-StandardOutput=file:/var/log/modmenuoutput.log
-StandardError=file:/var/log/modmenuoutput.log
 Restart=no
 User=pi
 

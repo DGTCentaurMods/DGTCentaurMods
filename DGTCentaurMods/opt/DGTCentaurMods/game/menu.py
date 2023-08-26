@@ -204,7 +204,10 @@ class Menu:
                         SCREEN.home_screen("Rebooting!")
                     
                     if command=="shutdown":
+                        CENTAUR_BOARD.led_from_to(7,7)
                         SCREEN.home_screen("Bye!")
+                        time.sleep(1)
+                        CENTAUR_BOARD.sleep()
 
                     if command=="restart_service":
                         SCREEN.home_screen("Reloading!")

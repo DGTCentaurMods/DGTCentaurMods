@@ -327,9 +327,6 @@ def main():
                             # We take the last move of the list
                             uci_move = state.get('moves').split()[-1]
 
-                            print("last_board_move")
-                            print(current_game["last_board_move"])
-
                             if uci_move == current_game["last_board_move"]:
                                 Log.info(f'Last board move "{uci_move}" validated by Lichess.')
 

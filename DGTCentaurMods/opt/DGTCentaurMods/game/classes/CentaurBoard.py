@@ -112,7 +112,7 @@ class CentaurBoard(common.Singleton):
                 self.write_to_serial(b'\x87\x00\x00\x07')
                 response = self.read_from_serial()
                 
-                if len(response) > 3:
+                if len(response) > 4:
 
                     self.address_1 = response[3]
                     self.address_2 = response[4]

@@ -89,7 +89,7 @@ def on_request(message):
 			# We relay the message to the app
 			socketio.emit('request', message)
 			os.system("sudo pkill centaur")
-			time.sleep(.5)
+			time.sleep(4)
 			os.system("sudo poweroff")
 
 		if action == "reboot":
