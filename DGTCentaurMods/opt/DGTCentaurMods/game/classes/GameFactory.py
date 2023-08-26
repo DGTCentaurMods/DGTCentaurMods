@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.game.consts import Enums, consts
 from DGTCentaurMods.game.lib import common
 
@@ -38,6 +39,8 @@ SCREEN = CentaurScreen.get()
 
 # Game manager class
 class Engine():
+
+    _started = False
 
     _thread_is_alive = False
     _initialized = False
@@ -73,7 +76,10 @@ class Engine():
 
         self._can_force_moves = Enums.BoardOption.CAN_FORCE_MOVES in flags
         self._can_undo_moves = Enums.BoardOption.CAN_UNDO_MOVES in flags
-        
+
+        self._evaluation_disabled = Enums.BoardOption.EVALUATION_DISABLED in flags
+        self._show_evaluation = not self._evaluation_disabled
+
         db_record_disabled = Enums.BoardOption.DB_RECORD_DISABLED in flags
 
         self._dal = DAL.get()
@@ -112,14 +118,13 @@ class Engine():
             # Key has not been handled by the client!
 
             # Default tick key
-            if key_index == Enums.Btn.TICK:
+            if not self._evaluation_disabled and key_index == Enums.Btn.TICK:
                 self._show_evaluation = not self._show_evaluation
 
                 self.update_evaluation()
 
                 self.display_partial_PGN()
                 self.display_board()
-                #self.synchronize_client_boards()
 
             # Default exit key
             if key_index == Enums.Btn.BACK:
@@ -228,7 +233,7 @@ class Engine():
 
             if field_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
                 
-                if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
+                if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
                     CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                 self._source_square = -1
@@ -279,12 +284,12 @@ class Engine():
                         self._legal_squares = []
                         self._source_square = -1
 
-                        if common.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
+                        if CentaurConfig.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
                             CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
 
                         CENTAUR_BOARD.led(field_index)
 
-                        self.update_Centaur_FEN()
+                        common.update_Centaur_FEN(self._chessboard.fen())
 
                         self.display_partial_PGN()
                         self.display_board()
@@ -341,7 +346,7 @@ class Engine():
                                 san_move = None
 
                             if san_move == None:
-                                if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
+                                if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
                                     CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
                                 Log.debug(f'INVALID move "{uci_move}"')
@@ -372,12 +377,13 @@ class Engine():
 
                                         self._san_move_list.append(san_move)
 
-                                        if common.get_sound_settings(consts.SOUND_CORRECT_MOVES):
+                                        if CentaurConfig.get_sound_settings(consts.SOUND_CORRECT_MOVES):
                                             CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
 
                                         CENTAUR_BOARD.led(field_index)
 
-                                        self.update_Centaur_FEN()
+                                        common.update_Centaur_FEN(self._chessboard.fen())
+
                                         self.display_partial_PGN()
                                         self.display_board()
                                         self.update_web_ui({ 
@@ -392,7 +398,7 @@ class Engine():
                                         self.stop()
 
                                 else:
-                                    Log.debug(f'Client rejected the move "{uci_move}/{san_move}...')
+                                    Log.debug(f'Client rejected the move "{uci_move}/{san_move}"...')
 
                                     # Move has been rejected by the client...
                                     self._chessboard.pop()
@@ -475,7 +481,7 @@ class Engine():
 
             self.update_evaluation(force=True, text=str_outcome)
 
-            self.send_to_client_boards({ 
+            self.send_to_web_clients({ 
                 "turn_caption":str_outcome
             })
 
@@ -492,37 +498,37 @@ class Engine():
 
                     self._new_evaluation_requested = False
 
-                    if self._show_evaluation:
+                    if self._show_evaluation and not self._evaluation_disabled:
 
-                            result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+                        result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
 
-                            if result != None and result["score"]:
+                        if result != None and result["score"]:
 
-                                score = str(result["score"])
+                            score = str(result["score"])
 
-                                del result
+                            del result
 
-                                Log.debug(score)
+                            Log.debug(score)
 
-                                if "Mate" in score:
-                                    
-                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+                            if "Mate" in score:
+                                
+                                mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
 
-                                    self.update_evaluation(force=True, text=f" mate in {mate}")
+                                self.update_evaluation(force=True, text=f" mate in {mate}")
 
-                                    del mate
-                                else:
-                                    eval = score[11:24]
-                                    eval = eval[1:eval.find(")")]
-                        
-                                    eval = int(eval)
+                                del mate
+                            else:
+                                eval = score[11:24]
+                                eval = eval[1:eval.find(")")]
+                    
+                                eval = int(eval)
 
-                                    if "BLACK" in score:
-                                        eval = eval * -1
+                                if "BLACK" in score:
+                                    eval = eval * -1
 
-                                    self.update_evaluation(force=True, value=eval)
+                                self.update_evaluation(force=True, value=eval)
 
-                                    del eval
+                                del eval
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
@@ -555,7 +561,7 @@ class Engine():
                 # We might need to resume a game...
                 if ticks == -1:
 
-                    uci_moves_history = self._dal.read_uci_moves_history()
+                    uci_moves_history = self._uci_moves_at_start if len(self._uci_moves_at_start)>0 else self._dal.read_uci_moves_history()
 
                     if len(uci_moves_history) > 0:
 
@@ -587,10 +593,11 @@ class Engine():
                                 Log.info("LAST GAME WAS FINISHED!")
                             
                             else:
-                                if common.get_sound_settings(consts.SOUND_MUSIC):
+                                if CentaurConfig.get_sound_settings(consts.SOUND_MUSIC):
                                     CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
-                                self.update_Centaur_FEN()
+                                common.update_Centaur_FEN(self._chessboard.fen())
+
                                 self.display_board()
                                 self.display_partial_PGN()
 
@@ -638,10 +645,11 @@ class Engine():
                                 
                                 self.__initialize()
                                 
-                                if common.get_sound_settings(consts.SOUND_MUSIC):
+                                if CentaurConfig.get_sound_settings(consts.SOUND_MUSIC):
                                     CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
-                                self.update_Centaur_FEN()
+                                common.update_Centaur_FEN(self._chessboard.fen())
+                                
                                 self.display_board()
                                 self.display_partial_PGN()
                                 self.update_web_ui({ 
@@ -682,10 +690,17 @@ class Engine():
                 "label":"← Back to main menu", 
                 "action": { "type": "socket_sys", "value": "homescreen"}}]})
     
-    def start(self):
+    def is_started(self):
+        return self._started
+
+    def start(self, uci_moves = []):
 
         if self._thread_is_alive:
             return
+
+        self._uci_moves_at_start = uci_moves
+        
+        self._started = True
 
         self._need_starting_position_check = True
 
@@ -706,8 +721,6 @@ class Engine():
 
             try:
             
-                # Do the same than synchronize_client_boards()
-                #  but on demand from the client
                 response = {}
 
                 if "pgn" in data:
@@ -806,19 +819,17 @@ class Engine():
             return san
         except:
             return None
-    
-    def load_Centaur_FEN(self):
-        self._chessboard = chess.Board(common.get_Centaur_FEN())
-
-    def update_Centaur_FEN(self):
-        common.update_Centaur_FEN(self._chessboard.fen())
 
     def display_board(self):
 
         SCREEN.draw_fen(self._chessboard.fen(), startrow=1.6)
 
-    def send_to_client_boards(self, message={}):
+    def send_to_web_clients(self, message={}):
         # We send the message to all connected clients
+
+        if self._evaluation_disabled:
+            message["evaluation_disabled"] = True
+
         if self._socket:
             self._socket.send_message(message)
 
@@ -909,6 +920,9 @@ class Engine():
 
     def get_board(self):
         return self._chessboard
+    
+    def computer_move_available(self):
+        return self._is_computer_move
 
     def set_computer_move(self, uci_move = None):
             
@@ -938,13 +952,13 @@ class Engine():
             from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
             to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
-            if common.get_sound_settings(consts.SOUND_COMPUTER_MOVES):
+            if CentaurConfig.get_sound_settings(consts.SOUND_COMPUTER_MOVES):
                 CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
    
             # Then light it up!
             CENTAUR_BOARD.led_from_to(from_num,to_num)
 
-            self.send_to_client_boards({ 
+            self.send_to_web_clients({ 
                 "clear_board_graphic_moves":False,
                 "computer_uci_move":uci_move,
             })

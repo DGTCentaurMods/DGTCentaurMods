@@ -25,6 +25,7 @@ from flask_socketio import SocketIO
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import consts
 from DGTCentaurMods.game.classes import DAL
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 
 import os, time, logging
 
@@ -152,13 +153,13 @@ def on_request(message):
 			if action == "sounds_settings_set":
 
 				if "value" in message:
-					common.update_sound_settings(message["value"]["id"], message["value"]["value"])
+					CentaurConfig.update_sound_settings(message["value"]["id"], message["value"]["value"])
 
 			if action == "sounds_settings":
 				
 				# We read the sounds settings
 				for s in consts.SOUNDS_SETTINGS:
-					s["value"] = common.get_sound_settings(s["id"])
+					s["value"] = CentaurConfig.get_sound_settings(s["id"])
 
 				response["sounds_settings"] = consts.SOUNDS_SETTINGS
 

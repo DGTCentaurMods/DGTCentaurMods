@@ -19,17 +19,21 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.lib import common
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 
 import importlib, shlex
 
 def main():
 
-    uci_module = importlib.import_module(name="uci_module", package="DGTCentaurMods.game")
-    last_uci = common.get_last_uci_command()
+    last_uci = CentaurConfig.get_last_uci_command()
 
-    # We unpack the last_uci args
-    uci_module.main(*shlex.split(last_uci))
+    if last_uci == "1vs1_module":
+        uci_module = importlib.import_module(name=last_uci, package="DGTCentaurMods.game")
+        uci_module.main()
+    else:
+        uci_module = importlib.import_module(name="uci_module", package="DGTCentaurMods.game")
+        # We unpack the last_uci args
+        uci_module.main(*shlex.split(last_uci))
 
 if __name__ == '__main__':
     main()

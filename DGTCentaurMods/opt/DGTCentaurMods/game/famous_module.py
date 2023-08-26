@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import GameFactory, Log, CentaurBoard, CentaurScreen
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.game.consts import Enums, fonts, consts
 from DGTCentaurMods.game.lib import common
 
@@ -110,7 +111,7 @@ def main(pgn):
             retry_count=0
             show_uci_move_on_board(correct_uci_move)
 
-            gfe.send_to_client_boards({ 
+            gfe.send_to_web_clients({ 
                 "clear_board_graphic_moves":False,
                 "tip_uci_move":correct_uci_move,
             })
@@ -128,7 +129,7 @@ def main(pgn):
                 if uci_move!= None:
                     show_uci_move_on_board(uci_move)
 
-                    gfe.send_to_client_boards({ 
+                    gfe.send_to_web_clients({ 
                         "clear_board_graphic_moves":False,
                         "tip_uci_move":uci_move,
                     })
@@ -165,7 +166,7 @@ def main(pgn):
 
             SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True)
 
-            gfe.send_to_client_boards({ 
+            gfe.send_to_web_clients({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
             })
 
@@ -178,7 +179,7 @@ def main(pgn):
 
                 show_uci_move_on_board(uci_move)
 
-                gfe.send_to_client_boards({ 
+                gfe.send_to_web_clients({ 
                     "clear_board_graphic_moves":False,
                     "computer_uci_move":uci_move,
                 })
@@ -202,7 +203,7 @@ def main(pgn):
         success = correct_uci_move == uci_move
 
         if not success:
-            if common.get_sound_settings(consts.SOUND_WRONG_MOVES):
+            if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
                 CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
             if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
@@ -212,7 +213,7 @@ def main(pgn):
                 if retry_count==0:
                     show_uci_move_on_board(correct_uci_move)
 
-                    gfe.send_to_client_boards({ 
+                    gfe.send_to_web_clients({ 
                         "clear_board_graphic_moves":False,
                         "tip_uci_move":correct_uci_move,
                     })
@@ -242,7 +243,7 @@ def main(pgn):
 
     exit_requested = False
 
-    # Subscribe to the game manager
+    # Subscribe to the game factory
     gfe = GameFactory.Engine(
         
         event_callback = event_callback,

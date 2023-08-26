@@ -23,7 +23,7 @@ from DGTCentaurMods.game.consts import consts, Enums
 
 from threading import Thread
 
-import os, configparser
+import os
 import subprocess
 import time
 
@@ -87,61 +87,6 @@ def update_Centaur_FEN(fen):
     except:
         pass
 
-def update_sound_settings(id, value):
-
-    try:
-        # Get the config
-        conf = configparser.ConfigParser()
-        conf.read_dict({'sounds':{ id: '1'}})
-        conf.read(consts.CONFIG_FILE)
-        conf.set('sounds', id, '1' if value else '0')
-    
-        with open(consts.CONFIG_FILE, 'w') as f:
-            conf.write(f)
-    except:
-        pass
-
-def get_sound_settings(id):
-
-    try:
-        # Get the config
-        conf = configparser.ConfigParser()
-        conf.read_dict({'sounds':{ id: '1'}})
-        conf.read(consts.CONFIG_FILE)
-
-        return conf.get('sounds', id) == '1'
-    except:
-        pass
-    
-    return True
-
-def update_last_uci_command(command):
-
-    try:
-        # Get the config
-        conf = configparser.ConfigParser()
-        conf.read_dict({'system':{ 'last_uci': ''}})
-        conf.read(consts.CONFIG_FILE)
-        conf.set('system', 'last_uci', command)
-    
-        with open(consts.CONFIG_FILE, 'w') as f:
-            conf.write(f)
-    except:
-        pass
-
-def get_last_uci_command():
-
-    try:
-         # Get the config
-        conf = configparser.ConfigParser()
-        conf.read_dict({'system':{ 'last_uci': ''}})
-        conf.read(consts.CONFIG_FILE)
-
-        return conf.get('system', 'last_uci')
-    except:
-        pass
-    
-    return None
 
 def delayed_command(command, delay):
     def _start_delayed(args, delay):

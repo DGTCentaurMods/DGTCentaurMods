@@ -20,10 +20,11 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, CentaurBoard
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.game.consts import Enums, fonts
 from DGTCentaurMods.game.lib import common
 
-import time, sys, chess
+import time, chess
 
 exit_requested = False
 
@@ -35,6 +36,8 @@ def main():
     global exit_requested
 
     exit_requested = False
+
+    CentaurConfig.update_last_uci_command("1vs1_module")
 
     def key_callback(args):
 
@@ -79,7 +82,7 @@ def main():
 
     exit_requested = False
 
-    # Subscribe to the game manager
+    # Subscribe to the game factory
     gfe = GameFactory.Engine(
         
         event_callback = event_callback,
@@ -102,8 +105,4 @@ def main():
 
 if __name__ == '__main__':
 
-    Log.debug(sys.argv)
-
-    assert len(sys.argv)>1, "The first argument needs to be the PGN file!"
-
-    main(sys.argv[1])
+    main()

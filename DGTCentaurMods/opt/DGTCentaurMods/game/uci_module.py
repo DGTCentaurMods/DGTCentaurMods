@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import ChessEngine, GameFactory, Log, CentaurBoard, CentaurScreen
+from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.game.consts import consts, Enums, fonts
 from DGTCentaurMods.game.lib import common
 
@@ -46,7 +47,7 @@ def main(color, engine_name, engine_parameters):
         "black"  : chess.WHITE, 
         "random" : chess.WHITE if randint(0,1) == 1 else chess.BLACK }[color]
 
-    common.update_last_uci_command(("black" if computer_color else "white")+' '+engine_name+' "'+engine_parameters+'"')
+    CentaurConfig.update_last_uci_command(("black" if computer_color else "white")+' '+engine_name+' "'+engine_parameters+'"')
 
     uci_options_desc = "Default"
     uci_options = {}
@@ -102,7 +103,7 @@ def main(color, engine_name, engine_parameters):
 
                 uci_move = gfe.get_Stockfish_uci_move()
 
-                gfe.send_to_client_boards({ 
+                gfe.send_to_web_clients({ 
                     "tip_uci_move":uci_move
                 })
 
@@ -136,7 +137,7 @@ def main(color, engine_name, engine_parameters):
 
             SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True, centered=True)
 
-            gfe.send_to_client_boards({ 
+            gfe.send_to_web_clients({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
             })
 
@@ -167,15 +168,7 @@ def main(color, engine_name, engine_parameters):
 
         return
 
-
-    # Activate the epaper
-    #epaper.initEpaper()
-
-    #statusbar = epaper.statusBar()
-    #statusbar.start()
-    #statusbar.print()
-
-    # Subscribe to the game manager
+    # Subscribe to the game factory
     gfe = GameFactory.Engine(
         
         event_callback = event_callback,

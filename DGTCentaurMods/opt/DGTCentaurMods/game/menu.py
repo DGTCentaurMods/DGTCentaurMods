@@ -49,12 +49,14 @@ TYPE = "type"
 MENU_ITEMS = [
 
     {   "id":"play", 
-        LABEL:"Play", 
+        LABEL:"Play",
         ITEMS: [
             {LABEL: "Resume last game", SHORT_LABEL: "Resume",
              ACTION: { TYPE: "socket_execute", VALUE: "uci_resume.py"} },
             {LABEL: "Play 1 vs 1", 
              ACTION:{ TYPE: "socket_execute", VALUE: "1vs1_module.py"} },
+            {LABEL: "Play Lichess", 
+             ACTION:{ TYPE: "socket_execute", VALUE: "lichess_module.py"} },
         ] }, 
     
     { LABEL:"Links", "only_web":True, ITEMS: [
@@ -214,7 +216,7 @@ class Menu:
 
                     Log.debug(command)
 
-                    match = re.search('1vs1_module|uci_resume|uci_module|famous_module|wifi_module', command)
+                    match = re.search('1vs1_module|uci_resume|uci_module|famous_module|wifi_module|lichess_module', command)
 
                     if match != None:
 

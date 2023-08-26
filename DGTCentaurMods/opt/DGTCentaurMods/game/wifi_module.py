@@ -63,6 +63,8 @@ def main():
     except:
         current_ssid = None
 
+    os.system(f"sudo chmod 666 {Network.WPA_SUPPLICANT_CONFIG}")
+    os.system(f"sudo chmod 777 {os.path.dirname(Network.WPA_SUPPLICANT_CONFIG)}")
 
     def _scan_networks():
 

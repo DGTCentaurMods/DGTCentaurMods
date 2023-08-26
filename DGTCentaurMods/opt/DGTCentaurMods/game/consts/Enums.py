@@ -62,4 +62,5 @@ class BoardOption(Flags):
     CAN_FORCE_MOVES = 1
     CAN_UNDO_MOVES = 2
     DB_RECORD_DISABLED = 4
-    CAN_DO_COFFEE = 8
+    EVALUATION_DISABLED = 8
+    CAN_DO_COFFEE = 16

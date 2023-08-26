@@ -449,6 +449,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									me.menuitems = result
 								},
 
+								evaluation_disabled: (value) => {
+									me.board.live_evaluation = !value
+								},
+
 								enable_menu: (value) => {
 									const menu = me.menuitems.filter(item => item.id == value)
 									if (menu && menu[0]) menu[0].disabled = false
