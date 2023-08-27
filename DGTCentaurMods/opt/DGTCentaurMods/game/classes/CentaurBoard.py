@@ -25,7 +25,6 @@ from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.lib import common
 from DGTCentaurMods.game.consts import Enums
 
-
 def _rotate_field(index):
     R = (index // 8)
     C = (index % 8)
@@ -37,7 +36,6 @@ def _checksum(bytes_array):
     for c in bytes(bytes_array):
         csum += c
     return csum % 128
-
 
 class CentaurBoard(common.Singleton):
 
@@ -102,10 +100,10 @@ class CentaurBoard(common.Singleton):
 
             response = b''
 
-            self.address_1 = 00
-            self.address_2 = 00
+            self._address_1 = 00
+            self._address_2 = 00
 
-            timeout = time.time() + 5
+            timeout = time.time() + 10
 
             while len(response) < 4 and time.time() < timeout:
 
@@ -114,13 +112,13 @@ class CentaurBoard(common.Singleton):
                 
                 if len(response) > 4:
 
-                    self.address_1 = response[3]
-                    self.address_2 = response[4]
+                    self._address_1 = response[3]
+                    self._address_2 = response[4]
 
                     self._IDLE_KEYS_RESPONSE = self.build_packet(b'\xb1\x00\x06', b'')
                     self._IDLE_BOARD_RESPONSE = self.build_packet(b'\x85\x00\x06', b'')
 
-                    print("Discovered new address:" + hex(self.address_1) + hex(self.address_2))
+                    print("Address:" + hex(self._address_1) + hex(self._address_2))
                     break
             else:
 
@@ -145,41 +143,37 @@ class CentaurBoard(common.Singleton):
     def serial(self):
         return self._SERIAL
 
-    def read_from_serial(self, length = 10000) -> bytes:
+    def read_from_serial(self) -> bytes:
 
         bytes = b''
 
         try:
-            bytes = self._SERIAL.read(length)
+            length = self._SERIAL.in_waiting
+            if length:
+                bytes = self._SERIAL.read(length)
         except:
             Log.info("Serial returned no data (Board may be disconnected)...")
 
             pass
 
         return bytes
-        
-        #bytes = self._SERIAL.read(length)
-
-        #if bytes != b'':
-        #    print("<-"+"".join("\\x%02x" % i for i in bytes))
-        
-        return bytes
 
     def write_to_serial(self, bytes):
         try:
             self._SERIAL.write(bytearray(bytes))
-            #print("->"+"".join("\\x%02x" % i for i in bytes))
+
         except:
             Log.info(f"Unable to write to serial '{bytes}'...")
 
-    def build_packet(self, command, data) -> bytearray:
+    def build_packet(self, command, data, no_checksum = False) -> bytearray:
 
         result = bytearray(command 
-                           + self.address_1.to_bytes(1,byteorder='big') 
-                           + self.address_2.to_bytes(1,byteorder='big') 
+                           + self._address_1.to_bytes(1,byteorder='big') 
+                           + self._address_2.to_bytes(1,byteorder='big') 
                            + data)
         
-        result.append(_checksum(result))
+        if not no_checksum:
+            result.append(_checksum(result))
 
         return result
     
@@ -204,6 +198,7 @@ class CentaurBoard(common.Singleton):
         self.send_packet(b'\x83', b'')
         self.read_from_serial()
 
+    # TODO to be reviewed
     def clear_serial(self):
         print('Checking and clear the serial line...')
 
@@ -223,9 +218,6 @@ class CentaurBoard(common.Singleton):
             if expected_1 == response_1 and expected_2 == response_2:
                 print('Board is idle. Serial is clear.')
                 return True
-            else:
-                print('Attempting to clear serial...')
-
 
     def beep(self, beeptype):
     
@@ -247,11 +239,11 @@ class CentaurBoard(common.Singleton):
         if (beeptype == Enums.Sound.POWER_OFF):
             self.send_packet(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
 
-
+    # TODO to be reviewed
     def led_array(self, inarray, speed = 3, intensity=5):
         
         # Lights all the leds in the given inarray with the given speed and intensity
-        message = bytearray(b'\xb0\x00\x0c' + self.address_1.to_bytes(1, byteorder='big') + self.address_2.to_bytes(1, byteorder='big') + b'\x05')
+        message = self.build_packet(b'\xb0\x00\x0c', b'\x05', no_checksum=True)
         
         message.append(speed)
         message.append(0)
@@ -266,15 +258,12 @@ class CentaurBoard(common.Singleton):
 
         self.write_to_serial(message)
 
-
+    # TODO to be reviewed
     def led_from_to(self, lfrom, lto, intensity=5):
         # Light up a from and to LED for move indication
         # Note the call to this function is 0 for a1 and runs to 63 for h8
         # but the electronics runs 0x00 from a8 right and down to 0x3F for h1
-        message = bytearray(b'\xb0\x00\x0c' 
-                            + self.address_1.to_bytes(1, byteorder='big') 
-                            + self.address_2.to_bytes(1, byteorder='big') 
-                            + b'\x05\x03\x00\x05\x3d\x31\x0d')
+        message = self.build_packet(b'\xb0\x00\x0c', b'\x05\x03\x00\x05\x3d\x31\x0d', no_checksum=True)
 
         # Recalculate lfrom to the different indexing system
         message[8] = intensity
@@ -287,7 +276,7 @@ class CentaurBoard(common.Singleton):
         
         self.write_to_serial(message)
 
-
+    # TODO to be reviewed
     def led(self, num, intensity=5):
         # Flashes a specific led
         # Note the call to this function is 0 for a1 and runs to 63 for h8
@@ -296,10 +285,7 @@ class CentaurBoard(common.Singleton):
 
         while try_index < 5:
             try:
-                message = bytearray(b'\xb0\x00\x0b' 
-                                    + self.address_1.to_bytes(1, byteorder='big') 
-                                    + self.address_2.to_bytes(1, byteorder='big') 
-                                    + b'\x05\x0a\x01\x01\x3d\x5f')
+                message = self.build_packet(b'\xb0\x00\x0b', b'\x05\x0a\x01\x01\x3d\x5f', no_checksum=True)
                 
                 # Recalculate num to the different indexing system
                 # Last bit is the checksum
@@ -323,6 +309,7 @@ class CentaurBoard(common.Singleton):
     def sleep(self):
         self.send_packet(b'\xb2\x00\x07', b'\x0a')
 
+    # TODO to be reviewed
     def get_board_state(self, field = None):
         # Query the board and return a representation of it
         # Consider this function experimental
@@ -335,9 +322,6 @@ class CentaurBoard(common.Singleton):
         while (len(response) < 64):
 
             response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
-
-            #if (len(response) < 64):
-            #    time.sleep(.1)
 
         response = response = response[6:(64 * 2) + 6]
         
@@ -409,7 +393,7 @@ class CentaurBoard(common.Singleton):
 
                 response = self.ask_serial(b'\x83', b'')
                 
-                if response != self._IDLE_BOARD_RESPONSE:
+                if not self._stand_by and response != self._IDLE_BOARD_RESPONSE:
 
                     if len(response) > 1 and response[0:2] == bytes(b'\x85\x00'):
                         
@@ -432,8 +416,8 @@ class CentaurBoard(common.Singleton):
 
     def _read_keys(self, timeout):
 
-        A1_HEX = "{:02x}".format(self.address_1)
-        A2_HEX = "{:02x}".format(self.address_2)
+        A1_HEX = "{:02x}".format(self._address_1)
+        A2_HEX = "{:02x}".format(self._address_2)
         
         try:
             button = Enums.Btn.NONE
@@ -442,46 +426,27 @@ class CentaurBoard(common.Singleton):
         
             if not self._stand_by and response != self._IDLE_KEYS_RESPONSE:
 
-                if (response.hex()[:-2] == "b10011" 
-                    + A1_HEX
-                    + A2_HEX 
-                    + "00140a0501000000007d47"):
+                response_is = lambda header, data: response.hex()[:-2] == header+A1_HEX+A2_HEX+data
 
-                    self.time_limit = time.time() + timeout
+                if response_is("b10011", "00140a0501000000007d47"):
                     button = Enums.Btn.BACK
 
-                if (response.hex()[:-2] == "b10011" 
-                    + A1_HEX
-                    + A2_HEX 
-                    + "00140a0510000000007d17"):
-
-                    self.time_limit = time.time() + timeout
+                if response_is("b10011", "00140a0510000000007d17"):
                     button = Enums.Btn.TICK
 
-                if (response.hex()[:-2] == "b10011" 
-                    + A1_HEX
-                    + A2_HEX 
-                    + "00140a0508000000007d3c"):
-
-                    self.time_limit = time.time() + timeout
+                if response_is("b10011", "00140a0508000000007d3c"):
                     button = Enums.Btn.UP
 
-                if (response.hex()[:-2] == "b10010" 
-                    + A1_HEX
-                    + A2_HEX 
-                    + "00140a05020000000061"):
-
-                    self.time_limit = time.time() + timeout
+                if response_is("b10010", "00140a05020000000061"):
                     button = Enums.Btn.DOWN
 
-                if (response.hex()[:-2] == "b10010" 
-                    + A1_HEX
-                    + A2_HEX 
-                    + "00140a0540000000006d"):
-
-                    self.time_limit = time.time() + timeout
+                if response_is("b10010", "00140a0540000000006d"):
                     button = Enums.Btn.HELP
-            
+
+                if response_is("b10010", "00140a0504000000002a"):
+                    button = Enums.Btn.PLAY
+
+            # TODO standby mode to be reviewed
             """
             if (response.hex()[:-2] == "b10010" 
                 + A1_HEX
@@ -542,7 +507,7 @@ class CentaurBoard(common.Singleton):
 
             if button != Enums.Btn.NONE:
                 self.time_limit = time.time() + timeout
-                
+
                 if self._key_callback:
                     self._key_callback(button)
 
@@ -557,6 +522,7 @@ class CentaurBoard(common.Singleton):
             self.beep(Enums.Sound.POWER_OFF)
             self._socket.send_request({"sys":"shutdown"})
 
+    # TODO to be reviewed
     def _read_battery(self, timeout):
         try:
 
@@ -618,8 +584,8 @@ class CentaurBoard(common.Singleton):
                     # FIELDS HANDLING
                     self._read_fields(timeout)
             
-                # KEYS HANDLING
-                self._read_keys(timeout)
+                    # KEYS HANDLING
+                    self._read_keys(timeout)
                 
                 # BATTERY HANDLING
                 self._read_battery(timeout)
