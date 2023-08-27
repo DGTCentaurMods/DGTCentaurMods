@@ -103,7 +103,7 @@ class CentaurBoard(common.Singleton):
             self._address_1 = 00
             self._address_2 = 00
 
-            timeout = time.time() + 10
+            timeout = time.time() + 5
 
             while len(response) < 4 and time.time() < timeout:
 
@@ -126,7 +126,8 @@ class CentaurBoard(common.Singleton):
             
             time.sleep(2)
 
-            self.clear_serial()
+            if not self.clear_serial():
+                Log.exception(CentaurBoard.initialize, "Unable to clear the serial!")
 
             self._events_worker = threading.Thread(target=self.events_board_thread)
             self._events_worker.daemon = True
@@ -199,17 +200,18 @@ class CentaurBoard(common.Singleton):
         self.read_from_serial()
 
     # TODO to be reviewed
-    def clear_serial(self):
+    def clear_serial(self, timeout=30):
         print('Checking and clear the serial line...')
 
         response_1 = b''
         response_2 = b''
         
-        while True:
+        timeout = time.time() + timeout
+
+        while time.time() < timeout:
 
             expected_1 = self.build_packet(b'\x85\x00\x06', b'')
             response_1 = self.ask_serial(b'\x83', b'')
-
 
             expected_2 = self.build_packet(b'\xb1\x00\x06', b'')
             response_2 = self.ask_serial(b'\x94', b'')
@@ -218,6 +220,9 @@ class CentaurBoard(common.Singleton):
             if expected_1 == response_1 and expected_2 == response_2:
                 print('Board is idle. Serial is clear.')
                 return True
+            
+        print('Unable to clear the serial.')
+        return False
 
     def beep(self, beeptype):
     
