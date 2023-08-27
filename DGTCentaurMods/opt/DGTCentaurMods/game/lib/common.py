@@ -106,7 +106,7 @@ class Converters:
         return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
         
     @staticmethod
-    def to_square_index(uci_move, square_type) -> int:
+    def to_square_index(uci_move, square_type = Enums.SquareType.ORIGIN) -> int:
 
         square_name = uci_move[0:2] if square_type == Enums.SquareType.ORIGIN else uci_move[2:4]
         

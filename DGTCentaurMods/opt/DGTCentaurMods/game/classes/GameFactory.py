@@ -380,7 +380,10 @@ class Engine():
                                         if CentaurConfig.get_sound_settings(consts.SOUND_CORRECT_MOVES):
                                             CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
 
-                                        CENTAUR_BOARD.led(field_index)
+                                        if len(self._chessboard.checkers())>0:
+                                            CENTAUR_BOARD.led_array([field_index, self._chessboard.king(self._chessboard.turn)])
+                                        else:
+                                            CENTAUR_BOARD.led(field_index)
 
                                         common.update_Centaur_FEN(self._chessboard.fen())
 
