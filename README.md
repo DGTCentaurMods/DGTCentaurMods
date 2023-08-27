@@ -12,25 +12,38 @@ This current project overrides the legacy one, re-coding and re-factoring all th
 
 ## Current reworked features
 
-Advanced web Interface - on http://IP_ADDRESS or the hostname of you board.
+New Centaur interface.
 
-Moves undoing & forcing have been added.
+New advanced web Interface - on http://IP_ADDRESS or the hostname of you board.
 
-Chess Engines.
+You can now takback moves.
+
+You can force a move (if you play against an engine).
+
+You can resume the last engine or 1 vs 1 game.
 
 New "Famous!" module that allows to train against famous games.
+
+New Lichess module.
+
+New WIFI module.
+
+LEGACY MODULES ARE NO MORE REACHABLE.
 
 ## Roadmap
 
 Currently we are working on...
-1. Refactoring code / Migrating legacy modules
-2. Squashing bugs
-3. Improving performance
-4. Adding new features
+1. Squashing bugs
+2. Improving performance
+3. Adding new features
 
 ## Install procedure
 See the install procedure in the release info page.
+This fork is initially based against the [v1.2.1 original version](https://github.com/EdNekebno/DGTCentaurMods/releases/tag/v1.2.1).
 
 ## Contributors welcome!
 
 If you can offer some time and effort to the project please get in contact! Everybody is more than welcome!
+
+![](https://images2.imgbox.com/4f/0f/TA6NrpFN_o.jpg)
+
