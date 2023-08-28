@@ -22,5 +22,5 @@
 from PIL import ImageFont
 from DGTCentaurMods.game.consts import consts
 
-FONT_Typewriter = ImageFont.truetype(consts.FONT_FILE, 16)
-FONT_Typewriter_small = ImageFont.truetype(consts.FONT_FILE, 11)
+MAIN_FONT = ImageFont.truetype(consts.FONT_FILE, 16)
+SMALL_FONT = ImageFont.truetype(consts.FONT_FILE, 11)

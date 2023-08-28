@@ -36,9 +36,6 @@ ROW_HEIGHT = 20
 
 B_W_MODE = '1'
 
-MAIN_FONT = fonts.FONT_Typewriter
-SMALL_FONT = fonts.FONT_Typewriter_small
-
 MAIN_SCREEN_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg"),(0,0)
 CHESS_SHEET_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/chesssprites.bmp")
 
@@ -148,7 +145,10 @@ class CentaurScreen(common.Singleton):
             self.write_text(10,text)
 
 
-    def write_text(self, row, text, font=MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
+    def write_text(self, row, text, font=fonts.MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
+
+        if option != None or bordered:
+            font=fonts.SMALL_FONT
 
         buffer_copy = self._buffer.copy()
         image = Image.new(B_W_MODE, (SCREEN_WIDTH, ROW_HEIGHT), 255)
@@ -157,11 +157,17 @@ class CentaurScreen(common.Singleton):
 
         _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
 
+        # Too large text?
+        if text_width>SCREEN_WIDTH and font!=fonts.SMALL_FONT:
+            font=fonts.SMALL_FONT
+            _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
+
         if option != None:
             offset_x = 15
         else:
             if bordered:
-                draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+2)],radius=radius,fill="white",outline='black', width=1)
+                centered = True
+                draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+1)],radius=radius,fill="white",outline='black', width=1)
 
             offset_x = int((SCREEN_WIDTH-text_width)/2 if centered else 0)
 
@@ -215,7 +221,7 @@ class CentaurScreen(common.Singleton):
             image = Image.new('1', (SCREEN_WIDTH, ROW_HEIGHT), 255)
 
             draw = ImageDraw.Draw(image)
-            draw.text((0, 0), "    Q    R    N   B", font=MAIN_FONT, fill=0)
+            draw.text((0, 0), "    Q    R    N   B", font=fonts.MAIN_FONT, fill=0)
             draw.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
             draw.polygon([(35, 3), (51, 3), (43, 18)], fill=0)
             o = 66
@@ -262,20 +268,20 @@ class CentaurScreen(common.Singleton):
                 piece_image = CHESS_SHEET_IMAGE.crop((offset_x, offset_y, offset_x+16, offset_y+16))
 
                 if is_keyboard and index<len(pieces):
-                    ImageDraw.Draw(piece_image).text((4, 0), pieces[index], font=fonts.FONT_Typewriter_small, fill=0)
+                    ImageDraw.Draw(piece_image).text((4, 0), pieces[index], font=fonts.SMALL_FONT, fill=0)
 
                 self._buffer.paste(piece_image,(col,row))
                 
         except Exception as e:
             Log.exception(CentaurScreen.draw_board, e)
 
-    def draw_evaluation_bar(self, row=8.5, value=0, text=None, disabled=False, font=SMALL_FONT):
+    def draw_evaluation_bar(self, row=8.5, value=0, text=None, disabled=False, font=fonts.SMALL_FONT):
 
         if disabled:
             text = "evaluation disabled"
 
         if text:
-            self.write_text(row, text, font=font, centered=True, bordered=True)
+            self.write_text(row, text, font=font, bordered=True)
             return
         
         draw = ImageDraw.Draw(self._buffer)

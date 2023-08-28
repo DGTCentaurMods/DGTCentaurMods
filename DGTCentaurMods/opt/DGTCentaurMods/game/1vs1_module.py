@@ -78,7 +78,7 @@ def main():
 
             current_player = "White player" if gfe.get_board().turn else "Black player"
 
-            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True)
+            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", bordered=True)
 
     exit_requested = False
 

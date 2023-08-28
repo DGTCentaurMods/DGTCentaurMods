@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.game.consts import consts
 
-import configparser
+import configparser, json
 
 
 class CentaurConfig:
@@ -79,3 +79,11 @@ class CentaurConfig:
     @staticmethod
     def get_last_uci_command():
         return CentaurConfig._get('system', 'last_uci', '')
+    
+    @staticmethod
+    def update_lichess_seeking_params(params):
+        CentaurConfig._update('lichess', 'seeking_params', json.dumps(params), '[]')
+
+    @staticmethod
+    def get_lichess_seeking_params() -> ():
+        return tuple(json.loads(CentaurConfig._get('lichess', 'seeking_params', '[]')))

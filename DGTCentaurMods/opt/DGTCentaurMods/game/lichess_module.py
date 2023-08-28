@@ -27,6 +27,7 @@ import time, chess, berserk, threading
 
 exit_requested = False
 stream_game_state = None
+stream_incoming_events = None
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
@@ -38,47 +39,264 @@ def main():
 
     exit_requested = False
 
-    w = SCREEN.write_text
+    class Criteria():
+
+        def __init__(self, id, caption, format, value, values):
+            self.row = 0
+            self.id = id
+            self.caption = caption
+            self.format = format
+            self.value = value
+            self.values = values
+
+    class SeekingEngine():
+
+        _current_index = 0
+        _seeking_worker = None
+
+        def __init__(self):
+
+            stored_criterias = CentaurConfig.get_lichess_seeking_params()
+
+            if len(stored_criterias) != 6:
+                stored_criterias = ("random","casual",200,200,10,0)
+
+            self._params = (
+                Criteria("color", "Select color", "{0}", stored_criterias[0], ("random", "white", "black")),
+                Criteria("mode", "Select mode", "{0}", stored_criterias[1], ("rated", "casual")),
+                Criteria("range_low", "Low relative range", "-{0}", stored_criterias[2], (100,200,300,400,500,600,700,800)),
+                Criteria("range_high", "High relative range", "+{0}", stored_criterias[3], (100,200,300,400,500,600,700,800)),
+                Criteria("clock", "Select clock", "{0} minutes", stored_criterias[4], (3,5,10,15,20,30,60)),
+                Criteria("increment", "Select increment", "+{0} seconds", stored_criterias[5], (0,1,2,5,10,30)),
+            )
+
+        def current(self):
+            return self._params[self._current_index]
+
+        def next_value(self):
+
+            current_index = self.current().values.index(self.current().value)
+
+            current_index += 1
+            if current_index == len(self.current().values):
+                current_index = 0
+
+            self.current().value = self.current().values[current_index]
+
+            W(self.current().row+1, self.current().format.format(self.current().value), option=True)
+
+            return self.current().value
+
+        def next(self):
+
+            W(self.current().row+1, self.current().format.format(self.current().value), option=False)
+
+            self._current_index += 1
+            if self._current_index == len(self._params):
+                self._current_index = 0
+
+            W(self.current().row+1, self.current().format.format(self.current().value), option=True)
+
+            return self.current()
+
+        def previous(self):
+
+            W(self.current().row+1, self.current().format.format(self.current().value), option=False)
+
+            self._current_index -= 1
+            if self._current_index == -1:
+                self._current_index = len(self._params)-1
+
+            W(self.current().row+1, self.current().format.format(self.current().value), option=True)
+
+            return self.current()
+
+        def print_all(self, starting_row = 3):
+
+            row = starting_row
+
+            for p in self._params:
+
+                p.row = row
+
+                W(row, p.caption, bordered=True)
+                W(row+1, p.format.format(p.value), option=self.current() == p)
+
+                row += 2
+
+        def get_all(self):
+
+            values = []
+
+            for p in self._params:
+                values.append(p.value)
+
+            return values
+        
+        def stop(self):
+            if self._seeking_worker != None:
+                self._seeking_worker.join()
+        
+        def start(self):
+            def seeking_thread():
+
+                criterias = self.get_all()
+
+                # To calculate the time class, LiChess uses the following algorithm:
+                # Take the increment and multiply it by 40
+                # Then add the initial time on the clock
+                # If this total is 25 minutes or more, it's considered Classical
+                # 25:00 - 5:00:00 is Classical
+                # 8:00 - 24:59 is Rapid
+                # 3:00 - 7:59 is Blitz
+                # 0:30 - 2:59 is Bullet
+                total_time = (criterias[5] * 40) + (criterias[4] * 60)
+
+                cadence = "bullet"
+                if total_time>=(3 * 60):
+                    cadence = "blitz"
+                if total_time>=(8 * 60):
+                    cadence = "rapid"
+                if total_time>=(25 * 60):
+                    cadence = "classical"
+
+                your_rating = current_game["perfs"][cadence]["rating"]
+
+                rating_range = f"{your_rating-criterias[2]}-{your_rating+criterias[3]}"
+
+                Log.info(f"Seeking Lichess {cadence} game - [{rating_range}]")
+
+                lichess_client.board.seek(
+                    criterias[4], #time
+                    criterias[5], #increment
+                    rated = criterias[1] == "rated", 
+                    variant = 'standard', 
+                    color = criterias[0], 
+                    rating_range=rating_range)
+
+
+            self.stop()
+
+            self._seeking_worker = threading.Thread(target=seeking_thread)
+            self._seeking_worker.daemon = True
+            self._seeking_worker.start()
+
+    seeking_engine = SeekingEngine()
+
+    W = SCREEN.write_text
 
     def _missing_token_screen():
         SCREEN.clear_area()
-        w(2, "Please set")
-        w(3, "a valid token")
-        w(4, "using the web")
-        w(5, "interface or")
-        w(6, "editing the")
-        w(7, '"centaur.ini"')
-        w(8, "config file!")
+        W(2, "Please set")
+        W(3, "a valid token")
+        W(4, "using the web")
+        W(5, "interface or")
+        W(6, "editing the")
+        W(7, '"centaur.ini"')
+        W(8, "config file!")
 
     def _incorrect_token_screen():
         SCREEN.clear_area()
-        w(2, "SORRY :(")
-        w(3, "")
-        w(4, "Unable to")
-        w(5, "connect to")
-        w(6, "Lichess using")
-        w(7, "your token!")
+        W(2, "SORRY :(")
+        W(3, "")
+        W(4, "Unable to")
+        W(5, "connect to")
+        W(6, "Lichess using")
+        W(7, "your token!")
     
     def _welcome_screen():
         SCREEN.clear_area()
-        w(2, "WELCOME")
-        w(3, f"{current_game['username'] }!")
-        w(4, "")
-        w(5, "Please create")
-        w(6, "a game from")
-        w(7, "the Lichess")
-        w(8, "web interface!")
+        W(2, "WELCOME")
+        W(3, f"{current_game['username'] }!")
+        W(4, "")
+        W(5, "Please create")
+        W(6, "a game from")
+        W(7, "the Lichess")
+        W(8, "web interface,")
+        W(9, "")
+        W(10, "or press")
+        W(11, "PLAY")
+        W(12, "to seek")
+        W(13, 'a player!')
+
+        CENTAUR_BOARD.led_array([27,28,36,35])
+
+    def _seeking_screen():
+        SCREEN.clear_area()
+        W(2, "WELCOME")
+        W(3, f"{current_game['username'] }!")
+        W(4, "")
+        W(5, "Seeking a")
+        W(6, "player that")
+        W(7, "matches your")
+        W(8, "criterias...")
+
+        CENTAUR_BOARD.led_array([27,28,36,35])
+
+    def _criterias_screen():
+        SCREEN.clear_area()
+        W(1, "Fill criterias")
+        W(2, "then press PLAY!")
+
+        seeking_engine.print_all(3)
 
     def _key_callback(key_index):
         global exit_requested
+        global stream_incoming_events
+
+        if key_index == Enums.Btn.PLAY or key_index == Enums.Btn.TICK:
+
+            seeking_engine.stop()
+            CENTAUR_BOARD.leds_off()
+            _criterias_screen()
+
+            def _seeking_key_callback(key_index):
+
+                if key_index == Enums.Btn.BACK:
+
+                    seeking_engine.stop()
+
+                    CENTAUR_BOARD.unsubscribe_events()
+                    _welcome_screen()
+
+                if key_index == Enums.Btn.PLAY:
+                    CENTAUR_BOARD.unsubscribe_events()
+                    _seeking_screen()
+                    CentaurConfig.update_lichess_seeking_params(seeking_engine.get_all())
+                    seeking_engine.start()
+
+                if key_index == Enums.Btn.UP:
+                    seeking_engine.previous()
+
+                if key_index == Enums.Btn.DOWN:
+                    seeking_engine.next()
+
+                if key_index == Enums.Btn.TICK:
+                    seeking_engine.next_value()
+
+            CENTAUR_BOARD.subscribe_events(_seeking_key_callback, None)
+
 
         if key_index == Enums.Btn.BACK:
+
+            seeking_engine.stop()
+
+            CENTAUR_BOARD.leds_off()
             CENTAUR_BOARD.unsubscribe_events()
             exit_requested = True
+            del stream_incoming_events
 
     CENTAUR_BOARD.subscribe_events(_key_callback, None)
 
-    current_game = {"username":None, "last_board_move":None, "id":None, "color":None, "opponent": None, "your_turn": None}
+    current_game = {
+        "username":None,
+        "perfs":None,
+        "last_board_move":None,
+        "id":None,
+        "color":None, 
+        "opponent": None,
+        "your_turn": None
+    }
 
     lichess_token = CentaurConfig.get_lichess_settings("token")
 
@@ -95,7 +313,11 @@ def main():
         Log.info(f"Lichess token:'{lichess_token}'")
 
         try:
-            current_game["username"] = lichess_client.account.get()["username"]
+
+            lichess_profile = lichess_client.account.get()
+            
+            current_game["perfs"] = lichess_profile["perfs"]
+            current_game["username"] = lichess_profile["username"]
         except Exception as e:
 
             Log.exception(main, e)
@@ -109,8 +331,10 @@ def main():
 
             _welcome_screen()
 
-            # Waiting for new standard game
-            for event in lichess_client.board.stream_incoming_events():
+            stream_incoming_events = lichess_client.board.stream_incoming_events()
+
+            # Waiting for new standard game created from Lichess UI
+            while True:
                 """
                 {
                     "type": "challenge",
@@ -168,19 +392,65 @@ def main():
 
                 """
 
-                #print(event)
+                time.sleep(.5)
 
-                if 'type' in event.keys():
+                try:
+                    event = stream_incoming_events.next()
+                except:
+                    event = None
+                    pass
+
+                if exit_requested:
+                    break
+
+                def _set_game_data(id, color, opponent):
+                    current_game["id"]  = id
+                    current_game["color"]  = chess.WHITE if color == "white" else chess.BLACK 
+                    current_game["opponent"] = opponent
+
+                if event and 'type' in event.keys():
                     if event.get('type') == "gameStart":
                         if 'game' in event.keys():
 
                             game_node = event.get('game')
 
                             if 'variant' in game_node.keys() and game_node.get('variant').get('key') == "standard":
-                                current_game["id"]  = game_node.get('id')
-                                current_game["color"]  = chess.WHITE if game_node.get('color') == "white" else chess.BLACK 
-                                current_game["opponent"] = game_node.get('opponent').get('username')
+                                _set_game_data(
+                                    game_node.get('id'),
+                                    game_node.get('color'),
+                                    game_node.get('opponent').get('username'))
+
                                 break
+                
+                if event == None:
+
+                    """
+                    [{
+                        'fullId': 'GAME_ID_FULL', 
+                        'gameId': 'GAME_ID', 
+                        'fen': 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 
+                        'color': 'white', 
+                        'lastMove': '', 
+                        'source': 'lobby', 
+                        'status': {'id': 20, 'name': 'started'}, 
+                        'variant': {'key': 'standard', 'name': 'Standard'}, 
+                        'speed': 'rapid',
+                        'perf': 'rapid',
+                        'rated': False,
+                        'hasMoved': False, 
+                        'opponent': {'id': 'jack_bauer', 'username': 'Jack_Bauer', 'rating': 1521},
+                        'isMyTurn': True,
+                        'secondsLeft': 600}]
+                    """
+
+                    ongoing_games = lichess_client.games.get_ongoing(1)
+                    if len(ongoing_games) >0:
+
+                        _set_game_data(
+                            ongoing_games[0].get('gameId'),
+                            ongoing_games[0].get('color'),
+                            ongoing_games[0].get('opponent').get('username'))
+                        break
 
             def key_callback(args):
 
@@ -210,7 +480,7 @@ def main():
 
                     current_player = current_game["username"] if current_game["your_turn"] else current_game["opponent"]
 
-                    SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", font=fonts.FONT_Typewriter_small, bordered=True, centered=True)
+                    SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", bordered=True)
 
                     gfe.send_to_web_clients({ 
                         "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
@@ -308,6 +578,10 @@ def main():
                     """
                     
                     if gfe.is_started() == False:
+
+                        seeking_engine.stop()
+
+                        CENTAUR_BOARD.leds_off()
 
                         if 'state' in state.keys():
 

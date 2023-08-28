@@ -129,7 +129,7 @@ class Menu:
         if clear_area:
             SCREEN.clear_area()
 
-        SCREEN.write_text(current_row-.8, "choose an item", font=fonts.FONT_Typewriter_small)
+        SCREEN.write_text(current_row-.8, "choose an item", font=fonts.SMALL_FONT)
 
         if is_root:
             SCREEN.draw_fen(common.get_Centaur_FEN())

@@ -99,14 +99,14 @@ def main():
     def _print_wifi_ui():
         SCREEN.clear_area()
 
-        SCREEN.write_text(2, "current WIFI", font=fonts.FONT_Typewriter_small, bordered=True)
+        SCREEN.write_text(2, "Current WIFI", bordered=True)
         
         if current_ssid:
-            SCREEN.write_text(3, f'"{current_ssid}"', font=fonts.FONT_Typewriter_small)
+            SCREEN.write_text(3, f'"{current_ssid}"')
         else:
-            SCREEN.write_text(3, f'Not connected!', font=fonts.FONT_Typewriter_small)
+            SCREEN.write_text(3, f'Not connected!')
 
-        SCREEN.write_text(5, "Available networks", font=fonts.FONT_Typewriter_small, bordered=True)
+        SCREEN.write_text(5, "Available networks", bordered=True)
 
         _scan_networks()
         _print_networks()
@@ -126,7 +126,7 @@ def main():
             SCREEN.write_text(7, "found!")
         else:
             for n in wifi[NETWORKS]:
-                SCREEN.write_text(index+6, f'{n.ssid} ({n.signal})', font=fonts.FONT_Typewriter_small, option=index == wifi[INDEX])
+                SCREEN.write_text(index+6, f'{n.ssid} ({n.signal})', option=index == wifi[INDEX])
                 index += 1
 
     def _password_field_callback(field_index, field_action):
@@ -164,7 +164,7 @@ def main():
 
             SCREEN.write_text(10, "Enter the")
             SCREEN.write_text(11, "password for")
-            SCREEN.write_text(12, f'"{selected_network.ssid}"', font=fonts.FONT_Typewriter_small)
+            SCREEN.write_text(12, f'"{selected_network.ssid}"', font=fonts.SMALL_FONT)
 
             network = Network.find(selected_network.ssid)
 
