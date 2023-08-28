@@ -41,11 +41,13 @@ def main(color, engine_name, engine_parameters):
 
     exit_requested = False
 
-    # Expect the first argument to be 'white' 'black' or 'random' for what the player is playing
     computer_color = {
         "white"  : chess.BLACK, 
         "black"  : chess.WHITE, 
         "random" : chess.WHITE if randint(0,1) == 1 else chess.BLACK }[color]
+
+    # If computer is white, we reverse the screen
+    SCREEN.set_reversed(computer_color)
 
     CentaurConfig.update_last_uci_command(("black" if computer_color else "white")+' '+engine_name+' "'+engine_parameters+'"')
 

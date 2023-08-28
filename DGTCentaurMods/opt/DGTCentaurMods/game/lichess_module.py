@@ -525,8 +525,11 @@ def main():
                     "site"  : "",
                     "round" : "",
                     "white" : current_game["opponent"] if current_game["color"] == chess.BLACK else current_game["username"] ,
-                    "black" : current_game["opponent"] if current_game["opponent"] == chess.WHITE else current_game["username"] ,
+                    "black" : current_game["opponent"] if current_game["color"] == chess.WHITE else current_game["username"] ,
                 })
+            
+            # If you are black, we reverse the screen
+            SCREEN.set_reversed(not current_game["color"])
 
             # Game stream
             stream_game_state = lichess_client.board.stream_game_state(current_game["id"])

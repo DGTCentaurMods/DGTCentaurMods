@@ -112,6 +112,8 @@ class Menu:
 
     def home_screen(self):
 
+        SCREEN.set_reversed(False)
+
         CENTAUR_BOARD.leds_off()
 
         self.draw_menu(True)

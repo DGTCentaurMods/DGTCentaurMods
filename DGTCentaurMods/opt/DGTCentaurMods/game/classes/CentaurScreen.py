@@ -48,7 +48,7 @@ class CentaurScreen(common.Singleton):
 
     _thread_is_alive = True
 
-    _last_bytes_buffer = bytearray(b'')
+    _last_buffer_bytes = bytearray(b'')
 
     _screen_reversed = False
     _screen_enabled = True
@@ -80,6 +80,9 @@ class CentaurScreen(common.Singleton):
 
         return self
     
+    def set_reversed(self, value):
+        self._screen_reversed = value
+    
     def set_battery_value(self, value):
         self._battery_value = value
 
@@ -109,7 +112,7 @@ class CentaurScreen(common.Singleton):
                 buffer_bytes = buffer_copy.tobytes()
 
                 # Change detected?
-                if self._last_bytes_buffer != buffer_bytes:
+                if self._last_buffer_bytes != buffer_bytes:
 
                     if self._screen_reversed == False:
                         buffer_copy = buffer_copy.transpose(Image.FLIP_TOP_BOTTOM)
@@ -117,7 +120,7 @@ class CentaurScreen(common.Singleton):
                     
                     self._api.DisplayPartial(self._api.getbuffer(buffer_copy))
                 
-                    self._last_bytes_buffer = buffer_bytes
+                    self._last_buffer_bytes = buffer_bytes
 
             time.sleep(.25)
 

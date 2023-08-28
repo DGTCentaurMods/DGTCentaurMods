@@ -84,6 +84,9 @@ def main(pgn):
     player_names = { "white":game.headers["White"], "black":game.headers["Black"], }
     human_color = chess.WHITE if game.headers["Player"] == "White" else chess.BLACK
 
+    # If human is black, we reverse the screen
+    SCREEN.set_reversed(not human_color)
+
     Log.debug(f"human_color={human_color}")
 
     moves_history = tuple(game.mainline_moves())
