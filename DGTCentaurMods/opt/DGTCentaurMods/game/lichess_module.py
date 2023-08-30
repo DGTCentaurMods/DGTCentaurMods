@@ -73,7 +73,7 @@ def main():
                 Criteria("mode", "Select mode", "{0}", stored_criterias[1], ("rated", "casual")),
                 Criteria("range_low", "Low relative range", "-{0}", stored_criterias[2], (100,200,300,400,500,600,700,800)),
                 Criteria("range_high", "High relative range", "+{0}", stored_criterias[3], (100,200,300,400,500,600,700,800)),
-                Criteria("clock", "Select clock", "{0} minutes", stored_criterias[4], (3,5,10,15,20,30,60)),
+                Criteria("clock", "Select clock", "{0} minutes", stored_criterias[4], (3,5,10,15,20,30,45,60)),
                 Criteria("increment", "Select increment", "+{0} seconds", stored_criterias[5], (0,1,2,5,10,30)),
             )
 

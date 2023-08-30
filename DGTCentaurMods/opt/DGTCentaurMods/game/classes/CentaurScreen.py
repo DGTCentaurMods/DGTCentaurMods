@@ -205,6 +205,8 @@ class CentaurScreen(common.Singleton):
         if text:
             self.write_text(10,text)
 
+    def system_message(self, message):
+        self.write_text(1, message)
 
     def write_text(self, row, text, font=fonts.MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
 

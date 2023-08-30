@@ -43,12 +43,15 @@ LABEL = "label"
 SHORT_LABEL = "short_label"
 VALUE = "value"
 TYPE = "type"
+ONLY_WEB = "only_web"
+ONLY_BOARD = "only_board"
+ID = "id"
 
 # Menu items
 # Proto version, shared between web & ePaper
 MENU_ITEMS = [
 
-    {   "id":"play", 
+    {   ID:"play", 
         LABEL:"Play",
         ITEMS: [
             {LABEL: "Resume last game", SHORT_LABEL: "Resume",
@@ -59,7 +62,7 @@ MENU_ITEMS = [
              ACTION:{ TYPE: "socket_execute", VALUE: "lichess_module.py"} },
         ] }, 
     
-    { LABEL:"Links", "only_web":True, ITEMS: [
+    { LABEL:"Links", ONLY_WEB:True, ITEMS: [
             {LABEL: "Open Lichess position analysis", 
              ACTION :{ TYPE: "js", VALUE: '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
             {LABEL: "Open Lichess PGN import page", 
@@ -68,14 +71,14 @@ MENU_ITEMS = [
              ACTION:{ TYPE: "js", VALUE: '() => me.viewCurrentPGN()' }},
         ]}, 
     
-    { LABEL:"Settings", "only_web":True, ITEMS: [
-        { LABEL:"🌈 Web display", "only_web":True, ITEMS: [], TYPE: "subitem", ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} },
-        { LABEL:"🎵 Board sounds", "only_web":True, ACTION:{ TYPE: "socket_data", VALUE: "sounds_settings"}}, 
+    { LABEL:"Settings", ONLY_WEB:True, ITEMS: [
+        { LABEL:"🌈 Web display", ONLY_WEB:True, ITEMS: [], TYPE: "subitem", ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} },
+        { LABEL:"🎵 Board sounds", ONLY_WEB:True, ACTION:{ TYPE: "socket_data", VALUE: "sounds_settings"}}, 
     ]},
     
-    { LABEL:"Previous games", "only_web":True, ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
+    { LABEL:"Previous games", ONLY_WEB:True, ACTION:{ TYPE: "socket_data", VALUE: "previous_games"} }, 
     
-    {   "id":"system", 
+    {   ID:"system", 
         LABEL:"System", ITEMS: [
             { LABEL: "Power off board", SHORT_LABEL: "Power off",
               ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
@@ -83,25 +86,25 @@ MENU_ITEMS = [
             { LABEL: "Reboot board", SHORT_LABEL: "Reboot",
               ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
-            { LABEL: "⚡ Restart service", "only_web":True,
+            { LABEL: "⚡ Restart service", ONLY_WEB:True,
               ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
             },
             
-            { TYPE: "divider", "only_web":True },
+            { TYPE: "divider", ONLY_WEB:True },
             
-            { LABEL: "📋 Last log events", "only_web":True,
+            { LABEL: "📋 Last log events", ONLY_WEB:True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
 
-            { TYPE: "divider", "only_web":True },
+            { TYPE: "divider", ONLY_WEB:True },
 
-            { LABEL: "Edit configuration file", "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
-            { "id":"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], "only_web":True }
+            { LABEL: "Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
+            { ID:"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
 
         ] },
 
     { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
-    { LABEL:"WIFI", "only_board":True, ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
+    { LABEL:"WIFI", ONLY_BOARD:True, ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
 ]
 
 
@@ -116,10 +119,10 @@ class Menu:
 
         CENTAUR_BOARD.leds_off()
 
-        self.draw_menu(True)
+        self.draw_menu()
         #SCREEN.save_screen()
 
-    def draw_menu(self, clear_area=False):
+    def draw_menu(self):
 
         # TODO to be optimized...
 
@@ -128,22 +131,22 @@ class Menu:
         current_row = 10 if is_root else 2
         current_index = 0
 
-        if clear_area:
-            SCREEN.clear_area()
-
         SCREEN.write_text(current_row-.8, "choose an item", font=fonts.SMALL_FONT)
 
         if is_root:
+            SCREEN.system_message('WELCOME!')
+            SCREEN.write_text(2, ' '*20)
+            SCREEN.write_text(3, ' '*20)
             SCREEN.draw_fen(common.get_Centaur_FEN())
 
-        current_items = self._menu[CURRENT_NODE]+([{LABEL:""}]*10)
+        current_items = self._menu[CURRENT_NODE]+([{LABEL:' '*20}]*10)
 
         current_item_row = current_row
 
         # We draw all the visible items
         for item in current_items:
 
-            if "only_web" in item and item["only_web"] == True:
+            if ONLY_WEB in item and item[ONLY_WEB] == True:
                 continue
 
             SCREEN.write_text(current_row, item[SHORT_LABEL if SHORT_LABEL in item else LABEL])
@@ -179,7 +182,7 @@ class Menu:
                         #SCREEN.pause()
                     else:
                         #SCREEN.unpause()
-                        self.draw_menu(True)
+                        self.draw_menu()
 
                 if "battery" in  data:
                     SCREEN.set_battery_value(data["battery"])
@@ -262,7 +265,7 @@ class Menu:
             CURRENT_INDEX: 0,
             NODES: [],
             NODE_INDEXES: [],
-            ITEMS: list(filter(lambda item:"only_web" not in item or item["only_web"] == False, self._build_menu_items()))
+            ITEMS: list(filter(lambda item:ONLY_WEB not in item or item[ONLY_WEB] == False, self._build_menu_items()))
         }
 
         self._menu[CURRENT_NODE] = self._menu[ITEMS]
@@ -295,7 +298,7 @@ class Menu:
             else:
                 m[CURRENT_INDEX] = 0
 
-        if key_index == Enums.Btn.TICK:
+        if key_index == Enums.Btn.TICK or key_index == Enums.Btn.PLAY:
 
             if ITEMS in node[index]:
                 m[CURRENT_NODE] = node[index][ITEMS]
@@ -347,13 +350,11 @@ class Menu:
             nodes = m[NODES]
             if len(nodes) >0:
 
-                clear_area = True
-
                 m[CURRENT_NODE] = nodes.pop()
                 m[CURRENT_INDEX] = m[NODE_INDEXES].pop()
 
 
-        self.draw_menu(clear_area)
+        self.draw_menu()
 
 
     # Add engines and famous PGNs to proto menu
@@ -361,9 +362,9 @@ class Menu:
 
         result = copy.deepcopy(MENU_ITEMS)
         
-        play_item = next(filter(lambda item:"id" in item and item["id"] == "play", result))
-        sys_item = next(filter(lambda item:"id" in item and item["id"] == "system", result))
-        uci_item = next(filter(lambda item:"id" in item and item["id"] == "uci", sys_item[ITEMS]))
+        play_item = next(filter(lambda item:ID in item and item[ID] == "play", result))
+        sys_item = next(filter(lambda item:ID in item and item[ID] == "system", result))
+        uci_item = next(filter(lambda item:ID in item and item[ID] == "uci", sys_item[ITEMS]))
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
         PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
@@ -375,11 +376,11 @@ class Menu:
             return list(map(lambda section:section, parser.sections()))
 
         # We read the available engines + their options
-        engines = list(map(lambda f:{"id":Path(f.name).stem, "options":get_sections(f.path)}, 
+        engines = list(map(lambda f:{ID:Path(f.name).stem, "options":get_sections(f.path)}, 
                            filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
         
         # Stockfish has no configuration file (we might create one...)
-        engines.append({ "id":"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
+        engines.append({ ID:"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
 
         famous_pgns = list(map(lambda f:Path(f.name).stem, 
                            filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
@@ -392,7 +393,7 @@ class Menu:
         # Engines menu items
         for engine in engines:
 
-            engine_menu = { LABEL: "Play "+engine["id"].capitalize(), SHORT_LABEL: engine["id"].capitalize(), TYPE: "subitem", ITEMS:[] }
+            engine_menu = { LABEL: "Play "+engine[ID].capitalize(), SHORT_LABEL: engine[ID].capitalize(), TYPE: "subitem", ITEMS:[] }
 
             play_item[ITEMS].append(engine_menu)
             
@@ -400,7 +401,7 @@ class Menu:
                     
                 engine_menu[ITEMS].append({
                         LABEL: "⭐ "+option.capitalize(), SHORT_LABEL:option.capitalize(),
-                        ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine["id"]+' "'+option+'"' } })
+                        ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine[ID]+' "'+option+'"' } })
                 
 
         # UCI editor menu items
@@ -408,7 +409,7 @@ class Menu:
 
             if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
 
-                editor_menu = { LABEL: "Edit UCI of "+engine["id"].capitalize(), "only_web":True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine["id"]+".uci"} }
+                editor_menu = { LABEL: "Edit UCI of "+engine[ID].capitalize(), ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine[ID]+".uci"} }
 
                 uci_item[ITEMS].append(editor_menu)
 
@@ -418,7 +419,7 @@ class Menu:
 
     def initialize_web_menu(self, message={}):
 
-        message["update_menu"] = list(filter(lambda item:"only_board" not in item or item["only_board"] == False, self._build_menu_items()))
+        message["update_menu"] = list(filter(lambda item:ONLY_BOARD not in item or item[ONLY_BOARD] == False, self._build_menu_items()))
         
         if self._socket != None:
             self._socket.send_message(message)
