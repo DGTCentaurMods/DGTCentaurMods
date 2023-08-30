@@ -12,23 +12,23 @@ This current project overrides the legacy one, re-coding and re-factoring all th
 
 ## Current reworked features
 
-New Centaur interface.
+- New Centaur interface.
 
-New advanced web Interface - on http://IP_ADDRESS or the hostname of you board.
+- New advanced web Interface - on http://IP_ADDRESS or the hostname of you board.
 
-You can now takback moves.
+- You can now takeback moves.
 
-You can force a move (if you play against an engine).
+- You can force a move (if you play against an engine).
 
-You can resume the last engine or 1 vs 1 game.
+- You can resume the last engine or 1 vs 1 game you played.
 
-New "Famous!" module that allows to train against famous games.
+- New "Famous!" module that allows to train against famous games.
 
-New Lichess module.
+- New Lichess module.
 
-New WIFI module.
+- New WIFI module.
 
-LEGACY MODULES ARE NO MORE REACHABLE.
+LEGACY MODULES ARE NO MORE REACHABLE USING THIS SOFTWARE.
 
 ## Roadmap
 
@@ -39,7 +39,23 @@ Currently we are working on...
 
 ## Install procedure
 See the install procedure in the release info page.
-This fork is initially based against the [v1.2.1 original version](https://github.com/EdNekebno/DGTCentaurMods/releases/tag/v1.2.1).
+This fork is initially based against the
+[v1.2.1 original version](https://github.com/EdNekebno/DGTCentaurMods/releases/tag/v1.2.1).
+
+## This project uses...
+
+- [Python 3](https://www.python.org/)
+- [e-Paper](https://github.com/waveshareteam/e-Paper)
+- [Pillow](https://pypi.org/project/Pillow/)
+- [wpa-pyfi](https://pypi.org/project/wpa-pyfi/)
+- [python-chess](https://python-chess.readthedocs.io/)
+- [berserk](https://pypi.org/project/berserk/)
+- [AngularJS](https://angularjs.org/)
+- [chessboard.js](https://chessboardjs.com/)
+- [Flask](https://flask.palletsprojects.com/)
+- [flask-socketio](https://flask-socketio.readthedocs.io/)
+- Multiple chess engines
+- DGT Centaur board Reverse engineering work of the [original](https://github.com/EdNekebno/DGTCentaurMods) project
 
 ## Contributors welcome!
 
