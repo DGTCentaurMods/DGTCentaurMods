@@ -309,6 +309,8 @@ def main():
 
     if lichess_token == None or len(lichess_token) == 0:
 
+        CentaurConfig.update_lichess_settings("token", "INSERT_YOUR_LICHESS_TOKEN_HERE")
+
         _missing_token_screen()
         lichess_token = None
 
