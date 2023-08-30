@@ -73,7 +73,7 @@ def main():
                 Criteria("mode", "Select mode", "{0}", stored_criterias[1], ("rated", "casual")),
                 Criteria("range_low", "Low relative range", "-{0}", stored_criterias[2], (100,200,300,400,500,600,700,800)),
                 Criteria("range_high", "High relative range", "+{0}", stored_criterias[3], (100,200,300,400,500,600,700,800)),
-                Criteria("clock", "Select clock", "{0} minutes", stored_criterias[4], (3,5,10,15,20,30,45,60)),
+                Criteria("clock", "Select clock", "{0} minutes", stored_criterias[4], (5,8,10,15,20,25,30,45,60)),
                 Criteria("increment", "Select increment", "+{0} seconds", stored_criterias[5], (0,1,2,5,10,30)),
             )
 
@@ -172,15 +172,20 @@ def main():
                 rating_range = f"{your_rating-criterias[2]}-{your_rating+criterias[3]}"
 
                 Log.info(f"Seeking Lichess {cadence} game - [{rating_range}]")
-
-                lichess_client.board.seek(
-                    criterias[4], #time
-                    criterias[5], #increment
-                    rated = criterias[1] == "rated", 
-                    variant = 'standard', 
-                    color = criterias[0], 
-                    rating_range=rating_range)
-
+                
+                try:
+                    lichess_client.board.seek(
+                        criterias[4], #time
+                        criterias[5], #increment
+                        rated = criterias[1] == "rated", 
+                        variant = 'standard', 
+                        color = criterias[0], 
+                        rating_range=rating_range)
+                
+                except:
+                    Log.exception(SeekingEngine.start, f'Invalid time control "{cadence}"')
+                    self._seeking_worker = None
+                    _invalid_time_control_screen()
 
             self.stop()
 
@@ -237,6 +242,22 @@ def main():
         W(6, "player that")
         W(7, "matches your")
         W(8, "criterias...")
+
+        CENTAUR_BOARD.led_array([27,28,36,35])
+
+    def _invalid_time_control_screen():
+        SCREEN.clear_area()
+        W(2, "The time criterias")
+        W(3, "that you selected")
+        W(4, "are not authorized")
+        W(5, "by Lichess from a")
+        W(6, "seeking stream...")
+        W(7, "")
+        W(8, "Please correct")
+        W(9, "them or create")
+        W(10, "a game from")
+        W(11, "the Lichess")
+        W(12, "interface!")
 
         CENTAUR_BOARD.led_array([27,28,36,35])
 
