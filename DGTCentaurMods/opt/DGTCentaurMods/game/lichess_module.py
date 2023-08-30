@@ -550,8 +550,6 @@ def main():
 
             SCREEN.enable_clocks(True)
 
-            CENTAUR_BOARD.unsubscribe_events()
-
             # Game stream
             stream_game_state = lichess_client.board.stream_game_state(current_game[_ID])
             
