@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.game.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.game.consts import Enums, consts
+from DGTCentaurMods.game.consts import Enums, consts, fonts
 from DGTCentaurMods.game.lib import common
 
 #from pympler import muppy, summary
@@ -81,6 +81,8 @@ class Engine():
         self._show_evaluation = not self._evaluation_disabled
 
         db_record_disabled = Enums.BoardOption.DB_RECORD_DISABLED in flags
+
+        self._partial_pgn_disabled = Enums.BoardOption.PARTIAL_PGN_DISABLED in flags
 
         self._dal = DAL.get()
 
@@ -363,6 +365,7 @@ class Engine():
                                 if Engine.__invoke_callback(self._move_callback_function, 
                                         uci_move=uci_move,
                                         san_move=san_move,
+                                        color=not self._chessboard.turn, # Move has been done, we need to reverse the color
                                         field_index=field_index):
 
                                     self.update_evaluation()
@@ -879,47 +882,52 @@ class Engine():
                 current_turn = not current_turn
 
         return current_pgn
+    
+    def display_board_header(self, text):
+        SCREEN.write_text(1, text, font=fonts.MEDIUM_FONT)
 
     def display_partial_PGN(self, row=9.3, move_count=10):
 
-        # Maximum displayed moves
-        move_count = 10
+        if not self._partial_pgn_disabled:
 
-        # We read the last san moves
-        san_list = self._san_move_list[-move_count:] if self._chessboard.turn == chess.WHITE else self._san_move_list[-move_count+1:]
-        san_list = list(san_list) + ([None] * move_count)
-        
-        # We truncate the list
-        del san_list[move_count:]
+            # Maximum displayed moves
+            move_count = 10
 
-        # We always start to show a white move
-        current_turn = chess.WHITE
-        
-        current_row_move = ""
-        current_row_index = int((len(self._san_move_list) -move_count +1) / 2) +1
-        current_row_index = 1 if current_row_index < 1 else current_row_index
+            # We read the last san moves
+            san_list = self._san_move_list[-move_count:] if self._chessboard.turn == chess.WHITE else self._san_move_list[-move_count+1:]
+            san_list = list(san_list) + ([None] * move_count)
+            
+            # We truncate the list
+            del san_list[move_count:]
 
-        for san in san_list:
+            # We always start to show a white move
+            current_turn = chess.WHITE
+            
+            current_row_move = ""
+            current_row_index = int((len(self._san_move_list) -move_count +1) / 2) +1
+            current_row_index = 1 if current_row_index < 1 else current_row_index
 
-            # White move
-            if current_turn == chess.WHITE:
-                if (san == None):
-                    SCREEN.write_text(row, ' '*20, centered=False)
+            for san in san_list:
+
+                # White move
+                if current_turn == chess.WHITE:
+                    if (san == None):
+                        SCREEN.write_text(row, ' '*20, centered=False)
+                    else:
+                        current_row_move = f"{current_row_index}. "+san
+                        SCREEN.write_text(row, current_row_move, centered=False)
+
+                # Black move
                 else:
-                    current_row_move = f"{current_row_index}. "+san
-                    SCREEN.write_text(row, current_row_move, centered=False)
+                    if san != None:
+                        current_row_move = current_row_move + ".."+san
+                        SCREEN.write_text(row, current_row_move, centered=False)
 
-            # Black move
-            else:
-                if san != None:
-                    current_row_move = current_row_move + ".."+san
-                    SCREEN.write_text(row, current_row_move, centered=False)
+                    row = row + 1
+                    current_row_index = current_row_index + 1
 
-                row = row + 1
-                current_row_index = current_row_index + 1
-
-            # We switch the color
-            current_turn = not current_turn
+                # We switch the color
+                current_turn = not current_turn
 
     def get_board(self):
         return self._chessboard

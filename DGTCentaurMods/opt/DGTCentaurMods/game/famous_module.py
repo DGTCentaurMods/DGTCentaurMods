@@ -167,7 +167,7 @@ def main(pgn):
 
             current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
 
-            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", bordered=True)
+            gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 
             gfe.send_to_web_clients({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"

@@ -22,6 +22,9 @@
 from DGTCentaurMods.display import epd2in9d
 
 from DGTCentaurMods.game.classes import Log
+
+from DGTCentaurMods.game.classes.Clock import Clock
+
 from DGTCentaurMods.game.consts import consts, fonts
 from DGTCentaurMods.game.lib import common
 
@@ -32,7 +35,7 @@ import threading, time
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 296
 
-ROW_HEIGHT = 20
+HEADER_HEIGHT = 20
 
 B_W_MODE = '1'
 
@@ -46,12 +49,17 @@ class CentaurScreen(common.Singleton):
     _thread_worker = None
     _api = None
 
+    _wclock = None
+    _bclock = None
+
     _thread_is_alive = True
 
     _last_buffer_bytes = bytearray(b'')
 
     _screen_reversed = False
     _screen_enabled = True
+
+    _clocks_enabled = False
 
     _battery_value = -1 # -1 means "charging"
 
@@ -86,6 +94,43 @@ class CentaurScreen(common.Singleton):
     def set_battery_value(self, value):
         self._battery_value = value
 
+    def push_clock(self, color):
+        
+        if self._wclock and self._bclock:
+            if color:
+                self._wclock.resume()
+                self._bclock.pause()
+            else:
+                self._bclock.resume()
+                self._wclock.pause()
+
+    def intialize_clocks(self, wtime = None, btime = None):
+        
+        if wtime:
+            # First call - clocks need to be initialized
+            if self._wclock == None:
+                self._wclock = Clock(wtime)
+                self._bclock = Clock(wtime)
+
+            self._wclock.set(wtime)
+
+        if btime and self._bclock:
+            self._bclock.set(btime)
+
+    def enable_clocks(self, value):
+        
+        self._clocks_enabled = value
+
+        if not value:
+            self._wclock = None
+            self._bclock = None
+
+    def stop_clocks(self):
+        
+        if self._wclock and self._bclock:
+            self._bclock.pause()
+            self._wclock.pause()
+
     def _screen_thread(self):
 
         self._api.display(self._api.getbuffer(self._buffer))
@@ -97,8 +142,21 @@ class CentaurScreen(common.Singleton):
 
             if self._screen_enabled:
 
+                # Header time
                 clock = time.strftime("%H:%M")
                 self.write_text(0, clock, centered=False)
+
+                # Player clocks
+                if self._clocks_enabled:
+                    if self._wclock:
+                        self.write_text(13, self._wclock.get().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
+                    else:
+                        self.write_text(13, Clock.zero().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
+
+                    if self._bclock:
+                        self.write_text(10, self._bclock.get().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
+                    else:
+                        self.write_text(10, Clock.zero().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
 
                 # Connected battery
                 bi = "batteryc"
@@ -143,7 +201,7 @@ class CentaurScreen(common.Singleton):
     def home_screen(self, text=None):
 
         logo = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg")
-        self._buffer.paste(logo,(0,ROW_HEIGHT))
+        self._buffer.paste(logo,(0,HEADER_HEIGHT))
         if text:
             self.write_text(10,text)
 
@@ -153,42 +211,43 @@ class CentaurScreen(common.Singleton):
         if option != None or bordered:
             font=fonts.SMALL_FONT
 
-        buffer_copy = self._buffer.copy()
-        image = Image.new(B_W_MODE, (SCREEN_WIDTH, ROW_HEIGHT), 255)
-        
-        draw = ImageDraw.Draw(image)
+        i = Image.new(B_W_MODE, (0, 0), 255)
+        canvas = ImageDraw.Draw(i)
+        _, _, text_width, text_height = canvas.textbbox(xy=(0, 0), text=text, font=font)
 
-        _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
+        del canvas
+        del i
+
+        buffer_copy = self._buffer.copy()
+        i = Image.new(B_W_MODE, (SCREEN_WIDTH, text_height+4), 255)
+        
+        canvas = ImageDraw.Draw(i)
 
         # Too large text?
         if text_width>SCREEN_WIDTH and font!=fonts.SMALL_FONT:
             font=fonts.SMALL_FONT
-            _, _, text_width, text_height = draw.textbbox(xy=(0, 0), text=text, font=font)
+            _, _, text_width, text_height = canvas.textbbox(xy=(0, 0), text=text, font=font)
+
+        if bordered:
+            canvas.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height)],radius=radius,fill="white",outline='black', width=1)
+
+        offset_x = int((SCREEN_WIDTH-text_width)/2 if centered or bordered else 0) if option == None else 15
+
+        canvas.text((offset_x, 0), text=text, font=font, fill=0)
 
         if option != None:
-            offset_x = 15
-        else:
-            if bordered:
-                centered = True
-                draw.rounded_rectangle([(0,0),(SCREEN_WIDTH -1,text_height+1)],radius=radius,fill="white",outline='black', width=1)
-
-            offset_x = int((SCREEN_WIDTH-text_width)/2 if centered else 0)
-
-        draw.text((offset_x, 0), text=text, font=font, fill=0)
-
-        if option != None:
-            draw.ellipse((0, 0, 10, 10), fill = 'white', outline ='black', width=1)
+            canvas.ellipse((0, 1, 10, 11), fill = 'white', outline ='black', width=1)
             if option:
-                draw.ellipse((2, 2, 8, 8), fill = 'black', outline ='black', width=1)
+                canvas.ellipse((2, 3, 8, 9), fill = 'black', outline ='black', width=1)
 
-        buffer_copy.paste(image, box=(0, int(row * ROW_HEIGHT)))
+        buffer_copy.paste(i, box=(0, int(row * HEADER_HEIGHT)))
         
         self._buffer = buffer_copy.copy()
 
     def draw_rectangle(self, x1, y1, x2, y2, fill=None, outline=None, width=1):
 
-        draw = ImageDraw.Draw(self._buffer)
-        draw.rectangle([(x1, y1), (x2, y2)], fill=fill, outline=outline, width=width)
+        canvas = ImageDraw.Draw(self._buffer)
+        canvas.rectangle([(x1, y1), (x2, y2)], fill=fill, outline=outline, width=width)
 
     def clear_area(self, x1 = 0, y1 = 0, x2 = SCREEN_WIDTH, y2 = SCREEN_HEIGHT):
 
@@ -221,22 +280,22 @@ class CentaurScreen(common.Singleton):
 
         try:
             row = 5
-            image = Image.new('1', (SCREEN_WIDTH, ROW_HEIGHT), 255)
+            image = Image.new('1', (SCREEN_WIDTH, HEADER_HEIGHT), 255)
 
-            draw = ImageDraw.Draw(image)
-            draw.text((0, 0), "    Q    R    N   B", font=fonts.MAIN_FONT, fill=0)
-            draw.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
-            draw.polygon([(35, 3), (51, 3), (43, 18)], fill=0)
+            canvas = ImageDraw.Draw(image)
+            canvas.text((0, 0), "    Q    R    N   B", font=fonts.MAIN_FONT, fill=0)
+            canvas.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
+            canvas.polygon([(35, 3), (51, 3), (43, 18)], fill=0)
             o = 66
-            draw.line((0+o,16,16+o,16), fill=0, width=5)
-            draw.line((14+o,16,14+o,5), fill=0, width=5)
-            draw.line((16+o,6,4+o,6), fill=0, width=5)
-            draw.polygon([(8+o, 2), (8+o, 10), (0+o, 6)], fill=0)
+            canvas.line((0+o,16,16+o,16), fill=0, width=5)
+            canvas.line((14+o,16,14+o,5), fill=0, width=5)
+            canvas.line((16+o,6,4+o,6), fill=0, width=5)
+            canvas.polygon([(8+o, 2), (8+o, 10), (0+o, 6)], fill=0)
             o = 97
-            draw.line((6+o,16,16+o,4), fill=0, width=5)
-            draw.line((2+o,10, 8+o,16), fill=0, width=5)
+            canvas.line((6+o,16,16+o,4), fill=0, width=5)
+            canvas.line((2+o,10, 8+o,16), fill=0, width=5)
 
-            self._buffer.paste(image, (0, (row * ROW_HEIGHT)))
+            self._buffer.paste(image, (0, (row * HEADER_HEIGHT)))
 
             self.write_text(2,"Choose")
             self.write_text(3,"your")
@@ -253,7 +312,7 @@ class CentaurScreen(common.Singleton):
                 
                 index = (square - 63) * -1
 
-                row = int(((start_row * ROW_HEIGHT) + 8) + (16 * (index // 8)))
+                row = int(((start_row * HEADER_HEIGHT) + 8) + (16 * (index // 8)))
                 col = int((square % 8) * 16)
 
                 r = square // 8
@@ -287,7 +346,7 @@ class CentaurScreen(common.Singleton):
             self.write_text(row, text, font=font, bordered=True)
             return
         
-        draw = ImageDraw.Draw(self._buffer)
+        canvas = ImageDraw.Draw(self._buffer)
 
         MAX_VALUE = 800
         HEIGHT = 14
@@ -301,11 +360,11 @@ class CentaurScreen(common.Singleton):
 
         offset = (-(value/MAX_VALUE) * BAR_WIDTH *.5) + (BAR_WIDTH *.5)
 
-        y = row * ROW_HEIGHT
+        y = row * HEADER_HEIGHT
 
-        draw.rounded_rectangle([(0,y),(127,y+HEIGHT)],radius=8, fill="white",outline='black', width=1)
-        draw.rectangle([(PADDING,y+(PADDING *.5)),(127-PADDING,y+HEIGHT-(PADDING *.5))],fill="white",outline='black', width=1)
-        draw.rectangle([(PADDING,y+(PADDING *.5)),(PADDING+offset,y+HEIGHT-(PADDING *.5))],fill="black",outline='black', width=1)
+        canvas.rounded_rectangle([(0,y),(127,y+HEIGHT)],radius=8, fill="white",outline='black', width=1)
+        canvas.rectangle([(PADDING,y+(PADDING *.5)),(127-PADDING,y+HEIGHT-(PADDING *.5))],fill="white",outline='black', width=1)
+        canvas.rectangle([(PADDING,y+(PADDING *.5)),(PADDING+offset,y+HEIGHT-(PADDING *.5))],fill="black",outline='black', width=1)
 
 
 def get():

@@ -19,9 +19,9 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, CentaurBoard
+from DGTCentaurMods.game.classes import GameFactory, CentaurScreen, CentaurBoard
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.game.consts import Enums, fonts
+from DGTCentaurMods.game.consts import Enums
 from DGTCentaurMods.game.lib import common
 
 import time, chess
@@ -78,9 +78,10 @@ def main():
 
             current_player = "White player" if gfe.get_board().turn else "Black player"
 
-            SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", bordered=True)
+            gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 
     exit_requested = False
+
 
     # Subscribe to the game factory
     gfe = GameFactory.Engine(

@@ -160,8 +160,8 @@ class Menu:
                 break
 
         # Then we draw the selected item
-        y = current_item_row * CentaurScreen.ROW_HEIGHT
-        SCREEN.draw_rectangle(0,y,CentaurScreen.SCREEN_WIDTH -1,y+CentaurScreen.ROW_HEIGHT, outline=0)
+        y = current_item_row * CentaurScreen.HEADER_HEIGHT
+        SCREEN.draw_rectangle(0,y,CentaurScreen.SCREEN_WIDTH -1,y+CentaurScreen.HEADER_HEIGHT, outline=0)
         
 
     def __init__(self):

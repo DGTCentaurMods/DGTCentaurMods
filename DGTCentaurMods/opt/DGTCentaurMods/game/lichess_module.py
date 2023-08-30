@@ -23,7 +23,7 @@ from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, Centaur
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.game.consts import Enums, fonts
 
-import time, chess, berserk, threading
+import time, chess, berserk, threading, datetime
 
 exit_requested = False
 stream_game_state = None
@@ -31,6 +31,13 @@ stream_incoming_events = None
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
+
+_YOUR_LAST_BOARD_MOVE = "your_last_board_move"
+_USERNAME = "username"
+_OPPONENT = "opponent"
+_PERFS = "perfs"
+_ID = "id"
+_COLOR = "color"
 
 def main():
 
@@ -62,7 +69,7 @@ def main():
                 stored_criterias = ("random","casual",200,200,10,0)
 
             self._params = (
-                Criteria("color", "Select color", "{0}", stored_criterias[0], ("random", "white", "black")),
+                Criteria(_COLOR, "Select color", "{0}", stored_criterias[0], ("random", "white", "black")),
                 Criteria("mode", "Select mode", "{0}", stored_criterias[1], ("rated", "casual")),
                 Criteria("range_low", "Low relative range", "-{0}", stored_criterias[2], (100,200,300,400,500,600,700,800)),
                 Criteria("range_high", "High relative range", "+{0}", stored_criterias[3], (100,200,300,400,500,600,700,800)),
@@ -160,7 +167,7 @@ def main():
                 if total_time>=(25 * 60):
                     cadence = "classical"
 
-                your_rating = current_game["perfs"][cadence]["rating"]
+                your_rating = current_game[_PERFS][cadence]["rating"]
 
                 rating_range = f"{your_rating-criterias[2]}-{your_rating+criterias[3]}"
 
@@ -283,19 +290,19 @@ def main():
 
             CENTAUR_BOARD.leds_off()
             CENTAUR_BOARD.unsubscribe_events()
+
             exit_requested = True
             del stream_incoming_events
 
     CENTAUR_BOARD.subscribe_events(_key_callback, None)
 
     current_game = {
-        "username":None,
-        "perfs":None,
-        "last_board_move":None,
-        "id":None,
-        "color":None, 
-        "opponent": None,
-        "your_turn": None
+        _USERNAME:None,
+        _OPPONENT: None,
+        _PERFS:None,
+        _YOUR_LAST_BOARD_MOVE:None,
+        _ID:None,
+        _COLOR:None,
     }
 
     lichess_token = CentaurConfig.get_lichess_settings("token")
@@ -316,8 +323,11 @@ def main():
 
             lichess_profile = lichess_client.account.get()
             
-            current_game["perfs"] = lichess_profile["perfs"]
-            current_game["username"] = lichess_profile["username"]
+            # We get the PERFS to compute a correct ELO range
+            # from the creation page
+            current_game[_PERFS] = lichess_profile[_PERFS]
+            current_game[_USERNAME] = lichess_profile[_USERNAME]
+
         except Exception as e:
 
             Log.exception(main, e)
@@ -339,11 +349,11 @@ def main():
                 {
                     "type": "challenge",
                     "challenge": {
-                        "id": "GAME_ID",
+                        _ID: "GAME_ID",
                         "url": "https://lichess.org/GAME_ID",
                         "status": "created",
                         "challenger": {
-                            "id": "jack_bauer",
+                            _ID: "jack_bauer",
                             "name": "Jack_Bauer",
                             "title": None,
                             "rating": 1498,
@@ -351,7 +361,7 @@ def main():
                             "lag": 4,
                         },
                         "destUser": {
-                            "id": "maia1",
+                            _ID: "maia1",
                             "name": "maia1",
                             "title": "BOT",
                             "rating": 1493,
@@ -361,7 +371,7 @@ def main():
                         "rated": False,
                         "speed": "rapid",
                         "timeControl": {"type": "clock", "limit": 600, "increment": 5, "show": "10+5"},
-                        "color": "white",
+                        _COLOR: "white",
                         "finalColor": "white",
                         "perf": {"icon": "\ue017", "name": "Rapid"},
                     },
@@ -373,20 +383,20 @@ def main():
                         "fullId": "GAME_ID_EX",
                         "gameId": "GAME_ID",
                         "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                        "color": "white",
+                        _COLOR: "white",
                         "lastMove": "",
                         "source": "friend",
-                        "status": {"id": 20, "name": "started"},
+                        "status": {_ID: 20, "name": "started"},
                         "variant": {"key": "standard", "name": "Standard"},
                         "speed": "rapid",
                         "perf": "rapid",
                         "rated": False,
                         "hasMoved": False,
-                        "opponent": {"id": "maia1", "username": "BOT maia1", "rating": 1493},
+                        _OPPONENT: {_ID: "maia1", _USERNAME: "BOT maia1", "rating": 1493},
                         "isMyTurn": True,
                         "secondsLeft": 600,
                         "compat": {"bot": False, "board": True},
-                        "id": "GAME_ID",
+                        _ID: "GAME_ID",
                     },
                 }
 
@@ -404,9 +414,9 @@ def main():
                     break
 
                 def _set_game_data(id, color, opponent):
-                    current_game["id"]  = id
-                    current_game["color"]  = chess.WHITE if color == "white" else chess.BLACK 
-                    current_game["opponent"] = opponent
+                    current_game[_ID]  = id
+                    current_game[_COLOR]  = chess.WHITE if color == "white" else chess.BLACK 
+                    current_game[_OPPONENT] = opponent
 
                 if event and 'type' in event.keys():
                     if event.get('type') == "gameStart":
@@ -458,6 +468,7 @@ def main():
 
                 key = args["key"]
 
+                # Nothing to do there - we keep the Factory default keys...
                 # Key has not been handled, Factory will handle it!
                 return False
 
@@ -471,16 +482,18 @@ def main():
 
                 if args["event"] == Enums.Event.QUIT:
 
+                    SCREEN.enable_clocks(False)
+
                     exit_requested = True
                     del stream_game_state
 
                 if args["event"] == Enums.Event.PLAY:
 
-                    current_game["your_turn"] = gfe.get_board().turn == current_game["color"]
+                    SCREEN.push_clock(gfe.get_board().turn)
 
-                    current_player = current_game["username"] if current_game["your_turn"] else current_game["opponent"]
+                    current_player = current_game[_USERNAME] if gfe.get_board().turn == current_game[_COLOR] else current_game[_OPPONENT]
 
-                    SCREEN.write_text(1,f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}", bordered=True)
+                    gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 
                     gfe.send_to_web_clients({ 
                         "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
@@ -492,21 +505,25 @@ def main():
                 # field_index, san_move, uci_move are available
                 assert "uci_move" in args, "args needs to contain 'uci_move' key!"
                 assert "san_move" in args, "args needs to contain 'san_move' key!"
+                assert "color" in args, "args needs to contain 'color' key!"
                 assert "field_index" in args, "args needs to contain 'field_index' key!"
 
-                current_game["last_board_move"] = None
+                current_game[_YOUR_LAST_BOARD_MOVE] = None
 
-                if current_game["your_turn"]:
+                # Your turn?
+                if args[_COLOR] == current_game[_COLOR]:
                     
-                    Log.info(f'Sending move of "{current_game["username"]}".')
+                    Log.info(f'Sending move of "{current_game[_USERNAME]}".')
 
-                    current_game["last_board_move"] = args["uci_move"]
+                    current_game[_YOUR_LAST_BOARD_MOVE] = args["uci_move"]
                     
-                    lichess_client.board.make_move(current_game["id"], args["uci_move"])
+                    lichess_client.board.make_move(current_game[_ID], args["uci_move"])
 
                     return True
 
-                # Move is accepted only if we receive a move from Lichess
+                # Lichess opponent move is accepted
+                # only if we received a move from Lichess
+
                 # From GameFactory perspective,
                 # Computer move == Lichess opponent move
                 return gfe.computer_move_available()
@@ -518,21 +535,25 @@ def main():
                 move_callback = move_callback,
                 key_callback = key_callback,
 
-                flags = Enums.BoardOption.EVALUATION_DISABLED | Enums.BoardOption.DB_RECORD_DISABLED,
+                flags = Enums.BoardOption.EVALUATION_DISABLED | Enums.BoardOption.DB_RECORD_DISABLED | Enums.BoardOption.PARTIAL_PGN_DISABLED,
 
                 game_informations = {
                     "event" : "Lichess",
                     "site"  : "",
                     "round" : "",
-                    "white" : current_game["opponent"] if current_game["color"] == chess.BLACK else current_game["username"] ,
-                    "black" : current_game["opponent"] if current_game["color"] == chess.WHITE else current_game["username"] ,
+                    "white" : current_game[_OPPONENT] if current_game[_COLOR] == chess.BLACK else current_game[_USERNAME] ,
+                    "black" : current_game[_OPPONENT] if current_game[_COLOR] == chess.WHITE else current_game[_USERNAME] ,
                 })
             
             # If you are black, we reverse the screen
-            SCREEN.set_reversed(not current_game["color"])
+            SCREEN.set_reversed(not current_game[_COLOR])
+
+            SCREEN.enable_clocks(True)
+
+            CENTAUR_BOARD.unsubscribe_events()
 
             # Game stream
-            stream_game_state = lichess_client.board.stream_game_state(current_game["id"])
+            stream_game_state = lichess_client.board.stream_game_state(current_game[_ID])
             
             # The game starts or is being resumed
             while True:
@@ -561,7 +582,7 @@ def main():
                     {
                         "type": "chatLine",
                         "room": "player",
-                        "username": "maia1",
+                        _USERNAME: "maia1",
                         "text": "Hi Jack Bauer, I'm currently taking my time like a human. If you type 'go' or 'fast' in the chat I'll play faster. gl hf",
                     }
                     {
@@ -579,6 +600,13 @@ def main():
                         "winner": "white",
                     }
                     """
+
+                    # Clocks initialization then synchronization
+                    if 'wtime' in state.keys():
+                        SCREEN.intialize_clocks(state.get('wtime'), None)
+
+                    if 'btime' in state.keys():
+                        SCREEN.intialize_clocks(None, state.get('btime'))
                     
                     if gfe.is_started() == False:
 
@@ -593,9 +621,10 @@ def main():
 
                             gfe.start(uci_moves)
 
+
                     if 'wdraw' in state.keys() or 'bdraw' in state.keys():
                         # TODO handle draw proposal
-                        lichess_client.board.decline_draw(current_game["id"])
+                        lichess_client.board.decline_draw(current_game[_ID])
                         pass
 
                     else:
@@ -604,21 +633,28 @@ def main():
                             # We take the last move of the list
                             uci_move = state.get('moves').split()[-1]
 
-                            if uci_move == current_game["last_board_move"]:
+                            if uci_move == current_game[_YOUR_LAST_BOARD_MOVE]:
                                 Log.info(f'Last board move "{uci_move}" validated by Lichess.')
 
                             else:
-                                Log.info(f'Player "{current_game["opponent"]}" played "{uci_move}".')
+                                SCREEN.push_clock(not gfe.get_board().turn)
+
+                                Log.info(f'Player "{current_game[_OPPONENT]}" played "{uci_move}".')
 
                                 gfe.set_computer_move(uci_move)
 
                             if 'status' in state.keys() and state.get('status') != "started":
                                 # Might be mate...
+
+                                SCREEN.stop_clocks()
+
                                 gfe.update_evaluation(force=True, text=state.get('status'))
                                 pass
 
     while exit_requested == False:
         time.sleep(0.1)
+
+    SCREEN.enable_clocks(False)
 
 if __name__ == '__main__':
     main()

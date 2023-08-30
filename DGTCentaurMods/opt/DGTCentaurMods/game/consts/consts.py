@@ -41,6 +41,7 @@ BOARD_START_STATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01
 FEN_LOG = HOME_DIRECTORY+"/centaur/fen.log"
 
 FONT_FILE = OPT_DIRECTORY + "/resources/Typewriter Medium.ttf"
+DIGITAL_FONT_FILE = OPT_DIRECTORY + "/resources/DIGITALDREAMFAT.ttf"
 
 STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
 

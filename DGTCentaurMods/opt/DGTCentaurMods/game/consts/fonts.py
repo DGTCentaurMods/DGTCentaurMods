@@ -24,3 +24,5 @@ from DGTCentaurMods.game.consts import consts
 
 MAIN_FONT = ImageFont.truetype(consts.FONT_FILE, 16)
 SMALL_FONT = ImageFont.truetype(consts.FONT_FILE, 11)
+MEDIUM_FONT = ImageFont.truetype(consts.FONT_FILE, 13)
+DIGITAL_FONT = ImageFont.truetype(consts.DIGITAL_FONT_FILE, 30)
