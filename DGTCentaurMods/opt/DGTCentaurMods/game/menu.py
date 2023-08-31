@@ -99,7 +99,8 @@ MENU_ITEMS = [
             { TYPE: "divider", ONLY_WEB:True },
 
             { LABEL: "Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
-            { ID:"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
+            { ID:"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
+            { ID:"famous", LABEL:"Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
 
         ] },
 
@@ -365,6 +366,7 @@ class Menu:
         play_item = next(filter(lambda item:ID in item and item[ID] == "play", result))
         sys_item = next(filter(lambda item:ID in item and item[ID] == "system", result))
         uci_item = next(filter(lambda item:ID in item and item[ID] == "uci", sys_item[ITEMS]))
+        famous_item = next(filter(lambda item:ID in item and item[ID] == "famous", sys_item[ITEMS]))
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
         PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
@@ -389,6 +391,12 @@ class Menu:
         # Famous PGN menu item
         play_item[ITEMS].append({ LABEL: "Play famous games", SHORT_LABEL: "Famous games", TYPE: "subitem", 
                                    ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), SHORT_LABEL:pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
+
+        # Famous PGN editor menu items
+        for pgn in famous_pgns:
+
+            editor_menu = { LABEL: 'Edit "'+pgn.capitalize()+'"', ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: pgn+".pgn"} }
+            famous_item[ITEMS].append(editor_menu)
 
         # Engines menu items
         for engine in engines:

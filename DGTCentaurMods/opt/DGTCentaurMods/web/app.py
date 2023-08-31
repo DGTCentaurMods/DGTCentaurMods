@@ -113,27 +113,23 @@ def on_request(message):
 		if "read" in message:
 			action = message["read"]
 
-			if action[-4:] == ".uci":
-
-				f = open(f"{consts.OPT_DIRECTORY}/engines/{action}", "r")
+			def _sendback_file_contents(path, id):
+				f = open(path, "r")
 				response["editor"] = {
 					"text":f.read(),
-					"filename":action
+					"filename":id
 				}
 				f.close()
-
 				socketio.emit('message', response)
+
+			if action[-4:] == ".uci":
+				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/engines/{action}", action)
+
+			if action[-4:] == ".pgn":
+				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/game/famous_pgns/{action}", action)
 
 			if action == "centaur.ini":
-
-				f = open(consts.CONFIG_FILE, "r")
-				response["editor"] = {
-					"text":f.read(),
-					"filename":action
-				}
-				f.close()
-
-				socketio.emit('message', response)
+				_sendback_file_contents(consts.CONFIG_FILE, action)
 
 		if "write" in message:
 
@@ -141,27 +137,24 @@ def on_request(message):
 
 			filename = None if "filename" not in action else action["filename"]
 
-			if filename and filename[-4:] == ".uci":
-
-				f = open(f"{consts.OPT_DIRECTORY}/engines/{filename}", "w")
+			def _update_file_contents(path, popup_message):
+				f = open(path, "w")
 
 				f.write(action["text"])
 				f.close()
 
-				response["popup"] = "File has been successfuly updated!"
-
+				response["popup"] = popup_message
 				socketio.emit('message', response)
+
+			if filename and filename[-4:] == ".uci":
+				_update_file_contents(f"{consts.OPT_DIRECTORY}/engines/{filename}", "UCI File has been successfuly updated!")
+
+			if filename and filename[-4:] == ".pgn":
+				_update_file_contents(f"{consts.OPT_DIRECTORY}/game/famous_pgns/{filename}", "PGN File has been successfuly updated!")
 
 			if filename and filename == "centaur.ini":
+				_update_file_contents(consts.CONFIG_FILE, "Configuration file has been successfuly updated!")
 
-				f = open(consts.CONFIG_FILE, "w")
-
-				f.write(action["text"])
-				f.close()
-
-				response["popup"] = "Configuration file has been successfuly updated!"
-
-				socketio.emit('message', response)
 
 		if "data" in message:
 			action = message["data"]
