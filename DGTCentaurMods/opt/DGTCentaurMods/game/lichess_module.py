@@ -313,7 +313,6 @@ def main():
             CENTAUR_BOARD.unsubscribe_events()
 
             exit_requested = True
-            del stream_incoming_events
 
     CENTAUR_BOARD.subscribe_events(_key_callback, None)
 
