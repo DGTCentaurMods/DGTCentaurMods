@@ -203,6 +203,9 @@ class Menu:
 
                     Log.debug(command)
 
+                    if command == "homescreen":
+                        CENTAUR_BOARD.push_button(Enums.Btn.BACK)
+
                     # The system actions are executed on server side
                     # We only handle the UI here (as the browser does)
 
@@ -435,7 +438,12 @@ class Menu:
     def start_child_module(self):
 
         if self._socket != None:
-            self._socket.send_message({ "loading_screen":True })
+            self._socket.send_message({ 
+                "loading_screen":True,
+                "update_menu": [{
+                "label":"← Back to main menu", 
+                "action": { "type": "socket_sys", "value": "homescreen"}}]
+            })
 
     def end_child_module(self):
 

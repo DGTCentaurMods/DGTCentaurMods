@@ -745,10 +745,8 @@ class Engine():
                     self.initialize_web_menu()
 
                 if "sys" in data:
-
                     if data["sys"] == "homescreen":
-                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
-                        self.stop()
+                        CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
                 if "standby" in data:
                     if data["standby"]:

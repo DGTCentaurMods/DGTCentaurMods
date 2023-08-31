@@ -521,6 +521,10 @@ class CentaurBoard(common.Singleton):
             Log.exception(CentaurBoard._read_keys, e)
             pass
 
+    def push_button(self, button):
+        if self._key_callback:
+            self._key_callback(button)
+
     def shutdown(self):
         
         if self._socket:
