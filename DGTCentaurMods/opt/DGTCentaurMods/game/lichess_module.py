@@ -490,6 +490,35 @@ def main():
 
                 key = args["key"]
 
+                if key == Enums.Btn.TICK:
+                    SCREEN.draw_resignation_window()
+
+                    def wait_for_resignation_input():
+
+                        def _confirm_key_callback(key_index):
+
+                            if key_index == Enums.Btn.TICK:
+                                # Back to original callbacks
+                                CENTAUR_BOARD.unsubscribe_events()
+
+                                lichess_client.board.resign_game(current_game[_ID])
+                               
+                                # Then back to homescreen
+                                CENTAUR_BOARD.push_button(Enums.Btn.BACK)
+                                pass
+
+                            if key_index == Enums.Btn.BACK:
+                                # Back to original callbacks
+                                CENTAUR_BOARD.unsubscribe_events()
+                                gfe.display_board()
+                                pass
+
+                        # We temporary disable the board field callback
+                        # and we add a new temporary board key callback
+                        CENTAUR_BOARD.subscribe_events(_confirm_key_callback, None)
+
+                    wait_for_resignation_input()
+
                 # Nothing to do there - we keep the Factory default keys...
                 # Key has not been handled, Factory will handle it!
                 return False

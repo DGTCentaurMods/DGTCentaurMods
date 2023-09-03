@@ -103,7 +103,7 @@ class CentaurBoard(common.Singleton):
             self._address_1 = 00
             self._address_2 = 00
 
-            timeout = time.time() + 5
+            timeout = time.time() + 30
 
             while len(response) < 4 and time.time() < timeout:
 
@@ -120,8 +120,9 @@ class CentaurBoard(common.Singleton):
 
                     print("Address:" + hex(self._address_1) + hex(self._address_2))
                     break
-            else:
 
+                time.sleep(1)
+            else:
                 raise Exception("No response from serial!")
             
             time.sleep(2)

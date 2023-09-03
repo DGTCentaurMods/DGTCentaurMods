@@ -276,13 +276,56 @@ class CentaurScreen(common.Singleton):
             Log.exception(CentaurScreen.draw_fen, e)
             pass
 
+    def draw_back_button(self, canvas, x):
+        canvas.line(
+            (x,16,x+16,16), fill=0, width=5)
+        canvas.line(
+            (x+14,16,x+14,5), fill=0, width=5)
+        canvas.line(
+            (x+16,6,x+4,6), fill=0, width=5)
+        canvas.polygon(
+            [(x+8, 2), (x+8, 10), (x, 6)], fill=0)
+
+    def draw_tick_button(self, canvas, x):
+        canvas.line(
+            (x+6,16,x+16,4), fill=0, width=5)
+        canvas.line(
+            (x+2,10, x+8,16), fill=0, width=5)
+
+    def draw_resignation_window(self):
+
+        try:
+
+            self.draw_rectangle(0,HEADER_HEIGHT*2,SCREEN_WIDTH-1,8.2*HEADER_HEIGHT, fill=255)
+
+            self.write_text(1,' '*20)
+            self.write_text(2,"Do you really")
+            self.write_text(3,"want to")
+            self.write_text(4,"resign?")
+            self.write_text(5,' '*20)
+            self.write_text(6,"NO    YES")
+
+            image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
+
+            canvas = ImageDraw.Draw(image)
+
+            self.draw_back_button(canvas, 28)
+            self.draw_tick_button(canvas, 82)
+
+            self._buffer.paste(image, (0, (7 * HEADER_HEIGHT)))
+
+            self.draw_rectangle(0,HEADER_HEIGHT*2,SCREEN_WIDTH-1,8.2*HEADER_HEIGHT)
+
+        except Exception as e:
+            Log.exception(CentaurScreen.draw_resignation_window, e)
+
     def draw_promotion_window(self):
 
         #TODO Promotion screen to be reviewed
 
         try:
             row = 5
-            image = Image.new('1', (SCREEN_WIDTH, HEADER_HEIGHT), 255)
+            image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
 
             canvas = ImageDraw.Draw(image)
             canvas.text((0, 0), "    Q    R    N   B", font=fonts.MAIN_FONT, fill=0)
