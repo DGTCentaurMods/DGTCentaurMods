@@ -201,7 +201,7 @@ class CentaurBoard(common.Singleton):
         self.read_from_serial()
 
     # TODO to be reviewed
-    def clear_serial(self, timeout=30):
+    def clear_serial(self, timeout=20):
         print('Checking and clear the serial line...')
 
         response_1 = b''
@@ -209,21 +209,24 @@ class CentaurBoard(common.Singleton):
         
         timeout = time.time() + timeout
 
-        while time.time() < timeout:
+        while True:
+            while time.time() < timeout:
 
-            expected_1 = self.build_packet(b'\x85\x00\x06', b'')
-            response_1 = self.ask_serial(b'\x83', b'')
+                expected_1 = self.build_packet(b'\x85\x00\x06', b'')
+                response_1 = self.ask_serial(b'\x83', b'')
 
-            expected_2 = self.build_packet(b'\xb1\x00\x06', b'')
-            response_2 = self.ask_serial(b'\x94', b'')
+                expected_2 = self.build_packet(b'\xb1\x00\x06', b'')
+                response_2 = self.ask_serial(b'\x94', b'')
 
-            # If board is idle, return True
-            if expected_1 == response_1 and expected_2 == response_2:
-                print('Board is idle. Serial is clear.')
-                return True
+                # If board is idle, return True
+                if expected_1 == response_1 and expected_2 == response_2:
+                    print('Board is idle. Serial is clear.')
+                    return True
             
-        print('Unable to clear the serial.')
-        return False
+            timeout = time.time() + timeout
+            print('Unable to clear the serial.')
+            self._SERIAL = None
+            self.initialize()
 
     def beep(self, beeptype):
     

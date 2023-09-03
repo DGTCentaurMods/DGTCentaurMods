@@ -491,6 +491,7 @@ def main():
                 key = args["key"]
 
                 if key == Enums.Btn.TICK:
+                    CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
                     SCREEN.draw_resignation_window()
 
                     def wait_for_resignation_input():

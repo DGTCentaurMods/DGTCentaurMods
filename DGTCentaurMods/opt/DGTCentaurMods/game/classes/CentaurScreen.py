@@ -291,6 +291,14 @@ class CentaurScreen(common.Singleton):
             (x+6,16,x+16,4), fill=0, width=5)
         canvas.line(
             (x+2,10, x+8,16), fill=0, width=5)
+        
+    def draw_up_button(self, canvas, x):
+        canvas.polygon(
+            [(x, 18), (x+16, 18), (x+8, 3)], fill=0)
+        
+    def draw_down_button(self, canvas, x):
+        canvas.polygon(
+            [(x, 3), (x+16, 3), (x+8, 18)], fill=0)
 
     def draw_resignation_window(self):
 
@@ -321,30 +329,26 @@ class CentaurScreen(common.Singleton):
 
     def draw_promotion_window(self):
 
-        #TODO Promotion screen to be reviewed
-
         try:
-            row = 5
-            image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
-
-            canvas = ImageDraw.Draw(image)
-            canvas.text((0, 0), "    Q    R    N   B", font=fonts.MAIN_FONT, fill=0)
-            canvas.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
-            canvas.polygon([(35, 3), (51, 3), (43, 18)], fill=0)
-            o = 66
-            canvas.line((0+o,16,16+o,16), fill=0, width=5)
-            canvas.line((14+o,16,14+o,5), fill=0, width=5)
-            canvas.line((16+o,6,4+o,6), fill=0, width=5)
-            canvas.polygon([(8+o, 2), (8+o, 10), (0+o, 6)], fill=0)
-            o = 97
-            canvas.line((6+o,16,16+o,4), fill=0, width=5)
-            canvas.line((2+o,10, 8+o,16), fill=0, width=5)
-
-            self._buffer.paste(image, (0, (row * HEADER_HEIGHT)))
+            self.draw_rectangle(0,HEADER_HEIGHT*2,SCREEN_WIDTH-1,8.2*HEADER_HEIGHT, fill=255)
 
             self.write_text(2,"Choose")
             self.write_text(3,"your")
             self.write_text(4,"promotion!")
+            self.write_text(6,"Q   R    N   B")
+
+            image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
+
+            canvas = ImageDraw.Draw(image)
+
+            self.draw_up_button(canvas, 10)
+            self.draw_down_button(canvas, 38)
+            self.draw_back_button(canvas, 70)
+            self.draw_tick_button(canvas, 100)
+
+            self._buffer.paste(image, (0, (7 * HEADER_HEIGHT)))
+
+            self.draw_rectangle(0,HEADER_HEIGHT*2,SCREEN_WIDTH-1,8.2*HEADER_HEIGHT)
 
         except Exception as e:
             Log.exception(CentaurScreen.draw_promotion_window, e)

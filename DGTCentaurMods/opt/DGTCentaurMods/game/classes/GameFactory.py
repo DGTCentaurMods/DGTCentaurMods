@@ -420,6 +420,7 @@ class Engine():
 
                             (self._is_computer_move == False or (self._is_computer_move == True and (from_name + to_name) != self._computer_uci_move[0:4]))):
 
+                            CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
                             SCREEN.draw_promotion_window()
 
                             def wait_for_promotion_input():
