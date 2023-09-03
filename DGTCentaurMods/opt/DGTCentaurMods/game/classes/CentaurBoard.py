@@ -68,7 +68,7 @@ class CentaurBoard(common.Singleton):
 
     _last_battery_check = time.time()-18 # Little starting delay before first check
 
-    def initialize(self):
+    def _initialize(self):
 
         if self._SERIAL == None:
 
@@ -124,6 +124,14 @@ class CentaurBoard(common.Singleton):
                 time.sleep(1)
             else:
                 raise Exception("No response from serial!")
+
+        return self
+
+    def initialize(self):
+
+        if self._SERIAL == None:
+
+            self._initialize()
             
             time.sleep(2)
 
@@ -224,9 +232,9 @@ class CentaurBoard(common.Singleton):
                     return True
             
             timeout = time.time() + timeout
-            print('Unable to clear the serial.')
+            print('Unable to clear the serial. Retrying...')
             self._SERIAL = None
-            self.initialize()
+            self._initialize()
 
     def beep(self, beeptype):
     
