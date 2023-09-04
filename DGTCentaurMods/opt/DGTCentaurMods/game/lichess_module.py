@@ -19,11 +19,11 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, CentaurBoard
+from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, CentaurBoard, Clock
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.game.consts import Enums, fonts
+from DGTCentaurMods.game.consts import Enums
 
-import time, chess, berserk, threading, datetime
+import time, chess, berserk, threading
 
 exit_requested = False
 stream_game_state = None
@@ -32,17 +32,22 @@ stream_incoming_events = None
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
 
+CLOCK_PANEL = Clock.get()
+
 _YOUR_LAST_BOARD_MOVE = "your_last_board_move"
 _USERNAME = "username"
 _OPPONENT = "opponent"
 _PERFS = "perfs"
 _ID = "id"
 _COLOR = "color"
+_RATING = "rating"
 
 def main():
 
     global exit_requested
     global stream_game_state
+
+    SCREEN.on_paint(lambda:CLOCK_PANEL.paint())
 
     exit_requested = False
 
@@ -167,7 +172,7 @@ def main():
                 if total_time>=(25 * 60):
                     cadence = "classical"
 
-                your_rating = current_game[_PERFS][cadence]["rating"]
+                your_rating = current_game[_PERFS][cadence][_RATING]
 
                 rating_range = f"{your_rating-criterias[2]}-{your_rating+criterias[3]}"
 
@@ -219,7 +224,7 @@ def main():
     def _welcome_screen():
         SCREEN.clear_area()
         W(2, "WELCOME")
-        W(3, f"{current_game['username'] }!")
+        W(3, f"{current_game[_USERNAME] }!")
         W(4, "")
         W(5, "Please create")
         W(6, "a game from")
@@ -236,7 +241,7 @@ def main():
     def _seeking_screen():
         SCREEN.clear_area()
         W(2, "WELCOME")
-        W(3, f"{current_game['username'] }!")
+        W(3, f"{current_game[_USERNAME] }!")
         W(4, "")
         W(5, "Seeking a")
         W(6, "player that")
@@ -435,10 +440,15 @@ def main():
                 if exit_requested:
                     break
 
-                def _set_game_data(id, color, opponent):
+                def _set_game_data(id, color, opponent, opponent_rating):
                     current_game[_ID]  = id
                     current_game[_COLOR]  = chess.WHITE if color == "white" else chess.BLACK 
                     current_game[_OPPONENT] = opponent
+
+                    if current_game[_COLOR] == chess.WHITE:
+                        CLOCK_PANEL.set_clock_headers(current_game[_USERNAME], f"{opponent}-{opponent_rating}")
+                    else:
+                        CLOCK_PANEL.set_clock_headers(f"{opponent}-{opponent_rating}", current_game[_USERNAME])
 
                 if event and 'type' in event.keys():
                     if event.get('type') == "gameStart":
@@ -450,7 +460,8 @@ def main():
                                 _set_game_data(
                                     game_node.get('id'),
                                     game_node.get('color'),
-                                    game_node.get('opponent').get('username'))
+                                    game_node.get('opponent').get(_USERNAME),
+                                    game_node.get('opponent').get(_RATING))
 
                                 break
                 
@@ -470,7 +481,7 @@ def main():
                         'perf': 'rapid',
                         'rated': False,
                         'hasMoved': False, 
-                        'opponent': {'id': 'jack_bauer', 'username': 'Jack_Bauer', 'rating': 1521},
+                        'opponent': {'id': 'jack_bauer', _USERNAME: 'Jack_Bauer', 'rating': 1521},
                         'isMyTurn': True,
                         'secondsLeft': 600}]
                     """
@@ -481,7 +492,8 @@ def main():
                         _set_game_data(
                             ongoing_games[0].get('gameId'),
                             ongoing_games[0].get('color'),
-                            ongoing_games[0].get('opponent').get('username'))
+                            ongoing_games[0].get('opponent').get(_USERNAME),
+                            ongoing_games[0].get('opponent').get(_RATING))
                         break
 
             def key_callback(args):
@@ -534,14 +546,14 @@ def main():
 
                 if args["event"] == Enums.Event.QUIT:
 
-                    SCREEN.enable_clocks(False)
+                    CLOCK_PANEL.enable(False)
 
                     exit_requested = True
                     del stream_game_state
 
                 if args["event"] == Enums.Event.PLAY:
 
-                    SCREEN.push_clock(gfe.get_board().turn)
+                    CLOCK_PANEL.push(gfe.get_board().turn)
 
                     current_player = current_game[_USERNAME] if gfe.get_board().turn == current_game[_COLOR] else current_game[_OPPONENT]
 
@@ -600,7 +612,7 @@ def main():
             # If you are black, we reverse the screen
             SCREEN.set_reversed(not current_game[_COLOR])
 
-            SCREEN.enable_clocks(True)
+            CLOCK_PANEL.enable(True)
 
             # Game stream
             stream_game_state = lichess_client.board.stream_game_state(current_game[_ID])
@@ -653,10 +665,10 @@ def main():
 
                     # Clocks initialization then synchronization
                     if 'wtime' in state.keys():
-                        SCREEN.intialize_clocks(state.get('wtime'), None)
+                        CLOCK_PANEL.initialize(state.get('wtime'), None)
 
                     if 'btime' in state.keys():
-                        SCREEN.intialize_clocks(None, state.get('btime'))
+                        CLOCK_PANEL.initialize(None, state.get('btime'))
                     
                     if gfe.is_started() == False:
 
@@ -687,7 +699,7 @@ def main():
                                 Log.info(f'Last board move "{uci_move}" validated by Lichess.')
 
                             else:
-                                SCREEN.push_clock(not gfe.get_board().turn)
+                                CLOCK_PANEL.push(not gfe.get_board().turn)
 
                                 Log.info(f'Player "{current_game[_OPPONENT]}" played "{uci_move}".')
 
@@ -696,7 +708,7 @@ def main():
                             if 'status' in state.keys() and state.get('status') != "started":
                                 # Might be mate...
 
-                                SCREEN.stop_clocks()
+                                CLOCK_PANEL.stop()
 
                                 gfe.update_evaluation(force=True, text=state.get('status'))
                                 pass
@@ -704,7 +716,9 @@ def main():
     while exit_requested == False:
         time.sleep(0.1)
 
-    SCREEN.enable_clocks(False)
+    CLOCK_PANEL.enable(False)
+
+    SCREEN.on_paint(None)
 
 if __name__ == '__main__':
     main()

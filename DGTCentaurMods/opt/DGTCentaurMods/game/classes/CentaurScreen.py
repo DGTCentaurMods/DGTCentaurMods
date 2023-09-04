@@ -23,8 +23,6 @@ from DGTCentaurMods.display import epd2in9d
 
 from DGTCentaurMods.game.classes import Log
 
-from DGTCentaurMods.game.classes.Clock import Clock
-
 from DGTCentaurMods.game.consts import consts, fonts
 from DGTCentaurMods.game.lib import common
 
@@ -49,17 +47,14 @@ class CentaurScreen(common.Singleton):
     _thread_worker = None
     _api = None
 
-    _wclock = None
-    _bclock = None
-
     _thread_is_alive = True
+
+    _on_paint = None
 
     _last_buffer_bytes = bytearray(b'')
 
     _screen_reversed = False
     _screen_enabled = True
-
-    _clocks_enabled = False
 
     _battery_value = -1 # -1 means "charging"
 
@@ -94,42 +89,8 @@ class CentaurScreen(common.Singleton):
     def set_battery_value(self, value):
         self._battery_value = value
 
-    def push_clock(self, color):
-        
-        if self._wclock and self._bclock:
-            if color:
-                self._wclock.resume()
-                self._bclock.pause()
-            else:
-                self._bclock.resume()
-                self._wclock.pause()
-
-    def intialize_clocks(self, wtime = None, btime = None):
-        
-        if wtime:
-            # First call - clocks need to be initialized
-            if self._wclock == None:
-                self._wclock = Clock(wtime)
-                self._bclock = Clock(wtime)
-
-            self._wclock.set(wtime)
-
-        if btime and self._bclock:
-            self._bclock.set(btime)
-
-    def enable_clocks(self, value):
-        
-        self._clocks_enabled = value
-
-        if not value:
-            self._wclock = None
-            self._bclock = None
-
-    def stop_clocks(self):
-        
-        if self._wclock and self._bclock:
-            self._bclock.pause()
-            self._wclock.pause()
+    def on_paint(self, _on_paint):
+        self._on_paint = _on_paint
 
     def _screen_thread(self):
 
@@ -146,18 +107,10 @@ class CentaurScreen(common.Singleton):
                 clock = time.strftime("%H:%M")
                 self.write_text(0, clock, centered=False)
 
-                # Player clocks
-                if self._clocks_enabled:
-                    if self._wclock:
-                        self.write_text(13, self._wclock.get().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
-                    else:
-                        self.write_text(13, Clock.zero().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
-
-                    if self._bclock:
-                        self.write_text(10, self._bclock.get().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
-                    else:
-                        self.write_text(10, Clock.zero().strftime("%M:%S"), font=fonts.DIGITAL_FONT)
-
+                # Paint event - (used for player clocks...)
+                if self._on_paint:
+                    self._on_paint()
+               
                 # Connected battery
                 bi = "batteryc"
 
