@@ -45,6 +45,7 @@ DIGITAL_FONT_FILE = OPT_DIRECTORY + "/resources/DIGITALDREAMFAT.ttf"
 
 STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
 
+EMPTY_LINE = ' '*20
 
 SOUND_CORRECT_MOVES = "correct_moves"
 SOUND_WRONG_MOVES = "wrong_moves"

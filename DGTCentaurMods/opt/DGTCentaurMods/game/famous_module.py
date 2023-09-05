@@ -38,7 +38,7 @@ exit_requested = False
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
 
-FAMOUS_PGNS_DIR = str(pathlib.Path(__file__).parent.resolve()) + "/famous_pgns/"
+FAMOUS_PGNS_DIR = consts.OPT_DIRECTORY+"/game/famous_pgns/"
 MAX_RETRIES = 2
 AUTO_MOVES_COUNT = 4
 

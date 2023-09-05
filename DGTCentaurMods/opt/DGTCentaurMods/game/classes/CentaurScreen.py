@@ -259,11 +259,11 @@ class CentaurScreen(common.Singleton):
 
             self.draw_rectangle(0,HEADER_HEIGHT*2,SCREEN_WIDTH-1,8.2*HEADER_HEIGHT, fill=255)
 
-            self.write_text(1,' '*20)
+            self.write_text(1,consts.EMPTY_LINE)
             self.write_text(2,"Do you really")
             self.write_text(3,"want to")
             self.write_text(4,"resign?")
-            self.write_text(5,' '*20)
+            self.write_text(5,consts.EMPTY_LINE)
             self.write_text(6,"NO    YES")
 
             image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)

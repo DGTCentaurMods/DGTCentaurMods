@@ -89,7 +89,8 @@ MENU_ITEMS = [
             { LABEL: "⚡ Restart service", ONLY_WEB:True,
               ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
             },
-            
+            { LABEL:"Wifi", ONLY_BOARD:True,
+              ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
             { TYPE: "divider", ONLY_WEB:True },
             
             { LABEL: "📋 Last log events", ONLY_WEB:True,
@@ -105,7 +106,6 @@ MENU_ITEMS = [
         ] },
 
     { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
-    { LABEL:"WIFI", ONLY_BOARD:True, ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
 ]
 
 
@@ -113,6 +113,8 @@ MENU_ITEMS = [
 class Menu:
 
     _browser_connected = False
+
+    _is_root = False
 
     def home_screen(self):
 
@@ -132,23 +134,28 @@ class Menu:
         current_row = 10 if is_root else 2
         current_index = 0
 
-        SCREEN.write_text(current_row-.8, "choose an item", font=fonts.SMALL_FONT)
+        #SCREEN.write_text(current_row-.7, "Choose one item", font=fonts.SMALL_FONT)
 
         if is_root:
-            SCREEN.system_message('WELCOME!')
-            SCREEN.write_text(2, ' '*20)
-            SCREEN.write_text(3, ' '*20)
-            SCREEN.draw_fen(common.get_Centaur_FEN())
 
-        current_items = self._menu[CURRENT_NODE]+([{LABEL:' '*20}]*10)
+            if not self._is_root:
+
+                SCREEN.system_message('Welcome!')
+                SCREEN.write_text(2, consts.EMPTY_LINE)
+                SCREEN.write_text(3, consts.EMPTY_LINE)
+                SCREEN.draw_fen(common.get_Centaur_FEN())
+                SCREEN.write_text(current_row-1.2, consts.EMPTY_LINE)
+        else:
+            SCREEN.system_message(consts.EMPTY_LINE)
+
+        self._is_root = is_root
+
+        current_items = self._menu[CURRENT_NODE]+([{LABEL:consts.EMPTY_LINE}]*10)
 
         current_item_row = current_row
 
         # We draw all the visible items
         for item in current_items:
-
-            if ONLY_WEB in item and item[ONLY_WEB] == True:
-                continue
 
             SCREEN.write_text(current_row, item[SHORT_LABEL if SHORT_LABEL in item else LABEL])
             
@@ -269,7 +276,7 @@ class Menu:
             CURRENT_INDEX: 0,
             NODES: [],
             NODE_INDEXES: [],
-            ITEMS: list(filter(lambda item:ONLY_WEB not in item or item[ONLY_WEB] == False, self._build_menu_items()))
+            ITEMS: self._build_menu_items(ONLY_WEB)
         }
 
         self._menu[CURRENT_NODE] = self._menu[ITEMS]
@@ -282,8 +289,6 @@ class Menu:
         #print(key_index)
 
         #SCREEN.restore_screen()
-
-        clear_area = False
 
         m = self._menu
 
@@ -362,14 +367,21 @@ class Menu:
 
 
     # Add engines and famous PGNs to proto menu
-    def _build_menu_items(self):
+    def _build_menu_items(self, excluded_flag):
 
-        result = copy.deepcopy(MENU_ITEMS)
+        result = []
+
+        # Items to exclude
+        for m in list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, copy.deepcopy(MENU_ITEMS))):
+            if ITEMS in m:
+                menu_item = copy.deepcopy(m)
+                menu_item[ITEMS] = list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, m[ITEMS]))
+                result.append(menu_item)
+            else:
+                result.append(m)
         
         play_item = next(filter(lambda item:ID in item and item[ID] == "play", result))
         sys_item = next(filter(lambda item:ID in item and item[ID] == "system", result))
-        uci_item = next(filter(lambda item:ID in item and item[ID] == "uci", sys_item[ITEMS]))
-        famous_item = next(filter(lambda item:ID in item and item[ID] == "famous", sys_item[ITEMS]))
 
         ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
         PGNS_PATH = consts.OPT_DIRECTORY+"/game/famous_pgns"
@@ -395,12 +407,6 @@ class Menu:
         play_item[ITEMS].append({ LABEL: "Play famous games", SHORT_LABEL: "Famous games", TYPE: "subitem", 
                                    ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), SHORT_LABEL:pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
 
-        # Famous PGN editor menu items
-        for pgn in famous_pgns:
-
-            editor_menu = { LABEL: 'Edit "'+pgn.capitalize()+'"', ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: pgn+".pgn"} }
-            famous_item[ITEMS].append(editor_menu)
-
         # Engines menu items
         for engine in engines:
 
@@ -415,14 +421,27 @@ class Menu:
                         ACTION: { TYPE: "socket_execute", "dialogbox": "color", VALUE: "uci_module.py {value} "+engine[ID]+' "'+option+'"' } })
                 
 
+        # Famous PGN editor menu items
         # UCI editor menu items
-        for engine in engines:
+        # Only web
+        if excluded_flag == ONLY_BOARD:
 
-            if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
+            famous_item = next(filter(lambda item:ID in item and item[ID] == "famous", sys_item[ITEMS]))
 
-                editor_menu = { LABEL: "Edit UCI of "+engine[ID].capitalize(), ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine[ID]+".uci"} }
+            for pgn in famous_pgns:
 
-                uci_item[ITEMS].append(editor_menu)
+                editor_menu = { LABEL: 'Edit "'+pgn.capitalize()+'"', ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: pgn+".pgn"} }
+                famous_item[ITEMS].append(editor_menu)
+
+            uci_item = next(filter(lambda item:ID in item and item[ID] == "uci", sys_item[ITEMS]))
+            
+            for engine in engines:
+
+                if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
+
+                    editor_menu = { LABEL: "Edit UCI of "+engine[ID].capitalize(), ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine[ID]+".uci"} }
+
+                    uci_item[ITEMS].append(editor_menu)
 
            
         return result
@@ -430,8 +449,8 @@ class Menu:
 
     def initialize_web_menu(self, message={}):
 
-        message["update_menu"] = list(filter(lambda item:ONLY_BOARD not in item or item[ONLY_BOARD] == False, self._build_menu_items()))
-        
+        message["update_menu"] = self._build_menu_items(ONLY_BOARD)
+
         if self._socket != None:
             self._socket.send_message(message)
 

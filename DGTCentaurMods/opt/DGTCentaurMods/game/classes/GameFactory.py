@@ -911,7 +911,7 @@ class Engine():
                 # White move
                 if current_turn == chess.WHITE:
                     if (san == None):
-                        SCREEN.write_text(row, ' '*20, centered=False)
+                        SCREEN.write_text(row, consts.EMPTY_LINE, centered=False)
                     else:
                         current_row_move = f"{current_row_index}. "+san
                         SCREEN.write_text(row, current_row_move, centered=False)

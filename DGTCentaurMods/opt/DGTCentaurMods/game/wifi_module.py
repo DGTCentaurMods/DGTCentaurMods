@@ -74,7 +74,7 @@ def main():
         SCREEN.write_text(8, "networks...")
     
         for row in range(9,20):
-            SCREEN.write_text(row, ' '*20)
+            SCREEN.write_text(row, consts.EMPTY_LINE)
         
         os.system("sudo iwlist wlan0 scan | grep ESSID > /dev/null")
         all_networks = list(Cell.all('wlan0'))
@@ -119,7 +119,7 @@ def main():
         index = 0
 
         for row in range(7,20):
-            SCREEN.write_text(row, ' '*20)
+            SCREEN.write_text(row, consts.EMPTY_LINE)
 
         if len(wifi[NETWORKS]) == 0:
             SCREEN.write_text(6, "No networks")
