@@ -20,12 +20,12 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import Log, SocketClient, CentaurScreen, CentaurBoard
-from DGTCentaurMods.game.consts import consts, fonts, Enums
+from DGTCentaurMods.game.consts import consts, Enums
 from DGTCentaurMods.game.lib import common
 
 from pathlib import Path
 
-import time, sys, os, configparser, re, copy
+import time, os, configparser, re, copy
 
 import importlib, shlex
 
@@ -269,6 +269,8 @@ class Menu:
                 pass
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
+
+        SCREEN.on_change(lambda screen_buffer:self._socket.send_message({ "screenshot":screen_buffer }))
 
         self._socket.send_message({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 

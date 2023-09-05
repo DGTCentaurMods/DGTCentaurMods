@@ -95,6 +95,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			{ id:"previous_move", default:true,  label: "Previous move", type:"checkbox"},
 			{ id:"kings_checks", default:false,  label: "Kings checks", type:"checkbox"},
 			{ id:"live_evaluation", default:true, label: "Live evaluation", type:"checkbox"},
+			{ id:"centaur_screen", default:true, label: "Centaur screen", type:"checkbox"},
 		]
 
 		// We read the cookies data and stores the values within me.board
@@ -604,6 +605,39 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									me.editor.text = value.text
 									me.editor.visible = true
 								},
+
+								screenshot: (value) => {
+
+									const encode = function encode (input) {
+										var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+										var output = ""
+										var chr1, chr2, chr3, enc1, enc2, enc3, enc4
+										var i = 0
+									
+										while (i < input.length) {
+											chr1 = input[i++]
+											chr2 = i < input.length ? input[i++] : Number.NaN
+											chr3 = i < input.length ? input[i++] : Number.NaN
+									
+											enc1 = chr1 >> 2
+											enc2 = ((chr1 & 3) << 4) | (chr2 >> 4)
+											enc3 = ((chr2 & 15) << 2) | (chr3 >> 6)
+											enc4 = chr3 & 63
+									
+											if (isNaN(chr2)) {
+												enc3 = enc4 = 64
+											} else if (isNaN(chr3)) {
+												enc4 = 64
+											}
+											output += keyStr.charAt(enc1) + keyStr.charAt(enc2) +
+													  keyStr.charAt(enc3) + keyStr.charAt(enc4)
+										}
+										return output
+									}
+
+									var cscreen = document.getElementById("centaur_screen")
+									cscreen.src = "data:image/png;base64," + encode(new Uint8Array(value))
+								}
 							}
 			
 							for(var id in socketmessages) {

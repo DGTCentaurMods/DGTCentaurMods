@@ -61,7 +61,7 @@ def main(pgn):
     pgn_file = FAMOUS_PGNS_DIR+pgn
 
     if not os.path.exists(pgn_file):
-        Log.exception(f"'{pgn_file}' does not exist!")
+        Log.exception(main, f"'{pgn_file}' does not exist!")
         exit()
 
     try:
@@ -71,7 +71,7 @@ def main(pgn):
         game = chess.pgn.read_game(pgn)
 
     except Exception as e:
-        Log.exception(f"PGN error:{e}")
+        Log.exception(main, e)
         exit()
 
     Log.debug(game.headers)

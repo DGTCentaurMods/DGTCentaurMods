@@ -400,7 +400,7 @@ class Engine():
 
                                         self._check_last_move_outcome_and_switch()
                                     else:
-                                        Log.exception(f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
+                                        Log.exception(finalize_move, f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
                                         self.stop()
 
                                 else:

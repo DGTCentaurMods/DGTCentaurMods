@@ -90,7 +90,6 @@
 				</div>
 
 				<div data-ng-show="!main.editor.visible" layout="row" layout-align="center stretch">
-				
 					<div layout="column" layout-align="space-around center">
 						<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
 						<div data-ng-show="main.board.synchronized">[[ main.board.turn_caption ]]</div>
@@ -105,7 +104,9 @@
 							<span class="clickable" data-ng-click="main.board.history.go(main.chessboard, item.index+1)" ng-class="{ 'currentmove':item.index+1 == main.board.history.index() }">[[item.bsan]]</span>
 						</div>
 					</div>
-				
+					<div data-ng-show="main.board.centaur_screen" class="centaurarea" style="height: {{ data.boardsize-6 }}px">
+						<div layout="column" layout-align="center center"><img id="centaur_screen" style="width:70%"/></div>
+					</div>
 				</div>
 
 				<div data-ng-show="main.editor.visible">
@@ -153,8 +154,6 @@
 						</md-dialog>
 					</div>
 				</div>
-
-
 			</div>
 		</div>
 	</body>

@@ -78,6 +78,13 @@ md-progress-linear .md-container .md-bar {
 	width: 300px;
 }
 
+.centaurarea {
+	border-color: black;
+	border-width: 2px;
+	border-style:outset;
+	width: 300px;
+}
+
 .clickable {
 	cursor: pointer;
 }

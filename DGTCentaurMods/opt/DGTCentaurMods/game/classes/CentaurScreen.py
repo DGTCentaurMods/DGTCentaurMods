@@ -28,7 +28,7 @@ from DGTCentaurMods.game.lib import common
 
 from PIL import Image, ImageDraw
 
-import threading, time
+import threading, time, io
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 296
@@ -50,6 +50,7 @@ class CentaurScreen(common.Singleton):
     _thread_is_alive = True
 
     _on_paint = None
+    _on_change = None
 
     _last_buffer_bytes = bytearray(b'')
 
@@ -92,6 +93,9 @@ class CentaurScreen(common.Singleton):
     def on_paint(self, _on_paint):
         self._on_paint = _on_paint
 
+    def on_change(self, _on_change):
+        self._on_change = _on_change
+
     def _screen_thread(self):
 
         self._api.display(self._api.getbuffer(self._buffer))
@@ -125,9 +129,19 @@ class CentaurScreen(common.Singleton):
                 # Change detected?
                 if self._last_buffer_bytes != buffer_bytes:
 
+                    if self._on_change:
+
+                        try:
+                            png_buffer = io.BytesIO()
+                            buffer_copy.save(png_buffer, format='PNG')
+                            
+                            self._on_change(png_buffer.getvalue())
+                        except Exception as e:
+                            Log.exception(CentaurScreen._screen_thread, e)
+                            pass
+
                     if self._screen_reversed == False:
-                        buffer_copy = buffer_copy.transpose(Image.FLIP_TOP_BOTTOM)
-                        buffer_copy = buffer_copy.transpose(Image.FLIP_LEFT_RIGHT)
+                        buffer_copy = buffer_copy.rotate(180, expand=True)
                     
                     self._api.DisplayPartial(self._api.getbuffer(buffer_copy))
                 
