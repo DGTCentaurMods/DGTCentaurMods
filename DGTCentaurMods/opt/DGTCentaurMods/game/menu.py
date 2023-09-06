@@ -104,10 +104,10 @@ MENU_ITEMS = [
             { ID:"famous", LABEL:"Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
 
         ] },
-
-    { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} },
 ]
 
+if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
+    MENU_ITEMS.append({ LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} })
 
 
 class Menu:
