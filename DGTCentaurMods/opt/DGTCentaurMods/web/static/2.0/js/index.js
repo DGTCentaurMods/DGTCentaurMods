@@ -96,10 +96,17 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			{ id:"kings_checks", default:false,  label: "Kings checks", type:"checkbox"},
 			{ id:"live_evaluation", default:true, label: "Live evaluation", type:"checkbox"},
 			{ id:"centaur_screen", default:true, label: "Centaur screen", type:"checkbox"},
+			{ id:"reversed_board", default:false, label: "Board reversed", type:"checkbox", callback:(value) => me.chessboard.orientation(value ? 'black' : 'white')},
+			{ id:"active_board", default:false, label: "Board is active", type:"checkbox", callback:(value) => me.chessboard.draggable = value},
 		]
 
+		const settingsCallbacks = {}
+
 		// We read the cookies data and stores the values within me.board
-		displaySettings.forEach((item) => me.board[item.id] = $store.get(item.id) == null ? item.default : $store.get(item.id))
+		displaySettings.forEach((item) => {
+			me.board[item.id] = $store.get(item.id) == null ? item.default : $store.get(item.id)
+			if (item.callback) settingsCallbacks[item.id] = item.callback
+		})
 
 		// Dialogboxes that the menu can use
 		const dialogBoxes = {
@@ -181,10 +188,20 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			let board = Chessboard('board'+q.index, {
 
 				showNotation: true,
-				orientation: 'white',
-				draggable: false,
+				orientation: me.board["reversed_board"] ? 'black' : 'white',
+				draggable: me.board["active_board"],
 
 				pieceTheme:'static/2.0/images/pieces/{piece}.png',
+
+				onDragStart: () => me.board["active_board"],
+				onDrop: (source, target) => {
+					me.board.synchronized = false
+
+					SOCKET.emit('request', {'web_move':{'source':source, 'target':target}})
+
+					return true
+				},
+				onSnapEnd: () => 'snapback',
 			})
 
 			if (options.keyboard) {
@@ -606,7 +623,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									me.editor.visible = true
 								},
 
-								screenshot: (value) => {
+								centaur_screen: (value) => {
 
 									const encode = function encode (input) {
 										var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="

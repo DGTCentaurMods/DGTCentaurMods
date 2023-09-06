@@ -164,7 +164,7 @@ class Engine():
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
-    def __field_callback(self, field_index, field_action):
+    def __field_callback(self, field_index, field_action, web_move = False):
 
         if self._initialized == False:
             return
@@ -241,7 +241,10 @@ class Engine():
                 self._source_square = -1
 
                 # Could be a reset request...
-                self._need_starting_position_check = True
+                if not web_move:
+                    self._need_starting_position_check = True
+
+                return False
 
             # Taking back process
             if self._can_undo_moves and piece_color_is_consistent == False and field_action == Enums.PieceAction.LIFT:
@@ -356,7 +359,10 @@ class Engine():
                                 self._source_square = -1
 
                                 # Could be a reset request...
-                                self._need_starting_position_check = True
+                                if not web_move:
+                                    self._need_starting_position_check = True
+
+                                return False
 
                             else:
 
@@ -457,6 +463,7 @@ class Engine():
                         else:
                             finalize_move(from_name + to_name)
 
+            return True
         
         except Exception as e:
             Log.exception(Engine.__field_callback, e)
@@ -744,6 +751,14 @@ class Engine():
 
                 if "web_menu" in data:
                     self.initialize_web_menu()
+
+                if "web_move" in data:
+                    # A move has been triggered from web UI
+                    self.__field_callback(common.Converters.to_square_index(data["web_move"]["source"]), Enums.PieceAction.LIFT, web_move=True)
+                    
+                    if not self.__field_callback(common.Converters.to_square_index(data["web_move"]["target"]), Enums.PieceAction.PLACE, web_move=True):
+                        response["fen"] = self._chessboard.fen()
+                        socket.send_message(response)
 
                 if "sys" in data:
                     if data["sys"] == "homescreen":

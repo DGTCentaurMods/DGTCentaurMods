@@ -196,8 +196,11 @@ class Menu:
                     SCREEN.set_battery_value(data["battery"])
 
                 if "web_menu" in data:
-
                     self.initialize_web_menu()
+
+                if "web_move" in data:
+                    # No game in progress - we send back the current FEN
+                    self._socket.send_message({ "fen":common.get_Centaur_FEN() })
 
                 if "pong" in data:
                     # Browser is connected (server ping)
@@ -270,7 +273,7 @@ class Menu:
 
         self._socket = SocketClient.get(on_socket_request=_on_socket_request)
 
-        SCREEN.on_change(lambda screen_buffer:self._socket.send_message({ "screenshot":screen_buffer }))
+        SCREEN.on_change(lambda image:self._socket.send_message({ "centaur_screen":image }))
 
         self._socket.send_message({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 
