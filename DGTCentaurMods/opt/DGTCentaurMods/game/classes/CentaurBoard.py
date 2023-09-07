@@ -238,22 +238,28 @@ class CentaurBoard(common.Singleton):
 
     def beep(self, beeptype):
     
-        if (beeptype == Enums.Sound.CORRECT_MOVE):
+        if beeptype == Enums.Sound.CORRECT_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x48\x05\x52\x05')
 
-        if (beeptype == Enums.Sound.TAKEBACK_MOVE):
+        if beeptype == Enums.Sound.TAKEBACK_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x52\x05\x48\x05')
 
-        if (beeptype == Enums.Sound.WRONG_MOVE):
+        if beeptype == Enums.Sound.WRONG_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x30\x04\x29\x04')
 
-        if (beeptype == Enums.Sound.COMPUTER_MOVE):
+        if beeptype == Enums.Sound.COMPUTER_MOVE:
             self.send_packet(b'\xb1\x00\x08', b'\x68\x05')
        
-        if (beeptype == Enums.Sound.MUSIC):
+        if beeptype == Enums.Sound.MUSIC:
             self.send_packet(b'\xb1\x00\x10', b'\x40\x10\x44\x08\x45\x08\x47\x10\x45\x08')
 
-        if (beeptype == Enums.Sound.POWER_OFF):
+        if beeptype == Enums.Sound.GAME_LOST:
+            self.send_packet(b'\xb1\x00\x16', b'\x49\x04\x46\x10\x48\x04\x45\x10\x47\x04\x44\x10\x46\x04\x43\x10')
+
+        if beeptype == Enums.Sound.VICTORY:
+            self.send_packet(b'\xb1\x00\x1C', b'\x40\x04\x42\x04\x45\x10\x42\x04\x44\x04\x47\x10\x44\x04\x46\x04\x49\x10\x46\x04\x49\x10')
+
+        if beeptype == Enums.Sound.POWER_OFF:
             self.send_packet(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
 
     # TODO to be reviewed

@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.game.classes import Log, GameFactory, CentaurScreen, CentaurBoard, Clock
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.game.consts import Enums
+from DGTCentaurMods.game.consts import Enums, consts
 
 import time, chess, berserk, threading
 
@@ -709,6 +709,14 @@ def main():
                                 # Might be mate...
 
                                 CLOCK_PANEL.stop()
+
+                                if 'winner' in state.keys():
+                                    if state.get('winner') == ("white" if current_game[_COLOR] else "black"):
+                                        if CentaurConfig.get_sound_settings(consts.SOUND_VICTORY):
+                                            CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
+                                    else:
+                                        if CentaurConfig.get_sound_settings(consts.SOUND_GAME_LOST):
+                                            CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
 
                                 gfe.update_evaluation(force=True, text=state.get('status'))
                                 pass

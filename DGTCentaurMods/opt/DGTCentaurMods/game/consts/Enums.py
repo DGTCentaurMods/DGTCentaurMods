@@ -29,6 +29,8 @@ class Sound(Enum):
     TAKEBACK_MOVE = 4,
     COMPUTER_MOVE = 5,
     POWER_OFF = 6,
+    VICTORY = 7,
+    GAME_LOST = 8,
 
 
 class Btn(Enum):

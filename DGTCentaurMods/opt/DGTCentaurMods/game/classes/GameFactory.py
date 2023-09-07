@@ -492,14 +492,14 @@ class Engine():
                     chess.Termination.VARIANT_DRAW:"draw",
         
                 }[outcome.termination]
-
+            
             self.update_evaluation(force=True, text=str_outcome)
 
             self.send_to_web_clients({ 
                 "turn_caption":str_outcome
             })
 
-            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, termination=outcome.termination)
+            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.TERMINATION, outcome=outcome)
 
     def _evaluation_thread_instance(self):
 

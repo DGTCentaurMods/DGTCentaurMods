@@ -52,10 +52,15 @@ SOUND_WRONG_MOVES = "wrong_moves"
 SOUND_TAKEBACK_MOVES = "takeback_moves"
 SOUND_COMPUTER_MOVES = "computer_moves"
 SOUND_MUSIC = "starting_music"
+SOUND_VICTORY = "victory_music"
+SOUND_GAME_LOST= "game_lost_music"
 
 SOUNDS_SETTINGS = [
     { "id":SOUND_MUSIC, "label":"Starting music" },
     { "id":SOUND_CORRECT_MOVES, "label":"Correct moves" },
     { "id":SOUND_WRONG_MOVES,"label":"Wrong moves" },
     { "id":SOUND_TAKEBACK_MOVES,"label":"Takebacks" },
-    { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" }]
+    { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" },
+    { "id":SOUND_VICTORY,"label":"Victory music" },
+    { "id":SOUND_GAME_LOST,"label":"Game lost/draw music" },
+]

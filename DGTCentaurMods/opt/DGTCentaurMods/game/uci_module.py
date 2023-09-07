@@ -133,6 +133,15 @@ def main(color, engine_name, engine_parameters):
             engine.quit()
             exit_requested = True
 
+        if args["event"] == Enums.Event.TERMINATION:
+
+            if args["outcome"].winner == (not computer_color):
+                if CentaurConfig.get_sound_settings(consts.SOUND_VICTORY):
+                    CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
+            else:
+                if CentaurConfig.get_sound_settings(consts.SOUND_GAME_LOST):
+                    CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
+
         if args["event"] == Enums.Event.PLAY:
 
             current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
