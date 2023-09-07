@@ -231,12 +231,20 @@ class CentaurScreen(common.Singleton):
             for index in range(1,9):
                 fen = fen.replace(str(index), " "*index)
 
-            reversed = ""
-            for a in range(8,0,-1):
-                for b in range(0,8):
-                    reversed = reversed + fen[((a-1)*8)+b]
+            if self._screen_reversed == False:
+                reversed = ""
+                for a in range(8,0,-1):
+                    for b in range(0,8):
+                        reversed = reversed + fen[((a-1)*8)+b]
+                fen = reversed
+            else:
+                reversed = ""
+                for a in range(0,8):
+                    for b in range(0,8):
+                        reversed = reversed + fen[(a*8)+(7-b)]
+                fen = reversed
 
-            self.draw_board(reversed, startrow)
+            self.draw_board(fen, startrow)
 
         except Exception as e:
             Log.debug(f"fen:{fen}")

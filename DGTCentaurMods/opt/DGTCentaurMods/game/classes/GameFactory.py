@@ -760,6 +760,9 @@ class Engine():
                         response["fen"] = self._chessboard.fen()
                         socket.send_message(response)
 
+                if "web_button" in data:
+                    CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
+
                 if "sys" in data:
                     if data["sys"] == "homescreen":
                         CENTAUR_BOARD.push_button(Enums.Btn.BACK)

@@ -92,11 +92,11 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 
 		// Each display menu item is connected to a boolean main.board property
 		const displaySettings = [
-			{ id:"previous_move", default:true,  label: "Previous move", type:"checkbox"},
-			{ id:"kings_checks", default:false,  label: "Kings checks", type:"checkbox"},
-			{ id:"live_evaluation", default:true, label: "Live evaluation", type:"checkbox"},
-			{ id:"centaur_screen", default:true, label: "Centaur screen", type:"checkbox"},
-			{ id:"reversed_board", default:false, label: "Board reversed", type:"checkbox", callback:(value) => me.chessboard.orientation(value ? 'black' : 'white')},
+			{ id:"previous_move", default:true,  label: "Previous move displayed", type:"checkbox"},
+			{ id:"kings_checks", default:false,  label: "Kings checks displayed", type:"checkbox"},
+			{ id:"live_evaluation", default:true, label: "Live evaluation displayed", type:"checkbox"},
+			{ id:"centaur_screen", default:true, label: "Centaur screen displayed", type:"checkbox"},
+			{ id:"reversed_board", default:false, label: "Board is reversed", type:"checkbox", callback:(value) => me.chessboard.orientation(value ? 'black' : 'white')},
 			{ id:"active_board", default:false, label: "Board is active", type:"checkbox", callback:(value) => me.chessboard.draggable = value},
 		]
 
@@ -136,6 +136,11 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		// Sub menus function
 		me.executeMenu = function(item, ev) {
 			if (item.action) item.action()
+		}
+
+		me.pushButton = function(btn, ev) {
+
+			SOCKET.emit('request', {'web_button':btn})
 		}
 
 		// Checkbox menus function
@@ -660,7 +665,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							for(var id in socketmessages) {
 								// Does the message contain the id?
 								// If yes we call the function
-								if (message[id]) socketmessages[id](message[id])
+								if (message[id] !== undefined) socketmessages[id](message[id])
 							}
 			
 							$scope.$apply()

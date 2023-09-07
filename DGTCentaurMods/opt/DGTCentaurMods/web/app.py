@@ -69,6 +69,13 @@ def on_request(message):
 	if "uuid" in message:
 		response["uuid"] = message["uuid"]
 
+
+	if "web_menu" in message:
+
+		response["update_menu"] = [{"label":f"The {consts.MAIN_ID} service is not properly running, please check!", "action":{ "type": "js", "value": '() => null' }}]
+
+		socketio.emit('message', response)
+
 	# System request
 	if "sys" in message:
 		action = message["sys"]
@@ -131,6 +138,8 @@ def on_request(message):
 			if action == "centaur.ini":
 				_sendback_file_contents(consts.CONFIG_FILE, action)
 
+			return
+
 		if "write" in message:
 
 			action = message["write"]
@@ -155,7 +164,8 @@ def on_request(message):
 			if filename and filename == "centaur.ini":
 				_update_file_contents(consts.CONFIG_FILE, "Configuration file has been successfuly updated!")
 
-
+			return
+		
 		if "data" in message:
 			action = message["data"]
 

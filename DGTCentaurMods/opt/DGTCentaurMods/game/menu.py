@@ -72,7 +72,7 @@ MENU_ITEMS = [
         ]}, 
     
     { LABEL:"Settings", ONLY_WEB:True, ITEMS: [
-        { LABEL:"🌈 Web display", ONLY_WEB:True, ITEMS: [], TYPE: "subitem", ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} },
+        { LABEL:"🕸 Web settings", ONLY_WEB:True, ITEMS: [], TYPE: "subitem", ACTION:{TYPE: "js_variable", VALUE: "displaySettings"} },
         { LABEL:"🎵 Board sounds", ONLY_WEB:True, ACTION:{ TYPE: "socket_data", VALUE: "sounds_settings"}}, 
     ]},
     
@@ -80,10 +80,10 @@ MENU_ITEMS = [
     
     {   ID:"system", 
         LABEL:"System", ITEMS: [
-            { LABEL: "Power off board", SHORT_LABEL: "Power off",
+            { LABEL: "📴 Power off board", SHORT_LABEL: "Power off",
               ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
             },
-            { LABEL: "Reboot board", SHORT_LABEL: "Reboot",
+            { LABEL: "🌀 Reboot board", SHORT_LABEL: "Reboot",
               ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
             { LABEL: "⚡ Restart service", ONLY_WEB:True,
@@ -99,9 +99,9 @@ MENU_ITEMS = [
 
             { TYPE: "divider", ONLY_WEB:True },
 
-            { LABEL: "Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
-            { ID:"uci", LABEL:"Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
-            { ID:"famous", LABEL:"Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
+            { LABEL: "✏ Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
+            { ID:"uci", LABEL:"✏ Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
+            { ID:"famous", LABEL:"✏ Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
 
         ] },
 ]
@@ -201,6 +201,9 @@ class Menu:
                 if "web_move" in data:
                     # No game in progress - we send back the current FEN
                     self._socket.send_message({ "fen":common.get_Centaur_FEN() })
+
+                if "web_button" in data:
+                    CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
 
                 if "pong" in data:
                     # Browser is connected (server ping)
@@ -471,7 +474,7 @@ class Menu:
 
     def end_child_module(self):
 
-        self.initialize_web_menu()
+        self.initialize_web_menu({"loading_screen":False, "fen":common.get_Centaur_FEN()})
 
         self.home_screen()
 
