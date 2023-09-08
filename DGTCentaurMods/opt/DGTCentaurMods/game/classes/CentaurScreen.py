@@ -225,7 +225,12 @@ class CentaurScreen(common.Singleton):
 
     def draw_fen(self, fen, startrow=2):
 
+        EMPTY_FEN = "8/8/8/8/8/8/8/8 w - - 0 1"
+
         try:
+            if fen == None:
+                fen = EMPTY_FEN
+
             fen = fen.replace("/", "")
 
             for index in range(1,9):

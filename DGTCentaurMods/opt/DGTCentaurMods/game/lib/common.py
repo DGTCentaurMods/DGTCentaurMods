@@ -23,7 +23,7 @@ from DGTCentaurMods.game.consts import consts, Enums
 
 from threading import Thread
 
-import os, requests, subprocess, time
+import os, requests, subprocess, time, chess
 
 class Singleton:
     _self = None
@@ -88,7 +88,7 @@ def get_Centaur_FEN():
 
         return fen
     except:
-        return None
+        return chess.STARTING_FEN
 
 def update_Centaur_FEN(fen):
 

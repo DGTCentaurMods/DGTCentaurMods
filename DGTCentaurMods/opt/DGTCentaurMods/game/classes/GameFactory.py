@@ -26,8 +26,8 @@ from DGTCentaurMods.game.lib import common
 
 #from pympler import muppy, summary
 
-from threading import Thread, Event
-import time, asyncio
+from threading import Thread
+import time
 import chess
 import chess.pgn
 import sys

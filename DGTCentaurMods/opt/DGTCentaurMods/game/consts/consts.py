@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23090801"
+TAG_RELEASE = "ON23090802"
 
 HOME_DIRECTORY = str(Path.home())
 OPT_DIRECTORY = f"/opt/{MAIN_ID}"

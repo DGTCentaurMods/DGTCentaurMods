@@ -23,7 +23,7 @@ import os, time, threading, serial
 
 from DGTCentaurMods.game.classes import Log
 from DGTCentaurMods.game.lib import common
-from DGTCentaurMods.game.consts import Enums
+from DGTCentaurMods.game.consts import Enums, consts
 
 def _rotate_field(index):
     R = (index // 8)
@@ -43,6 +43,8 @@ class CentaurBoard(common.Singleton):
     _BAUD_RATE = 1000000
     _TIMEOUT = .2
 
+    _initialized = False
+
     _IDLE_BOARD_RESPONSE = b''
     _IDLE_KEYS_RESPONSE = b''
 
@@ -56,6 +58,8 @@ class CentaurBoard(common.Singleton):
     _battery_level = 0
 
     _stand_by = False
+
+    _disabled = False
 
     _timeout_disabled = False
     _events_enabled = True
@@ -100,10 +104,10 @@ class CentaurBoard(common.Singleton):
 
             response = b''
 
-            self._address_1 = 00
-            self._address_2 = 00
+            self._address_1 = 0
+            self._address_2 = 0
 
-            timeout = time.time() + 30
+            timeout = time.time() + 10
 
             while len(response) < 4 and time.time() < timeout:
 
@@ -122,8 +126,13 @@ class CentaurBoard(common.Singleton):
                     break
 
                 time.sleep(1)
-            else:
-                raise Exception("No response from serial!")
+            
+            if self._address_1 == 0 and self._address_2 == 0:
+                Log.exception(CentaurBoard._initialize, "No response from serial!")
+                Log.info("Board communication has been disabled...")
+                self._disabled = True
+                self._SERIAL.close()
+                pass
 
         return self
 
@@ -137,6 +146,8 @@ class CentaurBoard(common.Singleton):
 
             if not self.clear_serial():
                 Log.exception(CentaurBoard.initialize, "Unable to clear the serial!")
+
+            self._initialized = True
 
             self._events_worker = threading.Thread(target=self.events_board_thread)
             self._events_worker.daemon = True
@@ -157,8 +168,11 @@ class CentaurBoard(common.Singleton):
 
         bytes = b''
 
+        if self._disabled:
+            return bytes
+
         try:
-            length = self._SERIAL.in_waiting
+            length = 1000 if not self._initialized  else self._SERIAL.in_waiting
             if length:
                 bytes = self._SERIAL.read(length)
         except:
@@ -170,7 +184,8 @@ class CentaurBoard(common.Singleton):
 
     def write_to_serial(self, bytes):
         try:
-            self._SERIAL.write(bytearray(bytes))
+            if not self._disabled:
+                self._SERIAL.write(bytearray(bytes))
 
         except:
             Log.info(f"Unable to write to serial '{bytes}'...")
@@ -188,6 +203,9 @@ class CentaurBoard(common.Singleton):
         return result
     
     def ask_serial(self, command, data) -> bytes:
+
+        if self._disabled:
+            return b''
 
         self.send_packet(command, data)
         time.sleep(.01)
@@ -209,7 +227,10 @@ class CentaurBoard(common.Singleton):
         self.read_from_serial()
 
     # TODO to be reviewed
-    def clear_serial(self, timeout=10):
+    def clear_serial(self, timeout=30):
+
+        if self._disabled:
+            return True
 
         response_1 = b''
         response_2 = b''
@@ -217,7 +238,7 @@ class CentaurBoard(common.Singleton):
         timeout = time.time() + timeout
 
         while True:
-            print('Checking and clear the serial line...')
+            print('Checking and clear the serial...')
             while time.time() < timeout:
 
                 expected_1 = self.build_packet(b'\x85\x00\x06', b'')
@@ -230,12 +251,11 @@ class CentaurBoard(common.Singleton):
                 if expected_1 == response_1 and expected_2 == response_2:
                     print('Board is idle. Serial is clear.')
                     return True
+                
+                time.sleep(1)
             
-            timeout = time.time() + timeout
-            print('Unable to clear the serial. Retrying...')
-            self._SERIAL.close()
-            self._SERIAL = None
-            self._initialize()
+            print('Unable to clear th serial...')
+            return False
 
     def beep(self, beeptype):
     
@@ -340,6 +360,11 @@ class CentaurBoard(common.Singleton):
         # lowerlimit/upperlimit may need adjusting
         # Get the board data
 
+        EMPTY_STATE = [None] * 64
+
+        if self._disabled:
+            return consts.BOARD_START_STATE
+
         self.pause_events()
 
         response = []
@@ -349,7 +374,7 @@ class CentaurBoard(common.Singleton):
 
         response = response = response[6:(64 * 2) + 6]
         
-        result = [None] * 64
+        result = EMPTY_STATE
 
         for x in range(0, 127, 2):
             tval = (response[x] * 256) + response[x+1]
@@ -413,7 +438,7 @@ class CentaurBoard(common.Singleton):
 
     def _read_fields(self, timeout):
         try:
-            if self._field_callback:
+            if not self._disabled and self._field_callback:
 
                 response = self.ask_serial(b'\x83', b'')
                 
@@ -439,6 +464,9 @@ class CentaurBoard(common.Singleton):
             pass
 
     def _read_keys(self, timeout):
+
+        if self._disabled:
+            return
 
         A1_HEX = "{:02x}".format(self._address_1)
         A2_HEX = "{:02x}".format(self._address_2)
@@ -552,6 +580,10 @@ class CentaurBoard(common.Singleton):
 
     # TODO to be reviewed
     def _read_battery(self, timeout):
+
+        if self._disabled:
+            return
+
         try:
 
             # Every 30 seconds check the battery details
