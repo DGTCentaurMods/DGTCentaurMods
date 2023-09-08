@@ -87,7 +87,7 @@ def on_request(message):
 			socketio.emit('message', response)
 		
 		except Exception as e:
-			response["script_exception"] = str(e)
+			response["script_output"] = str(e)
 			socketio.emit('message', response)
 			
 			pass
