@@ -209,8 +209,7 @@ class CentaurBoard(common.Singleton):
         self.read_from_serial()
 
     # TODO to be reviewed
-    def clear_serial(self, timeout=20):
-        print('Checking and clear the serial line...')
+    def clear_serial(self, timeout=10):
 
         response_1 = b''
         response_2 = b''
@@ -218,6 +217,7 @@ class CentaurBoard(common.Singleton):
         timeout = time.time() + timeout
 
         while True:
+            print('Checking and clear the serial line...')
             while time.time() < timeout:
 
                 expected_1 = self.build_packet(b'\x85\x00\x06', b'')
@@ -233,6 +233,7 @@ class CentaurBoard(common.Singleton):
             
             timeout = time.time() + timeout
             print('Unable to clear the serial. Retrying...')
+            self._SERIAL.close()
             self._SERIAL = None
             self._initialize()
 

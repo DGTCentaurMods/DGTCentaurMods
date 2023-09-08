@@ -27,7 +27,7 @@ from DGTCentaurMods.game.consts import consts
 from DGTCentaurMods.game.classes import DAL
 from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
 
-import os, time, logging
+import os, time, logging, subprocess
 
 #logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
@@ -75,6 +75,22 @@ def on_request(message):
 		response["update_menu"] = [{"label":f"The {consts.MAIN_ID} service is not properly running, please check!", "action":{ "type": "js", "value": '() => null' }}]
 
 		socketio.emit('message', response)
+
+	# Script request
+	if "script" in message:
+		script = message["script"]
+
+		try:
+			result = subprocess.check_output(["python3", f"{consts.OPT_DIRECTORY}/scripts/{script}.py"])
+
+			response["script_output"] = result.decode()
+			socketio.emit('message', response)
+		
+		except Exception as e:
+			response["script_exception"] = str(e)
+			socketio.emit('message', response)
+			
+			pass
 
 	# System request
 	if "sys" in message:

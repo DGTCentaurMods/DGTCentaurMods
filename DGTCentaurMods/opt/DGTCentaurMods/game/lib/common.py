@@ -23,9 +23,7 @@ from DGTCentaurMods.game.consts import consts, Enums
 
 from threading import Thread
 
-import os
-import subprocess
-import time
+import os, requests, subprocess, time
 
 class Singleton:
     _self = None
@@ -34,6 +32,20 @@ class Singleton:
         if cls._self is None:
             cls._self = super().__new__(cls)
         return cls._self
+    
+def get_lastest_tag():
+    response = requests.get("https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest")
+
+    # if file was downloaded
+    if response.status_code == 200:
+        response_json = response.json()
+        latest_tag = response_json['tag_name']
+        print(f"Latest tag found: {latest_tag}")
+    else:
+        print(f"Internet down? Status code: {response.status_code}")
+        latest_tag = consts.TAG_RELEASE
+
+    return latest_tag
 
 def tail(f, lines=1, _buffer=4098):
     """Tail a file and get X lines from the end"""

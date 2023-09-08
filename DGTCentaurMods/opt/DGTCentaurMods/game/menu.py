@@ -20,14 +20,14 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.game.classes import Log, SocketClient, CentaurScreen, CentaurBoard
-from DGTCentaurMods.game.consts import consts, Enums
+from DGTCentaurMods.game.consts import consts, Enums, fonts
 from DGTCentaurMods.game.lib import common
 
 from pathlib import Path
 
-import time, os, configparser, re, copy
+import time, os, configparser, re, copy, importlib, shlex
 
-import importlib, shlex
+LASTEST_TAG = common.get_lastest_tag()
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
@@ -46,6 +46,7 @@ TYPE = "type"
 ONLY_WEB = "only_web"
 ONLY_BOARD = "only_board"
 ID = "id"
+DISABLED = "disabled"
 
 # Menu items
 # Proto version, shared between web & ePaper
@@ -91,6 +92,16 @@ MENU_ITEMS = [
             },
             { LABEL:"Wifi", ONLY_BOARD:True,
               ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
+
+            { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
+
+            { LABEL:"Update", ONLY_BOARD:True,
+              ACTION:{ TYPE: "script_execute", VALUE: "update_mod"} },
+
+            { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
+            { LABEL: f"tag:{consts.TAG_RELEASE}", ONLY_BOARD:True, DISABLED:True, "font":"SMALL_FONT" },
+            { LABEL: f"last:{LASTEST_TAG}", ONLY_BOARD:True, DISABLED:True, "font":"SMALL_FONT" },
+
             { TYPE: "divider", ONLY_WEB:True },
             
             { LABEL: "📋 Last log events", ONLY_WEB:True,
@@ -101,13 +112,16 @@ MENU_ITEMS = [
 
             { LABEL: "✏ Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
             { ID:"uci", LABEL:"✏ Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
-            { ID:"famous", LABEL:"✏ Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True }
-
+            { ID:"famous", LABEL:"✏ Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
         ] },
+
+        # Current tag version label
+        { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
+        { LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", ONLY_BOARD:True, DISABLED:True, "font":"SMALL_FONT" },
 ]
 
 if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
-    MENU_ITEMS.append({ LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} })
+    MENU_ITEMS.insert(len(MENU_ITEMS)-2, { LABEL:"Launch Centaur", SHORT_LABEL:"Centaur", ACTION:{ TYPE: "socket_sys", VALUE: "centaur"} })
 
 
 class Menu:
@@ -157,7 +171,7 @@ class Menu:
         # We draw all the visible items
         for item in current_items:
 
-            SCREEN.write_text(current_row, item[SHORT_LABEL if SHORT_LABEL in item else LABEL])
+            SCREEN.write_text(current_row, item[SHORT_LABEL if SHORT_LABEL in item else LABEL], font=fonts.MAIN_FONT if "font" not in item else getattr(fonts, item["font"]))
             
             # Current selected item?
             if current_index == self._menu[CURRENT_INDEX]:
@@ -310,6 +324,7 @@ class Menu:
                 m[CURRENT_INDEX] = len(node)-1
 
         if key_index == Enums.Btn.DOWN:
+
             if index<len(node)-1:
                 m[CURRENT_INDEX] = index+1
             else:
@@ -339,6 +354,18 @@ class Menu:
                     if item_type == 'socket_sys':
                         # The server will excute the command
                         self._socket.send_request({'sys':value})
+
+                    if item_type == 'script_execute':
+
+                        SCREEN.home_screen("Processing...")
+
+                        # The server will excute the command
+                        self._socket.send_request({'script':value})
+
+                        time.sleep(3)
+
+                        CENTAUR_BOARD.push_button(Enums.Btn.BACK)
+
 
                     if item_type == 'socket_execute':
 
@@ -370,8 +397,11 @@ class Menu:
                 m[CURRENT_NODE] = nodes.pop()
                 m[CURRENT_INDEX] = m[NODE_INDEXES].pop()
 
-
-        self.draw_menu()
+        # We bypass the disabled items
+        if DISABLED in node[m[CURRENT_INDEX]] and node[m[CURRENT_INDEX]][DISABLED]:
+            CENTAUR_BOARD.push_button(key_index)
+        else:
+            self.draw_menu()
 
 
     # Add engines and famous PGNs to proto menu
@@ -468,8 +498,8 @@ class Menu:
             self._socket.send_message({ 
                 "loading_screen":True,
                 "update_menu": [{
-                "label":"← Back to main menu", 
-                "action": { "type": "socket_sys", "value": "homescreen"}}]
+                LABEL:"← Back to main menu", 
+                ACTION: { "type": "socket_sys", VALUE: "homescreen"}}]
             })
 
     def end_child_module(self):

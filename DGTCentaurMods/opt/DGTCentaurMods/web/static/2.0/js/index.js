@@ -547,6 +547,14 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									window.open(url)
 									window.URL.revokeObjectURL(url)
 								},
+
+								script_output: (value) => {
+									const data = new Blob([value], {type: 'text/plain'})
+									const url = window.URL.createObjectURL(data)
+
+									window.open(url)
+									window.URL.revokeObjectURL(url)
+								},
 			
 								// We clear the graphics (not the user ones)
 								clear_board_graphic_moves: () => Chessboard.clearGraphicArrow(me.chessboard),
