@@ -211,10 +211,6 @@ class PieceHandler:
         """Did player pick up a piece off board?"""
         return self._field_action == Enums.PieceAction.LIFT
 
-    def _is_place(self) -> bool:
-        """Did player put a piece onto board?"""
-        return self._field_action == Enums.PieceAction.PLACE
-
     def _move_origin(self, uci_move: str) -> str:
         """Origin square of move"""
         return uci_move[0:2]
@@ -231,7 +227,7 @@ class PieceHandler:
 
     def _play_sound(self, sound):
         """Play sound only if enabled in config"""
-        if CentaurConfig.get_sound_settings(sound)
+        if CentaurConfig.get_sound_settings(sound):
             return
         if beep := self._SOUNDS.get(sound):
             CENTAUR_BOARD.beep(beep)
@@ -244,45 +240,49 @@ class PieceHandler:
         """Target square of a move"""
         return common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
-    def _initial_legal_squares(self) -> None:
+    def _player_move_legal_squares(self) -> list[int]:
         """Legal squares construction from the lifted piece"""
-        self._legal_squares = [
+        return [
             self._to_target_index(move)
             for move in self._legal_moves
             if self._move_origin(move) == self._square_name
         ] + \
             [self._field_index] # The lifted piece can come back to its square
 
-    def _computer_move_legal_squares(self) -> None:
+    def _computer_move_legal_squares(self) -> list[int]:
         """If this is a computer move then the piece lifted should equal
         the start of computermove otherwise set legalsquares so they can
         just put the piece back down! If it is the correct piece then
         adjust legalsquares so to only include the target square"""
-
-        if self._square_name != self._move_origin(self._engine._computer_uci_move):
-            # Computer move but wrong piece lifted
-            if self._can_force_moves and self._is_legal_square():
-                Log.info(f'Alternative computer move chosen : "{self._square_name}".')
-            else:
-                # Wrong move - only option is to replace the piece on its square...
-                self._legal_squares = [self._field_index]
+        is_uci_move = self._source_name() == self._move_origin(self._engine._computer_uci_move)
+        if self._can_force_moves:
+            if not is_uci_move:
+                Log.info(f'Alternative computer move chosen : "{self._square_name()}".')
+            return self._player_move_legal_squares()
+        elif is_uci_move:
+            # Forced move, correct piece lifted
+            # Only one choice possible
+            return [self._to_target_index(self._engine._computer_uci_move)]
         else:
-            if self._can_force_moves == False:
-                # Forced move, correct piece lifted
-                # Only one choice possible
-                self._legal_squares = [self._to_target_index(self._engine._computer_uci_move)]
+            # Wrong move - only option is to replace the piece on its square...
+            return [self._source_square]
+
+    def _find_legal_squares(self) -> list[int]:
+        """Legal destination squares for the lifted piece"""
+        if self._engine._is_computer_move:
+            return self._computer_move_legal_squares()
+        else:
+            return self._player_move_legal_squares()
 
     def _look_for_undo(self) -> None:
         """Taking back process"""
-        if self._can_undo_moves and not self._piece_color_is_consistent and self._is_lift():
-            # We read the last move that has been recorded
-            previous_uci_move = self._get_last_uci_move()
-            if previous_uci_move and self._move_target(previous_uci_move) == self._square_name:
-                Log.info(f'Takeback request : "{self._square_name}".')
-
-                # The only legal square is the origin from the previous move
-                self._legal_squares = [self._to_origin_index(previous_uci_move)]
-                self._undo_requested = True
+        # We read the last move that has been recorded
+        if (previous_uci_move := self.get_last_uci_move()) and \
+                self._square_name() == self._move_target(previous_uci_move):
+            Log.info(f'Takeback request : "{self._square_name()}".')
+            # The only legal square is the origin from the previous move
+            self._legal_squares = [self._to_origin_index(previous_uci_move)]
+            self._undo_requested = True
 
     def _wrong_move(self) -> None:
         self._play_sound(consts.SOUND_WRONG_MOVES)
@@ -333,7 +333,7 @@ class PieceHandler:
 
     def _determine_move(self, player_uci_move: str, promoted_piece: str = "") -> str:
         if self._engine._is_computer_move:
-            # Has the computer move been overrided?
+            # Has the computer move been overridden?
             if self._can_force_moves and player_uci_move != self._engine._computer_uci_move[0:4]:
                 # computermove is replaced since we can override it!
                 self._engine._computer_uci_move = player_uci_move + promoted_piece
@@ -345,6 +345,7 @@ class PieceHandler:
     def _commit_move(self, uci_move: str, san_move: str) -> None:
         """We record the move"""
         committed = self._insert_new_game_move(uci_move, str(self._fen()))
+
         if not committed:
             Log.exception(self._finalize_move, f'Move "{uci_move}/{san_move}" HAS NOT been committed.')
             self._stop()
@@ -448,7 +449,7 @@ class PieceHandler:
         """Promotion menu display if player is human or if player
         overrides computer move"""
         return not self._engine._is_computer_move or \
-            self._move_name() != self._engine._computer_uci_move[0:4])
+            self._move_name() != self._engine._computer_uci_move[0:4]
 
     def _attempt_move(self) -> None:
         """Piece has been moved"""
@@ -458,55 +459,51 @@ class PieceHandler:
         else:
             self._finalize_move(self._move_name())
 
+    def _handle_lift(self):
+        if self._piece_color_is_consistent():
+            if not self._source_defined():
+                self._source_square = self._field_index
+            self._legal_squares = self._find_legal_squares()
+        Log.debug(f'legalsquares:{self._legal_squares}')
+
+        # We cancel the current taking back process if a second piece
+        # has been lifted.  Otherwise we can't capture properly...
+        self._undo_requested = False
+        if not self._piece_color_is_consistent() and self._can_undo_moves:
+            self._look_for_undo()
+
     def _handle_place(self) -> None:
+        Log.debug(f'legalsquares:{self._legal_squares}')
         if self._field_index == self._source_square:
             # Piece has simply been placed back
             self._source_square = -1
             self._legal_squares = []
             self._undo_requested = False
-        else:
+        elif self._is_legal_square():
             if self._undo_requested:
                 self._undo_move()
             else:
                 self._attempt_move()
+        else:
+            self._wrong_move()
 
-    def _field_callback(self):
+    def _field_callback(self) -> None:
         # We do not need to check the reset if a piece is lifted
         self._engine._need_starting_position_check = False
-        Log.debug(f"field_index:{self._field_index}, square_name:{self._square_name}, piece_action:{self._field_action}")
-
-        if self._is_lift() and self._piece_color_is_consistent and not self._source_defined():
-            self._source_square = self._field_index
-            self._initial_legal_squares()
-        Log.debug(f'legalsquares:{self._legal_squares}')
-
-        # We cancel the current taking back process if a second piece
-        # has been lifted.  Otherwise we can't capture properly...
+        Log.debug(f"field_index:{self._field_index}, square_name:{self._square_name()}, piece_action:{self._field_action}")
         if self._is_lift():
-            self._undo_requested = False
-
-        if self._engine._is_computer_move and self._is_lift() and self._piece_color_is_consistent:
-            self._computer_move_legal_squares()
-
-        if self._is_place() and not self._is_legal_square():
-            self._wrong_move()
-            return False
-
-        self._look_for_undo()
-
-        if self._is_place() and self._is_legal_square():
+            self._handle_lift()
+        else:
             self._handle_place()
-
-        return True
 
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
-    def __call__(self, field_index, field_action, web_move):
+    def __call__(self, field_index, field_action, web_move) -> None:
         self._field_index = field_index
         self._field_action = field_action
         self._web_move = web_move
-        return self._field_callback()
+        self._field_callback()
 
 
 # Game manager class
