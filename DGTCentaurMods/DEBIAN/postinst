@@ -77,6 +77,10 @@ cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} DGTCentaurMods
 sudo touch /etc/authbind/byport/80
 sudo chmod 777 /etc/authbind/byport/80
 
+# Allow memory access for epaper driver
+sudo usermod -a -G gpio pi
+sudo usermod -a -G kmem pi
+
 ##### Enable systemd services.
 echo -e "::: Setup services"
     systemctl daemon-reload

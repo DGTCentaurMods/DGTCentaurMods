@@ -33,7 +33,7 @@ from PIL import Image, ImageDraw, ImageFont
 import pathlib
 
 curturn = 1
-engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
+engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/ct800", timeout = None)
 computeronturn = 0
 kill = 0
 firstmove = 0
@@ -58,17 +58,14 @@ def keyCallback(key):
         engine.quit()
     if key == gamemanager.BTNDOWN:
         image = Image.new('1', (128, 80), 255)
-        epaper.drawImagePartial(0, 209, image) 
-        time.sleep(0.3)
+        epaper.drawImagePartial(0, 209, image)     
         epaper.drawImagePartial(0, 1, image)
-        graphson = 0
-        time.sleep(0.3)           
+        graphson = 0        
     if key == gamemanager.BTNUP:
         graphson = 1
         firstmove = 1
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
-        evaluationGraphs(info)
-        time.sleep(0.3)        
+        evaluationGraphs(info)        
 
 def eventCallback(event):
     global curturn
@@ -82,8 +79,7 @@ def eventCallback(event):
     if event == gamemanager.EVENT_NEW_GAME:
         writeTextLocal(0, "               ")
         writeTextLocal(1, "               ")
-        epaper.quickClear()
-        time.sleep(2)
+        epaper.quickClear()        
         scorehistory = []
         curturn = 1
         firstmove = 1
@@ -92,14 +88,12 @@ def eventCallback(event):
         drawBoardLocal(gamemanager.cboard.fen())
         curturn = 1
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
-        evaluationGraphs(info)
-        time.sleep(0.3)
+        evaluationGraphs(info)        
     if event == gamemanager.EVENT_BLACK_TURN:
         drawBoardLocal(gamemanager.cboard.fen())
         curturn = 0
         info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))        
-        evaluationGraphs(info)        
-        time.sleep(0.3) 
+        evaluationGraphs(info)                
     if event == gamemanager.EVENT_REQUEST_DRAW:
         gamemanager.drawGame()
     if event == gamemanager.EVENT_RESIGN_GAME:
@@ -125,10 +119,8 @@ def eventCallback(event):
             time.sleep(0.3)
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
             image = image.transpose(Image.FLIP_LEFT_RIGHT)    
-            epaper.drawImagePartial(0, 57, image)
-            time.sleep(1)
-            epaper.quickClear()
-            time.sleep(1)
+            epaper.drawImagePartial(0, 57, image)            
+            epaper.quickClear()            
             # Let's display an end screen
             image = Image.new('1', (128,292), 255)
             draw = ImageDraw.Draw(image)
@@ -229,8 +221,7 @@ def evaluationGraphs(info):
         dr2 = ImageDraw.Draw(tmp)
         if curturn == 1:            
             dr2.ellipse((119,14,126,21), fill = 0, outline = 0)
-        epaper.drawImagePartial(0, 209, tmp) 
-        time.sleep(0.3)
+        epaper.drawImagePartial(0, 209, tmp)         
         if curturn == 0:
             draw.ellipse((119,14,126,21), fill = 0, outline = 0)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -243,8 +234,7 @@ def writeTextLocal(row,txt):
     draw = ImageDraw.Draw(image)
     font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
     draw.text((0, 0), txt, font=font18, fill=0)
-    epaper.drawImagePartial(0, (row*20), image)
-    time.sleep(0.3)
+    epaper.drawImagePartial(0, (row*20), image)    
 
 def drawBoardLocal(fen):
     # This local version of drawboard - we draw into a 64x64 image and then
@@ -327,8 +317,8 @@ def drawBoardLocal(fen):
 
 # Activate the epaper
 epaper.initEpaper()
-time.sleep(2)
-epaper.pauseEpaper()
+#epaper.pauseEpaper()
+
 # Subscribe to the game manager to activate the previous functions
 gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
 writeTextLocal(0,"Place pieces in")

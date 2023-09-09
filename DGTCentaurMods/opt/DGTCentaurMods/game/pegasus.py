@@ -199,33 +199,34 @@ class UARTRXCharacteristic(Characteristic):
             # LEDS stuff
             # 96, [Packet data length - 2], 5(light leds), LedSpeed, 0 or 1 is 0 except in moveLed or checkLed, Intensity, ...field ids, 0
             print("Received LED command")
-            ledspeed = bytes[3]
-            intensity = bytes[5]
-            data = bytearray()
-            data.append(5)
-            data.append(ledspeed)
-            data.append(0)
-            data.append(intensity)
-            print(data.hex())
-            for x in range(6,len(bytes)-1):
-                # This is looping through the leds to light
-                data.append(bytes[x])
-            head = bytearray()
-            head.append(176)
-            head.append(0)
-            head.append(len(data)+6)
-            print(head.hex())
-            print(data.hex())
-            board.ledsOff()
-            board.sendPacket(head,data)
-            if bytes[4] == 1:
-                time.sleep(0.5)
+            if bytes[2] == 5:
+                ledspeed = bytes[3]
+                intensity = bytes[5]
+                data = bytearray()
+                data.append(5)
+                data.append(ledspeed)
+                data.append(0)
+                data.append(intensity)
+                print(data.hex())
+                for x in range(6,len(bytes)-1):
+                    # This is looping through the leds to light
+                    data.append(bytes[x])
+                head = bytearray()
+                head.append(176)
+                head.append(0)
+                head.append(len(data)+6)
+                print(head.hex())
+                print(data.hex())
                 board.ledsOff()
-            # Let's report the battery status here - 0x58 (or presumably higher as there is rounding) = 100%
-            # As I can't read centaur battery percentage here - fake it
-            #msg = b'\x58'
-            #self.sendMessage(DGT_MSG_BATTERY_STATUS, msg)
-            processed=1
+                board.sendPacket(head,data)
+                if bytes[4] == 1:
+                    time.sleep(0.5)
+                    board.ledsOff()
+                # Let's report the battery status here - 0x58 (or presumably higher as there is rounding) = 100%
+                # As I can't read centaur battery percentage here - fake it
+                #msg = b'\x58'
+                #self.sendMessage(DGT_MSG_BATTERY_STATUS, msg)
+                processed=1
         if processed==0:
             print("Un-coded command")
             UARTService.tx_obj.updateValue(bytes)

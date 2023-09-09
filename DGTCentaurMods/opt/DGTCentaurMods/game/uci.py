@@ -44,6 +44,7 @@ firstmove = 1
 graphson = 0 # Default to graphs off, for pi zero w users
 scorehistory = []
 
+
 if os.uname().machine=="armv7l":
     # The pi zero 2 w is armv71, so turn it on if we detect that
     graphson = 1
@@ -59,6 +60,9 @@ if computerarg == "random":
 
 # Arg2 is going to contain the name of our engine choice. We use this for database logging and to spawn the engine
 enginename = sys.argv[2]
+
+aengine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/ct800", timeout = None)
+pengine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
 
 ucioptionsdesc = "Default"
 ucioptions = {}
@@ -93,18 +97,15 @@ def keyCallback(key):
         kill = 1
     if key == gamemanager.BTNDOWN:
         image = Image.new('1', (128, 80), 255)
-        epaper.drawImagePartial(0, 209, image) 
-        time.sleep(0.3)
+        epaper.drawImagePartial(0, 209, image)         
         epaper.drawImagePartial(0, 1, image)
-        graphson = 0
-        time.sleep(0.3)        
+        graphson = 0        
     if key == gamemanager.BTNUP:
         graphson = 1
         firstmove = 1
-        engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
-        info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
-        evaluationGraphs(info)
-        time.sleep(0.3)       
+        #engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
+        info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
+        evaluationGraphs(info)            
 
 def eventCallback(event):
     global curturn
@@ -113,54 +114,50 @@ def eventCallback(event):
     global kill
     global scorehistory
     # This function receives event callbacks about the game in play
-    if event == gamemanager.EVENT_NEW_GAME:
-        writeTextLocal(0, "               ")
-        writeTextLocal(1, "               ")
-        epaper.quickClear()
-        time.sleep(2)
+    if event == gamemanager.EVENT_NEW_GAME:        
+        #writeTextLocal(0, "               ")
+        #writeTextLocal(1, "               ")        
+        epaper.quickClear()            
         scorehistory = []
         curturn = 1
-        firstmove = 1
+        firstmove = 1   
+        epaper.pauseEpaper() 
         drawBoardLocal(gamemanager.cboard.fen())
+        if graphson == 1:
+            info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.1))        
+            evaluationGraphs(info) 
+        epaper.unPauseEpaper()
     if event == gamemanager.EVENT_WHITE_TURN:
         curturn = 1
-        if graphson == 1:
-            engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
-            info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
-            engine.quit()
-            evaluationGraphs(info)
-            time.sleep(0.2)         
-            drawBoardLocal(gamemanager.cboard.fen())
-            time.sleep(0.4)
-        if curturn == computeronturn:
-            engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+        if graphson == 1:            
+            info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
+            epaper.pauseEpaper()
+            evaluationGraphs(info)            
+            drawBoardLocal(gamemanager.cboard.fen())            
+            epaper.unPauseEpaper()
+        if curturn == computeronturn:            
             if ucioptions != {}:
                 options = (ucioptions)
-                engine.configure(options)
+                pengine.configure(options)
             limit = chess.engine.Limit(time=5)
-            mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
+            mv = pengine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
             mv = mv.move
-            engine.quit()
             gamemanager.computerMove(str(mv))                 
     if event == gamemanager.EVENT_BLACK_TURN:
         curturn = 0
-        if graphson == 1:
-            engine = chess.engine.SimpleEngine.popen_uci("/home/pi/centaur/engines/stockfish_pi")
-            info = engine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))        
-            engine.quit()
-            evaluationGraphs(info)        
-            time.sleep(0.2)                 
-            drawBoardLocal(gamemanager.cboard.fen())  
-            time.sleep(0.4)
-        if curturn == computeronturn:
-            engine = chess.engine.SimpleEngine.popen_uci(str(pathlib.Path(__file__).parent.resolve()) + "/../engines/" + enginename)
+        if graphson == 1:            
+            info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))    
+            epaper.pauseEpaper()    
+            evaluationGraphs(info)                                 
+            drawBoardLocal(gamemanager.cboard.fen())              
+            epaper.unPauseEpaper()
+        if curturn == computeronturn:            
             if ucioptions != {}:
                 options = (ucioptions)
-                engine.configure(options)
+                pengine.configure(options)
             limit = chess.engine.Limit(time=5)
-            mv = engine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
+            mv = pengine.play(gamemanager.cboard, limit, info=chess.engine.INFO_ALL)
             mv = mv.move
-            engine.quit()
             gamemanager.computerMove(str(mv))        
     if event == gamemanager.EVENT_RESIGN_GAME:
         gamemanager.resignGame(computeronturn + 1)
@@ -186,10 +183,8 @@ def eventCallback(event):
             time.sleep(0.3)
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
             image = image.transpose(Image.FLIP_LEFT_RIGHT)    
-            epaper.drawImagePartial(0, 57, image)
-            time.sleep(2)
-            epaper.quickClear()
-            time.sleep(2)
+            epaper.drawImagePartial(0, 57, image)            
+            epaper.quickClear()            
             # Let's display an end screen
             print("displaying end screen")
             image = Image.new('1', (128,292), 255)
@@ -219,8 +214,7 @@ def eventCallback(event):
 def moveCallback(move):
     # This function receives valid moves made on the board
     # Note: the board state is in python-chess object gamemanager.cboard
-    epaper.drawFen(gamemanager.cboard.fen())
-    epaper.writeText(9, move)
+    pass
 
 def evaluationGraphs(info):
     # Draw the evaluation graphs to the screen
@@ -230,8 +224,7 @@ def evaluationGraphs(info):
     global curturn
     if graphson == 0:
         image = Image.new('1', (128, 80), 255)
-        epaper.drawImagePartial(0, 209, image) 
-        time.sleep(0.3)
+        epaper.drawImagePartial(0, 209, image)         
         epaper.drawImagePartial(0, 1, image)        
     sval = 0
     sc = str(info["score"])        
@@ -292,8 +285,7 @@ def evaluationGraphs(info):
         dr2 = ImageDraw.Draw(tmp)
         if curturn == 1:            
             dr2.ellipse((119,14,126,21), fill = 0, outline = 0)
-        epaper.drawImagePartial(0, 209, tmp) 
-        time.sleep(0.3)
+        epaper.drawImagePartial(0, 209, tmp)         
         if curturn == 0:
             draw.ellipse((119,14,126,21), fill = 0, outline = 0)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -306,8 +298,7 @@ def writeTextLocal(row,txt):
     draw = ImageDraw.Draw(image)
     font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
     draw.text((0, 0), txt, font=font18, fill=0)
-    epaper.drawImagePartial(0, (row*20), image)
-    time.sleep(0.3)
+    epaper.drawImagePartial(0, (row*20), image)    
 
 def drawBoardLocal(fen):
     # This local version of drawboard - we draw into a 64x64 image and then
@@ -386,13 +377,10 @@ def drawBoardLocal(fen):
             piece = piece.transpose(Image.FLIP_LEFT_RIGHT)            
         lboard.paste(piece,(col, row))
     draw.rectangle([(0,0),(127,127)],fill=None,outline='black')
-    epaper.drawImagePartial(0, 81, lboard)
-    time.sleep(0.3)
+    epaper.drawImagePartial(0, 81, lboard)    
     
 # Activate the epaper
 epaper.initEpaper()
-time.sleep(2)
-epaper.pauseEpaper()
 
 # Set the initial state of curturn to indicate white's turn
 curturn = 1
@@ -402,9 +390,10 @@ gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
 writeTextLocal(0,"Place pieces in")
 writeTextLocal(1,"Starting Pos")
 
-
-while kill == 0:
+while kill == 0:    
     time.sleep(0.1)
+    
 
 gamemanager.unsubscribeGame()
-
+aengine.quit()
+pengine.quit()

@@ -12,7 +12,10 @@ Inside the DGT Centaur is a Raspberry Pi Zero with an SD Card, by replacing that
 
 Note on forks and derivatives. As an open source project we want people to be able to take this code and work with it to improve people's experiences with electronic chess boards. You are welcome to amend the code, to use the reversed protocols, to create derivatives, and we encourage you to do so. Whilst we work with the DGT Centaur, maybe you will want to integrate it into your own DIY chessboard, and so on. Hopefully you'll feed back those great changes, fixes, improvements too. We ask only that you follow the license, be clear that your work is a modification, and you ensure that the end user understands the state of the code.
 
+A number of binaries are included in this repository as the software makes use of them - these are not covered under the general GPL license terms of the project. Our GPL license covers the bulk of the Python code. If you are creating a derivative, it is up to you to ensure you can use these binaries. 
+
 This project is presented to you in an beta state. This means that whilst the project works generally, you may come across some bugs. If you have problems, feel free to raise an issue or join us on discord https://discord.gg/zqgUGK2x49 .
+
 
 ## Current features
 
