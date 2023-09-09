@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import os, time, threading, serial
+import time, threading, serial
 
 from DGTCentaurMods.classes import Log
 from DGTCentaurMods.lib import common
@@ -658,7 +658,7 @@ class CentaurBoard(common.Singleton):
 
         else:
 
-            if self._events_enabled:
+            if self._events_enabled and not self._disabled:
                 self.shutdown()
 
 

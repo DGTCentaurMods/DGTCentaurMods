@@ -198,12 +198,14 @@ class Menu:
             
                 #response = {}
 
+                if "screen_message" in data:
+                    SCREEN.home_screen(data["screen_message"])
+
                 if "standby" in data:
                     if data["standby"]:
-                        SCREEN.home_screen("Paused!")
-                        #SCREEN.pause()
+                        SCREEN.pause()
                     else:
-                        #SCREEN.unpause()
+                        SCREEN.unpause()
                         self.draw_menu()
 
                 if "battery" in  data:

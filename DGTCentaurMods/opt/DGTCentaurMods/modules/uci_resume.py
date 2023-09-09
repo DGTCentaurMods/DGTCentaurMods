@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
+from DGTCentaurMods.consts import consts
 
 import importlib, shlex
 
@@ -28,10 +29,10 @@ def main():
     last_uci = CentaurConfig.get_last_uci_command()
 
     if last_uci == "1vs1_module":
-        uci_module = importlib.import_module(name=last_uci, package="DGTCentaurMods.game")
+        uci_module = importlib.import_module(name=f".modules.1vs1_module", package=consts.MAIN_ID)
         uci_module.main()
     else:
-        uci_module = importlib.import_module(name="uci_module", package="DGTCentaurMods.game")
+        uci_module = importlib.import_module(name=f".modules.uci_module", package=consts.MAIN_ID)
         # We unpack the last_uci args
         uci_module.main(*shlex.split(last_uci))
 

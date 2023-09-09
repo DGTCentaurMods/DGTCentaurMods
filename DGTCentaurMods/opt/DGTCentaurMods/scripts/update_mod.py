@@ -2,16 +2,18 @@
 import requests, os
 
 from DGTCentaurMods.consts import consts
-from DGTCentaurMods.classes import Log, SocketClient
 
-SOCKET = SocketClient.get()
+import socketio
+
+sio = socketio.Client()
+sio.connect('http://localhost')
 
 latest_release_url = ""
 
-Log.info("Starting mod update...")
-Log.info("Checking for the latest release...")
+print("Starting mod update...")
+print("Checking for the latest release...")
 
-SOCKET.send_message({"popup":"Starting mod update!", "standby":True})
+sio.emit('request', {"screen_message":"Update started!"})
 
 response = requests.get(consts.GITHUB_URI)
 
@@ -19,29 +21,33 @@ response = requests.get(consts.GITHUB_URI)
 if response.status_code == 200:
     response_json = response.json()
     latest_release_url = response_json['assets'][-1]['browser_download_url']
-    Log.info(f"Latest release found: {latest_release_url}")
+    print(f"Latest release found: {latest_release_url}")
 else:
-    Log.exception(f"Internet down? Status code: {response.status_code}")
+    print(f"Internet down? Status code: {response.status_code}")
+    sio.emit('request', {"screen_message":"Update failed!"})
     exit(-1)
 
 filename = latest_release_url.split('/')[-1]
 
-Log.info("Cleaning previous deb files...")
-os.system("sudo rm -f /home/pi/*.deb >/dev/null 2>&1")
+print("Cleaning previous deb files...")
+os.system("sudo rm -f *.deb >/dev/null 2>&1")
 
-Log.info(f"Downloading '{latest_release_url}'...")
+sio.emit('request', {"screen_message":"Downloading..."})
+
+print(f"Downloading '{latest_release_url}'...")
 os.system(f"wget {latest_release_url}")
 
-Log.info("DPKG configuration..")
+print("DPKG configuration..")
 os.system("sudo sudo dpkg --configure -a")
 
-SOCKET.send_message({"popup":"Installing new package!"})
+sio.emit('request', {"screen_message":"Installing...", "standby":True})
+sio.disconnect()
 
-Log.info("Uninstalling current version...")
+print("Uninstalling current version...")
 os.system("sudo apt remove -y dgtcentaurmods")
 
-Log.info("Installing package...")
+print("Installing package...")
 os.system(f"sudo apt install -y ./{filename}")
 
-Log.info("Rebooting!")
+print("Rebooting!")
 os.system("sudo reboot")
