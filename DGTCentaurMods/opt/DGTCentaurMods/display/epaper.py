@@ -27,10 +27,13 @@
 
 from DGTCentaurMods.board import centaur,board
 from DGTCentaurMods.display import epd2in9d
+from DGTCentaurMods.display.epaper_driver import epaperDriver
 import os, time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import threading
+
+driver = epaperDriver()
 
 font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
 # Screenbuffer is what we want to display on the screen

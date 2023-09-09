@@ -171,8 +171,7 @@ def doMenu(menu, title=None):
             and res[31] == 0
         ):
             quickselect = 1
-    epaper.clearScreen()
-    time.sleep(0.2)
+    epaper.clearScreen()    
     if title:
         row = 2
         shift = 20
