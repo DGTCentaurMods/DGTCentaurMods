@@ -37,6 +37,314 @@ import re
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
 
+
+# Isolate logic of __field_callback
+class PieceHandler:
+
+    def __init__(self, engine: 'Engine') -> None:
+        self._engine: 'Engine' = engine
+        self._source_square: int = -1
+        self._legal_squares: list[int] = []
+        self._undo_requested: bool = False
+
+    # Receives field events from the board.
+    # Positive is a field lift, negative is a field place.
+    # Numbering 0 = a1, 63 = h8
+    def __call__(self, field_index, field_action, web_move):
+
+        # We do not need to check the reset if a piece is lifted
+        self._engine._need_starting_position_check = False
+
+        # Check the piece colour against the current turn
+        piece_color_is_consistent = self._engine._chessboard.turn == self._engine._chessboard.color_at(field_index)
+
+        square_name = common.Converters.to_square_name(field_index)
+
+        Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{field_action}")
+
+        # Legal squares construction from the lifted piece
+        if field_action == Enums.PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
+
+            self._source_square = field_index
+
+            self._legal_squares = list(
+
+                # All legal move indexes
+                map(lambda item:common.Converters.to_square_index(item, Enums.SquareType.TARGET),
+
+                # All legal uci moves that start with the current square name
+                list(filter(lambda item:item[0:2]==square_name,
+
+                    # All legal uci moves
+                    list(map(lambda item:str(item), self._engine._chessboard.legal_moves))))
+                )
+            )
+
+            # The lifted piece can come back to its square
+            self._legal_squares.append(field_index)
+
+        Log.debug(f'legalsquares:{self._legal_squares}')
+
+        # We cancel the current taking back process if a second piece has been lifted
+        # Otherwise we can't capture properly...
+        if field_action == Enums.PieceAction.LIFT:
+            self._undo_requested = False
+
+        if self._engine._is_computer_move and field_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
+            # If this is a computer move then the piece lifted should equal the start of computermove
+            # otherwise set legalsquares so they can just put the piece back down! If it is the correct piece then
+            # adjust legalsquares so to only include the target square
+            if square_name != self._engine._computer_uci_move[0:2]:
+                # Computer move but wrong piece lifted
+
+                if self._engine._can_force_moves and field_index in self._legal_squares:
+                    Log.info(f'Alternative computer move chosen : "{square_name}".')
+
+                else:
+                    # Wrong move - only option is to replace the piece on its square...
+                    self._legal_squares = [field_index]
+
+            else:
+
+                if self._engine._can_force_moves == False:
+
+                    # Forced move, correct piece lifted
+                    # Only one choice possible
+                    self._legal_squares = [common.Converters.to_square_index(self._engine._computer_uci_move, Enums.SquareType.TARGET)]
+
+        if field_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
+
+            if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
+                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+
+            self._source_square = -1
+
+            # Could be a reset request...
+            if not web_move:
+                self._engine._need_starting_position_check = True
+
+            return False
+
+        # Taking back process
+        if self._engine._can_undo_moves and piece_color_is_consistent == False and field_action == Enums.PieceAction.LIFT:
+
+            # We read the last move that has been recorded
+            previous_uci_move = self._engine.get_last_uci_move()
+
+            if previous_uci_move and previous_uci_move[2:4] == square_name:
+                Log.info(f'Takeback request : "{square_name}".')
+
+                # The only legal square is the origin from the previous move
+                self._legal_squares = [common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)]
+
+                self._undo_requested = True
+
+                del previous_uci_move
+
+        if field_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
+
+            if field_index == self._source_square:
+                # Piece has simply been placed back
+                self._source_square = -1
+                self._legal_squares = []
+
+                self._undo_requested = False
+            else:
+
+                # Previous move has been taken back
+                if self._undo_requested:
+
+                    # Undo the move
+                    previous_uci_move = self._engine._chessboard.pop().uci()
+
+                    Log.debug(f'Undoing move "{previous_uci_move}"...')
+
+                    previous_san_move = self._engine._san_move_list.pop()
+
+                    Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
+
+                    self._engine._dal.delete_last_game_move()
+
+                    self._legal_squares = []
+                    self._source_square = -1
+
+                    if CentaurConfig.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
+                        CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
+
+                    CENTAUR_BOARD.led(field_index)
+
+                    common.update_Centaur_FEN(self._engine._chessboard.fen())
+
+                    self._engine.display_partial_PGN()
+                    self._engine.display_board()
+                    self._engine.update_web_ui({
+                        "clear_board_graphic_moves":True,
+                        "uci_undo_move":previous_uci_move[2:4]+previous_uci_move[:2],
+                        "uci_move":self._engine.get_last_uci_move(),
+                    })
+
+                    Engine.__invoke_callback(self._engine._undo_callback_function,
+                        uci_move=previous_uci_move,
+                        san_move=previous_san_move,
+                        field_index=field_index)
+
+                    Engine.__invoke_callback(self._engine._event_callback_function, event=Enums.Event.PLAY)
+
+                    self._undo_requested = False
+                    self._engine.update_evaluation()
+
+                    del previous_uci_move
+                    del previous_san_move
+
+                else:
+
+                    Log.info(f'Piece has been moved to "{square_name}".')
+
+                    # Piece has been moved
+                    from_name = common.Converters.to_square_name(self._source_square)
+                    to_name = common.Converters.to_square_name(field_index)
+
+                    def finalize_move(player_uci_move, promoted_piece = ""):
+
+                        if self._engine._is_computer_move:
+
+                            # Has the computer move been overrided?
+                            if self._engine._can_force_moves and player_uci_move != self._engine._computer_uci_move[0:4]:
+
+                                # computermove is replaced since we can override it!
+                                self._engine._computer_uci_move = player_uci_move + promoted_piece
+
+                                Log.info(f'New computermove : "{self._engine._computer_uci_move}".')
+
+                            uci_move = self._engine._computer_uci_move
+                        else:
+                            uci_move = from_name + to_name + promoted_piece
+
+                        # Make the move
+                        try:
+                            move = chess.Move.from_uci(uci_move)
+
+                            self._engine._chessboard.push(move)
+                            san_move = self._engine.get_last_san_move()
+                        except:
+                            san_move = None
+
+                        if san_move == None:
+                            if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
+                                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+
+                            Log.debug(f'INVALID move "{uci_move}"')
+
+                            self._source_square = -1
+
+                            # Could be a reset request...
+                            if not web_move:
+                                self._engine._need_starting_position_check = True
+
+                            return False
+
+                        else:
+
+                            # We invoke the client callback
+                            # If the callback returns True, the move is accepted
+                            if Engine.__invoke_callback(self._engine._move_callback_function,
+                                    uci_move=uci_move,
+                                    san_move=san_move,
+                                    color=not self._engine._chessboard.turn, # Move has been done, we need to reverse the color
+                                    field_index=field_index):
+
+                                self._engine.update_evaluation()
+
+                                # We record the move
+                                if self._engine._dal.insert_new_game_move(uci_move, str(self._engine._chessboard.fen())):
+                                    Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
+
+                                    self._legal_squares = []
+                                    self._source_square = -1
+                                    self._engine._is_computer_move = False
+
+                                    self._engine._san_move_list.append(san_move)
+
+                                    if CentaurConfig.get_sound_settings(consts.SOUND_CORRECT_MOVES):
+                                        CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
+
+                                    if len(self._engine._chessboard.checkers())>0:
+                                        CENTAUR_BOARD.led_array([field_index, self._engine._chessboard.king(self._engine._chessboard.turn)])
+                                    else:
+                                        CENTAUR_BOARD.led(field_index)
+
+                                    common.update_Centaur_FEN(self._engine._chessboard.fen())
+
+                                    self._engine.display_partial_PGN()
+                                    self._engine.display_board()
+                                    self._engine.update_web_ui({
+                                        "clear_board_graphic_moves":True,
+                                        "uci_move":uci_move,
+                                        "san_move":san_move,
+                                        "field_index":field_index })
+
+                                    self._engine._check_last_move_outcome_and_switch()
+                                else:
+                                    Log.exception(finalize_move, f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
+                                    self._engine.stop()
+
+                            else:
+                                Log.debug(f'Client rejected the move "{uci_move}/{san_move}"...')
+
+                                # Move has been rejected by the client...
+                                self._engine._chessboard.pop()
+
+                    # Promotion
+                    # If this is a WPAWN and squarerow is 7
+                    # or a BPAWN and squarerow is 0
+                    piece_name = str(self._engine._chessboard.piece_at(self._source_square))
+
+                    if (((field_index // 8) == 7 and piece_name == "P") or ((field_index // 8) == 0 and piece_name == "p") and
+
+                        # Promotion menu display if player is human or if player overrides computer move
+
+                        (self._engine._is_computer_move == False or (self._engine._is_computer_move == True and (from_name + to_name) != self._engine._computer_uci_move[0:4]))):
+
+                        CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
+                        SCREEN.draw_promotion_window()
+
+                        def wait_for_promotion_input():
+
+                            def _promote_key_callback(key_index):
+
+                                promoted_piece = ({
+
+                                    Enums.Btn.BACK:"n",
+                                    Enums.Btn.TICK:"b",
+                                    Enums.Btn.UP:"q",
+                                    Enums.Btn.DOWN:"r",
+
+                                    Enums.Btn.HELP:None,
+                                    Enums.Btn.PLAY: None,
+                                    Enums.Btn.LONGPLAY: None
+
+                                }[key_index])
+
+                                if promoted_piece != None:
+
+                                    # Back to original callbacks
+                                    CENTAUR_BOARD.unsubscribe_events()
+
+                                    self._engine.display_board()
+
+                                    finalize_move(from_name + to_name, promoted_piece)
+
+                            # We temporary disable the board field callback
+                            # and we add a new temporary board key callback
+                            CENTAUR_BOARD.subscribe_events(_promote_key_callback, None)
+
+                        wait_for_promotion_input()
+                    else:
+                        finalize_move(from_name + to_name)
+
+        return True
+
+
 # Game manager class
 class Engine():
 
@@ -119,12 +427,10 @@ class Engine():
 
         CENTAUR_BOARD.leds_off()
 
-        self._source_square = -1
-        self._legal_squares = []
         self._computer_uci_move = ""
         self._is_computer_move = False
-        self._undo_requested = False
         self._san_move_list = []
+        self._piece_handler = PieceHandler(self)
 
         self._new_evaluation_requested = False
 
@@ -174,312 +480,16 @@ class Engine():
                         CENTAUR_BOARD.led_from_to(from_num,to_num)
 
                         self._previous_move_displayed = True
-                
 
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
-
         if self._initialized == False:
             return
-
         self._previous_move_displayed = False
-
         try:
-            # We do not need to check the reset if a piece is lifted
-            self._need_starting_position_check = False
-
-            # Check the piece colour against the current turn
-            piece_color_is_consistent = self._chessboard.turn == self._chessboard.color_at(field_index)
-            
-            square_name = common.Converters.to_square_name(field_index)
-      
-            Log.debug(f"field_index:{field_index}, square_name:{square_name}, piece_action:{field_action}")
-
-            # Legal squares construction from the lifted piece
-            if field_action == Enums.PieceAction.LIFT and piece_color_is_consistent and self._source_square == -1:
-  
-                self._source_square = field_index
-
-                self._legal_squares = list(
-
-                    # All legal move indexes
-                    map(lambda item:common.Converters.to_square_index(item, Enums.SquareType.TARGET), 
-                                              
-                    # All legal uci moves that start with the current square name
-                    list(filter(lambda item:item[0:2]==square_name,
-                                
-                        # All legal uci moves
-                        list(map(lambda item:str(item), self._chessboard.legal_moves))))
-                    )
-                )
-                
-                # The lifted piece can come back to its square
-                self._legal_squares.append(field_index)
-
-                        
-            Log.debug(f'legalsquares:{self._legal_squares}')
-            
-            # We cancel the current taking back process if a second piece has been lifted
-            # Otherwise we can't capture properly...
-            if field_action == Enums.PieceAction.LIFT:
-                self._undo_requested = False
-                        
-            if self._is_computer_move and field_action == Enums.PieceAction.LIFT and piece_color_is_consistent:
-                # If this is a computer move then the piece lifted should equal the start of computermove
-                # otherwise set legalsquares so they can just put the piece back down! If it is the correct piece then
-                # adjust legalsquares so to only include the target square
-                if square_name != self._computer_uci_move[0:2]:
-                    # Computer move but wrong piece lifted
-                    
-                    if self._can_force_moves and field_index in self._legal_squares:
-                        Log.info(f'Alternative computer move chosen : "{square_name}".')
-                        
-                    else:
-                        # Wrong move - only option is to replace the piece on its square...
-                        self._legal_squares = [field_index]
-
-                else:
-                    
-                    if self._can_force_moves == False:
-                    
-                        # Forced move, correct piece lifted
-                        # Only one choice possible
-                        self._legal_squares = [common.Converters.to_square_index(self._computer_uci_move, Enums.SquareType.TARGET)]
-
-            if field_action == Enums.PieceAction.PLACE and field_index not in self._legal_squares:
-                
-                if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
-                    CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
-
-                self._source_square = -1
-
-                # Could be a reset request...
-                if not web_move:
-                    self._need_starting_position_check = True
-
-                return False
-
-            # Taking back process
-            if self._can_undo_moves and piece_color_is_consistent == False and field_action == Enums.PieceAction.LIFT:
-                
-                # We read the last move that has been recorded
-                previous_uci_move = self.get_last_uci_move()
-               
-                if previous_uci_move and previous_uci_move[2:4] == square_name:
-                    Log.info(f'Takeback request : "{square_name}".')
-                    
-                    # The only legal square is the origin from the previous move
-                    self._legal_squares = [common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)]
-
-                    self._undo_requested = True
-
-                    del previous_uci_move
-
-            if field_action == Enums.PieceAction.PLACE and field_index in self._legal_squares:
-
-                if field_index == self._source_square:
-                    # Piece has simply been placed back
-                    self._source_square = -1
-                    self._legal_squares = []
-                    
-                    self._undo_requested = False
-                else:
-                    
-                    # Previous move has been taken back
-                    if self._undo_requested:
-                        
-                        # Undo the move
-                        previous_uci_move = self._chessboard.pop().uci()
-                        
-                        Log.debug(f'Undoing move "{previous_uci_move}"...')
-
-                        previous_san_move = self._san_move_list.pop()
-                        
-                        Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
-
-                        self._dal.delete_last_game_move()
-                        
-                        self._legal_squares = []
-                        self._source_square = -1
-
-                        if CentaurConfig.get_sound_settings(consts.SOUND_TAKEBACK_MOVES):
-                            CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
-
-                        CENTAUR_BOARD.led(field_index)
-
-                        common.update_Centaur_FEN(self._chessboard.fen())
-
-                        self.display_partial_PGN()
-                        self.display_board()
-                        self.update_web_ui({ 
-                            "clear_board_graphic_moves":True,
-                            "uci_undo_move":previous_uci_move[2:4]+previous_uci_move[:2],
-                            "uci_move":self.get_last_uci_move(),
-                        })
-            
-                        Engine.__invoke_callback(self._undo_callback_function,
-                            uci_move=previous_uci_move,
-                            san_move=previous_san_move,
-                            field_index=field_index)
-            
-                        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
-
-                        self._undo_requested = False
-                        self.update_evaluation()
-
-                        del previous_uci_move
-                        del previous_san_move
-                        
-                    else:
-                        
-                        Log.info(f'Piece has been moved to "{square_name}".')
-
-                        # Piece has been moved
-                        from_name = common.Converters.to_square_name(self._source_square)
-                        to_name = common.Converters.to_square_name(field_index)
-                        
-                        def finalize_move(player_uci_move, promoted_piece = ""):
-            
-                            if self._is_computer_move:
-                                
-                                # Has the computer move been overrided?
-                                if self._can_force_moves and player_uci_move != self._computer_uci_move[0:4]:
-                                    
-                                    # computermove is replaced since we can override it!
-                                    self._computer_uci_move = player_uci_move + promoted_piece
-                            
-                                    Log.info(f'New computermove : "{self._computer_uci_move}".')
-                                
-                                uci_move = self._computer_uci_move
-                            else:
-                                uci_move = from_name + to_name + promoted_piece
-                           
-                            # Make the move
-                            try:
-                                move = chess.Move.from_uci(uci_move)
-
-                                self._chessboard.push(move)
-                                san_move = self.get_last_san_move()
-                            except:
-                                san_move = None
-
-                            if san_move == None:
-                                if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
-                                    CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
-
-                                Log.debug(f'INVALID move "{uci_move}"')
-
-                                self._source_square = -1
-
-                                # Could be a reset request...
-                                if not web_move:
-                                    self._need_starting_position_check = True
-
-                                return False
-
-                            else:
-
-                                # We invoke the client callback
-                                # If the callback returns True, the move is accepted
-                                if Engine.__invoke_callback(self._move_callback_function, 
-                                        uci_move=uci_move,
-                                        san_move=san_move,
-                                        color=not self._chessboard.turn, # Move has been done, we need to reverse the color
-                                        field_index=field_index):
-
-                                    self.update_evaluation()
-
-                                    # We record the move
-                                    if self._dal.insert_new_game_move(uci_move, str(self._chessboard.fen())):
-                                        Log.debug(f'Move "{uci_move}/{san_move}" has been commited.')
-
-                                        self._legal_squares = []
-                                        self._source_square = -1
-                                        self._is_computer_move = False
-
-                                        self._san_move_list.append(san_move)
-
-                                        if CentaurConfig.get_sound_settings(consts.SOUND_CORRECT_MOVES):
-                                            CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
-
-                                        if len(self._chessboard.checkers())>0:
-                                            CENTAUR_BOARD.led_array([field_index, self._chessboard.king(self._chessboard.turn)])
-                                        else:
-                                            CENTAUR_BOARD.led(field_index)
-
-                                        common.update_Centaur_FEN(self._chessboard.fen())
-
-                                        self.display_partial_PGN()
-                                        self.display_board()
-                                        self.update_web_ui({ 
-                                            "clear_board_graphic_moves":True,
-                                            "uci_move":uci_move,
-                                            "san_move":san_move,
-                                            "field_index":field_index })
-
-                                        self._check_last_move_outcome_and_switch()
-                                    else:
-                                        Log.exception(finalize_move, f'Move "{uci_move}/{san_move}" HAS NOT been commited.')
-                                        self.stop()
-
-                                else:
-                                    Log.debug(f'Client rejected the move "{uci_move}/{san_move}"...')
-
-                                    # Move has been rejected by the client...
-                                    self._chessboard.pop()
-
-                        # Promotion
-                        # If this is a WPAWN and squarerow is 7
-                        # or a BPAWN and squarerow is 0
-                        piece_name = str(self._chessboard.piece_at(self._source_square))
-                        
-                        if (((field_index // 8) == 7 and piece_name == "P") or ((field_index // 8) == 0 and piece_name == "p") and
-                            
-                            # Promotion menu display if player is human or if player overrides computer move
-
-                            (self._is_computer_move == False or (self._is_computer_move == True and (from_name + to_name) != self._computer_uci_move[0:4]))):
-
-                            CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
-                            SCREEN.draw_promotion_window()
-
-                            def wait_for_promotion_input():
-
-                                def _promote_key_callback(key_index):
-
-                                    promoted_piece = ({
-
-                                        Enums.Btn.BACK:"n", 
-                                        Enums.Btn.TICK:"b", 
-                                        Enums.Btn.UP:"q", 
-                                        Enums.Btn.DOWN:"r", 
-
-                                        Enums.Btn.HELP:None, 
-                                        Enums.Btn.PLAY: None, 
-                                        Enums.Btn.LONGPLAY: None
-                                    
-                                    }[key_index])
-
-                                    if promoted_piece != None:
-
-                                        # Back to original callbacks
-                                        CENTAUR_BOARD.unsubscribe_events()
-
-                                        self.display_board()
-
-                                        finalize_move(from_name + to_name, promoted_piece)
-
-                                # We temporary disable the board field callback
-                                # and we add a new temporary board key callback
-                                CENTAUR_BOARD.subscribe_events(_promote_key_callback, None)
-
-                            wait_for_promotion_input()
-                        else:
-                            finalize_move(from_name + to_name)
-
-            return True
-        
+            return self._piece_handler(field_index, field_action, web_move)
         except Exception as e:
             Log.exception(Engine.__field_callback, e)
 
