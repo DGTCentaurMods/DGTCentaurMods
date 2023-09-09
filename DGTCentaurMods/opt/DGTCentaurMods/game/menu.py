@@ -49,7 +49,7 @@ def keyPressed(id):
     global selection
     global event_key
     global idle
-    epaper.epapermode = 0
+    epaper.epapermode = 1
     board.beep(board.SOUND_GENERAL)
     if idle:
         if id == board.BTNTICK:
@@ -59,7 +59,7 @@ def keyPressed(id):
         if id == board.BTNTICK:
             if not curmenu:
                 selection = "BTNTICK"
-                print(selection)
+                #print(selection)
                 # event_key.set()
                 return
             c = 1
@@ -67,7 +67,7 @@ def keyPressed(id):
             for k, v in curmenu.items():
                 if c == menuitem:
                     selection = k
-                    print(selection)
+                    #print(selection)
                     event_key.set()
                     menuitem = 1
                     return
@@ -91,7 +91,7 @@ def keyPressed(id):
         if menuitem < 1:
             menuitem = 1
         if menuitem > len(curmenu):
-            menuitem = len(curmenu)
+            menuitem = len(curmenu)        
         epaper.clearArea(0, 20 + shift, 17, 295)
         draw = ImageDraw.Draw(epaper.epaperbuffer)
         draw.polygon(
@@ -195,8 +195,7 @@ def doMenu(menu, title=None):
         fill=0,
     )
     draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
-    statusbar.print()
-    print("drawn")
+    statusbar.print()    
     epaper.unPauseEpaper()
     event_key.wait()
     event_key.clear()
@@ -295,7 +294,7 @@ while True:
         statusbar.start()
     if result == "Centaur":
         epaper.loadingScreen()
-        time.sleep(1)
+        #time.sleep(1)
         board.pauseEvents()
         statusbar.stop()
         board.ser.close()
@@ -869,5 +868,4 @@ while True:
         while selection == "" and time.time() < timeout:
             if selection == "BTNTICK" or selection == "BTNBACK":
                 break
-        epaper.clearScreen()
-        time.sleep(0.5)
+        epaper.clearScreen()        
