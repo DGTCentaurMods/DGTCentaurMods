@@ -178,7 +178,6 @@ def initScreen():
     global screenbuffer
     global initialised
     epd.init()
-    time.sleep(0.5)
     epd.Clear(0xff)
     screenbuffer = Image.new('1', (128, 296), 255)
     initialised = 0
