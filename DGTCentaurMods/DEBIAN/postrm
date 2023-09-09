@@ -3,24 +3,19 @@
 PACKAGE="DGTCentaurMods"
 DGTCM_PATH="/opt/${PACKAGE}"
 
-
 function reloadSystemd {
     systemctl daemon-reload
 }
 
-
-function completeDGTCMremove {
+function removeInstallationDir {
     rm -rf ${DGTCM_PATH}
 }
 
-
-#Default actions on postrm
 reloadSystemd
-
 
 case $1 in
     purge* )
-        completeDGTCMremove
+        removeInstallationDir
         exit 0
         ;;
 esac

@@ -3,21 +3,15 @@
 PACKAGE="DGTCentaurMods"
 DGTCM_PATH="/opt/${PACKAGE}"
 
-function removePycache {    
-    find ${DGTCM_PATH} | grep -E "(__pycache__|\.pyc|\.pyo$|epaper.jpg)" | xargs rm -rf
+function removePycache {
+    py3clean ${DGTCM_PATH}
+    find ${DGTCM_PATH} | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 }
-
 
 function stopServices {
-    systemctl stop rfcomm.service
-    systemctl stop centaurmods-web.service
-    systemctl stop DGTCentaurMods.service
-    systemctl stop var-run-sdp.path
-    systemctl stop var-run-sdp.service
-    systemctl stop stopDGTController.service
-    systemctl stop var-run-sdp.path
+    systemctl stop ${PACKAGE}.service
+    systemctl stop ${PACKAGE}Web.service
 }
-
 
 case $1 in
     remove* )

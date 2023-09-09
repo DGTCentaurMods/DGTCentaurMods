@@ -1,32 +1,26 @@
 #!/bin/bash
 
-DEFAULT_HOSTNAME="raspberrypi"
 ARCH=`uname -m`
-NEW_HOSTNAME="dgtcentaur"
 CONFIG="/boot/config.txt"
 PACKAGE="DGTCentaurMods"
 DGTCM_PATH="/opt/${PACKAGE}"
-DATABASE="${DGTCM_PATH}/db/centaur.db"
-CONFIGINI="${DGTCM_PATH}/config/centaur.ini"
 CMDLINEFILE="/boot/cmdline.txt"
-BTMAIN="/etc/bluetooth/main.conf"
-DBUSSERVICE="/etc/systemd/system/dbus-org.bluez.service"
 CENTAUR="/home/pi/centaur/"
 CENTAUR_ENGINE="/home/pi/centaur/engines"
 STOCKFISH="stockfish_pi"
 RODENT_REPO="https://github.com/nescitus/rodent-iv.git"
 MAIA_REPO="https://github.com/CSSLab/maia-chess.git"
 FENLOG="/home/pi/centaur/fen.log"
-################################
+
 
 if ! cat $CONFIG | grep -q "#dgtcentaurmods"
 then
-    echo -e "::: Hardware configuration"
-    echo -e "::: Backup some first"
+    echo -e "::: Hardware configuration."
+    echo -e "::: Backup few files."
     cp $CONFIG $CONFIG.bak
     cp $CMDLINEFILE $CMDLINEFILE.bak
 
-    # Enabke SPI bus if not enbaled
+    # Enable SPI bus if not enabled
     echo "::: Checking SPI"
         SPION=`cat $CONFIG | grep "^#dtparam=spi=on"`
         SPI10=`cat $CONFIG | grep "^dtoverlay=spi1-3cs"`
@@ -43,11 +37,11 @@ then
         sed -i "$ a dtoverlay=spi1-3cs" $CONFIG
     fi
 
-echo "::: Checking serial port. "
+echo "::: Checking serial port."
     UARTON=`cat $CONFIG | grep "^#enable_uart=1"`
     if [ ! -z $UARTON ]
     then
-        echo "::: Enabling serial port..."
+        echo "::: Enabling serial port."
         sed -i "s/#enable_uart=1.*/enable_uart=1/g" $CONFIG
     else
         sed -i "$ a enable_uart=1" $CONFIG
@@ -63,76 +57,45 @@ then
         echo -e "$REPLY" > $CMDLINEFILE
 fi
 
-    # Setting up Bluetooth
-    #echo -e "::: Setting up bluetooth."
-    #    echo -e "$BTPIN" > /etc/bluetooth/pin.conf
-    #    echo -e "$BTMACHINEINFO" > /etc/machine-info
-
-
-#Make DGTCM available to all users
-rm /usr/lib/python3/dist-packages/DGTCentaurMods
-cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} DGTCentaurMods
+# Make DGTCM available to all users
+rm /usr/lib/python3/dist-packages/${PACKAGE}
+cd /usr/lib/python3/dist-packages && sudo ln -s ${DGTCM_PATH} ${PACKAGE}
 
 # Allow flask on port 80
 sudo touch /etc/authbind/byport/80
 sudo chmod 777 /etc/authbind/byport/80
 
-##### Enable systemd services.
-echo -e "::: Setup services"
+# Enable systemd services.
+echo -e "::: Setup services."
     systemctl daemon-reload
-    systemctl enable rfcomm.service
-    systemctl enable centaurmods-web.service
-    systemctl enable DGTCentaurMods.service
+    systemctl enable ${PACKAGE}Web.service
+    systemctl enable ${PACKAGE}.service
     systemctl enable ntp
-    systemctl enable var-run-sdp.path
-    systemctl enable var-run-sdp.service
-    systemctl enable stopDGTController.service
-    systemctl start var-run-sdp.path
-
-
-# Update main.conf in /etc/bluetooth
-    cp $BTMAIN $BTMAIN.bak
-    sed -i "/DiscoverableTimeout/s/^# *//" $BTMAIN
-    sed -i "/PairableTimeout/s/^# *//" $BTMAIN
-    sed -i "s/#JustWorksRepairing = never/JustWorksRepairing = always/g" $BTMAIN
-    #Mark file as changed
-    sed -i "$ a #dgtcentaurmods" $BTMAIN
 
 systemctl daemon-reload
 
-
-# Update rc.local
-if ! cat /etc/rc.local | grep -q "#dgtcentaurmods"
+#Check if CENTAUR directory exists
+if [ ! -d $CENTAUR ]
 then
-    cp /etc/rc.local /etc/rc.local.bak
-    if cat /etc/rc.local | grep -q "^exit 0" /etc/rc.local; then sed -i "s/^exit 0.*//g" /etc/rc.local; fi
-    sed -i "$ a	sudo sdptool add SP & \n\
-\n\
-sudo bluetoothctl <<EOF \n\
-power on \n\
-agent on \n\
-discoverable on \n\
-pairable on \n\
-EOF" /etc/rc.local
-    sed -i "$ a exit 0" /etc/rc.local
-    # Mark rc.local as changed.
-    sed -i "$ a #dgtcentaurmods" /etc/rc.local
+    mkdir $CENTAUR
 fi
 
-
-function update_hostname {
-#Do not update unless hostname is still the default one.
-if [ $(hostname) = $DEFAULT_HOSTNAME ]
+#Check if CENTAUR engine directory exists
+if [ ! -d $CENTAUR_ENGINE ]
 then
-    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hosts
-    sed -i "s/$DEFAULT_HOSTNAME/$NEW_HOSTNAME/g" /etc/hostname
+    mkdir $CENTAUR_ENGINE
 fi
-}
+
+#Check if fen.log exists
+if [ ! -e $FENLOG ]
+then
+    touch $FENLOG
+fi
 
 # Install Stockfish if in build
 if [[ -e ${DGTCM_PATH}/engines/$STOCKFISH ]]
 then
-    echo -e "::: Installing Stockfish engine"
+    echo -e "::: Installing Stockfish engine."
     if [[ -d $CENTAUR_ENGINE ]]
     then
         mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
@@ -143,17 +106,7 @@ then
         mv ${DGTCM_PATH}/engines/$STOCKFISH $CENTAUR_ENGINE
         chown -R pi.root $CENTAUR_ENGINE
     fi
-#else
-#    echo -e "Downloading Stockfish..."
-    # TODO: find a way to download.
 fi
-
-#Check if fen.log is there
-if [ ! -e $FENLOG ]
-then
-    touch $FENLOG
-fi
-
 
 # Check if pip is installed
 if sudo dpkg -l | grep -q python3-pip
@@ -166,13 +119,13 @@ fi
 
 echo -e "::: Installing python packages."
     cd $DGTCM_PATH
-    CFLAGS="-fcommon" pip3 install -r $DGTCM_PATH/setup/requirements.txt
+    CFLAGS="-fcommon" pip3 install -r $DGTCM_PATH/config/pip-requirements.txt
 
 
 function insertMaia {
     if [[ $ARCH == "armv6"* ]]; then
         #Remove maia and don't get weights
-        echo -e "::: This system is not compatible with maia engine. Removing"
+        echo -e "::: This system is not compatible with maia engine."
         rm -rf ${DGTCM_PATH}/engines/maia* > /dev/null 2>&1
         return
     fi
@@ -211,9 +164,7 @@ function insertRodentIV {
 
 function insertZahak {
     chmod 755 ${DGTCM_PATH}/engines/zahak
-
 }
-
 
 insertMaia
 insertRodentIV
@@ -221,49 +172,26 @@ insertZahak
 
 # Setting final permissions
 function setPermissions {
-    chown -R pi.pi ${DGTCM_PATH}
-    chown -R pi.root $CENTAUR
+    echo -e "::: Setting permissions."
+    sudo chown -R pi.pi ${DGTCM_PATH}
+    sudo chown -R pi.root $CENTAUR
 
 }
 
-
 function copyDefaults {
+    echo -e "::: Copying default values."
     cp -rn ${DGTCM_PATH}/defaults/* ${DGTCM_PATH}/
 }
 
-update_hostname
-
-#Old versions special handling tasks
-function cleanOldBeta {
-    rm -rf /home/pi/DGTCentaurMods
-}
-
-
-function restoreConfig {
-    cp /tmp/config/centaur.ini $CONFIGINI
-}
-
-
-function restoreDatabase {
-    cp /tmp/db/centaur.db ${DGTCM_PATH}/db && rm -r /tmp/db
-}
-
-
 case $1 in
     configure* )
-        case $2 in
-            1.0-beta|1.0.1-beta)
-                cleanOldBeta
-                ;;
-        esac       
-    echo -e "::: Finalizing install..."
-    #Copy over all defaults from /defaults
-    copyDefaults
 
+    copyDefaults
     setPermissions
+
+    echo -e "::: Done. You can reboot."
     ;;
 esac
-
 
 exit 0
 

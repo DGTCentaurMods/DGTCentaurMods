@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-source config/build.config
-
 BASEDIR=`pwd`
 PACKAGE="DGTCentaurMods"
 INSTALLDIR="/opt/${PACKAGE}"
@@ -14,7 +12,7 @@ function detectVersion {
 }
 
 function stage {
-    STAGE="dgtcentaurmods_${VERSION}_armhf"
+    STAGE="DGTCentaurMods_A.alpha-ON${VERSION}"
     echo -e "::: Staging build"
     cp -r $(basename "$PWD"/${PACKAGE}) /tmp/${STAGE}
     return
@@ -66,7 +64,7 @@ function insertStockfish {
 
 function clean {
     echo -e "::: Cleaning"
-    sudo rm -rf /tmp/dgtcentaurmods*
+    sudo rm -rf /tmp/${STAGE}*
     rm -rf ${BASEDIR}/releases
     rm -rf /tmp/Stockfish
 }
@@ -75,6 +73,15 @@ function removeDev {
     #All files in repo that are used in development stage are removed here
     rm /tmp/${STAGE}/opt/${PACKAGE}/config/centaur.ini
     rm /tmp/${STAGE}/opt/${PACKAGE}/db/centaur.db
+
+    rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/maia_weights
+    rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/personalities
+    rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/books
+
+    find /tmp/${STAGE} -name '.DS_Store' -type f -delete
+    find /tmp/${STAGE} -name 'fen.log' -type f -delete
+    
+    py3clean /tmp/${STAGE} 
 }
 
 

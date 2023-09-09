@@ -1,6 +1,0 @@
-[user]
-        email = <your@email.com>
-	name = <NAME>
-[credential]
-        helper = store
-

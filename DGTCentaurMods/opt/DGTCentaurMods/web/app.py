@@ -22,10 +22,10 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 
-from DGTCentaurMods.game.lib import common
-from DGTCentaurMods.game.consts import consts
-from DGTCentaurMods.game.classes import DAL
-from DGTCentaurMods.game.classes.CentaurConfig import CentaurConfig
+from DGTCentaurMods.lib import common
+from DGTCentaurMods.consts import consts
+from DGTCentaurMods.classes import DAL
+from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 import os, time, logging, subprocess
 
@@ -149,7 +149,7 @@ def on_request(message):
 				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/engines/{action}", action)
 
 			if action[-4:] == ".pgn":
-				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/game/famous_pgns/{action}", action)
+				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/famous_pgns/{action}", action)
 
 			if action == "centaur.ini":
 				_sendback_file_contents(consts.CONFIG_FILE, action)
@@ -175,7 +175,7 @@ def on_request(message):
 				_update_file_contents(f"{consts.OPT_DIRECTORY}/engines/{filename}", "UCI File has been successfuly updated!")
 
 			if filename and filename[-4:] == ".pgn":
-				_update_file_contents(f"{consts.OPT_DIRECTORY}/game/famous_pgns/{filename}", "PGN File has been successfuly updated!")
+				_update_file_contents(f"{consts.OPT_DIRECTORY}/famous_pgns/{filename}", "PGN File has been successfuly updated!")
 
 			if filename and filename == "centaur.ini":
 				_update_file_contents(consts.CONFIG_FILE, "Configuration file has been successfuly updated!")
