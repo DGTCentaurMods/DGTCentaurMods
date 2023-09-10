@@ -27,6 +27,8 @@ MAIN_ID = "DGTCentaurMods"
 
 TAG_RELEASE = "ON23091001"
 
+GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
+
 HOME_DIRECTORY = str(Path.home())
 OPT_DIRECTORY = f"/opt/{MAIN_ID}"
 CONFIG_FILE = OPT_DIRECTORY + "/config/centaur.ini"

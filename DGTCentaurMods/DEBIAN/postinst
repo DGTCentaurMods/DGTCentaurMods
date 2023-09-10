@@ -69,6 +69,7 @@ sudo chmod 777 /etc/authbind/byport/80
 echo -e "::: Setup services."
     systemctl daemon-reload
     systemctl enable ${PACKAGE}Web.service
+    systemctl enable ${PACKAGE}Update.service
     systemctl enable ${PACKAGE}.service
     systemctl enable ntp
 

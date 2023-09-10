@@ -19,12 +19,9 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from pathlib import Path
-import requests, os, socketio
+from DGTCentaurMods.consts.consts import HOME_DIRECTORY, MAIN_ID, GITHUB_URI
 
-HOME_DIRECTORY = str(Path.home())
-MAIN_ID = "DGTCentaurMods"
-GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
+import requests, os, socketio
 
 sio = socketio.Client()
 
@@ -34,13 +31,20 @@ except:
     sio = None
     pass
 
+def screen_message(screen_message, standby = False):
+    print(screen_message)
+    if sio:
+        m = {"screen_message":screen_message, "popup":screen_message}
+        if standby:
+            m["standby"] = True
+        sio.emit('request', m)
+
 latest_release_url = ""
 
 print("Starting mod update...")
 print("Checking for the latest release...")
 
-if sio:
-    sio.emit('request', {"screen_message":"Update started!"})
+screen_message("Update started!")
 
 response = requests.get(GITHUB_URI)
 
@@ -52,8 +56,7 @@ if response.status_code == 200:
 else:
     print(f"Internet down? Status code: {response.status_code}")
     
-    if sio:
-        sio.emit('request', {"screen_message":"Update failed!"})
+    screen_message("Update failed!")
     exit(-1)
 
 filename = latest_release_url.split('/')[-1]
@@ -61,9 +64,7 @@ filename = latest_release_url.split('/')[-1]
 print("Cleaning previous deb files...")
 os.system(f"sudo rm -f {HOME_DIRECTORY}/*.deb >/dev/null 2>&1")
 
-if sio:
-    sio.emit('request', {"screen_message":"Downloading..."})
-    sio.disconnect()
+screen_message("Downloading...", True)
 
 print(f"Downloading '{latest_release_url}'...")
 os.system(f"wget -O {HOME_DIRECTORY}/{MAIN_ID}_latest.deb {latest_release_url}")

@@ -25,7 +25,7 @@ from DGTCentaurMods.lib import common
 
 from pathlib import Path
 
-import time, os, configparser, re, copy, importlib, shlex
+import time, os, configparser, re, copy, importlib, shlex, glob
 
 LASTEST_TAG = common.get_lastest_tag()
 
@@ -526,7 +526,23 @@ class Menu:
         return self._browser_connected
 
 
-Menu()
+if len(glob.glob(f"{consts.HOME_DIRECTORY}/{consts.MAIN_ID}*.deb"))>0:
+
+    SERVICE_LOCKED = "Service locked: one update in progress..."
+
+    Log.info(SERVICE_LOCKED)
+    print(SERVICE_LOCKED)
+
+    time.sleep(3)
+    SCREEN.home_screen()
+    SCREEN.write_text(10, "Update")
+    SCREEN.write_text(11, "in progress...")
+    SCREEN.write_text(13, "Please wait!")
+    time.sleep(3)
+
+    exit()
+else:
+    Menu()
 
 while True:
     time.sleep(.5)
