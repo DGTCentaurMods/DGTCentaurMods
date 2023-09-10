@@ -96,8 +96,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			{ id:"kings_checks", default:false,  label: "Kings checks displayed", type:"checkbox"},
 			{ id:"live_evaluation", default:true, label: "Live evaluation displayed", type:"checkbox"},
 			{ id:"centaur_screen", default:true, label: "Centaur screen displayed", type:"checkbox"},
-			{ id:"reversed_board", default:false, label: "Board is reversed", type:"checkbox", callback:(value) => me.chessboard.orientation(value ? 'black' : 'white')},
-			{ id:"active_board", default:false, label: "Board is active", type:"checkbox", callback:(value) => me.chessboard.draggable = value},
+			{ id:"reversed_board", default:false, label: "Board is reversed", type:"checkbox", callback:(value) => { me.chessboard.orientation(value ? 'black' : 'white'); me.chessboard.resize(); }},
+			{ id:"active_board", default:false, label: "Board is active", type:"checkbox", callback:(value) => { me.chessboard.draggable = value; me.chessboard.resize(); }},
 		]
 
 		const settingsCallbacks = {}

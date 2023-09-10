@@ -66,7 +66,7 @@
 											<md-menu-content width="3">
 												<md-menu-item data-ng-repeat="sitem in item.items" ng-switch on="sitem.type">
 													<md-menu-item ng-switch-when="checkbox">
-														<md-button ng-click="main.executeCheckboxMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ main.board[sitem.id]?' ✅':' ⛔' ]] [[ sitem.label ]] </md-button>
+														<md-button ng-click="main.executeCheckboxMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ main.board[sitem.id]?' ✅':'⬜' ]] [[ sitem.label ]] </md-button>
 													</md-menu-item>
 													<md-menu-item ng-switch-default>
 														<md-button ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
@@ -76,7 +76,7 @@
 										</md-menu>
 									</md-menu-item>
 									<md-menu-item ng-switch-when="checkbox">
-										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ main.board[item.id]?' ✅':' ⛔' ]] [[ item.label ]] </md-button>
+										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ main.board[item.id]?' ✅':'⬜' ]] [[ item.label ]] </md-button>
 									</md-menu-item>
 									<md-menu-item ng-switch-when="divider"></md-menu-item>
 									<md-menu-item ng-switch-default>

@@ -301,7 +301,7 @@ class Menu:
 
         SCREEN.on_change(lambda image:self._socket.send_message({ "centaur_screen":image }))
 
-        self._socket.send_message({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
+        self.initialize_web_menu({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 
         self._menu = {
             CURRENT_INDEX: 0,
