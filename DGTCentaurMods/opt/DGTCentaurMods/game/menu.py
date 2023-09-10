@@ -49,8 +49,7 @@ def keyPressed(id):
     global selection
     global event_key
     global idle
-    epaper.epapermode = 1
-    board.beep(board.SOUND_GENERAL)
+    epaper.epapermode = 1    
     if idle:
         if id == board.BTNTICK:
             event_key.set()
@@ -107,30 +106,6 @@ def keyPressed(id):
 
 quickselect = 0
 
-
-def fieldActivity(id):
-    # This function receives field activity. +fieldid for lift -fieldid for place down
-    global quickselect
-    global curmenu
-    global selection
-    if quickselect == 1 and (id < -15 and id > -32):
-        board.beep(board.SOUND_GENERAL)
-        menuitem = 1
-        if quickselect == 1 and (id < -23 and id > -32):
-            menuitem = (id * -1) - 23
-        if quickselect == 1 and (id < -15 and id > -24):
-            menuitem = (id * -1) - 7
-        c = 1
-        r = ""
-        for k, v in curmenu.items():
-            if c == menuitem:
-                selection = k
-                event_key.set()
-                menuitem = 1
-                return
-            c = c + 1
-
-
 def doMenu(menu, title=None):
     # Draws a menu and waits for the response in the global variable 'selection'
     global shift
@@ -145,32 +120,8 @@ def doMenu(menu, title=None):
     # Display the given menu
     menuitem = 1
     quickselect = 0
-    board.pauseEvents()
-    res = board.getBoardState()
-    board.unPauseEvents()
-    epaper.pauseEpaper()
-    # If 3rd and 4th ranks are empty then enable quick select by placing and releasing a piece
-    if (
-        res[32] == 0
-        and res[33] == 0
-        and res[34] == 0
-        and res[35] == 0
-        and res[36] == 0
-        and res[37] == 0
-        and res[38] == 0
-        and res[39] == 0
-    ):
-        if (
-            res[24] == 0
-            and res[25] == 0
-            and res[26] == 0
-            and res[27] == 0
-            and res[28] == 0
-            and res[29] == 0
-            and res[30] == 0
-            and res[31] == 0
-        ):
-            quickselect = 1
+
+    quickselect = 1
     epaper.clearScreen()    
     if title:
         row = 2
@@ -196,7 +147,6 @@ def doMenu(menu, title=None):
     )
     draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
     statusbar.print()    
-    epaper.unPauseEpaper()
     event_key.wait()
     event_key.clear()
     return selection
@@ -216,7 +166,7 @@ print("Setting checking for updates in 5 mins.")
 threading.Timer(300, update.main).start()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
-board.subscribeEvents(keyPressed, fieldActivity, timeout=900)
+board.subscribeEvents(keyPressed, None, timeout=900)
 
 
 def show_welcome():
@@ -252,7 +202,7 @@ def get_lichess_client():
 
 
 # Handle the menu structure
-while True:
+while True:    
     menu = {}
     if os.path.exists(centaur_software):
         centaur_item = {"Centaur": "DGT Centaur"}
