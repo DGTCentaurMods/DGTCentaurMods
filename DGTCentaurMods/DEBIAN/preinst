@@ -35,10 +35,6 @@ sudo cp /opt/DGTCentaurMods/config/centaur.ini /home/pi/ >/dev/null 2>&1
 echo -e "::: Backup db file if exists."
 sudo cp /opt/DGTCentaurMods/db/centaur.db /home/pi/ >/dev/null 2>&1
 
-#echo -e "::: Uninstalling legacy package."
-#sudo apt -y remove dgtcentaurmods >/dev/null 2>&1
-#sudo apt autoremove >/dev/null 2>&1
-
 echo -e "::: Removing all Legacy files."
 sudo rm -fR /opt/DGTCentaurMods
 sudo mkdir /opt/DGTCentaurMods

@@ -189,7 +189,7 @@ case $1 in
     copyDefaults
     setPermissions
 
-    echo -e "::: Done. You can reboot."
+    echo -e "::: Done."
     ;;
 esac
 

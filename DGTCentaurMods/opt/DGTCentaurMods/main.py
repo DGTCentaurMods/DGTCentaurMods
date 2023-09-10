@@ -95,8 +95,8 @@ MENU_ITEMS = [
 
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
 
-            #{ LABEL:"Update", ONLY_BOARD:True,
-            #  ACTION:{ TYPE: "script_execute", VALUE: "update_mod"} },
+            { LABEL:"Update", ONLY_BOARD:True,
+              ACTION:{ TYPE: "script_execute", VALUE: "update"} },
 
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
