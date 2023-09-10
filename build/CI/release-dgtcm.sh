@@ -122,7 +122,7 @@ function prepareAssets() {
 
     # Build the release deb
     cd ${BASEDIR}/..
-    ./build.sh full
+#    ./build.sh full
     cp releases/* CI/${WORKSPACE}/assets
     sayOnDiscord "::: dgtcentaurmods_${NEW_VERSION}_armhf.deb ready"
 
