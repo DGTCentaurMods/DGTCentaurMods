@@ -38,7 +38,8 @@ Currently we are working on...
 3. Adding new features
 
 ## Install procedure
-See the install procedure in the release info page.
+Download the [latest](https://github.com/Alistair-Crompton/DGTCentaurMods/releases/latest) available release.
+
 This fork is initially based against the
 [v1.2.1 original version](https://github.com/EdNekebno/DGTCentaurMods/releases/tag/v1.2.1).
 
@@ -61,5 +62,5 @@ This fork is initially based against the
 
 If you can offer some time and effort to the project please get in contact! Everybody is more than welcome!
 
-![](https://images2.imgbox.com/4f/0f/TA6NrpFN_o.jpg)
+![](https://images2.imgbox.com/10/f5/CYVB5sgU_o.jpg)
 
