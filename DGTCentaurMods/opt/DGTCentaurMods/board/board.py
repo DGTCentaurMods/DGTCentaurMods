@@ -904,32 +904,33 @@ def eventsThread(keycallback, fieldcallback, tout):
             buttonPress = 0
             if not standby:
                 #Hold fields activity on standby
-                try:
-                    sendPacket(b'\x83', b'')
-                    expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
-                    expect.append(checksum(expect))
-                    resp = ser.read(10000)
-                    resp = bytearray(resp)
-                    if (bytearray(resp) != expect):
-                        if (resp[0] == 133 and resp[1] == 0):
-                            for x in range(0, len(resp) - 1):
-                                if (resp[x] == 64):
-                                    # Calculate the square to 0(a1)-63(h8) so that
-                                    # all functions match
-                                    fieldHex = resp[x + 1]
-                                    newsquare = rotateFieldHex(fieldHex)
-                                    fieldcallback(newsquare + 1)
-                                    to = time.time() + tout
-                                if (resp[x] == 65):
-                                    #print("PIECE PLACED")
-                                    # Calculate the square to 0(a1)-63(h8) so that
-                                    # all functions match
-                                    fieldHex = resp[x + 1]
-                                    newsquare = rotateFieldHex(fieldHex)
-                                    fieldcallback((newsquare + 1) * -1)
-                                    to = time.time() + tout
-                except:
-                    pass
+                if fieldcallback != None:
+                    try:
+                        sendPacket(b'\x83', b'')
+                        expect = bytearray(b'\x85\x00\x06' + addr1.to_bytes(1, byteorder='big') + addr2.to_bytes(1, byteorder='big'))
+                        expect.append(checksum(expect))
+                        resp = ser.read(10000)
+                        resp = bytearray(resp)
+                        if (bytearray(resp) != expect):
+                            if (resp[0] == 133 and resp[1] == 0):
+                                for x in range(0, len(resp) - 1):
+                                    if (resp[x] == 64):
+                                        # Calculate the square to 0(a1)-63(h8) so that
+                                        # all functions match
+                                        fieldHex = resp[x + 1]
+                                        newsquare = rotateFieldHex(fieldHex)
+                                        fieldcallback(newsquare + 1)
+                                        to = time.time() + tout
+                                    if (resp[x] == 65):
+                                        #print("PIECE PLACED")
+                                        # Calculate the square to 0(a1)-63(h8) so that
+                                        # all functions match
+                                        fieldHex = resp[x + 1]
+                                        newsquare = rotateFieldHex(fieldHex)
+                                        fieldcallback((newsquare + 1) * -1)
+                                        to = time.time() + tout
+                    except:
+                        pass
            
             try:
                 sendPacket(b'\x94', b'')
