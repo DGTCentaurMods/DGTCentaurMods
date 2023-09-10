@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23091001"
+TAG_RELEASE = "ON23091002"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 
@@ -33,7 +33,7 @@ HOME_DIRECTORY = str(Path.home())
 OPT_DIRECTORY = f"/opt/{MAIN_ID}"
 CONFIG_FILE = OPT_DIRECTORY + "/config/centaur.ini"
 
-WEB_NAME = MAIN_ID+" web 2.0"
+WEB_NAME = MAIN_ID+" web "+TAG_RELEASE
 
 LOG_NAME = MAIN_ID
 LOG_DIRECTORY = HOME_DIRECTORY+"/logs"

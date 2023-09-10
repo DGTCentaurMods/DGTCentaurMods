@@ -23,9 +23,8 @@ from DGTCentaurMods.consts.consts import HOME_DIRECTORY, MAIN_ID, GITHUB_URI
 
 import requests, os, socketio
 
-sio = socketio.Client()
-
 try:
+    sio = socketio.Client()
     sio.connect('http://localhost')
 except:
     sio = None

@@ -104,7 +104,6 @@ MENU_ITEMS = [
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
             { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
-            { LABEL: consts.EMPTY_LINE, ONLY_BOARD:True, DISABLED:True },
             
             { LABEL: f"tag:{consts.TAG_RELEASE}", ONLY_BOARD:True, DISABLED:True, "font":"SMALL_FONT" },
             { LABEL: f"last:{LASTEST_TAG}", ONLY_BOARD:True, DISABLED:True, "font":"SMALL_FONT" },
@@ -497,6 +496,12 @@ class Menu:
     def initialize_web_menu(self, message={}):
 
         message["update_menu"] = self._build_menu_items(ONLY_BOARD)
+
+        message["release"] = {
+            "tag":consts.TAG_RELEASE,
+            "need_update":LASTEST_TAG != consts.TAG_RELEASE,
+            "latest_tag":LASTEST_TAG
+        }
 
         if self._socket != None:
             self._socket.send_message(message)

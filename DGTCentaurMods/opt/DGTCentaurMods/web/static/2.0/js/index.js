@@ -636,6 +636,23 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 									me.editor.visible = true
 								},
 
+								release: (value) => {
+
+									if (value.need_update) {
+
+										const message = "The release "+value.latest_tag+" is available!"
+
+										$mdDialog.show(
+
+											$mdDialog.alert()
+											.clickOutsideToClose(true)
+											.title('♔ '+document.title+' ♔')
+											.textContent(message)
+											.ariaLabel(message)
+											.ok('Got it!'))
+									}
+								},
+
 								centaur_screen: (value) => {
 
 									const encode = function encode (input) {
