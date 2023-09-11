@@ -54,9 +54,21 @@ class Engine():
 
     _socket = None
 
+    _chess_engine: ChessEngine = None
+
     _show_evaluation = True
 
-    def __init__(self, event_callback = None, move_callback = None, undo_callback = None, key_callback = None, flags = Enums.BoardOption.CAN_DO_COFFEE, game_informations = {}):
+    def __init__(self, 
+                 event_callback = None,
+                 move_callback = None,
+                 undo_callback = None,
+                 key_callback = None,
+                 
+                 flags = Enums.BoardOption.CAN_DO_COFFEE,
+
+                 chess_engine = None,
+                 
+                 game_informations = {}):
 
         SCREEN.clear_area()
 
@@ -64,6 +76,8 @@ class Engine():
         SCREEN.write_text(4,"pieces in")
         SCREEN.write_text(5,"starting")
         SCREEN.write_text(6,"position!")
+
+        self._chess_engine = chess_engine
 
         self._key_callback_function = key_callback
         self._move_callback_function = move_callback
@@ -123,6 +137,8 @@ class Engine():
             if not self._evaluation_disabled and key_index == Enums.Btn.TICK:
                 self._show_evaluation = not self._show_evaluation
 
+                self.update_evaluation(force=True, text="evaluation enabled" if self._show_evaluation else "evaluation disabled")
+
                 self.update_evaluation()
 
                 self.display_partial_PGN()
@@ -132,7 +148,6 @@ class Engine():
             if key_index == Enums.Btn.BACK:
                 
                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
-
                 self.stop()
         
             # Default down key: show previous move
@@ -504,7 +519,7 @@ class Engine():
     def _evaluation_thread_instance(self):
 
         try:
-            sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
+            #sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
 
             while self._thread_is_alive:
 
@@ -514,42 +529,53 @@ class Engine():
 
                     if self._show_evaluation and not self._evaluation_disabled:
 
-                        result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+                        #result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
+                        
+                        def evaluation_callback(result):
 
-                        if result != None and result["score"]:
+                            if result != None and result["score"]:
 
-                            score = str(result["score"])
+                                score = str(result["score"])
 
-                            del result
+                                del result
 
-                            Log.debug(score)
+                                Log.debug(score)
 
-                            if "Mate" in score:
-                                
-                                mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+                                if "Mate" in score:
+                                    
+                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
 
-                                self.update_evaluation(force=True, text=f" mate in {mate}")
+                                    self.update_evaluation(force=True, text=f" mate in {mate}")
 
-                                del mate
-                            else:
-                                eval = score[11:24]
-                                eval = eval[1:eval.find(")")]
-                    
-                                eval = int(eval)
+                                    del mate
+                                else:
+                                    eval = score[11:24]
+                                    eval = eval[1:eval.find(")")]
+                        
+                                    eval = int(eval)
 
-                                if "BLACK" in score:
-                                    eval = eval * -1
+                                    if "BLACK" in score:
+                                        eval = eval * -1
 
-                                self.update_evaluation(force=True, value=eval)
+                                    self.update_evaluation(force=True, value=eval)
 
-                                del eval
+                                    del eval
+
+                        if self._chess_engine == None:
+                            self._chess_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
+
+                        self._chess_engine.analyse(
+                            self._chessboard, 
+                            chess.engine.Limit(time=1), 
+                            on_taskengine_done = evaluation_callback)
+
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
 
                 time.sleep(.5)
 
-            sf_engine.quit()
+            #sf_engine.quit()
 
         except Exception as e:
             Log.exception(Engine._evaluation_thread_instance, e)
@@ -730,7 +756,7 @@ class Engine():
 
         def _on_socket_request(data, socket):
 
-            if (self._initialized == False):
+            if self._initialized == False:
                 pass
 
             try:
@@ -800,6 +826,9 @@ class Engine():
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
 
+        if self._chess_engine:
+            self._chess_engine.quit()
+
         CENTAUR_BOARD.unsubscribe_events()
 
         Log.info(f"{Engine.__name__} thread has been stopped.")
@@ -814,20 +843,34 @@ class Engine():
         else:
             self._new_evaluation_requested = True
 
-    def get_Stockfish_uci_move(self, _time = 1):
+    def flash_hint(self, thinking_time = 1):
 
         try:
-            sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
+            if self._chess_engine == None:
+                self._chess_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
             
-            moves = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=_time))
+            self.update_evaluation(force=True, text="thinking...")
 
-            best_move = str(moves["pv"][0])
-            sf_engine.quit()
-            Log.info(f'Stockfish help requested :"{best_move}"')
-        except:
-            best_move = None
+            def hint_callback(moves):
+                uci_hint_move = str(moves["pv"][0])
+                Log.info(f'Engine help requested :"{uci_hint_move}"')
 
-        return best_move
+                self.send_to_web_clients({ 
+                    "tip_uci_move":uci_hint_move
+                })
+
+                if uci_hint_move!= None:
+                    from_num = common.Converters.to_square_index(uci_hint_move, Enums.SquareType.ORIGIN)
+                    to_num = common.Converters.to_square_index(uci_hint_move, Enums.SquareType.TARGET)
+
+                    CENTAUR_BOARD.led_from_to(from_num,to_num)
+
+                self.update_evaluation()
+
+            self._chess_engine.analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
+
+        except Exception as e:
+            Log.exception(Engine.flash_hint, e)
 
     def get_last_uci_move(self):
         return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()

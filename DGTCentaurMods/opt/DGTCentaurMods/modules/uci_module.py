@@ -56,11 +56,11 @@ def main(color, engine_name, engine_parameters):
 
     # Async chess engine result
     # The result should never be outdated since we test it before trigerring the callback...
-    def on_taskengine_done(result):
+    def on_computer_move_done(result):
         if result != None:
             gfe.set_computer_move(str(result.move))
 
-    engine = ChessEngine.get(f"{consts.OPT_DIRECTORY}/engines/{engine_name}", on_taskengine_done = on_taskengine_done)
+    engine = ChessEngine.get(f"{consts.OPT_DIRECTORY}/engines/{engine_name}")
 
     if len(engine_parameters) > 3:
         
@@ -91,22 +91,7 @@ def main(color, engine_name, engine_parameters):
         if key == Enums.Btn.HELP:
 
             if gfe.get_board().turn != computer_color:
-
-                gfe.update_evaluation(force=True, text="thinking...")
-
-                uci_move = gfe.get_Stockfish_uci_move()
-
-                gfe.send_to_web_clients({ 
-                    "tip_uci_move":uci_move
-                })
-
-                if uci_move!= None:
-                    from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
-                    to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
-
-                    CENTAUR_BOARD.led_from_to(from_num,to_num)
-
-                gfe.update_evaluation()
+                gfe.flash_hint()
             
             return True
 
@@ -121,7 +106,6 @@ def main(color, engine_name, engine_parameters):
         global exit_requested
 
         if args["event"] == Enums.Event.QUIT:
-            engine.quit()
             exit_requested = True
 
         if args["event"] == Enums.Event.TERMINATION:
@@ -145,11 +129,12 @@ def main(color, engine_name, engine_parameters):
 
             if gfe.get_board().turn == computer_color:
                 
-                #engine_move = engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
-                #gfe.set_computer_move(str(engine_move.move))
-
                 # Async request
-                engine.play(gfe.get_board(), chess.engine.Limit(time=5), info=chess.engine.INFO_NONE)
+                engine.play(
+                    gfe.get_board(), 
+                    chess.engine.Limit(time=5), 
+                    info=chess.engine.INFO_NONE, 
+                    on_taskengine_done = on_computer_move_done)
 
     def move_callback(args):
 
@@ -177,6 +162,8 @@ def main(color, engine_name, engine_parameters):
         move_callback = move_callback,
         undo_callback = undo_callback,
         key_callback = key_callback,
+
+        chess_engine = engine,
 
         flags = Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES,
         

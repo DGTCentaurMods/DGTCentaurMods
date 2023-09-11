@@ -46,18 +46,7 @@ def main():
         key = args["key"]
 
         if key == Enums.Btn.HELP:
-
-            gfe.update_evaluation(force=True, text="thinking...")
-
-            uci_move = gfe.get_Stockfish_uci_move()
-
-            if uci_move!= None:
-                from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
-                to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
-
-                CENTAUR_BOARD.led_from_to(from_num,to_num)
-
-            gfe.update_evaluation()
+            gfe.flash_hint()
             
             return True
 

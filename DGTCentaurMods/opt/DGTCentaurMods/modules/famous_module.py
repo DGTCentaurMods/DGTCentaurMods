@@ -24,8 +24,6 @@ from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.consts import Enums, consts
 from DGTCentaurMods.lib import common
 
-
-import pathlib
 import random
 import time
 import chess
@@ -124,20 +122,7 @@ def main(pgn):
         if key == Enums.Btn.HELP:
 
             if gfe.get_board().turn == human_color:
-
-                gfe.update_evaluation(force=True, text="thinking...")
-
-                uci_move = gfe.get_Stockfish_uci_move()
-
-                if uci_move!= None:
-                    show_uci_move_on_board(uci_move)
-
-                    gfe.send_to_web_clients({ 
-                        "clear_board_graphic_moves":False,
-                        "tip_uci_move":uci_move,
-                    })
-
-                gfe.update_evaluation()
+                gfe.flash_hint()
 
             return True
         
