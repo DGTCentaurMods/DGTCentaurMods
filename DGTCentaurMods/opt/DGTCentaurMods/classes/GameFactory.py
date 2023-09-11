@@ -43,11 +43,12 @@ SCREEN = CentaurScreen.get()
 class PieceHandler:
 
     def __init__(self, engine: 'Engine') -> None:
-        # Call back into engine for most side-effects
+        # Call back into engine for side-effects
         self._engine: 'Engine' = engine
 
         # History of field events
         self._lift1: Optional[int] = None
+        self._lift2: Optional[int] = None
         self._place1: Optional[int] = None
 
         # Local to a single field event
@@ -70,6 +71,11 @@ class PieceHandler:
         return self._engine._chessboard
 
     @property
+    def _computer_uci_move(self) -> str:
+        """Computer's choice of move, stripping off promotion suffix"""
+        return self._engine._computer_uci_move[0:4]
+
+    @property
     def _dal(self):
         return self._engine._dal
 
@@ -78,7 +84,7 @@ class PieceHandler:
         """Color of active party"""
         return self._chessboard.turn
 
-    def _display_board(self) -> None:
+    def _update_display(self) -> None:
         CENTAUR_BOARD.led(self._place1)
         common.update_Centaur_FEN(self._fen())
         self._engine.display_partial_PGN()
@@ -105,8 +111,11 @@ class PieceHandler:
 
     def _undo_name(self) -> str:
         """Move that undoes the previous move"""
-        prev_move = self._engine.get_last_uci_move()
-        return prev_move[2:4] + prev_move[0:2]
+        if prev_move := self._engine.get_last_uci_move():
+            return prev_move[2:4] + prev_move[0:2]
+        else:
+            # No previous move
+            return ""
 
     _SOUNDS = {
         consts.SOUND_CORRECT_MOVES: Enums.Sound.CORRECT_MOVE,
@@ -130,19 +139,18 @@ class PieceHandler:
 
     def _is_legal_move(self, uci_move: str) -> bool:
         if self._engine._is_computer_move and not self._can_force_moves:
-            return uci_move == self._engine._computer_uci_move[0:4]
+            return uci_move == self._computer_uci_move
         else:
             legal_moves = (str(move) for move in self._chessboard.legal_moves)
             return uci_move in legal_moves
 
     def _commit_move(self, uci_move: str, san_move: str) -> None:
-        """Record the move"""
         if self._dal.insert_new_game_move(uci_move, str(self._fen())):
             Log.debug(f'Move "{uci_move}/{san_move}" has been committed.')
             self._engine._is_computer_move = False
             self._engine._san_move_list.append(san_move)
             self._play_sound(consts.SOUND_CORRECT_MOVES)
-            self._display_board()
+            self._update_display()
             self._engine.update_web_ui({
                 "clear_board_graphic_moves": True,
                 "uci_move": uci_move,
@@ -151,6 +159,7 @@ class PieceHandler:
             })
             self._engine._check_last_move_outcome_and_switch()
         else:
+            # Fatal
             Log.exception(
                 self._finalize_move,
                 f'Move "{uci_move}/{san_move}" HAS NOT been committed.')
@@ -169,21 +178,34 @@ class PieceHandler:
             self._engine.update_evaluation()
             self._commit_move(uci_move, san_move)
         else:
+            # Engine can still reject moves that pass our simplified
+            # legality check.  It's the final authority.
             Log.debug(f'Client rejected the move "{uci_move}/{san_move}"...')
             self._chessboard.pop()
             self._wrong_move()
 
-    def _finalize_move(self, player_uci_move, promoted_piece = "") -> None:
+    def _decide_move(
+            self, player_uci_move: str, promoted_piece: str = "") -> str:
+
+        player_move = player_uci_move + promoted_piece
+        if self._engine._is_computer_move:
+            if self._can_force_moves and \
+                    player_uci_move != self._computer_uci_move:
+                # Player has overridden computer's choice of move
+                self._engine._computer_uci_move = player_move
+            else:
+                # Adopt computer's choice of move
+                player_move = self._engine._computer_uci_move
+        return player_move
+
+    def _finalize_move(
+            self, player_uci_move: str, promoted_piece: str = "") -> None:
+
         if not self._is_legal_move(player_uci_move):
             self._wrong_move()
             return
 
-        uci_move = player_uci_move + promoted_piece
-        if self._engine._is_computer_move and \
-                self._can_force_moves and \
-                player_uci_move != self._engine._computer_uci_move[0:4]:
-            self._engine._computer_uci_move = uci_move
-
+        uci_move = self._decide_move(player_uci_move, promoted_piece)
         try:
             move = chess.Move.from_uci(uci_move)
             self._chessboard.push(move)
@@ -195,14 +217,16 @@ class PieceHandler:
 
     def _is_promotion(self) -> bool:
         piece_name = self._chessboard.piece_at(self._lift1)
-        return (piece_name == "P" and (self._place1 // 8 == 7)) or \
-            (piece_name == "p" and (self._place1 // 8 == 0))
+        white_pawn, black_pawn = piece_name == "P", piece_name == "p"
+        rank = self._place1 // 8
+        first_rank, last_rank = rank == 0, rank == 7
+        return (white_pawn and last_rank) or (black_pawn and first_rank)
 
     def _ask_user_for_promotion(self) -> bool:
         """Promotion menu display if player is human or if player
         overrides computer move"""
         return not self._engine._is_computer_move or \
-            self._move_name() != self._engine._computer_uci_move[0:4]
+            self._move_name() != self._computer_uci_move
 
     _PROMOTION_KEYS = {
         Enums.Btn.BACK: "n",
@@ -240,15 +264,14 @@ class PieceHandler:
         """Previous move has been taken back"""
 
         previous_uci_move = self._chessboard.pop().uci()
+        previous_san_move = self._engine._san_move_list.pop()
         Log.debug(f'Undoing move "{previous_uci_move}"...')
 
-        previous_san_move = self._engine._san_move_list.pop()
         Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
-
         self._dal.delete_last_game_move()
 
         self._play_sound(consts.SOUND_TAKEBACK_MOVES)
-        self._display_board()
+        self._update_display()
         self._engine.update_web_ui({
             "clear_board_graphic_moves": True,
             "uci_undo_move": self._undo_name(),
@@ -266,12 +289,35 @@ class PieceHandler:
 
         self._engine.update_evaluation()
 
+    def _normalize_event_order(self) -> None:
+        """Arrange events so that capturing piece is lifted first"""
+
+        # Is normalization needed?
+        if not self._lift2:
+            return
+
+        # Is this a capture?
+        if self._lift1 == self._place1:
+            # Normalize so that moving piece is lifted first, as this
+            # lets us keep most of the other code unchanged.
+            self._lift2, self._lift1 = self._lift1, self._lift2
+
+        # Beyond dealing with captures, we also want to ignore any
+        # spurious LIFT actions. We do this by looking for a subset of
+        # events that produce a valid move.
+        if not self._is_legal_move(self._move_name()):
+            # Normalize so that the first LIFT is the one that
+            # produces a valid move.
+            self._lift1, self._lift2 = self._lift2, None
+
     def _interpret_actions(self) -> None:
         """Take action based on history of field events"""
 
         if not (self._lift1 and self._place1):
             # Move is incomplete
             return
+
+        self._normalize_event_order()
 
         if self._lift1 == self._place1:
             # Piece has simply been placed back
@@ -283,13 +329,13 @@ class PieceHandler:
         else:
             # A LIFT and PLACE of a piece of the wrong color, that is
             # not a takeback, is assumed to be the completion of a
-            # two-part move, i.e., castling, and is best handled by
-            # just ignoring it.
+            # two-part move (i.e., castling) and can be ignored.
             pass
 
+        # Clear event history for next move.
         self._lift1 = None
+        self._lift2 = None
         self._place1 = None
-
 
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
@@ -297,26 +343,30 @@ class PieceHandler:
     def __call__(self, field_index: int, field_action, web_move: bool) -> None:
         Log.debug(f"field_index:{field_index}, square_name:{self._to_square_name(field_index)}, piece_action:{field_action}")
 
-        # We do not need to check the reset if a piece is lifted
+        # We do not need to check reset if piece is lifted
         self._engine._need_starting_position_check = False
 
+        # Used to decide error path in event of illegal move
         self._web_move = web_move
 
         match field_action:
             case Enums.PieceAction.LIFT:
-                # Keeping compatibility with the old code, discard any
-                # previous events when we see a LIFT action.  This
-                # allows for capturing only by removing the captured
-                # piece first, before lifting the capturing piece.
-                self._lift1 = field_index
                 self._place1 = None
-                pass
+                if self._lift1:
+                    # There's no normal sequence where we would expect a
+                    # sequence of three or more LIFT actions without an
+                    # intervening PLACE.  Should this occur, we ignore
+                    # the oldest LIFT.
+                    if self._lift2:
+                        self._lift1 = self._lift2
+                    self._lift2 = field_index
+                else:
+                    self._lift1 = field_index
             case Enums.PieceAction.PLACE:
                 if not self._lift1:
                     # A PLACE action with no corresponding LIFT is
                     # likely the restoration of a previously captured
-                    # piece after a takeback.  We handle that
-                    # satisfactorily by just ignoring it.
+                    # piece after a takeback.  We can ignore it.
                     return
                 self._place1 = field_index
             case _:
@@ -467,12 +517,14 @@ class Engine():
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
         if self._initialized == False:
-            return
+            return False
         self._previous_move_displayed = False
         try:
-            return self._piece_handler(field_index, field_action, web_move)
+            self._piece_handler(field_index, field_action, web_move)
+            return True
         except Exception as e:
             Log.exception(Engine.__field_callback, e)
+            return False
 
     def _check_last_move_outcome_and_switch(self):
         # Check the outcome
