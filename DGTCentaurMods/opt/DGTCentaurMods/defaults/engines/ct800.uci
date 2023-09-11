@@ -1,0 +1,47 @@
+[DEFAULT]
+UCI_LimitStrength = true
+UCI_Elo: 1200
+
+[E-1000]
+UCI_LimitStrength = true
+UCI_Elo: 1000
+
+[E-1100]
+UCI_LimitStrength = true
+UCI_Elo: 1100
+
+[E-1200]
+UCI_LimitStrength = true
+UCI_Elo: 1200
+
+[E-1300]
+UCI_LimitStrength = true
+UCI_Elo: 1300
+
+[E-1400]
+UCI_LimitStrength = true
+UCI_Elo: 1400
+
+[E-1500]
+UCI_LimitStrength = true
+UCI_Elo: 1500
+
+[E-1600]
+UCI_LimitStrength = true
+UCI_Elo: 1600
+
+[E-1800]
+UCI_LimitStrength = true
+UCI_Elo: 1800
+
+[E-2000]
+UCI_LimitStrength = true
+UCI_Elo: 2000
+
+[E-2200]
+UCI_LimitStrength = true
+UCI_Elo: 2200
+
+[E-2400]
+UCI_LimitStrength = true
+UCI_Elo: 2400

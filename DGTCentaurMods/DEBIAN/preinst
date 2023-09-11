@@ -1,46 +1,50 @@
 #!/usr/bin/bash
 
-echo -e "::: Starting removing legacy components."
+legacy_menu=/opt/DGTCentaurMods/board/board.py
 
-function cleanService() {
-	echo -e "::: Cleaning $1."
-	sudo systemctl stop $1 >/dev/null 2>&1
-	sudo systemctl disable $1 >/dev/null 2>&1
-	sudo rm -f /etc/systemd/system/$1
-}
+if [ -f "$legacy_menu" ]; then
+	echo -e "::: Starting removing legacy components."
 
-function restoreFile() {
-	if [[ -e $1.bak ]]
-	then
-		echo -e "::: Restoring original $1."
-		sudo cp $1.bak $1
-		sudo rm -f $1.bak
-	fi
-}
+	function cleanService() {
+		echo -e "::: Cleaning $1."
+		sudo systemctl stop $1 >/dev/null 2>&1
+		sudo systemctl disable $1 >/dev/null 2>&1
+		sudo rm -f /etc/systemd/system/$1
+	}
 
-cleanService stopDGTController.service
-cleanService DGTCentaurMods.service
-cleanService centaurmods-web.service
-cleanService rfcomm.service
-cleanService var-run-sdp.path
-cleanService var-run-sdp.service
+	function restoreFile() {
+		if [[ -e $1.bak ]]
+		then
+			echo -e "::: Restoring original $1."
+			sudo cp $1.bak $1
+			sudo rm -f $1.bak
+		fi
+	}
 
-restoreFile /boot/cmdline.txt
-restoreFile /boot/config.txt
-restoreFile /etc/rc.local
+	cleanService stopDGTController.service
+	cleanService DGTCentaurMods.service
+	cleanService centaurmods-web.service
+	cleanService rfcomm.service
+	cleanService var-run-sdp.path
+	cleanService var-run-sdp.service
 
-echo -e "::: Backup configuration file if exists."
-sudo cp /opt/DGTCentaurMods/config/centaur.ini /home/pi/ >/dev/null 2>&1
+	restoreFile /boot/cmdline.txt
+	restoreFile /boot/config.txt
+	restoreFile /etc/rc.local
 
-echo -e "::: Backup db file if exists."
-sudo cp /opt/DGTCentaurMods/db/centaur.db /home/pi/ >/dev/null 2>&1
+	echo -e "::: Backup configuration file if exists."
+	sudo cp /opt/DGTCentaurMods/config/centaur.ini /home/pi/ >/dev/null 2>&1
 
-echo -e "::: Removing all Legacy files."
-sudo rm -fR /opt/DGTCentaurMods
-sudo mkdir /opt/DGTCentaurMods
-sudo mkdir /opt/DGTCentaurMods/config
-sudo mkdir /opt/DGTCentaurMods/db
-sudo mv /home/pi/centaur.ini /opt/DGTCentaurMods/config/ >/dev/null 2>&1
-sudo mv /home/pi/centaur.db /opt/DGTCentaurMods/db/ >/dev/null 2>&1
+	echo -e "::: Backup db file if exists."
+	sudo cp /opt/DGTCentaurMods/db/centaur.db /home/pi/ >/dev/null 2>&1
 
-echo -e "::: Legacy components removed."
+	echo -e "::: Removing all Legacy files."
+	sudo rm -fR /opt/DGTCentaurMods
+	sudo mkdir /opt/DGTCentaurMods
+	sudo mkdir /opt/DGTCentaurMods/config
+	sudo mkdir /opt/DGTCentaurMods/db
+	sudo mv /home/pi/centaur.ini /opt/DGTCentaurMods/config/ >/dev/null 2>&1
+	sudo mv /home/pi/centaur.db /opt/DGTCentaurMods/db/ >/dev/null 2>&1
+
+	echo -e "::: Legacy components removed."
+fi

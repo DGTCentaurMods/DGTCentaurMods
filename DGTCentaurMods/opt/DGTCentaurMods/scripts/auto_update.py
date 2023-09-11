@@ -20,17 +20,17 @@
 # distribution, modification, variant, or derivative of this software.
 
 from pathlib import Path
-import os, glob, time
+import os, time
 
 HOME_DIRECTORY = str(Path.home())
 MAIN_ID = "DGTCentaurMods"
 
-deb_files = glob.glob(f"{HOME_DIRECTORY}/{MAIN_ID}*.deb")
+deb_file = f"{HOME_DIRECTORY}/{MAIN_ID}_latest.deb"
 
-if len(deb_files)>0:
+if os.path.exists(deb_file):
     print(f"One {MAIN_ID} package file has been found!")
-    filename = deb_files[0]
-    print(f"Installing '{filename}'...")
+
+    print(f"Installing '{deb_file}'...")
 
     time.sleep(5)
 
@@ -41,10 +41,10 @@ if len(deb_files)>0:
     os.system("sudo apt remove -y dgtcentaurmods")
 
     print("Installing package...")
-    os.system(f"sudo apt install -y {filename}")
+    os.system(f"sudo apt install -y {deb_file}")
 
     print("Cleaning deb file...")
-    os.system(f"sudo rm -f {HOME_DIRECTORY}/*.deb >/dev/null 2>&1")
+    os.system(f"sudo rm -f {deb_file} >/dev/null 2>&1")
 
     print("Restarting services...")
     os.system('sudo systemctl start "DGTCentaurModsWeb.service"')

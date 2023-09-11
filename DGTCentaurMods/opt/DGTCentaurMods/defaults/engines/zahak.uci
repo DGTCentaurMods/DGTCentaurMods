@@ -9,23 +9,23 @@
 #option name MultiPV type spin default 1 min 1 max 120
 #option name Skill Level type spin default 7 min 1 max 7
 
-[Level 1: 1270]
+[E-1270]
 Skill Level = 1
 
-[Level 2: 1440]
+[E-1440]
 Skill Level = 2
 
-[Level 3: 1630]
+[E-1630]
 Skill Level = 3
 
-[Level 4: 1856]
+[E-1856]
 Skill Level = 4
 
-[Level 5: 2004]
+[E-2004]
 Skill Level = 5
 
-[Level 6: 2074]
+[E-2074]
 Skill Level = 6
 
-[Level 7: open]
+[E-MAX]
 Skill Level = 7

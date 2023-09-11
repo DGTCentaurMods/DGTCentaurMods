@@ -60,33 +60,24 @@ def main(color, engine_name, engine_parameters):
         if result != None:
             gfe.set_computer_move(str(result.move))
 
-    if engine_name == "stockfish":
+    engine = ChessEngine.get(f"{consts.OPT_DIRECTORY}/engines/{engine_name}", on_taskengine_done = on_taskengine_done)
 
-        engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH, on_taskengine_done = on_taskengine_done)
+    if len(engine_parameters) > 3:
+        
+        # This also has an options string...but what is actually passed in 3 is the desc which is the section name
+        uci_options_desc = engine_parameters
+        
+        # These options we should derive form the uci file
+        uci_file = f"{consts.OPT_DIRECTORY}/engines/{engine_name}.uci"
+        
+        config = configparser.ConfigParser()
+        config.optionxform = str
+        config.read(uci_file)
 
-        uci_options = {"UCI_LimitStrength": True, "UCI_Elo": engine_parameters}
+        for item in config.items(uci_options_desc):
+            uci_options[item[0]] = item[1]
 
-        engine_name = engine_name+'-'+engine_parameters
-    else:
-
-        engine = ChessEngine.get(f"{consts.OPT_DIRECTORY}/engines/{engine_name}", on_taskengine_done = on_taskengine_done)
-
-        if len(engine_parameters) > 3:
-            
-            # This also has an options string...but what is actually passed in 3 is the desc which is the section name
-            uci_options_desc = engine_parameters
-            
-            # These options we should derive form the uci file
-            uci_file = f"{consts.OPT_DIRECTORY}/engines/{engine_name}.uci"
-            
-            config = configparser.ConfigParser()
-            config.optionxform = str
-            config.read(uci_file)
-
-            for item in config.items(uci_options_desc):
-                uci_options[item[0]] = item[1]
-
-            engine_name = engine_name+'-'+uci_options_desc
+        engine_name = common.capitalize_string(engine_name)+'-'+uci_options_desc
 
 
     engine.configure(uci_options)
@@ -144,7 +135,7 @@ def main(color, engine_name, engine_parameters):
 
         if args["event"] == Enums.Event.PLAY:
 
-            current_player = engine_name.capitalize() if gfe.get_board().turn == computer_color else "You"
+            current_player = engine_name if gfe.get_board().turn == computer_color else "You"
 
             gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 

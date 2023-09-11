@@ -20,9 +20,13 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.classes import Log
+from DGTCentaurMods.consts import consts
+from DGTCentaurMods.lib import common
 
-import time, threading, queue
-import chess, chess.engine
+from pathlib import Path
+
+import time, threading, queue, os, chess, chess.engine
+
 
 # Wrapper intercepts inner engine exceptions that could occur...
 class _ChessEngine():
@@ -92,12 +96,18 @@ class _ChessEngine():
     def __instanciate(self):
 
         try:
+            # Only for RodentIV...
+            os.environ["RODENT4PERSONALITIES"] = consts.OPT_DIRECTORY+'/engines/personalities'
+            os.environ["RODENT4BOOKS"] = consts.OPT_DIRECTORY+'/engines/books'
+
             self.__engine = None
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
             
             Log.debug(f'{_ChessEngine.__instanciate.__name__}({id(self.__engine)})')
             
             if self.__engine_options != None:
+
+                Log.debug(self.__engine_options)
                 self.__engine.configure(self.__engine_options)
 
         except Exception as e:
@@ -127,7 +137,18 @@ class _ChessEngine():
 
             time.sleep(.5)
 
-    def configure(self, engine_options = None):
+    def configure(self, engine_options = {}):
+
+        # Only for RodentIV...
+        if "PersonalityFile" in engine_options:
+
+            #engine_options["Verbose"] = consts.VERBOSE_CHESS_ENGINE
+
+            # We replace the PersonalityFile tag by the Personality one
+            # Taking the filename as personality name
+            engine_options["Personality"] = common.capitalize_string(Path(engine_options["PersonalityFile"]).stem)
+
+            del engine_options["PersonalityFile"]
 
         self.__engine_options = engine_options
 

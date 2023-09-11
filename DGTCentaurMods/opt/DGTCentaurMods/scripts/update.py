@@ -63,7 +63,7 @@ filename = latest_release_url.split('/')[-1]
 print("Cleaning previous deb files...")
 os.system(f"sudo rm -f {HOME_DIRECTORY}/*.deb >/dev/null 2>&1")
 
-screen_message("Downloading...", True)
+screen_message("...", True)
 
 print(f"Downloading '{latest_release_url}'...")
 os.system(f"wget -O {HOME_DIRECTORY}/{MAIN_ID}_latest.deb {latest_release_url}")

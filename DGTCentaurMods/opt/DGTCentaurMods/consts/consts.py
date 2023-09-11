@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23091002"
+TAG_RELEASE = "ON23091101"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 
@@ -40,6 +40,8 @@ LOG_DIRECTORY = HOME_DIRECTORY+"/logs"
 LOG_FILENAME = f"{LOG_DIRECTORY}/{LOG_NAME}.log"
 LOG_LEVEL = logging.DEBUG
 
+VERBOSE_CHESS_ENGINE = False
+
 BOARD_START_STATE = bytearray(b'\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01')
 
 FEN_LOG = HOME_DIRECTORY+"/centaur/fen.log"
@@ -47,7 +49,8 @@ FEN_LOG = HOME_DIRECTORY+"/centaur/fen.log"
 FONT_FILE = OPT_DIRECTORY + "/resources/Typewriter Medium.ttf"
 DIGITAL_FONT_FILE = OPT_DIRECTORY + "/resources/DIGITALDREAMFAT.ttf"
 
-STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
+#STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
+STOCKFISH_ENGINE_PATH = OPT_DIRECTORY+"/engines/stockfish"
 
 EMPTY_LINE = ' '*20
 

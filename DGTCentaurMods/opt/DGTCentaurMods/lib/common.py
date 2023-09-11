@@ -52,6 +52,9 @@ def get_lastest_tag():
 
     return latest_tag
 
+def capitalize_string(str):
+    return str[:1].upper()+str[1:]
+
 def tail(f, lines=1, _buffer=4098):
     """Tail a file and get X lines from the end"""
     # place holder for the lines found

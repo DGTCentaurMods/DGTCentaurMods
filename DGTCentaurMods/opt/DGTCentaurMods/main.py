@@ -442,21 +442,18 @@ class Menu:
         engines = list(map(lambda f:{ID:Path(f.name).stem, "options":get_sections(f.path)}, 
                            filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
         
-        # Stockfish has no configuration file (we might create one...)
-        engines.append({ ID:"stockfish", "options":["1350","1400","1500","1600","1700","1800","2000","2200","2400","2600","2850"]})
-
         famous_pgns = list(map(lambda f:Path(f.name).stem, 
                            filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
 
 
         # Famous PGN menu item
         play_item[ITEMS].append({ LABEL: "Play famous games", SHORT_LABEL: "Famous games", TYPE: "subitem", 
-                                   ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+pgn.capitalize(), SHORT_LABEL:pgn.capitalize(), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
+                                   ITEMS:list(map(lambda pgn: { LABEL: "⭐ "+common.capitalize_string(pgn), SHORT_LABEL:common.capitalize_string(pgn), ACTION: { TYPE: "socket_execute", VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
 
         # Engines menu items
         for engine in engines:
 
-            engine_menu = { LABEL: "Play "+engine[ID].capitalize(), SHORT_LABEL: engine[ID].capitalize(), TYPE: "subitem", ITEMS:[] }
+            engine_menu = { LABEL: "Play "+common.capitalize_string(engine[ID]), SHORT_LABEL: common.capitalize_string(engine[ID]), TYPE: "subitem", ITEMS:[] }
 
             play_item[ITEMS].append(engine_menu)
             
@@ -476,7 +473,7 @@ class Menu:
 
             for pgn in famous_pgns:
 
-                editor_menu = { LABEL: 'Edit "'+pgn.capitalize()+'"', ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: pgn+".pgn"} }
+                editor_menu = { LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: pgn+".pgn"} }
                 famous_item[ITEMS].append(editor_menu)
 
             uci_item = next(filter(lambda item:ID in item and item[ID] == "uci", sys_item[ITEMS]))
@@ -485,7 +482,7 @@ class Menu:
 
                 if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
 
-                    editor_menu = { LABEL: "Edit UCI of "+engine[ID].capitalize(), ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine[ID]+".uci"} }
+                    editor_menu = { LABEL: "Edit UCI of "+common.capitalize_string(engine[ID]), ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: engine[ID]+".uci"} }
 
                     uci_item[ITEMS].append(editor_menu)
 
@@ -531,7 +528,7 @@ class Menu:
         return self._browser_connected
 
 
-if len(glob.glob(f"{consts.HOME_DIRECTORY}/{consts.MAIN_ID}*.deb"))>0:
+if os.path.exists(f"{consts.HOME_DIRECTORY}/{consts.MAIN_ID}_latest.deb"):
 
     SERVICE_LOCKED = "Service locked: one update in progress..."
 

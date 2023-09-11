@@ -75,38 +75,22 @@ echo -e "::: Setup services."
 
 systemctl daemon-reload
 
-#Check if CENTAUR directory exists
+# Check if CENTAUR directory exists
 if [ ! -d $CENTAUR ]
 then
     mkdir $CENTAUR
 fi
 
-#Check if CENTAUR engine directory exists
+# Check if CENTAUR engine directory exists
 if [ ! -d $CENTAUR_ENGINE ]
 then
     mkdir $CENTAUR_ENGINE
 fi
 
-#Check if fen.log exists
+# Check if fen.log exists
 if [ ! -e $FENLOG ]
 then
     touch $FENLOG
-fi
-
-# Install Stockfish if in build
-if [[ -e ${DGTCM_PATH}/engines/$STOCKFISH ]]
-then
-    echo -e "::: Installing Stockfish engine."
-    if [[ -d $CENTAUR_ENGINE ]]
-    then
-        mv ${CENTAUR_ENGINE}/$STOCKFISH ${CENTAUR_ENGINE}/$STOCKFISH.bak
-        mv ${DGTCM_PATH}/engines/$STOCKFISH $CENTAUR_ENGINE/$STOCKFISH
-        chown -R pi.root $CENTAUR_ENGINE
-    else
-        mkdir -p $CENTAUR_ENGINE
-        mv ${DGTCM_PATH}/engines/$STOCKFISH $CENTAUR_ENGINE
-        chown -R pi.root $CENTAUR_ENGINE
-    fi
 fi
 
 # Check if pip is installed
@@ -142,7 +126,6 @@ function insertMaia {
         fi
     fi
     cp -rn ${DGTCM_PATH}/tmp/maia-chess/maia_weights ${DGTCM_PATH}/engines/
-    cp -n ${DGTCM_PATH}/engines/maia_weights/maia-1900.pb.gz ${DGTCM_PATH}/engines/
     chmod 755 ${DGTCM_PATH}/engines/maia
 }
 
