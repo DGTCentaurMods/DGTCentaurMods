@@ -142,6 +142,7 @@ class PieceHandler:
             return uci_move == self._computer_uci_move
         else:
             legal_moves = (str(move) for move in self._chessboard.legal_moves)
+
             return uci_move in legal_moves
 
     def _commit_move(self, uci_move: str, san_move: str) -> None:
@@ -200,8 +201,10 @@ class PieceHandler:
 
     def _finalize_move(
             self, player_uci_move: str, promoted_piece: str = "") -> None:
-
-        if not self._is_legal_move(player_uci_move):
+        
+        self._promotion_move = None
+        
+        if not self._is_legal_move(player_uci_move+promoted_piece):
             self._wrong_move()
             return
 
@@ -216,10 +219,14 @@ class PieceHandler:
             self._wrong_move()
 
     def _is_promotion(self) -> bool:
-        piece_name = self._chessboard.piece_at(self._lift1)
+        piece_name = self._chessboard.piece_at(self._lift1).symbol()
+
         white_pawn, black_pawn = piece_name == "P", piece_name == "p"
+
         rank = self._place1 // 8
+
         first_rank, last_rank = rank == 0, rank == 7
+
         return (white_pawn and last_rank) or (black_pawn and first_rank)
 
     def _ask_user_for_promotion(self) -> bool:
@@ -239,15 +246,20 @@ class PieceHandler:
         if promoted_piece := self._PROMOTION_KEYS.get(key_index):
             CENTAUR_BOARD.unsubscribe_events()
             self._engine.display_board()
-            self._finalize_move(self._move_name(), promoted_piece)
+
+            self._finalize_move(self._promotion_move, promoted_piece)
 
     def _prompt_for_promotion(self) -> None:
+
+        self._promotion_move = self._move_name()
+
         CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
         SCREEN.draw_promotion_window()
         CENTAUR_BOARD.subscribe_events(self._promote_key_callback, None)
 
     def _attempt_move(self) -> None:
         """Piece has been moved"""
+
         Log.info(f'Piece has been moved to "{self._to_square_name(self._place1)}".')
         if self._is_promotion() and self._ask_user_for_promotion():
             self._prompt_for_promotion()
