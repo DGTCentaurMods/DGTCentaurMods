@@ -778,6 +778,9 @@ class Engine():
                 if "web_menu" in data:
                     self.initialize_web_menu()
 
+                if "battery" in  data:
+                    SCREEN.set_battery_value(data["battery"])
+
                 if "web_move" in data:
                     # A move has been triggered from web UI
                     self.__field_callback(common.Converters.to_square_index(data["web_move"]["source"]), Enums.PieceAction.LIFT, web_move=True)
