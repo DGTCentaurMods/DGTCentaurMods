@@ -138,12 +138,16 @@ class PieceHandler:
             self._engine._need_starting_position_check = True
 
     def _is_legal_move(self, uci_move: str) -> bool:
-        if self._engine._is_computer_move and not self._can_force_moves:
-            return uci_move == self._computer_uci_move
-        else:
-            legal_moves = (str(move) for move in self._chessboard.legal_moves)
 
-            return uci_move in legal_moves
+         # We test there the basic board move, from square to square,
+         # ignoring the promotion if exists
+
+        if self._engine._is_computer_move and not self._can_force_moves:
+            return uci_move == self._computer_uci_move[0:4]
+        else:
+            legal_board_moves = (str(move)[0:4] for move in self._chessboard.legal_moves)
+
+            return uci_move in legal_board_moves
 
     def _commit_move(self, uci_move: str, san_move: str) -> None:
         if self._dal.insert_new_game_move(uci_move, str(self._fen())):
@@ -204,7 +208,8 @@ class PieceHandler:
         
         self._promotion_move = None
         
-        if not self._is_legal_move(player_uci_move+promoted_piece):
+        if not self._is_legal_move(player_uci_move):
+            Log.debug(f'ILLEGAL move "{player_uci_move}"')
             self._wrong_move()
             return
 
