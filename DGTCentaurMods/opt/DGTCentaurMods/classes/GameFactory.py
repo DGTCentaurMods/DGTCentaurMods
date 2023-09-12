@@ -98,7 +98,7 @@ class PieceHandler:
     @property
     def _piece_color_is_consistent(self) -> bool:
         """Check piece color against current turn"""
-        return self._engine.color_at(self._lift1) == self._turn
+        return self._chessboard.color_at(self._lift1) == self._turn
 
     def _to_square_name(self, square_index: int) -> str:
         "Numbering 0 = a1, 63 = h8"
@@ -168,7 +168,7 @@ class PieceHandler:
     def _accept_move(self, uci_move: str, san_move: str) -> None:
         # We invoke the client callback
         # If the callback returns True, the move is accepted
-        accepted = Engine.__invoke_callback(
+        accepted = Engine._Engine__invoke_callback(
             self._engine._move_callback_function,
             uci_move=uci_move,
             san_move=san_move,
@@ -256,7 +256,7 @@ class PieceHandler:
 
     def _is_takeback(self) -> bool:
         """Is this an attempt to take back a move?"""
-        return not self._piece_color_is_consistent() and \
+        return not self._piece_color_is_consistent and \
             self._can_undo_moves and \
             self._move_name() == self._undo_name()
 
@@ -278,12 +278,12 @@ class PieceHandler:
             "uci_move": self._engine.get_last_uci_move(),
         })
 
-        Engine.__invoke_callback(
+        Engine._Engine__invoke_callback(
             self._engine._undo_callback_function,
             uci_move=previous_uci_move,
             san_move=previous_san_move,
             field_index=self._place1)
-        Engine.__invoke_callback(
+        Engine._Engine__invoke_callback(
             self._engine._event_callback_function,
             event=Enums.Event.PLAY)
 
@@ -322,7 +322,7 @@ class PieceHandler:
         if self._lift1 == self._place1:
             # Piece has simply been placed back
             pass
-        elif self._piece_color_is_consistent():
+        elif self._piece_color_is_consistent:
             self._attempt_move()
         elif self._is_takeback():
             self._takeback_move()
@@ -349,29 +349,28 @@ class PieceHandler:
         # Used to decide error path in event of illegal move
         self._web_move = web_move
 
-        match field_action:
-            case Enums.PieceAction.LIFT:
-                self._place1 = None
-                if self._lift1:
-                    # There's no normal sequence where we would expect a
-                    # sequence of three or more LIFT actions without an
-                    # intervening PLACE.  Should this occur, we ignore
-                    # the oldest LIFT.
-                    if self._lift2:
-                        self._lift1 = self._lift2
-                    self._lift2 = field_index
-                else:
-                    self._lift1 = field_index
-            case Enums.PieceAction.PLACE:
-                if not self._lift1:
-                    # A PLACE action with no corresponding LIFT is
-                    # likely the restoration of a previously captured
-                    # piece after a takeback.  We can ignore it.
-                    return
-                self._place1 = field_index
-            case _:
-                # Not expected
+        if field_action == Enums.PieceAction.LIFT:
+            self._place1 = None
+            if self._lift1:
+                # There's no normal sequence where we would expect a
+                # sequence of three or more LIFT actions without an
+                # intervening PLACE.  Should this occur, we ignore
+                # the oldest LIFT.
+                if self._lift2:
+                    self._lift1 = self._lift2
+                self._lift2 = field_index
+            else:
+                self._lift1 = field_index
+        elif field_action == Enums.PieceAction.PLACE:
+            if not self._lift1:
+                # A PLACE action with no corresponding LIFT is
+                # likely the restoration of a previously captured
+                # piece after a takeback.  We can ignore it.
                 return
+            self._place1 = field_index
+        else:
+            # Not expected
+            return
 
         self._interpret_actions()
 
