@@ -51,6 +51,8 @@ class PieceHandler:
         self._lift2: Optional[int] = None
         self._place1: Optional[int] = None
 
+        self._invalid_move: int = -1
+
         # Local to a single field event
         self._web_move: bool = False
 
@@ -132,6 +134,9 @@ class PieceHandler:
     def _wrong_move(self) -> None:
         """Alert user to illegal move attempt"""
         self._play_sound(consts.SOUND_WRONG_MOVES)
+        CENTAUR_BOARD.led_from_to(self._place1,self._lift1)
+        self._invalid_move = self._lift1
+        
 
         # Could be a reset request...
         if not self._web_move:
@@ -378,6 +383,9 @@ class PieceHandler:
             else:
                 self._lift1 = field_index
         elif field_action == Enums.PieceAction.PLACE:
+            if field_index == self._invalid_move:
+                CENTAUR_BOARD.leds_off()
+                self._invalid_move = -1
             if self._lift1 == None:
                 # A PLACE action with no corresponding LIFT is
                 # likely the restoration of a previously captured
