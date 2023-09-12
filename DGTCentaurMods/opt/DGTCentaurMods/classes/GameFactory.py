@@ -310,7 +310,7 @@ class PieceHandler:
         """Arrange events so that capturing piece is lifted first"""
 
         # Is normalization needed?
-        if not self._lift2:
+        if self._lift2 == None:
             return
 
         # Is this a capture?
@@ -330,7 +330,7 @@ class PieceHandler:
     def _interpret_actions(self) -> None:
         """Take action based on history of field events"""
 
-        if not (self._lift1 and self._place1):
+        if self._lift1 == None or self._place1 == None:
             # Move is incomplete
             return
 
@@ -355,8 +355,7 @@ class PieceHandler:
         self._place1 = None
 
     # Receives field events from the board.
-    # Positive is a field lift, negative is a field place.
-    # Numbering 0 = a1, 63 = h8
+    # field_index 0 = a1, 63 = h8
     def __call__(self, field_index: int, field_action, web_move: bool) -> None:
         Log.debug(f"field_index:{field_index}, square_name:{self._to_square_name(field_index)}, piece_action:{field_action}")
 
@@ -368,18 +367,18 @@ class PieceHandler:
 
         if field_action == Enums.PieceAction.LIFT:
             self._place1 = None
-            if self._lift1:
+            if self._lift1 != None:
                 # There's no normal sequence where we would expect a
                 # sequence of three or more LIFT actions without an
                 # intervening PLACE.  Should this occur, we ignore
                 # the oldest LIFT.
-                if self._lift2:
+                if self._lift2 != None:
                     self._lift1 = self._lift2
                 self._lift2 = field_index
             else:
                 self._lift1 = field_index
         elif field_action == Enums.PieceAction.PLACE:
-            if not self._lift1:
+            if self._lift1 == None:
                 # A PLACE action with no corresponding LIFT is
                 # likely the restoration of a previously captured
                 # piece after a takeback.  We can ignore it.
@@ -532,6 +531,7 @@ class Engine():
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
+
         if self._initialized == False:
             return False
         self._previous_move_displayed = False
