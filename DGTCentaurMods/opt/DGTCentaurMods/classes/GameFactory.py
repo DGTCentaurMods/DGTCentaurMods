@@ -791,6 +791,7 @@ class Engine():
 
 
     def initialize_web_menu(self):
+        
         if self._socket:
             self._socket.send_message({
                 "update_menu": [{
