@@ -22,14 +22,11 @@
 from DGTCentaurMods.classes import Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.consts import consts, Enums, fonts
 from DGTCentaurMods.lib import common
-
-from DGTCentaurMods.consts.menu import MENU_ITEMS, _TYPE, _ONLY_WEB, _ITEMS, _ACTION, _VALUE, _LABEL, _SHORT_LABEL, _DISABLED, _ID, _ONLY_BOARD
+from DGTCentaurMods.consts import menu
 
 from DGTCentaurMods.consts.latest_tag import LASTEST_TAG
 
-from pathlib import Path
-
-import time, os, configparser, re, copy, importlib, shlex
+import time, os, re, importlib, shlex
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
@@ -83,14 +80,14 @@ class Main:
 
         self._is_root = is_root
 
-        current_items = self._menu[_CURRENT_NODE]+([{_LABEL:consts.EMPTY_LINE}]*10)
+        current_items = self._menu[_CURRENT_NODE]+([{menu.Tag.LABEL:consts.EMPTY_LINE}]*10)
 
         current_item_row = current_row
 
         # We draw all the visible items
         for item in current_items:
 
-            SCREEN.write_text(current_row, item[_SHORT_LABEL if _SHORT_LABEL in item else _LABEL], font=fonts.MAIN_FONT if "font" not in item else getattr(fonts, item["font"]))
+            SCREEN.write_text(current_row, item[menu.Tag.SHORT_LABEL if menu.Tag.SHORT_LABEL in item else menu.Tag.LABEL], font=fonts.MAIN_FONT if "font" not in item else getattr(fonts, item["font"]))
             
             # Current selected item?
             if current_index == self._menu[_CURRENT_INDEX]:
@@ -219,10 +216,10 @@ class Main:
             _CURRENT_INDEX: 0,
             _NODES: [],
             _NODE_INDEXES: [],
-            _ITEMS: self._build_menu_items(_ONLY_WEB)
+            menu.Tag.ITEMS: menu.get(menu.Tag.ONLY_BOARD)
         }
 
-        self._menu[_CURRENT_NODE] = self._menu[_ITEMS]
+        self._menu[_CURRENT_NODE] = self._menu[menu.Tag.ITEMS]
 
         self.refresh_screen()
 
@@ -253,18 +250,18 @@ class Main:
 
         if key_index == Enums.Btn.TICK or key_index == Enums.Btn.PLAY:
 
-            if _ITEMS in node[index]:
-                m[_CURRENT_NODE] = node[index][_ITEMS]
+            if menu.Tag.ITEMS in node[index]:
+                m[_CURRENT_NODE] = node[index][menu.Tag.ITEMS]
                 m[_CURRENT_INDEX] = 0
                 m[_NODES].append(node)
                 m[_NODE_INDEXES].append(index)
 
             else:
 
-                if _ACTION in node[index] and _VALUE in node[index][_ACTION]:
+                if menu.Tag.ACTION in node[index] and menu.Tag.VALUE in node[index][menu.Tag.ACTION]:
 
-                    value = node[index][_ACTION][_VALUE]
-                    item_type = node[index][_ACTION][_TYPE]
+                    value = node[index][menu.Tag.ACTION][menu.Tag.VALUE]
+                    item_type = node[index][menu.Tag.ACTION][menu.Tag.TYPE]
 
                     if item_type == 'color':
 
@@ -290,15 +287,15 @@ class Main:
 
                     if item_type == 'socket_execute':
 
-                        if "dialogbox" in node[index][_ACTION]:
+                        if "dialogbox" in node[index][menu.Tag.ACTION]:
 
                             # TODO align the design with the generic JS version
                             m[_CURRENT_NODE] = [
-                                { _LABEL: "Play white",
-                                _ACTION:{ _TYPE: "color", _VALUE: "white"}
+                                { menu.Tag.LABEL: "Play white",
+                                menu.Tag.ACTION:{ menu.Tag.TYPE: "color", menu.Tag.VALUE: "white"}
                                 },
-                                { _LABEL: "Play black",
-                                _ACTION:{ _TYPE: "color", _VALUE: "black"}
+                                { menu.Tag.LABEL: "Play black",
+                                menu.Tag.ACTION:{ menu.Tag.TYPE: "color", menu.Tag.VALUE: "black"}
                                 },
                             ]
                             m[_CURRENT_INDEX] = 0
@@ -319,93 +316,14 @@ class Main:
                 m[_CURRENT_INDEX] = m[_NODE_INDEXES].pop()
 
         # We bypass the disabled items
-        if _DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][_DISABLED]:
+        if menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
             CENTAUR_BOARD.push_button(key_index)
         else:
             self.draw_menu()
 
-
-    # Add engines and famous PGNs to proto menu
-    def _build_menu_items(self, excluded_flag):
-
-        result = []
-
-        # Items to exclude
-        for m in list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, copy.deepcopy(MENU_ITEMS))):
-            if _ITEMS in m:
-                menu_item = copy.deepcopy(m)
-                menu_item[_ITEMS] = list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, m[_ITEMS]))
-                result.append(menu_item)
-            else:
-                result.append(m)
-        
-        play_item = next(filter(lambda item:_ID in item and item[_ID] == "play", result))
-        sys_item = next(filter(lambda item:_ID in item and item[_ID] == "system", result))
-
-        ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
-        PGNS_PATH = consts.OPT_DIRECTORY+"/famous_pgns"
-
-        def get_sections(uci_file):
-            parser = configparser.ConfigParser()
-            parser.read(uci_file)
-
-            return list(map(lambda section:section, parser.sections()))
-
-        # We read the available engines + their options
-        engines = list(map(lambda f:{_ID:Path(f.name).stem, "options":get_sections(f.path)}, 
-                           filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
-        
-        famous_pgns = list(map(lambda f:Path(f.name).stem, 
-                           filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
-
-
-        # Famous PGN menu item
-        play_item[_ITEMS].append({ _LABEL: "Play famous games", _SHORT_LABEL: "Famous games", _TYPE: "subitem", 
-                                   _ITEMS:list(map(lambda pgn: { _LABEL: "⭐ "+common.capitalize_string(pgn), _SHORT_LABEL:common.capitalize_string(pgn), _ACTION: { _TYPE: "socket_execute", _VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
-
-        # Engines menu items
-        for engine in engines:
-
-            engine_menu = { _LABEL: "Play "+common.capitalize_string(engine[_ID]), _SHORT_LABEL: common.capitalize_string(engine[_ID]), _TYPE: "subitem", _ITEMS:[] }
-
-            play_item[_ITEMS].append(engine_menu)
-            
-            for option in engine["options"]:
-                    
-                engine_menu[_ITEMS].append({
-                        _LABEL: "⭐ "+option.capitalize(), _SHORT_LABEL:option.capitalize(),
-                        _ACTION: { _TYPE: "socket_execute", "dialogbox": "color", _VALUE: "uci_module.py {value} "+engine[_ID]+' "'+option+'"' } })
-                
-
-        # Famous PGN editor menu items
-        # UCI editor menu items
-        # Only web
-        if excluded_flag == _ONLY_BOARD:
-
-            famous_item = next(filter(lambda item:_ID in item and item[_ID] == "famous", sys_item[_ITEMS]))
-
-            for pgn in famous_pgns:
-
-                editor_menu = { _LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', _ONLY_WEB:True, _ITEMS: [], _ACTION:{ _TYPE: "socket_read", _VALUE: pgn+".pgn"} }
-                famous_item[_ITEMS].append(editor_menu)
-
-            uci_item = next(filter(lambda item:_ID in item and item[_ID] == "uci", sys_item[_ITEMS]))
-            
-            for engine in engines:
-
-                if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
-
-                    editor_menu = { _LABEL: "Edit UCI of "+common.capitalize_string(engine[_ID]), _ONLY_WEB:True, _ITEMS: [], _ACTION:{ _TYPE: "socket_read", _VALUE: engine[_ID]+".uci"} }
-
-                    uci_item[_ITEMS].append(editor_menu)
-
-           
-        return result
-
-
     def initialize_web_menu(self, message={}):
 
-        message["update_menu"] = self._build_menu_items(_ONLY_BOARD)
+        message["update_menu"] = menu.get(menu.Tag.ONLY_WEB)
 
         message["release"] = {
             "tag":consts.TAG_RELEASE,
@@ -419,11 +337,10 @@ class Main:
     def start_child_module(self):
 
         if self._socket != None:
+     
             self._socket.send_message({ 
                 "loading_screen":True,
-                "update_menu": [{
-                _LABEL:"← Back to main menu", 
-                _ACTION: { "type": "socket_sys", _VALUE: "homescreen"}}]
+                "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
             })
 
     def end_child_module(self):

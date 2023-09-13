@@ -20,102 +20,202 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.consts import consts
+from DGTCentaurMods.lib import common
+
 from DGTCentaurMods.consts.latest_tag import LASTEST_TAG
 
-import os
+from pathlib import Path
 
-_ITEMS = "items"
-_ACTION = "action"
-_LABEL = "label"
-_SHORT_LABEL = "short_label"
-_VALUE = "value"
-_TYPE = "type"
-_ONLY_WEB = "only_web"
-_ONLY_BOARD = "only_board"
-_ID = "id"
-_DISABLED = "disabled"
+import os, configparser, copy
+
+
+class Tag():
+
+  ITEMS : str = "items"
+  ACTION : str =  "action"
+  LABEL : str =  "label"
+  SHORT_LABEL : str =  "short_label"
+  VALUE : str =  "value"
+  TYPE : str =  "type"
+  ONLY_WEB : str =  "only_web"
+  ONLY_BOARD : str =  "only_board"
+  ID : str =  "id"
+  DISABLED : str =  "disabled"
 
 # Menu items
 # Proto version, shared between web & ePaper
-MENU_ITEMS = [
+_MENU_ITEMS = [
+    
+    {
+        Tag.ID:"homescreen",
+        Tag.LABEL:"← Back to main menu", 
+        Tag.ACTION: { "type": "socket_sys", Tag.VALUE: "homescreen"}
+    },
 
-    {   _ID:"play", 
-        _LABEL:"Play",
-        _ITEMS: [
-            {_LABEL: "Resume last game", _SHORT_LABEL: "Resume",
-             _ACTION: { _TYPE: "socket_execute", _VALUE: "uci_resume.py"} },
-            {_LABEL: "Play 1 vs 1", 
-             _ACTION:{ _TYPE: "socket_execute", _VALUE: "1vs1_module.py"} },
-            {_LABEL: "Play Lichess", 
-             _ACTION:{ _TYPE: "socket_execute", _VALUE: "lichess_module.py"} },
+    {   Tag.ID:"play",
+        Tag.LABEL:"Play",
+        Tag.ITEMS: [
+            {Tag.LABEL: "Resume last game", Tag.SHORT_LABEL: "Resume",
+            Tag.ACTION: { Tag.TYPE: "socket_execute", Tag.VALUE: "uci_resume.py"} },
+            {Tag.LABEL: "Play 1 vs 1", 
+            Tag.ACTION:{ Tag.TYPE: "socket_execute", Tag.VALUE: "1vs1_module.py"} },
+            {Tag.LABEL: "Play Lichess", 
+            Tag.ACTION:{ Tag.TYPE: "socket_execute", Tag.VALUE: "lichess_module.py"} },
         ] }, 
     
-    { _LABEL:"Links", _ONLY_WEB:True, _ITEMS: [
-            {_LABEL: "Open Lichess position analysis", 
-             _ACTION :{ _TYPE: "js", _VALUE: '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
-            {_LABEL: "Open Lichess PGN import page", 
-             _ACTION:{ _TYPE: "js", _VALUE: '() => window.open("https://lichess.org/paste", "_blank")' }},
-            {_LABEL: "View current PGN", 
-             _ACTION:{ _TYPE: "js", _VALUE: '() => me.viewCurrentPGN()' }},
+    { Tag.ID:"links", Tag.LABEL:"Links", Tag.ONLY_WEB:True, Tag.ITEMS: [
+            {Tag.LABEL: "Open Lichess position analysis", 
+            Tag.ACTION :{ Tag.TYPE: "js", Tag.VALUE: '() => window.open("https://lichess.org/analysis/ "+encodeURI(me.current_fen), "_blank")' }},
+            {Tag.LABEL: "Open Lichess PGN import page", 
+            Tag.ACTION:{ Tag.TYPE: "js", Tag.VALUE: '() => window.open("https://lichess.org/paste", "_blank")' }},
+            {Tag.LABEL: "View current PGN", 
+            Tag.ACTION:{ Tag.TYPE: "js", Tag.VALUE: '() => me.viewCurrentPGN()' }},
         ]}, 
     
-    { _LABEL:"Settings", _ONLY_WEB:True, _ITEMS: [
-        { _LABEL:"🕸 Web settings", _ONLY_WEB:True, _ITEMS: [], _TYPE: "subitem", _ACTION:{_TYPE: "js_variable", _VALUE: "displaySettings"} },
-        { _LABEL:"🎵 Board sounds", _ONLY_WEB:True, _ACTION:{ _TYPE: "socket_data", _VALUE: "sounds_settings"}}, 
+    { Tag.ID:"settings", Tag.LABEL:"Settings", Tag.ONLY_WEB:True, Tag.ITEMS: [
+        { Tag.LABEL:"🕸 Web settings", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.TYPE: "subitem", Tag.ACTION:{Tag.TYPE: "js_variable", Tag.VALUE: "displaySettings"} },
+        { Tag.LABEL:"🎵 Board sounds", Tag.ONLY_WEB:True, Tag.ACTION:{ Tag.TYPE: "socket_data", Tag.VALUE: "sounds_settings"}}, 
     ]},
     
-    { _LABEL:"Previous games", _ONLY_WEB:True, _ACTION:{ _TYPE: "socket_data", _VALUE: "previous_games"} }, 
+    { Tag.ID:"previous", Tag.LABEL:"Previous games", Tag.ONLY_WEB:True, Tag.ACTION:{ Tag.TYPE: "socket_data", Tag.VALUE: "previous_games"} }, 
     
-    {   _ID:"system", 
-        _LABEL:"System", _ITEMS: [
+    {   Tag.ID:"system", 
+        Tag.LABEL:"System", Tag.ITEMS: [
 
-            { _LABEL: "✏ Edit configuration file", _ONLY_WEB:True, _ITEMS: [], _ACTION:{ _TYPE: "socket_read", _VALUE: "centaur.ini"}},
-            { _ID:"uci", _LABEL:"✏ Edit engines UCI", _TYPE: "subitem", _ITEMS: [], _ONLY_WEB:True },
-            { _ID:"famous", _LABEL:"✏ Edit famous PGN", _TYPE: "subitem", _ITEMS: [], _ONLY_WEB:True },
+            { Tag.LABEL: "✏ Edit configuration file", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: "centaur.ini"}},
+            { Tag.ID:"uci", Tag.LABEL:"✏ Edit engines UCI", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
+            { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
 
-            { _TYPE: "divider", _ONLY_WEB:True },
+            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
 
-            { _LABEL: "📴 Power off board", _SHORT_LABEL: "Power off",
-              _ACTION:{ _TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", _VALUE: "shutdown"}
+            { Tag.LABEL: "📴 Power off board", Tag.SHORT_LABEL: "Power off",
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", Tag.VALUE: "shutdown"}
             },
-            { _LABEL: "🌀 Reboot board", _SHORT_LABEL: "Reboot",
-              _ACTION:{ _TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", _VALUE: "reboot"}
+            { Tag.LABEL: "🌀 Reboot board", Tag.SHORT_LABEL: "Reboot",
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", Tag.VALUE: "reboot"}
             },
-            { _LABEL: "⚡ Restart CORE service", _ONLY_WEB:True,
-              _ACTION:{ _TYPE: "socket_sys", "message": "A restart request has been sent to the board!", _VALUE: "restart_service"}
+            { Tag.LABEL: "⚡ Restart CORE service", Tag.ONLY_WEB:True,
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A restart request has been sent to the board!", Tag.VALUE: "restart_service"}
             },
-            { _LABEL: "⚡ Restart WEB service", _ONLY_WEB:True,
-              _ACTION:{ _TYPE: "socket_sys", "message": "A restart request has been sent to the board!", _VALUE: "restart_web_service"}
+            { Tag.LABEL: "⚡ Restart WEB service", Tag.ONLY_WEB:True,
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A restart request has been sent to the board!", Tag.VALUE: "restart_web_service"}
             },
-            { _LABEL:"Wifi", _ONLY_BOARD:True,
-              _ACTION:{ _TYPE: "socket_execute", _VALUE: "wifi_module"} },
+            { Tag.LABEL:"Wifi", Tag.ONLY_BOARD:True,
+              Tag.ACTION:{ Tag.TYPE: "socket_execute", Tag.VALUE: "wifi_module"} },
 
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
 
-            { _LABEL:"Update", _ONLY_BOARD:True,
-              _ACTION:{ _TYPE: "script_execute", _VALUE: "update"} },
+            { Tag.LABEL:"Update", Tag.ONLY_BOARD:True,
+              Tag.ACTION:{ Tag.TYPE: "script_execute", Tag.VALUE: "update"} },
 
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-            { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             
-            { _LABEL: f"tag:{consts.TAG_RELEASE}", _ONLY_BOARD:True, _DISABLED:True, "font":"SMALL_FONT" },
-            { _LABEL: f"last:{LASTEST_TAG}", _ONLY_BOARD:True, _DISABLED:True, "font":"SMALL_FONT" },
+            { Tag.LABEL: f"tag:{consts.TAG_RELEASE}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
+            { Tag.LABEL: f"last:{LASTEST_TAG}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
 
-            { _TYPE: "divider", _ONLY_WEB:True },
+            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
             
-            { _LABEL: "📋 Last log events", _ONLY_WEB:True,
-              _ACTION:{ _TYPE: "socket_sys", "message": None, _VALUE: "log_events"}
+            { Tag.LABEL: "📋 Last log events", Tag.ONLY_WEB:True,
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": None, Tag.VALUE: "log_events"}
             },
         ] },
 
         # Current tag version label
-        { _LABEL: consts.EMPTY_LINE, _ONLY_BOARD:True, _DISABLED:True },
-        { _LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", _ONLY_BOARD:True, _DISABLED:True, "font":"SMALL_FONT" },
+        { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+        { Tag.LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
 ]
 
 if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
-    MENU_ITEMS.insert(len(MENU_ITEMS)-2, { _LABEL:"Launch Centaur", _SHORT_LABEL:"Centaur", _ACTION:{ _TYPE: "socket_sys", _VALUE: "centaur"} })
+    _MENU_ITEMS.insert(len(_MENU_ITEMS)-2, { Tag.ID:"centaur", Tag.LABEL:"Launch Centaur", Tag.SHORT_LABEL:"Centaur", Tag.ACTION:{ Tag.TYPE: "socket_sys", Tag.VALUE: "centaur"} })
+
+
+class _Menu(common.Singleton):
+
+    def __call__(self, flag:str, ids:tuple) -> list :
+
+        excluded_flag = Tag.ONLY_BOARD if flag == Tag.ONLY_WEB else Tag.ONLY_WEB
+
+        result : list = []
+
+        # Items to exclude
+        for m in list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, copy.deepcopy(_MENU_ITEMS))):
+            
+            if Tag.ID not in m or (len(ids) == 0 and m[Tag.ID] != "homescreen") or m[Tag.ID] in ids:
+
+              if Tag.ITEMS in m:
+                  menu_item = copy.deepcopy(m)
+                  menu_item[Tag.ITEMS] = list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, m[Tag.ITEMS]))
+                  result.append(menu_item)
+              else:
+                  result.append(m)
+        
+        play_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "play", result), None)
+        sys_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "system", result), None)
+
+        ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
+        PGNS_PATH = consts.OPT_DIRECTORY+"/famous_pgns"
+
+        def get_sections(uci_file):
+            parser = configparser.ConfigParser()
+            parser.read(uci_file)
+
+            return list(map(lambda section:section, parser.sections()))
+
+        # We read the available engines + their options
+        engines = list(map(lambda f:{Tag.ID:Path(f.name).stem, "options":get_sections(f.path)}, 
+                           filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
+        
+        famous_pgns = list(map(lambda f:Path(f.name).stem, 
+                           filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
+
+
+        # Famous PGN menu item
+        if play_item:
+          play_item[Tag.ITEMS].append({ Tag.LABEL: "Play famous games", Tag.SHORT_LABEL: "Famous games", Tag.TYPE: "subitem", 
+                                    Tag.ITEMS:list(map(lambda pgn: { Tag.LABEL: "⭐ "+common.capitalize_string(pgn), Tag.SHORT_LABEL:common.capitalize_string(pgn), Tag.ACTION: { Tag.TYPE: "socket_execute", Tag.VALUE: f'famous_module.py "{pgn}.pgn"' }},famous_pgns)) })
+
+          # Engines menu items
+          for engine in engines:
+
+              engine_menu = { Tag.LABEL: "Play "+common.capitalize_string(engine[Tag.ID]), Tag.SHORT_LABEL: common.capitalize_string(engine[Tag.ID]), Tag.TYPE: "subitem", Tag.ITEMS:[] }
+
+              play_item[Tag.ITEMS].append(engine_menu)
+              
+              for option in engine["options"]:
+                      
+                  engine_menu[Tag.ITEMS].append({
+                          Tag.LABEL: "⭐ "+option.capitalize(), Tag.SHORT_LABEL:option.capitalize(),
+                          Tag.ACTION: { Tag.TYPE: "socket_execute", "dialogbox": "color", Tag.VALUE: "uci_module.py {value} "+engine[Tag.ID]+' "'+option+'"' } })
+                
+
+        # Famous PGN editor menu items
+        # UCI editor menu items
+        # Only web
+        if sys_item and excluded_flag == Tag.ONLY_BOARD:
+
+            famous_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "famous", sys_item[Tag.ITEMS]))
+
+            for pgn in famous_pgns:
+
+                editor_menu = { Tag.LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: pgn+".pgn"} }
+                famous_item[Tag.ITEMS].append(editor_menu)
+
+            uci_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "uci", sys_item[Tag.ITEMS]))
+            
+            for engine in engines:
+
+                if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
+
+                    editor_menu = { Tag.LABEL: "Edit UCI of "+common.capitalize_string(engine[Tag.ID]), Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: engine[Tag.ID]+".uci"} }
+
+                    uci_item[Tag.ITEMS].append(editor_menu)
+
+        return result
+    
+def get(flag: str, ids: tuple = ()):
+    return _Menu()(flag, ids)

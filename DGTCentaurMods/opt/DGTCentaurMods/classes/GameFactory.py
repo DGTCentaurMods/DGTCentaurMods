@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.consts import Enums, consts, fonts
+from DGTCentaurMods.consts import Enums, consts, fonts, menu
 from DGTCentaurMods.lib import common
 
 #from pympler import muppy, summary
@@ -793,10 +793,9 @@ class Engine():
     def initialize_web_menu(self):
         
         if self._socket:
-            self._socket.send_message({
-                "update_menu": [{
-                "label":"← Back to main menu", 
-                "action": { "type": "socket_sys", "value": "homescreen"}}]})
+            self._socket.send_message({ 
+                "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
+            })
     
     def is_started(self):
         return self._started
