@@ -27,7 +27,7 @@ from DGTCentaurMods.lib import common
 #from pympler import muppy, summary
 
 from threading import Thread
-from typing import Optional
+
 import time
 import chess
 import chess.pgn
@@ -38,6 +38,7 @@ import re
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
 
+UNDEFINED_SQUARE: int = -1
 
 # Isolate logic of __field_callback
 class PieceHandler:
@@ -47,11 +48,11 @@ class PieceHandler:
         self._engine: 'Engine' = engine
 
         # History of field events
-        self._lift1: Optional[int] = None
-        self._lift2: Optional[int] = None
-        self._place1: Optional[int] = None
+        self._lift1: int = UNDEFINED_SQUARE
+        self._lift2: int = UNDEFINED_SQUARE
+        self._place1: int = UNDEFINED_SQUARE
 
-        self._invalid_move: int = -1
+        self._invalid_move: int = UNDEFINED_SQUARE
 
         # Local to a single field event
         self._web_move: bool = False
@@ -314,8 +315,7 @@ class PieceHandler:
     def _normalize_event_order(self) -> None:
         """Arrange events so that capturing piece is lifted first"""
 
-        # Is normalization needed?
-        if self._lift2 == None:
+        if self._lift2 == UNDEFINED_SQUARE:
             return
 
         # Is this a capture?
@@ -335,7 +335,7 @@ class PieceHandler:
     def _interpret_actions(self) -> None:
         """Take action based on history of field events"""
 
-        if self._lift1 == None or self._place1 == None:
+        if self._lift1 == UNDEFINED_SQUARE or self._place1 == UNDEFINED_SQUARE:
             # Move is incomplete
             return
 
@@ -355,9 +355,9 @@ class PieceHandler:
             pass
 
         # Clear event history for next move.
-        self._lift1 = None
-        self._lift2 = None
-        self._place1 = None
+        self._lift1 = UNDEFINED_SQUARE
+        self._lift2 = UNDEFINED_SQUARE
+        self._place1 = UNDEFINED_SQUARE
 
     # Receives field events from the board.
     # field_index 0 = a1, 63 = h8
@@ -371,13 +371,13 @@ class PieceHandler:
         self._web_move = web_move
 
         if field_action == Enums.PieceAction.LIFT:
-            self._place1 = None
-            if self._lift1 != None:
+            self._place1 = UNDEFINED_SQUARE
+            if self._lift1 != UNDEFINED_SQUARE:
                 # There's no normal sequence where we would expect a
                 # sequence of three or more LIFT actions without an
                 # intervening PLACE.  Should this occur, we ignore
                 # the oldest LIFT.
-                if self._lift2 != None:
+                if self._lift2 != UNDEFINED_SQUARE:
                     self._lift1 = self._lift2
                 self._lift2 = field_index
             else:
@@ -385,8 +385,8 @@ class PieceHandler:
         elif field_action == Enums.PieceAction.PLACE:
             if field_index == self._invalid_move:
                 CENTAUR_BOARD.leds_off()
-                self._invalid_move = -1
-            if self._lift1 == None:
+                self._invalid_move = UNDEFINED_SQUARE
+            if self._lift1 == UNDEFINED_SQUARE:
                 # A PLACE action with no corresponding LIFT is
                 # likely the restoration of a previously captured
                 # piece after a takeback.  We can ignore it.
@@ -1041,7 +1041,7 @@ class Engine():
 
                 # White move
                 if current_turn == chess.WHITE:
-                    if (san == None):
+                    if san == None:
                         SCREEN.write_text(row, consts.EMPTY_LINE, centered=False)
                     else:
                         current_row_move = f"{current_row_index}. "+san
