@@ -127,6 +127,11 @@ def on_request(message):
 			time.sleep(.5)
 			os.system(f"sudo systemctl restart {consts.MAIN_ID}.service")
 
+		if action == "restart_web_service":
+			os.system("sudo pkill centaur")
+			time.sleep(.5)
+			os.system(f"sudo systemctl restart {consts.MAIN_ID}Web.service")
+
 		if action == "log_events":
 			response["log_events"] = common.tail(open(consts.LOG_FILENAME, "r"), 500)
 			socketio.emit('message', response)

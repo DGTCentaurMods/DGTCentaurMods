@@ -81,14 +81,24 @@ MENU_ITEMS = [
     
     {   ID:"system", 
         LABEL:"System", ITEMS: [
+
+            { LABEL: "✏ Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
+            { ID:"uci", LABEL:"✏ Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
+            { ID:"famous", LABEL:"✏ Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
+
+            { TYPE: "divider", ONLY_WEB:True },
+
             { LABEL: "📴 Power off board", SHORT_LABEL: "Power off",
               ACTION:{ TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", VALUE: "shutdown"}
             },
             { LABEL: "🌀 Reboot board", SHORT_LABEL: "Reboot",
               ACTION:{ TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", VALUE: "reboot"}
             },
-            { LABEL: "⚡ Restart service", ONLY_WEB:True,
+            { LABEL: "⚡ Restart CORE service", ONLY_WEB:True,
               ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_service"}
+            },
+            { LABEL: "⚡ Restart WEB service", ONLY_WEB:True,
+              ACTION:{ TYPE: "socket_sys", "message": "A restart request has been sent to the board!", VALUE: "restart_web_service"}
             },
             { LABEL:"Wifi", ONLY_BOARD:True,
               ACTION:{ TYPE: "socket_execute", VALUE: "wifi_module"} },
@@ -113,12 +123,6 @@ MENU_ITEMS = [
             { LABEL: "📋 Last log events", ONLY_WEB:True,
               ACTION:{ TYPE: "socket_sys", "message": None, VALUE: "log_events"}
             },
-
-            { TYPE: "divider", ONLY_WEB:True },
-
-            { LABEL: "✏ Edit configuration file", ONLY_WEB:True, ITEMS: [], ACTION:{ TYPE: "socket_read", VALUE: "centaur.ini"}},
-            { ID:"uci", LABEL:"✏ Edit engines UCI", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
-            { ID:"famous", LABEL:"✏ Edit famous PGN", TYPE: "subitem", ITEMS: [], ONLY_WEB:True },
         ] },
 
         # Current tag version label
