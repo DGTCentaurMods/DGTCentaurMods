@@ -70,9 +70,8 @@ class CentaurScreen(common.Singleton):
             self._buffer = Image.new(B_W_MODE, (SCREEN_WIDTH, SCREEN_HEIGHT), 255)
 
             self._api.init()
-            time.sleep(1)
-            self._api.Clear(0xff)
-            time.sleep(2)
+
+            self._api.Clear()
 
             self.home_screen("Welcome!")
 
