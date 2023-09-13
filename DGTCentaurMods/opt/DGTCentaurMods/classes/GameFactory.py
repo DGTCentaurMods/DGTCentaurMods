@@ -38,7 +38,7 @@ import re
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
 
-UNDEFINED_SQUARE: int = -1
+UNDEFINED_SQUARE: chess.Square = -1
 
 # Isolate logic of __field_callback
 class PieceHandler:
@@ -48,11 +48,14 @@ class PieceHandler:
         self._engine: 'Engine' = engine
 
         # History of field events
-        self._lift1: int = UNDEFINED_SQUARE
-        self._lift2: int = UNDEFINED_SQUARE
-        self._place1: int = UNDEFINED_SQUARE
+        self._lift1: chess.Square = UNDEFINED_SQUARE
+        self._lift2: chess.Square = UNDEFINED_SQUARE
+        self._place1: chess.Square = UNDEFINED_SQUARE
 
-        self._invalid_move: int = UNDEFINED_SQUARE
+        # An invalid move cannot be saved as part of the board state,
+        # so we remember it here in order to know when it gets "undone"
+        # and we can clear the LED.
+        self._invalid_move: chess.Square = UNDEFINED_SQUARE
 
         # Local to a single field event
         self._web_move: bool = False
@@ -70,7 +73,7 @@ class PieceHandler:
         return self._engine._can_undo_moves
 
     @property
-    def _chessboard(self):
+    def _chessboard(self) -> chess.Board:
         return self._engine._chessboard
 
     @property
@@ -83,7 +86,7 @@ class PieceHandler:
         return self._engine._dal
 
     @property
-    def _turn(self) -> bool:
+    def _turn(self) -> chess.Color:
         """Color of active party"""
         return self._chessboard.turn
 
@@ -93,7 +96,7 @@ class PieceHandler:
         self._engine.display_partial_PGN()
         self._engine.display_board()
 
-    def _fen(self):
+    def _fen(self) -> str:
         return self._chessboard.fen()
 
     # Method Object
@@ -103,7 +106,7 @@ class PieceHandler:
         """Check piece color against current turn"""
         return self._chessboard.color_at(self._lift1) == self._turn
 
-    def _to_square_name(self, square_index: int) -> str:
+    def _to_square_name(self, square_index: chess.Square) -> str:
         "Numbering 0 = a1, 63 = h8"
         return common.Converters.to_square_name(square_index)
 
@@ -126,7 +129,7 @@ class PieceHandler:
         consts.SOUND_TAKEBACK_MOVES: Enums.Sound.TAKEBACK_MOVE,
     }
 
-    def _play_sound(self, sound):
+    def _play_sound(self, sound) -> None:
         """Play sound only if enabled in config"""
         if CentaurConfig.get_sound_settings(sound) and \
                 (beep := self._SOUNDS.get(sound)):
@@ -134,10 +137,15 @@ class PieceHandler:
 
     def _wrong_move(self) -> None:
         """Alert user to illegal move attempt"""
+
+        # Get user's attention.
         self._play_sound(consts.SOUND_WRONG_MOVES)
-        CENTAUR_BOARD.led_from_to(self._place1,self._lift1)
+
+        # Show user what move should be corrected.
+        CENTAUR_BOARD.led_from_to(self._place1, self._lift1)
+
+        # Remember to clear the LED when user corrects move.
         self._invalid_move = self._lift1
-        
 
         # Could be a reset request...
         if not self._web_move:
@@ -361,7 +369,7 @@ class PieceHandler:
 
     # Receives field events from the board.
     # field_index 0 = a1, 63 = h8
-    def __call__(self, field_index: int, field_action, web_move: bool) -> None:
+    def __call__(self, field_index: chess.Square, field_action, web_move: bool) -> None:
         Log.debug(f"field_index:{field_index}, square_name:{self._to_square_name(field_index)}, piece_action:{field_action}")
 
         # We do not need to check reset if piece is lifted
@@ -383,9 +391,12 @@ class PieceHandler:
             else:
                 self._lift1 = field_index
         elif field_action == Enums.PieceAction.PLACE:
+            # Check for correction of earlier wrong move.
             if field_index == self._invalid_move:
+                # Can stop blinken the lights.
                 CENTAUR_BOARD.leds_off()
                 self._invalid_move = UNDEFINED_SQUARE
+
             if self._lift1 == UNDEFINED_SQUARE:
                 # A PLACE action with no corresponding LIFT is
                 # likely the restoration of a previously captured
