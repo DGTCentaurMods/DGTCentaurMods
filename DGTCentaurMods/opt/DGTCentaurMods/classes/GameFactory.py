@@ -91,7 +91,6 @@ class PieceHandler:
         return self._chessboard.turn
 
     def _update_display(self) -> None:
-        CENTAUR_BOARD.led(self._place1)
         common.update_Centaur_FEN(self._fen())
         self._engine.display_partial_PGN()
         self._engine.display_board()
@@ -169,6 +168,17 @@ class PieceHandler:
             self._engine._is_computer_move = False
             self._engine._san_move_list.append(san_move)
             self._play_sound(consts.SOUND_CORRECT_MOVES)
+
+            if len(self._chessboard.checkers()) > 0:
+                # Highlight both moved piece and king in check
+                CENTAUR_BOARD.led_array([
+                    self._place1,
+                    self._chessboard.king(self._turn)
+                ])
+            else:
+                # Highlight moved piece
+                CENTAUR_BOARD.led(self._place1)
+
             self._update_display()
             self._engine.update_web_ui({
                 "clear_board_graphic_moves": True,
@@ -302,6 +312,7 @@ class PieceHandler:
         self._dal.delete_last_game_move()
 
         self._play_sound(consts.SOUND_TAKEBACK_MOVES)
+        CENTAUR_BOARD.led(self._place1)
         self._update_display()
         self._engine.update_web_ui({
             "clear_board_graphic_moves": True,
