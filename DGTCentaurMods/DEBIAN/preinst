@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-legacy_menu=/opt/DGTCentaurMods/board/board.py
+legacy_app=/opt/DGTCentaurMods/board/board.py
 
-if [ -f "$legacy_menu" ]; then
+if [ -f "$legacy_app" ]; then
 	echo -e "::: Starting removing legacy components."
 
 	function cleanService() {
