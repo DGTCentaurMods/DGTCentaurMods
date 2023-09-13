@@ -136,9 +136,10 @@ class Menu:
 
     _is_root = False
 
-    def home_screen(self):
+    def refresh_screen(self):
 
         SCREEN.set_reversed(False)
+        SCREEN.clear_area()
 
         CENTAUR_BOARD.leds_off()
 
@@ -311,7 +312,7 @@ class Menu:
 
         self._menu[CURRENT_NODE] = self._menu[ITEMS]
 
-        self.home_screen()
+        self.refresh_screen()
 
         CENTAUR_BOARD.subscribe_events(self._key_callback, None, self._socket)
 
@@ -517,7 +518,7 @@ class Menu:
 
         self.initialize_web_menu({"loading_screen":False, "fen":common.get_Centaur_FEN()})
 
-        self.home_screen()
+        self.refresh_screen()
 
     def disconnect(self):
 
