@@ -19,6 +19,11 @@
 	font-size:130%;
 }
 
+.smallfont {
+	font-family: Courier, monospace;
+	font-size:90%;
+}
+
 textarea {
 	font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
 	font-size: medium;
@@ -30,6 +35,10 @@ textarea {
 
 input {
 	font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+md-switch {
+    margin: 6px 0;
 }
 
 .logEvents {

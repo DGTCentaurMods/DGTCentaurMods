@@ -139,10 +139,8 @@
 					<div class="md-dialog-container" id="sounds_settings">
 					<md-dialog layout-padding>
 						<h3>Board sounds</h3>
-						<div class="md-dense" layout="column" layout-align="center start">
-					
+						<div class="smallfont" class="md-dense" layout="column" layout-align="center start">
 							<md-switch data-ng-repeat="item in main.board.sounds" ng-click="main.updateAppSettings('sounds_settings_set', item)" ng-model="item.value">[[item.label]]</md-switch>
-
 						</div>
 					</md-dialog>
 					</div>
