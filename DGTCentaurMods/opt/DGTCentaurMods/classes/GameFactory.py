@@ -20,7 +20,6 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
-from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.consts import Enums, consts, fonts, menu
 from DGTCentaurMods.lib import common
 
@@ -51,11 +50,6 @@ class PieceHandler:
         self._lift1: chess.Square = UNDEFINED_SQUARE
         self._lift2: chess.Square = UNDEFINED_SQUARE
         self._place1: chess.Square = UNDEFINED_SQUARE
-
-        # An invalid move cannot be saved as part of the board state,
-        # so we remember it here in order to know when it gets "undone"
-        # and we can clear the LED.
-        self._invalid_move: chess.Square = UNDEFINED_SQUARE
 
         # Local to a single field event
         self._web_move: bool = False
@@ -122,32 +116,18 @@ class PieceHandler:
             # No previous move
             return ""
 
-    _SOUNDS = {
-        consts.SOUND_CORRECT_MOVES: Enums.Sound.CORRECT_MOVE,
-        consts.SOUND_WRONG_MOVES: Enums.Sound.WRONG_MOVE,
-        consts.SOUND_TAKEBACK_MOVES: Enums.Sound.TAKEBACK_MOVE,
-    }
-
-    def _play_sound(self, sound) -> None:
-        """Play sound only if enabled in config"""
-        if CentaurConfig.get_sound_settings(sound) and \
-                (beep := self._SOUNDS.get(sound)):
-            CENTAUR_BOARD.beep(beep)
-
     def _wrong_move(self) -> None:
         """Alert user to illegal move attempt"""
 
         # Get user's attention.
-        self._play_sound(consts.SOUND_WRONG_MOVES)
+        CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
         # Show user what move should be corrected.
         CENTAUR_BOARD.led_from_to(self._place1, self._lift1)
 
-        # Remember to clear the LED when user corrects move.
-        self._invalid_move = self._lift1
-
         # Could be a reset request...
         if not self._web_move:
+            self._engine._update_board_state()
             self._engine._need_starting_position_check = True
 
     def _is_legal_move(self, uci_move: str) -> bool:
@@ -167,7 +147,8 @@ class PieceHandler:
             Log.debug(f'Move "{uci_move}/{san_move}" has been committed.')
             self._engine._is_computer_move = False
             self._engine._san_move_list.append(san_move)
-            self._play_sound(consts.SOUND_CORRECT_MOVES)
+            
+            CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
 
             if len(self._chessboard.checkers()) > 0:
                 # Highlight both moved piece and king in check
@@ -311,7 +292,7 @@ class PieceHandler:
         Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
         self._dal.delete_last_game_move()
 
-        self._play_sound(consts.SOUND_TAKEBACK_MOVES)
+        CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
         CENTAUR_BOARD.led(self._place1)
         self._update_display()
         self._engine.update_web_ui({
@@ -361,6 +342,8 @@ class PieceHandler:
         self._normalize_event_order()
 
         if self._lift1 == self._place1:
+            self._engine._update_board_state()
+
             # Piece has simply been placed back
             pass
         elif self._piece_color_is_consistent:
@@ -368,6 +351,8 @@ class PieceHandler:
         elif self._is_takeback():
             self._takeback_move()
         else:
+            self._engine._update_board_state()
+
             # A LIFT and PLACE of a piece of the wrong color, that is
             # not a takeback, is assumed to be the completion of a
             # two-part move (i.e., castling) and can be ignored.
@@ -402,11 +387,10 @@ class PieceHandler:
             else:
                 self._lift1 = field_index
         elif field_action == Enums.PieceAction.PLACE:
-            # Check for correction of earlier wrong move.
-            if field_index == self._invalid_move:
-                # Can stop blinken the lights.
-                CENTAUR_BOARD.leds_off()
-                self._invalid_move = UNDEFINED_SQUARE
+            
+            # If the state was not OK, we check again.
+            if self._engine._invalid_board_state:
+                self._engine._update_board_state()
 
             if self._lift1 == UNDEFINED_SQUARE:
                 # A PLACE action with no corresponding LIFT is
@@ -414,12 +398,21 @@ class PieceHandler:
                 # piece after a takeback.  We can ignore it.
                 return
             self._place1 = field_index
+
+            # Board needs to be OK before playing.
+            if not self._engine._invalid_board_state:
+                self._interpret_actions()
+            else:
+                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+                Log.info("The board needs to be re-arranged!")
+            
+            return
+
         else:
             # Not expected
             return
 
         self._interpret_actions()
-
 
 # Game manager class
 class Engine():
@@ -431,6 +424,8 @@ class Engine():
     _new_evaluation_requested = False
 
     _previous_move_displayed = False
+
+    _invalid_board_state = False
 
     _chessboard = None
 
@@ -722,8 +717,9 @@ class Engine():
                                 Log.info("LAST GAME WAS FINISHED!")
                             
                             else:
-                                if CentaurConfig.get_sound_settings(consts.SOUND_MUSIC):
-                                    CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
+                                CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
+
+                                self._update_board_state()
 
                                 common.update_Centaur_FEN(self._chessboard.fen())
 
@@ -753,10 +749,10 @@ class Engine():
                     else:
                         try:
 
-                            board_state = bytearray(CENTAUR_BOARD.get_board_state())
+                            board_state = CENTAUR_BOARD.get_board_state()
 
                             # In case of full undo we do not restart a game - no need
-                            if board_state == consts.BOARD_START_STATE:
+                            if bytearray(board_state) == consts.BOARD_START_STATE:
                                 
                                 Log.info("STARTING A NEW GAME!")
 
@@ -774,8 +770,7 @@ class Engine():
                                 
                                 self.__initialize()
                                 
-                                if CentaurConfig.get_sound_settings(consts.SOUND_MUSIC):
-                                    CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
+                                CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
                                 common.update_Centaur_FEN(self._chessboard.fen())
                                 
@@ -801,7 +796,7 @@ class Engine():
                                     white  = self._game_informations["white"],
                                     black  = self._game_informations["black"]
                                 )
-
+                            
                             ticks = 0
                         except:
                             pass
@@ -978,6 +973,21 @@ class Engine():
         except:
             return None
 
+    def _update_board_state(self):
+        board_state = CENTAUR_BOARD.get_board_state()
+        business_board_state = common.Converters.fen_to_board_state(self._chessboard.fen())
+        invalid_squares = []
+        for square in range(0,64):
+            if business_board_state[square] != board_state[square]:
+                invalid_squares.append(square)
+
+        if len(invalid_squares):
+            self._invalid_board_state = True
+            CENTAUR_BOARD.led_array(invalid_squares, no_field_rotation=True)
+        else:
+            self._invalid_board_state = False
+            CENTAUR_BOARD.leds_off()
+
     def display_board(self):
 
         SCREEN.draw_fen(self._chessboard.fen(), startrow=1.6)
@@ -1115,8 +1125,7 @@ class Engine():
             from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)
             to_num = common.Converters.to_square_index(uci_move, Enums.SquareType.TARGET)
 
-            if CentaurConfig.get_sound_settings(consts.SOUND_COMPUTER_MOVES):
-                CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
+            CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
    
             # Then light it up!
             CENTAUR_BOARD.led_from_to(from_num,to_num)

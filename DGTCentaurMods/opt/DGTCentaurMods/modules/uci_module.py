@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.classes import ChessEngine, GameFactory, Log, CentaurBoard, CentaurScreen
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
-from DGTCentaurMods.consts import consts, Enums, fonts
+from DGTCentaurMods.consts import consts, Enums
 from DGTCentaurMods.lib import common
 
 from random import randint
@@ -111,11 +111,9 @@ def main(color, engine_name, engine_parameters):
         if args["event"] == Enums.Event.TERMINATION:
 
             if args["outcome"].winner == (not computer_color):
-                if CentaurConfig.get_sound_settings(consts.SOUND_VICTORY):
-                    CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
+                CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
             else:
-                if CentaurConfig.get_sound_settings(consts.SOUND_GAME_LOST):
-                    CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
+                CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
 
         if args["event"] == Enums.Event.PLAY:
 

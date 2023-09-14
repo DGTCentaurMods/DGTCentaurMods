@@ -20,7 +20,6 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.classes import GameFactory, Log, CentaurBoard, CentaurScreen
-from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.consts import Enums, consts
 from DGTCentaurMods.lib import common
 
@@ -191,8 +190,7 @@ def main(pgn):
         success = correct_uci_move == uci_move
 
         if not success:
-            if CentaurConfig.get_sound_settings(consts.SOUND_WRONG_MOVES):
-                CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
+            CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
             if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
                 # We do nothing...
