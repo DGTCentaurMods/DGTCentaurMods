@@ -175,7 +175,7 @@ class PieceHandler:
                 f'Move "{uci_move}/{san_move}" HAS NOT been committed.')
             self._engine.stop()
 
-    def _accept_move(self, uci_move: str, san_move: str) -> None:
+    def _accept_move(self, uci_move: str, san_move: str) -> bool:
         # We invoke the client callback
         # If the callback returns True, the move is accepted
         accepted = Engine._Engine__invoke_callback(
@@ -187,12 +187,14 @@ class PieceHandler:
         if accepted:
             self._engine.update_evaluation()
             self._commit_move(uci_move, san_move)
+            return True
         else:
             # Engine can still reject moves that pass our simplified
             # legality check.  It's the final authority.
             Log.debug(f'Client rejected the move "{uci_move}/{san_move}"...')
             self._chessboard.pop()
             self._wrong_move()
+            return False
 
     def _decide_move(
             self, player_uci_move: str, promoted_piece: str = "") -> str:
@@ -209,24 +211,25 @@ class PieceHandler:
         return player_move
 
     def _finalize_move(
-            self, player_uci_move: str, promoted_piece: str = "") -> None:
+            self, player_uci_move: str, promoted_piece: str = "") -> bool:
         
         self._promotion_move = None
         
         if not self._is_legal_move(player_uci_move):
             Log.debug(f'ILLEGAL move "{player_uci_move}"')
             self._wrong_move()
-            return
+            return False
 
         uci_move = self._decide_move(player_uci_move, promoted_piece)
         try:
             move = chess.Move.from_uci(uci_move)
             self._chessboard.push(move)
             san_move = self._engine.get_last_san_move()
-            self._accept_move(uci_move, san_move)
+            return self._accept_move(uci_move, san_move)
         except:
             Log.debug(f'INVALID move "{uci_move}"')
             self._wrong_move()
+            return False
 
     def _is_promotion(self) -> bool:
         piece_name = self._chessboard.piece_at(self._lift1).symbol()
@@ -252,12 +255,12 @@ class PieceHandler:
         Enums.Btn.DOWN: "r",
     }
 
-    def _promote_key_callback(self, key_index) -> None:
+    def _promote_key_callback(self, key_index) -> bool:
         if promoted_piece := self._PROMOTION_KEYS.get(key_index):
             CENTAUR_BOARD.unsubscribe_events()
             self._engine.display_board()
 
-            self._finalize_move(self._promotion_move, promoted_piece)
+            return self._finalize_move(self._promotion_move, promoted_piece)
 
     def _prompt_for_promotion(self) -> None:
 
@@ -267,14 +270,16 @@ class PieceHandler:
         SCREEN.draw_promotion_window()
         CENTAUR_BOARD.subscribe_events(self._promote_key_callback, None)
 
-    def _attempt_move(self) -> None:
+    def _attempt_move(self) -> bool:
         """Piece has been moved"""
 
         Log.info(f'Piece has been moved to "{self._to_square_name(self._place1)}".')
         if self._is_promotion() and self._ask_user_for_promotion():
             self._prompt_for_promotion()
         else:
-            self._finalize_move(self._move_name())
+            return self._finalize_move(self._move_name())
+
+        return True
 
     def _is_takeback(self) -> bool:
         """Is this an attempt to take back a move?"""
@@ -282,7 +287,7 @@ class PieceHandler:
             self._can_undo_moves and \
             self._move_name() == self._undo_name()
 
-    def _takeback_move(self) -> None:
+    def _takeback_move(self) -> bool:
         """Previous move has been taken back"""
 
         previous_uci_move = self._chessboard.pop().uci()
@@ -306,11 +311,14 @@ class PieceHandler:
             uci_move=previous_uci_move,
             san_move=previous_san_move,
             field_index=self._place1)
+        
         Engine._Engine__invoke_callback(
             self._engine._event_callback_function,
             event=Enums.Event.PLAY)
 
         self._engine.update_evaluation()
+
+        return True
 
     def _normalize_event_order(self) -> None:
         """Arrange events so that capturing piece is lifted first"""
@@ -332,12 +340,14 @@ class PieceHandler:
             # produces a valid move.
             self._lift1, self._lift2 = self._lift2, None
 
-    def _interpret_actions(self) -> None:
+    def _interpret_actions(self) -> bool:
         """Take action based on history of field events"""
+
+        result = False
 
         if self._lift1 == UNDEFINED_SQUARE or self._place1 == UNDEFINED_SQUARE:
             # Move is incomplete
-            return
+            return False
 
         self._normalize_event_order()
 
@@ -347,9 +357,9 @@ class PieceHandler:
             # Piece has simply been placed back
             pass
         elif self._piece_color_is_consistent:
-            self._attempt_move()
+            result = self._attempt_move()
         elif self._is_takeback():
-            self._takeback_move()
+            result = self._takeback_move()
         else:
             self._engine._update_board_state()
 
@@ -362,6 +372,8 @@ class PieceHandler:
         self._lift1 = UNDEFINED_SQUARE
         self._lift2 = UNDEFINED_SQUARE
         self._place1 = UNDEFINED_SQUARE
+
+        return result
 
     # Receives field events from the board.
     # field_index 0 = a1, 63 = h8
@@ -401,18 +413,18 @@ class PieceHandler:
 
             # Board needs to be OK before playing.
             if not self._engine._invalid_board_state:
-                self._interpret_actions()
+                return self._interpret_actions()
             else:
                 CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
                 Log.info("The board needs to be re-arranged!")
             
-            return
+            return False
 
         else:
             # Not expected
-            return
+            return False
 
-        self._interpret_actions()
+        return self._interpret_actions()
 
 # Game manager class
 class Engine():
@@ -557,12 +569,22 @@ class Engine():
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
 
-        if self._initialized == False:
+        # We backup the current board state
+        board_state = self._invalid_board_state
+
+        if not self._initialized:
             return False
         self._previous_move_displayed = False
         try:
-            self._piece_handler(field_index, field_action, web_move)
-            return True
+            result = self._piece_handler(field_index, field_action, web_move)
+
+            # The board has not been physically updated.
+            # We restore the previous board state
+            if web_move:
+                self._invalid_board_state = board_state
+
+            return result
+
         except Exception as e:
             Log.exception(Engine.__field_callback, e)
             return False
