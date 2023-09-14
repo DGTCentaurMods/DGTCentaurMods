@@ -43,7 +43,7 @@ class Singleton:
             cls._self = super().__new__(cls)
         return cls._self
 
-def get_lastest_tag():
+def get_lastest_tag() -> str:
 
     try:
         response = requests.get("https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest")
@@ -62,7 +62,7 @@ def get_lastest_tag():
 
     return latest_tag
 
-def capitalize_string(str):
+def capitalize_string(str: str) -> str:
     """Capitalize first letter of string, preserving existing capitals
 
     >>> capitalize_string("my Turn")
@@ -106,7 +106,9 @@ def tail(f, lines=1, _buffer=4098):
 
     return lines_found[-lines:]
 
-def get_Centaur_FEN():
+def get_Centaur_FEN() -> str:
+    """Read board state from FEN log (default ~/centaur/fen.log),
+    returning default starting position if log does not exist."""
 
     try:
         f = open(consts.FEN_LOG, "r")
@@ -117,7 +119,8 @@ def get_Centaur_FEN():
     except:
         return chess.STARTING_FEN
 
-def update_Centaur_FEN(fen):
+def update_Centaur_FEN(fen: str) -> None:
+    """Save board state to FEN log (default ~/centaur/fen.log)"""
 
     try:
         f = open(consts.FEN_LOG, "w")
@@ -138,7 +141,7 @@ def delayed_command(command, delay):
 class Converters:
 
     @staticmethod
-    def to_square_name(square) -> str:
+    def to_square_name(square: chess.Square) -> str:
         """Return the algebraic name of the indexed square
 
         >>> Converters.to_square_name(0)
@@ -152,7 +155,7 @@ class Converters:
         return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
 
     @staticmethod
-    def to_square_index(uci_move, square_type = Enums.SquareType.ORIGIN) -> int:
+    def to_square_index(uci_move: str, square_type = Enums.SquareType.ORIGIN) -> chess.Square:
         """Find the origin or target index of a UCI move
 
         >>> Converters.to_square_index("g1f3", Enums.SquareType.ORIGIN)
