@@ -20,6 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.classes.waveshare import epd2in9d
+from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 from DGTCentaurMods.classes import Log
 
@@ -41,6 +42,8 @@ MAIN_SCREEN_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_scre
 CHESS_SHEET_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/chesssprites.bmp")
 
 class CentaurScreen(common.Singleton):
+
+    _clock_fmt = CentaurConfig.get_system_settings("clock_format", "%%H:%%M") or "%H:%M"
 
     _buffer = None
     _buffer_copy = None
@@ -107,7 +110,7 @@ class CentaurScreen(common.Singleton):
             if self._screen_enabled:
 
                 # Header time
-                clock = time.strftime("%H:%M")
+                clock = time.strftime(self._clock_fmt)
                 self.write_text(0, clock, centered=False)
 
                 # Paint event - (used for player clocks...)

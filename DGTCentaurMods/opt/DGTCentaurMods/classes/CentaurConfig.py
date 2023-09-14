@@ -27,7 +27,7 @@ import configparser, json
 class CentaurConfig:
 
     @staticmethod
-    def _update(section, id, value, default_value):
+    def _update(section:str, id:str, value:str, default_value:str):
 
         try:
             # Get the config
@@ -42,7 +42,7 @@ class CentaurConfig:
             pass
 
     @staticmethod
-    def _get(section, id, default_value):
+    def _get(section:str, id:str, default_value:str):
 
         try:
             # Get the config
@@ -55,33 +55,41 @@ class CentaurConfig:
             pass
         
         return None
+    
+    @staticmethod
+    def update_system_settings(id:str, value:str) -> None:
+        CentaurConfig._update('system', id, value, '')
 
     @staticmethod
-    def update_sound_settings(id, value):
+    def get_system_settings(id:str, default:str) -> str:
+        return CentaurConfig._get('system', id, default)
+
+    @staticmethod
+    def update_sound_settings(id:str, value:bool) -> None:
         CentaurConfig._update('sounds', id, '1' if value else '0', '1')
 
     @staticmethod
-    def get_sound_settings(id):
+    def get_sound_settings(id:str)  -> bool:
         return CentaurConfig._get('sounds', id, '1') == '1'
 
     @staticmethod
-    def update_lichess_settings(id, value):
+    def update_lichess_settings(id:str, value:str) -> None:
         CentaurConfig._update('lichess', id, value, '')
 
     @staticmethod
-    def get_lichess_settings(id):
+    def get_lichess_settings(id:str) -> str:
         return CentaurConfig._get('lichess', id, '')
 
     @staticmethod
-    def update_last_uci_command(command):
+    def update_last_uci_command(command:str) -> None:
         CentaurConfig._update('system', 'last_uci', command, '')
 
     @staticmethod
-    def get_last_uci_command():
+    def get_last_uci_command() -> str:
         return CentaurConfig._get('system', 'last_uci', '')
     
     @staticmethod
-    def update_lichess_seeking_params(params):
+    def update_lichess_seeking_params(params:dict) -> None:
         CentaurConfig._update('lichess', 'seeking_params', json.dumps(params), '[]')
 
     @staticmethod
