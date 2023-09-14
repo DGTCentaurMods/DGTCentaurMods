@@ -80,13 +80,48 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		me.editor = {
 			text:"",
 			visible:false,
-		
-			save: () => {
+			value: {},
+			dirty: false,
+			busy: false,
+
+			close: function() {
+				// Web menu might be updated...
+				if (this.dirty) SOCKET.emit('request', {'web_menu': true})
+				this.visible = false
+				this.dirty = false
+				this.busy = false
+			},
+
+			delete: function() {
+				if (this.busy) return
+				this.busy = true
+
+				this.dirty = true
+
 				SOCKET.emit('request', {'write':{
-					text:me.editor.text,
-					filename:me.editor.filename,
+					id:this.value.id,
+					file:this.value.file,
+					new_file:"__delete__",
 				}})
-				me.editor.visible = false
+
+				$timeout(() => {
+					this.close()
+				}, 1000)
+			},
+		
+			save: function() {
+				if (this.busy) return
+				this.busy = true
+
+				this.dirty = true
+				SOCKET.emit('request', {'write':{
+					id:this.value.id,
+					file:this.value.file,
+					new_file:this.value.new_file,
+					text:this.value.text,
+				}})
+
+				this.busy = false
 			}
 		}
 
@@ -390,6 +425,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 											item.action = () => SOCKET.emit('request', {'read':value})
 										},
 
+										'socket_write': (item, value) => {
+											item.action = () => SOCKET.emit('request', {'write':value})
+										},
+
 										'socket_execute': (item, value) => {
 
 											// Should we show a dialog box before executing the command?
@@ -631,8 +670,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								},
 
 								editor: (value) => {
-									me.editor.filename = value.filename
-									me.editor.text = value.text
+									me.editor.value = value
 									me.editor.visible = true
 								},
 

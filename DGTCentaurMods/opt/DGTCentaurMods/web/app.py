@@ -41,6 +41,7 @@ socketio = SocketIO(appFlask, cors_allowed_origins="*")
 
 if __name__ == '__main__':
 	print("Starting socketio server...")
+	#socketio.run(appFlask, port=5000, host='0.0.0.0', ssl_context='adhoc', allow_unsafe_werkzeug=True)
 	socketio.run(appFlask, port=5000, host='0.0.0.0', allow_unsafe_werkzeug=True)
 
 @socketio.on('connect')
@@ -138,53 +139,105 @@ def on_request(message):
 
 	else:
 
+		_get_file_descriptor = lambda action:{
+			"uci":{
+				"directory":f"{consts.OPT_DIRECTORY}/engines",
+				"label":"UCI File",
+				"extension":"uci",
+				"editable_name":False,
+				"can_delete":False,
+			},
+			"famous_pgn":{
+				"directory":f"{consts.OPT_DIRECTORY}/famous_pgns",
+				"label":"famous PGN File",
+				"extension":"pgn",
+				"editable_name":True,
+				"can_delete":True,
+			},
+			"conf":{
+				"directory":f"{consts.OPT_DIRECTORY}/config",
+				"label":"configuration file",
+				"extension":"ini",
+				"editable_name":False,
+				"can_delete":False,
+			},
+		}[action['id']]
+
+
 		if "read" in message:
 			action = message["read"]
 
-			def _sendback_file_contents(path, id):
-				f = open(path, "r")
+			try:
+				file_descriptor = _get_file_descriptor(action)
+			except:
+				file_descriptor = None
+				pass
+
+			if file_descriptor:
+
+				path = file_descriptor["directory"]+'/'+action["file"]+'.'+file_descriptor["extension"]
+
+				if action["file"] == "__new__":
+					contents = f'Your {file_descriptor["label"]} contents is there.'
+				else:
+					f = open(path, "r")
+					contents = f.read()
+					f.close()
+
 				response["editor"] = {
-					"text":f.read(),
-					"filename":id
+					"id":action["id"],
+					"text":contents,
+					#"path":path,
+					"file":action["file"],
+					"new_file":action["file"],
+					"extension":file_descriptor["extension"],
+					"editable_name":file_descriptor["editable_name"],
+					"can_delete":file_descriptor["can_delete"],
 				}
-				f.close()
+				
 				socketio.emit('message', response)
-
-			if action[-4:] == ".uci":
-				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/engines/{action}", action)
-
-			if action[-4:] == ".pgn":
-				_sendback_file_contents(f"{consts.OPT_DIRECTORY}/famous_pgns/{action}", action)
-
-			if action == "centaur.ini":
-				_sendback_file_contents(consts.CONFIG_FILE, action)
-
 			return
 
 		if "write" in message:
 
 			action = message["write"]
 
-			filename = None if "filename" not in action else action["filename"]
+			try:
+				file_descriptor = _get_file_descriptor(action)
+			except:
+				pass
 
-			def _update_file_contents(path, popup_message):
+			if file_descriptor:
+
+				path = file_descriptor["directory"]+'/'+action["file"]+'.'+file_descriptor["extension"]
+
+				if action["new_file"] == "__new__":
+
+					response["popup"] = "You need to rename your " + file_descriptor["label"] + "!"
+					socketio.emit('message', response)
+
+					return
+				
+				if action["new_file"] == "__delete__" and file_descriptor["can_delete"]:
+
+					os.system(f'sudo rm -f "{path}"')
+
+					response["popup"] = "The " + file_descriptor["label"] + " has been successfuly deleted!"
+					socketio.emit('message', response)
+
+					return
+
 				f = open(path, "w")
 
 				f.write(action["text"])
 				f.close()
 
-				response["popup"] = popup_message
+				if action["new_file"] != action["file"]:
+					newpath = file_descriptor["directory"]+'/'+action["new_file"]+'.'+file_descriptor["extension"]
+					os.system(f'sudo mv "{path}" "{newpath}"')
+
+				response["popup"] = "The " + file_descriptor["label"] + " has been successfuly updated!"
 				socketio.emit('message', response)
-
-			if filename and filename[-4:] == ".uci":
-				_update_file_contents(f"{consts.OPT_DIRECTORY}/engines/{filename}", "UCI File has been successfuly updated!")
-
-			if filename and filename[-4:] == ".pgn":
-				_update_file_contents(f"{consts.OPT_DIRECTORY}/famous_pgns/{filename}", "PGN File has been successfuly updated!")
-
-			if filename and filename == "centaur.ini":
-				_update_file_contents(consts.CONFIG_FILE, "Configuration file has been successfuly updated!")
-
 			return
 		
 		if "data" in message:

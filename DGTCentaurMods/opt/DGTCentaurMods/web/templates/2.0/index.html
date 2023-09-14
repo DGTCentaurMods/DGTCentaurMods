@@ -123,13 +123,16 @@
 
 					<md-toolbar>
 						<div class="md-toolbar-tools">
-							<h2>[[main.editor.filename]]</h2>
-							<md-button class="md-raised md-primary" ng-click="main.editor.save()" aria-label="Save">Save</md-button>
-							<md-button class="md-raised md-warn" ng-click="main.editor.visible = false" aria-label="Cancel">Cancel</md-button>
+							<span data-ng-if="!main.editor.value.editable_name"><h2>[[main.editor.value.file]].[[main.editor.value.extension]]</h2></span>
+							<span data-ng-if="main.editor.value.editable_name"><input ng-model="main.editor.value.new_file"><span>.[[main.editor.value.extension]]</span></span>
+							<span flex md-truncate></span>
+							<md-button class="md-raised" ng-click="main.editor.save()" aria-label="Save">Save</md-button>
+							<md-button ng-if="main.editor.value.can_delete" class="md-raised md-warn" ng-click="main.editor.delete()" aria-label="Save">Delete</md-button>
+							<md-button class="md-raised md-primary" ng-click="main.editor.close()" aria-label="Back">Back</md-button>
 						</div>
 					</md-toolbar>
 					
-					<ivl-codearea ng-model="main.editor.text" syntax="uci"></ivl-codearea>
+					<ivl-codearea ng-model="main.editor.value.text" syntax="uci"></ivl-codearea>
 				</div>
 
 				<div style="visibility: hidden">
@@ -138,7 +141,7 @@
 						<h3>Board sounds</h3>
 						<div class="md-dense" layout="column" layout-align="center start">
 					
-							<md-checkbox data-ng-repeat="item in main.board.sounds" ng-click="main.updateAppSettings('sounds_settings_set', item)" ng-model="item.value">[[item.label]]</md-checkbox>
+							<md-switch data-ng-repeat="item in main.board.sounds" ng-click="main.updateAppSettings('sounds_settings_set', item)" ng-model="item.value">[[item.label]]</md-switch>
 
 						</div>
 					</md-dialog>

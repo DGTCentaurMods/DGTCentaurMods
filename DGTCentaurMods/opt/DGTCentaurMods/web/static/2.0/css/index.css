@@ -28,6 +28,10 @@ textarea {
 	width:100%;
 }
 
+input {
+	font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
 .logEvents {
 	height:300px;
 	width:800px;

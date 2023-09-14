@@ -41,6 +41,7 @@ class Tag():
   ONLY_BOARD : str =  "only_board"
   ID : str =  "id"
   DISABLED : str =  "disabled"
+  FILE : str =  "file"
 
 # Menu items
 # Proto version, shared between web & ePaper
@@ -82,9 +83,9 @@ _MENU_ITEMS = [
     {   Tag.ID:"system", 
         Tag.LABEL:"System", Tag.ITEMS: [
 
-            { Tag.LABEL: "✏ Edit configuration file", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: "centaur.ini"}},
+            { Tag.LABEL: "✏ Edit configuration file", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "conf", Tag.FILE:"centaur" }}},
             { Tag.ID:"uci", Tag.LABEL:"✏ Edit engines UCI", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
-            { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
+            { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [{ Tag.LABEL: "➕ Create a new PGN", Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID:"famous_pgn", Tag.FILE:"__new__" }}}], Tag.ONLY_WEB:True },
 
             { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
 
@@ -198,12 +199,13 @@ class _Menu(common.Singleton):
         # Only web
         if sys_item and excluded_flag == Tag.ONLY_BOARD:
 
-            famous_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "famous", sys_item[Tag.ITEMS]))
+            famous_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "famous", sys_item[Tag.ITEMS]), None)
 
-            for pgn in famous_pgns:
+            if famous_item:
+                for pgn in famous_pgns:
 
-                editor_menu = { Tag.LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: pgn+".pgn"} }
-                famous_item[Tag.ITEMS].append(editor_menu)
+                    editor_menu = { Tag.LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "famous_pgn", Tag.FILE:pgn }} }
+                    famous_item[Tag.ITEMS].insert(len(famous_item[Tag.ITEMS])-1, editor_menu)
 
             uci_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "uci", sys_item[Tag.ITEMS]))
             
@@ -211,7 +213,7 @@ class _Menu(common.Singleton):
 
                 if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
 
-                    editor_menu = { Tag.LABEL: "Edit UCI of "+common.capitalize_string(engine[Tag.ID]), Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: engine[Tag.ID]+".uci"} }
+                    editor_menu = { Tag.LABEL: "Edit UCI of "+common.capitalize_string(engine[Tag.ID]), Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "uci", Tag.FILE:engine[Tag.ID] }} }
 
                     uci_item[Tag.ITEMS].append(editor_menu)
 
