@@ -27,6 +27,13 @@ import os
 import unittest
 
 
+# Hook to run doctests from unittest
+def load_tests(loader, tests, ignore):
+    import doctest
+    tests.addTests(doctest.DocTestSuite(common))
+    return tests
+
+
 class TestSingleton(unittest.TestCase):
 
         def test_Singleton1(self):

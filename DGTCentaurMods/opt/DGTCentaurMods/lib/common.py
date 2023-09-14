@@ -26,13 +26,23 @@ from threading import Thread
 import os, requests, subprocess, time, chess
 
 class Singleton:
+    """Classes derived from Singleton only ever have one instance
+
+    >>> class Derived(Singleton):
+    ...     pass
+    >>> ref1 = Derived()
+    >>> ref2 = Derived()
+    >>> ref1 is ref2
+    True
+    """
+
     _self = None
 
     def __new__(cls):
         if cls._self is None:
             cls._self = super().__new__(cls)
         return cls._self
-    
+
 def get_lastest_tag():
 
     try:
@@ -53,6 +63,15 @@ def get_lastest_tag():
     return latest_tag
 
 def capitalize_string(str):
+    """Capitalize first letter of string, preserving existing capitals
+
+    >>> capitalize_string("my Turn")
+    'My Turn'
+
+    Note this differs from the built-in str.capitalize() method
+    >>> "my Turn".capitalize()
+    'My turn'
+    """
     return str[:1].upper()+str[1:]
 
 def tail(f, lines=1, _buffer=4098):
@@ -115,21 +134,35 @@ def delayed_command(command, delay):
 
     t = Thread(target=_start_delayed, kwargs={'args': [{command}], 'delay': delay})
     t.start()
-    
+
 class Converters:
 
     @staticmethod
     def to_square_name(square) -> str:
+        """Return the algebraic name of the indexed square
+
+        >>> Converters.to_square_name(0)
+        'a1'
+        >>> Converters.to_square_name(27)
+        'd4'
+        """
         square_row = (square // 8)
         square_col = (square % 8)
         square_col = 7 - square_col
         return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
-        
+
     @staticmethod
     def to_square_index(uci_move, square_type = Enums.SquareType.ORIGIN) -> int:
+        """Find the origin or target index of a UCI move
+
+        >>> Converters.to_square_index("g1f3", Enums.SquareType.ORIGIN)
+        6
+        >>> Converters.to_square_index("g1f3", Enums.SquareType.TARGET)
+        21
+        """
 
         square_name = uci_move[0:2] if square_type == Enums.SquareType.ORIGIN else uci_move[2:4]
-        
+
         square_col = ord(square_name[0:1]) - ord('a')
         square_row = ord(square_name[1:2]) - ord('1')
 
