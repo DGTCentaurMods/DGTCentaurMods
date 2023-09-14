@@ -85,7 +85,9 @@ _MENU_ITEMS = [
 
             { Tag.LABEL: "✏ Edit configuration file", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "conf", Tag.FILE:"centaur" }}},
             { Tag.ID:"uci", Tag.LABEL:"✏ Edit engines UCI", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
-            { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [{ Tag.LABEL: "➕ Create a new PGN", Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID:"famous_pgn", Tag.FILE:"__new__" }}}], Tag.ONLY_WEB:True },
+            { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [
+                { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+                { Tag.LABEL: "➕ Create a new PGN", Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID:"famous_pgn", Tag.FILE:"__new__" }}}], Tag.ONLY_WEB:True },
 
             { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
 
@@ -202,10 +204,13 @@ class _Menu(common.Singleton):
             famous_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "famous", sys_item[Tag.ITEMS]), None)
 
             if famous_item:
+
+                static_items_len = len(famous_item[Tag.ITEMS])
+
                 for pgn in famous_pgns:
 
                     editor_menu = { Tag.LABEL: 'Edit "'+common.capitalize_string(pgn)+'"', Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "famous_pgn", Tag.FILE:pgn }} }
-                    famous_item[Tag.ITEMS].insert(len(famous_item[Tag.ITEMS])-1, editor_menu)
+                    famous_item[Tag.ITEMS].insert(len(famous_item[Tag.ITEMS])-static_items_len, editor_menu)
 
             uci_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "uci", sys_item[Tag.ITEMS]))
             
