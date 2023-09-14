@@ -712,11 +712,9 @@ def main():
 
                                 if 'winner' in state.keys():
                                     if state.get('winner') == ("white" if current_game[_COLOR] else "black"):
-                                        if CentaurConfig.get_sound_settings(consts.SOUND_VICTORY):
-                                            CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
+                                        CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
                                     else:
-                                        if CentaurConfig.get_sound_settings(consts.SOUND_GAME_LOST):
-                                            CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
+                                        CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
 
                                 gfe.update_evaluation(force=True, text=state.get('status'))
                                 pass

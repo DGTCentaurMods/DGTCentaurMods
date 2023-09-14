@@ -22,6 +22,7 @@
 import time, threading, serial
 
 from DGTCentaurMods.classes import Log
+from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import Enums, consts
 
@@ -257,34 +258,49 @@ class CentaurBoard(common.Singleton):
             print('Unable to clear th serial...')
             return False
 
-    def beep(self, beeptype):
+    def beep(self, sound) -> None:
+        """Play sound only if enabled in config"""
+
+        _SOUND_TO_CONF_MAPPING = {
+            Enums.Sound.CORRECT_MOVE : consts.SOUND_CORRECT_MOVES,
+            Enums.Sound.WRONG_MOVE : consts.SOUND_WRONG_MOVES,
+            Enums.Sound.TAKEBACK_MOVE : consts.SOUND_TAKEBACK_MOVES,
+            Enums.Sound.COMPUTER_MOVE : consts.SOUND_COMPUTER_MOVES,
+            Enums.Sound.GAME_LOST : consts.SOUND_GAME_LOST,
+            Enums.Sound.MUSIC : consts.SOUND_MUSIC,
+            Enums.Sound.VICTORY : consts.SOUND_VICTORY,
+        }
+
+        if sound in _SOUND_TO_CONF_MAPPING:
+            if not CentaurConfig.get_sound_settings(_SOUND_TO_CONF_MAPPING[sound]):
+                return
     
-        if beeptype == Enums.Sound.CORRECT_MOVE:
+        if sound == Enums.Sound.CORRECT_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x48\x05\x52\x05')
 
-        if beeptype == Enums.Sound.TAKEBACK_MOVE:
+        if sound == Enums.Sound.TAKEBACK_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x52\x05\x48\x05')
 
-        if beeptype == Enums.Sound.WRONG_MOVE:
+        if sound == Enums.Sound.WRONG_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x30\x04\x29\x04')
 
-        if beeptype == Enums.Sound.COMPUTER_MOVE:
+        if sound == Enums.Sound.COMPUTER_MOVE:
             self.send_packet(b'\xb1\x00\x08', b'\x68\x05')
        
-        if beeptype == Enums.Sound.MUSIC:
+        if sound == Enums.Sound.MUSIC:
             self.send_packet(b'\xb1\x00\x10', b'\x40\x10\x44\x08\x45\x08\x47\x10\x45\x08')
 
-        if beeptype == Enums.Sound.GAME_LOST:
+        if sound == Enums.Sound.GAME_LOST:
             self.send_packet(b'\xb1\x00\x16', b'\x49\x04\x46\x10\x48\x04\x45\x10\x47\x04\x44\x10\x46\x04\x43\x10')
 
-        if beeptype == Enums.Sound.VICTORY:
+        if sound == Enums.Sound.VICTORY:
             self.send_packet(b'\xb1\x00\x1C', b'\x40\x04\x42\x04\x45\x10\x42\x04\x44\x04\x47\x10\x44\x04\x46\x04\x49\x10\x46\x04\x49\x10')
 
-        if beeptype == Enums.Sound.POWER_OFF:
+        if sound == Enums.Sound.POWER_OFF:
             self.send_packet(b'\xb1\x00\x0a', b'\x4c\x08\x48\x08')
 
     # TODO to be reviewed
-    def led_array(self, inarray, speed = 3, intensity=5):
+    def led_array(self, inarray, speed = 3, intensity=5, no_field_rotation = False):
         
         # Lights all the leds in the given inarray with the given speed and intensity
         message = self.build_packet(b'\xb0\x00\x0c', b'\x05', no_checksum=True)
@@ -293,8 +309,12 @@ class CentaurBoard(common.Singleton):
         message.append(0)
         message.append(intensity)
 
-        for i in range(0, len(inarray)):
-            message.append(_rotate_field(inarray[i]))
+        if no_field_rotation:
+            for i in range(0, len(inarray)):
+                message.append(inarray[i])
+        else:
+            for i in range(0, len(inarray)):
+                message.append(_rotate_field(inarray[i]))
 
         message[2] = len(message) + 1
 
@@ -354,13 +374,13 @@ class CentaurBoard(common.Singleton):
         self.send_packet(b'\xb2\x00\x07', b'\x0a')
 
     # TODO to be reviewed
-    def get_board_state(self, field = None):
+    def get_board_state(self) -> bytearray:
         # Query the board and return a representation of it
         # Consider this function experimental
         # lowerlimit/upperlimit may need adjusting
         # Get the board data
 
-        EMPTY_STATE = [None] * 64
+        EMPTY_STATE : bytearray = [0] * 64
 
         if self._disabled:
             return consts.BOARD_START_STATE
@@ -369,7 +389,6 @@ class CentaurBoard(common.Singleton):
 
         response = []
         while (len(response) < 64):
-
             response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
 
         response = response = response[6:(64 * 2) + 6]
@@ -386,12 +405,7 @@ class CentaurBoard(common.Singleton):
         lowerlimit = 300
 
         for x in range(0,64):
-            if ((result[x] < lowerlimit) or (result[x] > upperlimit)):
-                result[x] = 0
-            else:
-                result[x] = 1
-        if field:
-            return result[field]
+            result[x] = 0 if (result[x] < lowerlimit) or (result[x] > upperlimit) else 1
         
         self.unpause_events()
         

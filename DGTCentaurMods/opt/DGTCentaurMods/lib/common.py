@@ -19,6 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+from DGTCentaurMods.classes import Log
 from DGTCentaurMods.consts import consts, Enums
 
 from threading import Thread
@@ -138,7 +139,34 @@ def delayed_command(command, delay):
     t = Thread(target=_start_delayed, kwargs={'args': [{command}], 'delay': delay})
     t.start()
 
+
 class Converters:
+  
+    @staticmethod
+    def fen_to_board_state(fen : str) -> bytearray:
+
+        EMPTY_FEN = "8/8/8/8/8/8/8/8 w - - 0 1"
+
+        try:
+            result : bytearray = [0] * 64
+
+            fen = (fen or EMPTY_FEN).replace('/', '')
+
+            for index in range(1,9):
+                fen = fen.replace(str(index), ' '*index)
+
+            for a in range(8,0,-1):
+                for b in range(0,8):
+                    index = ((a-1)*8)+b
+                    if fen[index] != ' ':
+                        result[index] = 1
+
+            return result
+
+        except Exception as e:
+            Log.debug(f"fen:{fen}")
+            Log.exception(Converters.fen_to_board_state, e)
+            pass
 
     @staticmethod
     def to_square_name(square: chess.Square) -> str:
@@ -173,3 +201,5 @@ class Converters:
             return move.from_square
         else:
             return move.to_square
+
+
