@@ -111,10 +111,8 @@ def get_Centaur_FEN() -> str:
     returning default starting position if log does not exist."""
 
     try:
-        f = open(consts.FEN_LOG, "r")
-        fen = f.readline()
-        f.close()
-
+        with open(consts.FEN_LOG, "r") as f:
+            fen = f.readline()
         return fen
     except:
         return chess.STARTING_FEN
@@ -123,9 +121,11 @@ def update_Centaur_FEN(fen: str) -> None:
     """Save board state to FEN log (default ~/centaur/fen.log)"""
 
     try:
-        f = open(consts.FEN_LOG, "w")
-        f.write(fen)
-        f.close()
+        # TODO Most likely cause of failure here is that the log directory
+        # does not exist.  Should we create it?
+        # >>> os.makedirs(os.path.dirname(consts.FEN_LOG), exist_ok=True)
+        with open(consts.FEN_LOG, "w") as f:
+            f.write(fen)
     except:
         pass
 
@@ -149,10 +149,8 @@ class Converters:
         >>> Converters.to_square_name(27)
         'd4'
         """
-        square_row = (square // 8)
-        square_col = (square % 8)
-        square_col = 7 - square_col
-        return chr(ord("a") + (7 - square_col)) + chr(ord("1") + square_row)
+
+        return chess.square_name(square)
 
     @staticmethod
     def to_square_index(uci_move: str, square_type = Enums.SquareType.ORIGIN) -> chess.Square:
@@ -162,11 +160,16 @@ class Converters:
         6
         >>> Converters.to_square_index("g1f3", Enums.SquareType.TARGET)
         21
+
+        Throws ValueError if given an invalid move
+        >>> Converters.to_square_index("k9b4", square_type=Enums.SquareType.ORIGIN)
+        Traceback (most recent call last):
+        ...
+        ValueError: 'k9' is not in list
         """
 
-        square_name = uci_move[0:2] if square_type == Enums.SquareType.ORIGIN else uci_move[2:4]
-
-        square_col = ord(square_name[0:1]) - ord('a')
-        square_row = ord(square_name[1:2]) - ord('1')
-
-        return (square_row * 8) + square_col
+        move = chess.Move.from_uci(uci_move)
+        if square_type == Enums.SquareType.ORIGIN:
+            return move.from_square
+        else:
+            return move.to_square
