@@ -177,7 +177,7 @@ class UpdateSystem:
         #Evaluate policies
         #On 'revision' install only if revision is newer
         if policy == 'revision':
-            if local_major == update_major and local_minor == update_minor:
+            if local_major == update_major and local_minor == updrate_minor:
                 if local_revision < update_revision:
                     return True
             else:
@@ -186,12 +186,10 @@ class UpdateSystem:
 
         #On 'always' just make sure this is an update to current installed version
         if policy == 'always':
-            if local_major < update_major:
-                return True 
-            elif local_minor < update_minor:
-                return True
-            elif local_revision < update_revision:
-                return True
+            vallocal = int(local_revision) + (int(local_minor) * 100) + (int(local_major) * 10000)
+            valupdate = int(update_revision) + (int(update_minor) * 100) + (int(update_major) * 10000)
+            if valupdate > vallocal:
+                return true
             else:
                 return False
 
