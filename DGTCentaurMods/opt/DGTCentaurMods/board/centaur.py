@@ -189,7 +189,7 @@ class UpdateSystem:
             vallocal = int(local_revision) + (int(local_minor) * 100) + (int(local_major) * 10000)
             valupdate = int(update_revision) + (int(update_minor) * 100) + (int(update_major) * 10000)
             if valupdate > vallocal:
-                return true
+                return True
             else:
                 return False
 
