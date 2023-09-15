@@ -437,11 +437,13 @@ class CentaurBoard(common.Singleton):
 
     def unsubscribe_events(self):
 
-        callbacks = self._callbacks_queue.pop()
+        # We cannot unsubscribe from the root callbacks!
+        if len(self._callbacks_queue) > 1:
+            callbacks = self._callbacks_queue.pop()
 
-        # We restore the previous callbacks
-        self._field_callback = callbacks["field_callback"]
-        self._key_callback = callbacks["key_callback"]
+            # We restore the previous callbacks.
+            self._field_callback = callbacks["field_callback"]
+            self._key_callback = callbacks["key_callback"]
 
     def pause_events(self):
         self._events_enabled = False
