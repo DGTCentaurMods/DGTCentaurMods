@@ -205,15 +205,14 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		}
 
 		me.onGameLoad = function(game, iscurrent) {
-			if (iscurrent) {
-				// We ask the app to send us the current PGN, FEN and previous move
-				SOCKET.emit('request', {'fen':true, 'pgn': true, 'uci_move': true})
-			}
-			else {
-				SOCKET.emit('request', {'data':'game_moves', 'id':game.id})
-				me.currentGame = game
-				me.board.synchronized = false
-			}
+
+			let request = {'data':'game_moves', 'id':game.id}
+			if (iscurrent) request['uci_move'] = true
+
+			SOCKET.emit('request', {'data':'game_moves', 'id':game.id})
+			me.currentGame = game
+			me.board.synchronized = false
+
 			$mdDialog.cancel()
 		}
 
