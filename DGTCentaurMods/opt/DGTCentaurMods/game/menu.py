@@ -88,9 +88,9 @@ def keyPressed(id):
             event_key.set()
             return
         if menuitem < 1:
-            menuitem = 1
+            menuitem = len(curmenu)
         if menuitem > len(curmenu):
-            menuitem = len(curmenu)        
+            menuitem = 1       
         epaper.clearArea(0, 20 + shift, 17, 295)
         draw = ImageDraw.Draw(epaper.epaperbuffer)
         draw.polygon(
