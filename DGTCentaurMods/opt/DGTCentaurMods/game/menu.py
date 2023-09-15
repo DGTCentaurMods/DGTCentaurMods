@@ -115,6 +115,7 @@ def doMenu(menu, title=None):
     global quickselect
     global event_key
     epaper.epapermode = 0
+    epaper.clearScreen()
     selection = ""
     curmenu = menu
     # Display the given menu
