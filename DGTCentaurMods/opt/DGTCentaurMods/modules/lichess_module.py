@@ -287,9 +287,9 @@ def main():
 
                 if key_index == Enums.Btn.BACK:
 
+                    CENTAUR_BOARD.unsubscribe_events()
                     seeking_engine.stop()
 
-                    CENTAUR_BOARD.unsubscribe_events()
                     _welcome_screen()
 
                 if key_index == Enums.Btn.PLAY:
@@ -312,10 +312,10 @@ def main():
 
         if key_index == Enums.Btn.BACK:
 
+            CENTAUR_BOARD.unsubscribe_events()
             seeking_engine.stop()
 
             CENTAUR_BOARD.leds_off()
-            CENTAUR_BOARD.unsubscribe_events()
 
             exit_requested = True
 
