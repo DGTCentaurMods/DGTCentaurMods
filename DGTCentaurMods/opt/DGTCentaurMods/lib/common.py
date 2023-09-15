@@ -182,24 +182,22 @@ class Converters:
 
     @staticmethod
     def to_square_index(uci_move: str, square_type = Enums.SquareType.ORIGIN) -> chess.Square:
-        """Find the origin or target index of a UCI move
+        """Find the origin or target index of a UCI move or a square
 
         >>> Converters.to_square_index("g1f3", Enums.SquareType.ORIGIN)
         6
         >>> Converters.to_square_index("g1f3", Enums.SquareType.TARGET)
         21
+        >>> Converters.to_square_index("a1", Enums.SquareType.ORIGIN)
+        0
 
-        Throws ValueError if given an invalid move
-        >>> Converters.to_square_index("k9b4", square_type=Enums.SquareType.ORIGIN)
-        Traceback (most recent call last):
-        ...
-        ValueError: 'k9' is not in list
         """
 
-        move = chess.Move.from_uci(uci_move)
-        if square_type == Enums.SquareType.ORIGIN:
-            return move.from_square
-        else:
-            return move.to_square
+        square_name = uci_move[0:2] if square_type == Enums.SquareType.ORIGIN else uci_move[2:4]
+        
+        square_col = ord(square_name[0:1]) - ord('a')
+        square_row = ord(square_name[1:2]) - ord('1')
+
+        return (square_row * 8) + square_col
 
 

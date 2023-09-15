@@ -80,7 +80,7 @@ class Main:
 
         self._is_root = is_root
 
-        current_items = self._menu[_CURRENT_NODE]+([{menu.Tag.LABEL:consts.EMPTY_LINE}]*10)
+        current_items = self._menu[_CURRENT_NODE]+([{menu.Tag.LABEL:consts.EMPTY_LINE}]*20)
 
         current_item_row = current_row
 
@@ -171,6 +171,41 @@ class Main:
                         CENTAUR_BOARD.pause_events()
                     
 
+                if "plugin_execute" in data:
+
+                    plugin = data["plugin_execute"]
+
+                    if os.path.exists(consts.PLUGINS_DIRECTORY+"/"+plugin+".py"):
+
+                        self.start_child_module()
+
+                        try:
+                            module = importlib.import_module(name=f".plugins.{plugin}", package=consts.MAIN_ID)
+                            importlib.reload(module)
+
+                            class_ = getattr(module, plugin)
+
+                            instance = class_(plugin)
+
+                            instance.start()
+
+                            self._socket.send_message({ "loading_screen":False })
+
+                            while instance._running():
+                                time.sleep(0.1)
+
+                            del instance
+                            del class_
+                            del module
+                        except Exception as e:
+                            Log.info("Error during module execution : "+e)
+                            pass
+
+                        self.end_child_module()
+
+                    else:
+                        Log.info(f'The plugin "{plugin}" does not exists!')
+                
                 if "execute" in data:
 
                     command = data["execute"]
@@ -199,7 +234,6 @@ class Main:
 
                         del module
 
-                        #importlib.invalidate_caches()
                         self.end_child_module()
 
             except Exception as e:
@@ -284,6 +318,8 @@ class Main:
 
                         CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
+                    if item_type == 'socket_plugin':
+                        self._socket.send_request({'plugin_execute':value})
 
                     if item_type == 'socket_execute':
 
@@ -337,6 +373,9 @@ class Main:
     def start_child_module(self):
 
         if self._socket != None:
+
+            SCREEN.clear_area()
+            SCREEN.write_text(8, "Loading...")
      
             self._socket.send_message({ 
                 "loading_screen":True,

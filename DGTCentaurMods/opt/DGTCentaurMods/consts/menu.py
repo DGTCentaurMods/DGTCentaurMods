@@ -42,6 +42,7 @@ class Tag():
   ID : str =  "id"
   DISABLED : str =  "disabled"
   FILE : str =  "file"
+  NO_HOMESCREEN: str = "no_homescreen"
 
 # Menu items
 # Proto version, shared between web & ePaper
@@ -49,6 +50,7 @@ _MENU_ITEMS = [
     
     {
         Tag.ID:"homescreen",
+        Tag.NO_HOMESCREEN: True,
         Tag.LABEL:"← Back to main menu", 
         Tag.ACTION: { "type": "socket_sys", Tag.VALUE: "homescreen"}
     },
@@ -62,7 +64,11 @@ _MENU_ITEMS = [
             Tag.ACTION:{ Tag.TYPE: "socket_execute", Tag.VALUE: "1vs1_module.py"} },
             {Tag.LABEL: "Play Lichess", 
             Tag.ACTION:{ Tag.TYPE: "socket_execute", Tag.VALUE: "lichess_module.py"} },
-        ] }, 
+        ] },
+
+    {   Tag.ID:"plugins",
+        Tag.LABEL:"Plugins",
+        Tag.ITEMS: [] },
     
     { Tag.ID:"links", Tag.LABEL:"Links", Tag.ONLY_WEB:True, Tag.ITEMS: [
             {Tag.LABEL: "Open Lichess position analysis", 
@@ -80,6 +86,14 @@ _MENU_ITEMS = [
     
     { Tag.ID:"previous", Tag.LABEL:"Previous games", Tag.ONLY_WEB:True, Tag.ACTION:{ Tag.TYPE: "socket_data", Tag.VALUE: "previous_games"} }, 
     
+    {
+        Tag.ID:"plugin_edit",
+        Tag.NO_HOMESCREEN: True,
+        Tag.ONLY_WEB:True,
+        Tag.LABEL:"Edit plugin", 
+        Tag.ACTION: { "type": "js", Tag.VALUE: "() => alert('Not implemented!')"}
+    },
+
     {   Tag.ID:"system", 
         Tag.LABEL:"System", Tag.ITEMS: [
 
@@ -129,12 +143,13 @@ _MENU_ITEMS = [
         ] },
 
         # Current tag version label
-        { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
         { Tag.LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
 ]
 
 if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
-    _MENU_ITEMS.insert(len(_MENU_ITEMS)-2, { Tag.ID:"centaur", Tag.LABEL:"Launch Centaur", Tag.SHORT_LABEL:"Centaur", Tag.ACTION:{ Tag.TYPE: "socket_sys", Tag.VALUE: "centaur"} })
+    _MENU_ITEMS.insert(len(_MENU_ITEMS)-1, { Tag.ID:"centaur", Tag.LABEL:"Launch Centaur", Tag.SHORT_LABEL:"Centaur", Tag.ACTION:{ Tag.TYPE: "socket_sys", Tag.VALUE: "centaur"} })
+else:
+    _MENU_ITEMS.insert(len(_MENU_ITEMS)-1, { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },)
 
 
 class _Menu(common.Singleton):
@@ -148,7 +163,7 @@ class _Menu(common.Singleton):
         # Items to exclude
         for m in list(filter(lambda item:excluded_flag not in item or item[excluded_flag] == False, copy.deepcopy(_MENU_ITEMS))):
             
-            if Tag.ID not in m or (len(ids) == 0 and m[Tag.ID] != "homescreen") or m[Tag.ID] in ids:
+            if Tag.ID not in m or (len(ids) == 0 and (Tag.NO_HOMESCREEN not in m or m[Tag.NO_HOMESCREEN] == False)) or m[Tag.ID] in ids:
 
               if Tag.ITEMS in m:
                   menu_item = copy.deepcopy(m)
@@ -157,6 +172,7 @@ class _Menu(common.Singleton):
               else:
                   result.append(m)
         
+        plugins_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "plugins", result), None)
         play_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "play", result), None)
         sys_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "system", result), None)
 
@@ -169,6 +185,10 @@ class _Menu(common.Singleton):
 
             return list(map(lambda section:section, parser.sections()))
 
+        # We read the available plugins
+        plugins = list(map(lambda f:{Tag.ID:Path(f.name).stem, Tag.LABEL:Path(f.name).stem}, 
+                           filter(lambda f: f.name.endswith(".py"), os.scandir(consts.PLUGINS_DIRECTORY))))
+
         # We read the available engines + their options
         engines = list(map(lambda f:{Tag.ID:Path(f.name).stem, "options":get_sections(f.path)}, 
                            filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
@@ -177,6 +197,10 @@ class _Menu(common.Singleton):
                            filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
 
 
+        # Plugins
+        if plugins_item:
+          plugins_item[Tag.ITEMS] = list(map(lambda p: { Tag.LABEL: '⭐ Launch "'+p[Tag.LABEL]+'"', Tag.SHORT_LABEL: p[Tag.LABEL], Tag.ACTION: { Tag.TYPE: "socket_plugin", Tag.VALUE: p[Tag.ID] }},plugins))
+   
         # Famous PGN menu item
         if play_item:
           play_item[Tag.ITEMS].append({ Tag.LABEL: "Play famous games", Tag.SHORT_LABEL: "Famous games", Tag.TYPE: "subitem", 
