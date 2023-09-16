@@ -49,7 +49,11 @@ Currently we are working on...
 3. Improving Gamemanager features (gamemanager is the central system that handles chess games)
 4. Code tidyup
 5. Instructions
-6. Other stuff :)
+6. Improving screen performance (and support if we get our hands on a v1 board!)
+7. Abstracting the board controller interface specifics
+8. Web interface
+9. Documentation/the wiki
+10. Other stuff :)
 
 ## Install procedure
 See the install procedure in the release info page.

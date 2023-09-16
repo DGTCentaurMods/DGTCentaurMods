@@ -100,7 +100,28 @@ def pgn():
 @app.route("/configure")
 def configure():
 	# Get the lichessapikey		
-	return render_template('configure.html', lichesskey=centaurflask.get_lichess_api(), lichessrange=centaurflask.get_lichess_range())
+	showEngines = centaurflask.get_menuEngines() or "checked"
+	if centaurflask.get_menuEngines() == "unchecked":
+		showEngines = ""
+	showHandBrain = centaurflask.get_menuHandBrain() or "checked"
+	if centaurflask.get_menuHandBrain() == "unchecked":
+		showHandBrain = ""
+	show1v1Analysis = centaurflask.get_menu1v1Analysis() or "checked"
+	if centaurflask.get_menu1v1Analysis() == "unchecked":
+		show1v1Analysis = ""
+	showEmulateEB = centaurflask.get_menuEmulateEB() or "checked"
+	if centaurflask.get_menuEmulateEB() == "unchecked":
+		showEmulateEB = ""
+	showCast = centaurflask.get_menuCast() or "checked"
+	if centaurflask.get_menuCast() == "unchecked":
+		showCast = ""
+	showSettings = centaurflask.get_menuSettings() or "checked"
+	if centaurflask.get_menuSettings() == "unchecked":
+		showSettings = ""
+	showAbout = centaurflask.get_menuAbout() or "checked"	
+	if centaurflask.get_menuCast() == "unchecked":
+		showAbout = ""
+	return render_template('configure.html', lichesskey=centaurflask.get_lichess_api(), lichessrange=centaurflask.get_lichess_range(),menuEngines = showEngines, menuHandBrain = showHandBrain, menu1v1Analysis = show1v1Analysis,menuEmulateEB = showEmulateEB, menuCast = showCast, menuSettings = showSettings, menuAbout = showAbout)
 
 @app.route("/support")
 def support():
@@ -132,6 +153,45 @@ def lichesskey(key):
 @app.route("/lichessrange/<newrange>")
 def lichessrange(newrange):
 	centaurflask.set_lichess_range(newrange)
+	return "ok"
+
+@app.route("/menuoptions/<engines>/<handbrain>/<analysis>/<emulateeb>/<cast>/<settings>/<about>")
+def menuoptions(engines,handbrain,analysis,emulateeb,cast,settings,about):
+	if engines == "true":
+		engines = "checked"
+	if engines == "false":
+		engines = "unchecked"
+	if handbrain == "true":
+		handbrain = "checked"
+	if handbrain == "false":
+		handbrain = "unchecked"
+	if analysis == "true":
+		analysis = "checked"
+	if analysis == "false":
+		analysis = "unchecked"
+	if emulateeb == "true":
+		emulateeb = "checked"
+	if emulateeb == "false":
+		emulateeb = "unchecked"
+	if cast == "true":
+		cast = "checked"
+	if cast == "false":
+		cast = "unchecked"
+	if settings == "true":
+		settings = "checked"
+	if settings == "false":
+		settings = "unchecked"
+	if about == "true":
+		about = "checked"
+	if about == "false":
+		about = "unchecked"
+	centaurflask.set_menuEngines(engines)
+	centaurflask.set_menuHandBrain(handbrain)
+	centaurflask.set_menu1v1Analysis(analysis)
+	centaurflask.set_menuEmulateEB(emulateeb)
+	centaurflask.set_menuCast(cast)
+	centaurflask.set_menuSettings(settings)
+	centaurflask.set_menuAbout(about)
 	return "ok"
 
 @app.route("/analyse/<gameid>")

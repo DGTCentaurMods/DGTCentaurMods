@@ -88,9 +88,9 @@ def keyPressed(id):
             event_key.set()
             return
         if menuitem < 1:
-            menuitem = 1
+            menuitem = len(curmenu)
         if menuitem > len(curmenu):
-            menuitem = len(curmenu)        
+            menuitem = 1       
         epaper.clearArea(0, 20 + shift, 17, 295)
         draw = ImageDraw.Draw(epaper.epaperbuffer)
         draw.polygon(
@@ -115,14 +115,15 @@ def doMenu(menu, title=None):
     global quickselect
     global event_key
     epaper.epapermode = 0
+    epaper.clearScreen()  
+    
     selection = ""
     curmenu = menu
     # Display the given menu
     menuitem = 1
     quickselect = 0
 
-    quickselect = 1
-    epaper.clearScreen()    
+    quickselect = 1    
     if title:
         row = 2
         shift = 20
@@ -211,17 +212,20 @@ while True:
     if centaur.lichess_api:
         lichess_item = {"Lichess": "Lichess"}
         menu.update(lichess_item)
-    menu.update(
-        {
-            "Engines": "Engines",
-            "HandBrain": "Hand + Brain",
-            "1v1Analysis": "1v1 Analysis",
-            "EmulateEB": "e-Board",
-            "Cast": "Chromecast",
-            "settings": "Settings",
-            "About": "About",
-        }
-    )
+    if centaur.get_menuEngines() != "unchecked":
+        menu.update({"Engines": "Engines"})
+    if centaur.get_menuHandBrain() != "unchecked":
+        menu.update({"HandBrain": "Hand + Brain"})
+    if centaur.get_menu1v1Analysis() != "unchecked":
+        menu.update({"1v1Analysis": "1v1 Analysis"})
+    if centaur.get_menuEmulateEB() != "unchecked":
+        menu.update({"EmulateEB": "e-Board"})
+    if centaur.get_menuCast() != "unchecked":
+        menu.update({"Cast": "Chromecast"})
+    if centaur.get_menuSettings() != "unchecked":
+        menu.update({"settings": "Settings"})
+    if centaur.get_menuAbout() != "unchecked":
+        menu.update({"About": "About"})                                
     result = doMenu(menu, "Main menu")
     # epaper.epd.init()
     # time.sleep(0.7)

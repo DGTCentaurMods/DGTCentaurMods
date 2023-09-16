@@ -1,4 +1,4 @@
-berserk==0.10.0
+berserk==0.12.10
 casttube==0.2.1
 certifi==2021.10.8
 charset-normalizer==2.0.6

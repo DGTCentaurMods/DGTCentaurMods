@@ -40,6 +40,62 @@ def get_lichess_range():
     lichess_range = config["lichess"]["range"]
     return lichess_range
 
+def get_menuEngines():
+    global config
+    try:
+        ret = config["menu"]["showEngines"]
+    except:
+        return None
+    return ret
+
+def get_menuHandBrain():
+    global config
+    try:
+        ret = config["menu"]["showHandBrain"]
+    except:
+        return None
+    return ret
+
+def get_menu1v1Analysis():
+    global config
+    try:
+        ret = config["menu"]["show1v1Analysis"]
+    except:
+        return None
+    return ret
+
+def get_menuEmulateEB():
+    global config
+    try:
+        ret = config["menu"]["showEmulateEB"]
+    except:
+        return None
+    return ret
+
+def get_menuCast():
+    global config
+    try:
+        ret = config["menu"]["showCast"]
+    except:
+        return None
+    return ret
+
+def get_menuSettings():
+    global config
+    try:
+        ret = config["menu"]["showSettings"]
+    except:
+        return None
+    return ret
+
+def get_menuAbout():
+    global config
+    try:
+        ret = config["menu"]["showAbout"]
+    except:
+        return None
+    return ret
+
 def get_sound():
     global config
     centaur_sound = config["sound"]["sound"]
@@ -68,6 +124,76 @@ def set_sound(onoff):
     with open(config_file, 'w') as configfile:
         config.write(configfile)
         configfile.close()
+        
+def set_menuEngines(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showEngines', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()
+        
+def set_menuHandBrain(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showHandBrain', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()   
+
+def set_menu1v1Analysis(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'show1v1Analysis', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()   
+        
+def set_menuEmulateEB(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showEmulateEB', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()  
+        
+def set_menuCast(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showCast', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close() 
+        
+def set_menuSettings(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showSettings', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()  
+        
+def set_menuAbout(val):
+    global config
+    global config_file
+    if not config.has_section("menu"): 
+        config.add_section("menu")    
+    config.set('menu', 'showAbout', val)
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+        configfile.close()                             
 
 def dgtcm_path():
     return str(pathlib.Path(__file__).parent.resolve()) + "/.."
@@ -177,7 +303,7 @@ class UpdateSystem:
         #Evaluate policies
         #On 'revision' install only if revision is newer
         if policy == 'revision':
-            if local_major == update_major and local_minor == update_minor:
+            if local_major == update_major and local_minor == updrate_minor:
                 if local_revision < update_revision:
                     return True
             else:
@@ -186,11 +312,9 @@ class UpdateSystem:
 
         #On 'always' just make sure this is an update to current installed version
         if policy == 'always':
-            if local_major < update_major:
-                return True 
-            elif local_minor < update_minor:
-                return True
-            elif local_revision < update_revision:
+            vallocal = int(local_revision) + (int(local_minor) * 100) + (int(local_major) * 10000)
+            valupdate = int(update_revision) + (int(update_minor) * 100) + (int(update_major) * 10000)
+            if valupdate > vallocal:
                 return True
             else:
                 return False

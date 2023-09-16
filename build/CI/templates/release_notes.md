@@ -2,8 +2,13 @@
 ### * ***This release only works on the second version of DGT centaur board*** *
 You own a first verion of the board if your board has visible black circles on the fields. If you decide to install this software anyway, you can use the web interface to display in real time what should be on the screen. The web interface allows you to safely power off the board too.
 
-## What's new in 1.2.1
-- bug fix for pawn promotion on e-board emulation
+## What's new in 1.3.1
+- Tampermonkey script for quick import to lichess analysis
+- Wrap menu indicator around when using up/down at top or bottom of menu
+- Fix updates for revisions on always policy
+- Tweaks to reduce ghosting (especially in the menu)
+- Ugly hack to allow hiding menu items (set from web interface, restart)
+- Upgraded berserk python package for lichess + sleep retry on fail
 
 ## Installation
 ### Bootstrap install (new setup or upgrade)

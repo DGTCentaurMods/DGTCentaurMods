@@ -115,7 +115,7 @@ def epaperUpdate():
             print("sleeping")
             screensleep = 1
             driver.sleepDisplay()       
-        time.sleep(0.05)
+        time.sleep(0.1)
 
 def refresh():
     # Just waits for a refresh
@@ -186,8 +186,7 @@ def initEpaper(mode = 0):
     epaperbuffer = Image.new('1', (128, 296), 255)
     print("init epaper")
     driver.reset()
-    driver.init()
-    driver.clear()    
+    driver.init()    
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
     epaperUpd.daemon = True
     epaperUpd.start()
@@ -264,9 +263,13 @@ def clearScreen():
     global event_refresh
     global first
     #epaperbuffer = Image.new('1', (128, 296), 255)
+    pauseEpaper()
     draw = ImageDraw.Draw(epaperbuffer)
     draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
-    first = 1
+    driver.DisplayRegion(0, 295, epaperbuffer)
+    driver.clear()
+    first = 0    
+    unPauseEpaper()
 
 def drawBoard(pieces, startrow=2):         
     global epaperbuffer
@@ -392,8 +395,8 @@ def resignDrawMenu(row):
         drawImagePartial(0, 271, timage)
     
 def quickClear():
-    # Assumes the screen is in partial mode and makes it white
-    driver.clear()
+    # Assumes the screen is in partial mode and makes it white    
+    driver.clear()    
     
 def drawWindow(x, y, w, data):
     # Calling this function assumes the screen is already initialised
