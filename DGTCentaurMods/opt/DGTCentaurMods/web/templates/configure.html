@@ -144,6 +144,31 @@
               </script>
             </div>
         </article>
+        <article class="panel is-info">
+          <p class="panel-heading">
+            Main Menu
+          </p>
+            <div class="panel-block">
+                <p>
+                Enable/Disable options on the main menu. Note: 'Centaur' shows if the original centaur software is installed. 'Lichess' shows if you enter a Lichess API key. 
+                After saving, reboot the board either by the menu or by holding down the play button until it beeps, release, and press again - to make this active.
+              </p>
+            </div>
+            <div class="panel-block">
+                <div>
+                  <label><input type=checkbox name='Engines' id='Engines' {{ menuEngines }}> Engines</label><br/>
+                  <label><input type=checkbox name='HandBrain' id='HandBrain' {{ menuHandBrain }}> Hand + Brain</label><br/>
+                  <label><input type=checkbox name='1v1Analysis' id='1v1Analysis' {{ menu1v1Analysis }}> 1v1 Analysis</label><br/>
+                  <label><input type=checkbox name='EmulateEB' id='EmulateEB' {{ menuEmulateEB }}> e-Board</label><br/>
+                  <label><input type=checkbox name='Cast' id='Cast' {{ menuCast }}> Chromecast</label><br/>
+                  <label><input type=checkbox name='msettings' id='msettings' {{ menuSettings }}> Settings</label><br/>
+                  <label><input type=checkbox name='About' id='About' {{ menuAbout }}> About</label><br/>                      
+                </div>                  
+            </div>
+            <div class="is-pulled-right" style="width:100%">
+              <button class="button is-pulled-right" id="menusavebutton" style="margin-left:10px;" onClick="saveMenu()">Save</button>
+            </div>   
+        </article>        
     </div>
 </div>
 
@@ -192,6 +217,28 @@
         }
         xmlhttp.open("GET", "/lichesskey/" + newkey, true);
         xmlhttp.send();
+    }
+
+    function saveMenu() {
+      var menuEngines = document.getElementById('Engines').checked;
+      var menuHandBrain = document.getElementById('HandBrain').checked;
+      var menu1v1Analysis = document.getElementById('1v1Analysis').checked;
+      var menuEmulateEB = document.getElementById('EmulateEB').checked;
+      var menuCast = document.getElementById('Cast').checked;
+      var menuSettings = document.getElementById('msettings').checked;
+      var menuAbout = document.getElementById('About').checked;
+      var xmlhttp;      
+      xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = function(){
+          if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+              if (xmlhttp.responseText == "ok") {
+                document.getElementById('menusavebutton').className='button is-pulled-right';
+              }
+          }
+      }
+      xmlhttp.open("GET", "/menuoptions/" + menuEngines + "/" + menuHandBrain + "/" + menu1v1Analysis + "/" + menuEmulateEB + "/" + menuCast + "/" + menuSettings + "/" + menuAbout, true);
+      xmlhttp.send();
+      return false;
     }
 
     function getEngineFiles() {
