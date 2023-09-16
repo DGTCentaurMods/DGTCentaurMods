@@ -81,14 +81,15 @@ class Centaur():
         SocketClient.get().send_message({"turn_caption":web_text or text})
 
     @staticmethod
-    def start_engine(event:str="",
-                     site:str="",
-                     white:str="",
-                     black:str="",
-                     flags:Enums.BoardOption=Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES):
+    def start_game(
+                event:str="",
+                site:str="",
+                white:str="",
+                black:str="",
+                flags:Enums.BoardOption=Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES):
 
         if Centaur._plugin:
-            Centaur._plugin._start_engine(event,site,white,black,flags)
+            Centaur._plugin._start_game(event,site,white,black,flags)
 
     @staticmethod
     def play_computer_move(uci_move:str):
@@ -241,7 +242,7 @@ class Plugin():
 
         
     # Invoked from Centaur API
-    def _start_engine(self, event:str, site:str, white:str, black:str, flags:Enums.BoardOption):
+    def _start_game(self, event:str, site:str, white:str, black:str, flags:Enums.BoardOption):
         
         if self._game_engine == None:
             self._game_engine = GameFactory.Engine(

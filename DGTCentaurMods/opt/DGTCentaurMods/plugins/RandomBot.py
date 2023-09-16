@@ -107,7 +107,7 @@ class RandomBot(Plugin):
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
 
         # Start chess engine
-        Centaur.start_engine(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
+        Centaur.start_game(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
 
      # When exits, this function is automatically invoked
      # when the plugin starts.
