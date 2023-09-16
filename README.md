@@ -27,6 +27,8 @@ This current project overrides the legacy one, re-coding and re-factoring all th
 - New Lichess module.
 
 - New WIFI module.
+  
+- Plugins engine.
 
 LEGACY MODULES ARE NO MORE REACHABLE USING THIS SOFTWARE.
 
@@ -38,23 +40,30 @@ Currently we are working on...
 3. Adding new features
 
 ## Install procedure
-Download the [latest](https://github.com/Alistair-Crompton/DGTCentaurMods/releases/latest) available release.
+1. From your Pi, download the latest available release:
 
-This fork is initially based against the
-[v1.2.1 original version](https://github.com/EdNekebno/DGTCentaurMods/releases/tag/v1.2.1).
+```
+wget -O ./_DGTCentaurMods_A.alpha-latest.deb `curl -s https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest | grep browser_download_url | cut -d '"' -f 4`
+```
+
+2. Install the downloaded package:
+
+```
+sudo apt install -y ./_DGTCentaurMods_A.alpha-latest.deb
+```
 
 ## This project uses...
 
 - [Python 3](https://www.python.org/)
-- [e-Paper](https://github.com/waveshareteam/e-Paper)
-- [Pillow](https://pypi.org/project/Pillow/)
-- [wpa-pyfi](https://pypi.org/project/wpa-pyfi/)
-- [python-chess](https://python-chess.readthedocs.io/)
-- [berserk](https://pypi.org/project/berserk/)
+- [Waveshare e-Paper driver](https://github.com/waveshareteam/e-Paper)
+- [Pillow library](https://pypi.org/project/Pillow/)
+- [python-chess library](https://python-chess.readthedocs.io/)
+- [berserk library](https://pypi.org/project/berserk/)
 - [AngularJS](https://angularjs.org/)
 - [chessboard.js](https://chessboardjs.com/)
-- [Flask](https://flask.palletsprojects.com/)
-- [flask-socketio](https://flask-socketio.readthedocs.io/)
+- [Flask server](https://flask.palletsprojects.com/)
+- [flask-socketio library](https://flask-socketio.readthedocs.io/)
+- [wpa-pyfi](https://pypi.org/project/wpa-pyfi/)
 - Multiple chess engines
 - DGT Centaur board Reverse engineering work of the [original](https://github.com/EdNekebno/DGTCentaurMods) project
 
