@@ -430,10 +430,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 										},
 
 										'socket_plugin': (item, value) => {
-
-											me.board.plugin = value
-
-											item.action = () => SOCKET.emit('request', {'plugin_execute':value})
+											item.action = () => {
+												me.board.plugin = value
+												SOCKET.emit('request', {'plugin_execute':value})
+											}
 										},
 
 										'socket_execute': (item, value) => {
