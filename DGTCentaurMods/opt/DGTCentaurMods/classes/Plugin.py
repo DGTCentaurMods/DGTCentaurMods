@@ -29,9 +29,19 @@ import chess
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
 
+
 class Centaur():
 
     _current_row:int = 1
+    _plugin = None
+
+    @staticmethod
+    def _attach_plugin(plugin):
+        Centaur._plugin = plugin
+
+    @staticmethod
+    def _detach_plugin():
+        Centaur._plugin = None
    
     @staticmethod
     def clear_screen():
@@ -70,6 +80,37 @@ class Centaur():
 
         SocketClient.get().send_message({"turn_caption":web_text or text})
 
+    @staticmethod
+    def start_engine(event:str="",
+                     site:str="",
+                     white:str="",
+                     black:str="",
+                     flags:Enums.BoardOption=Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES):
+
+        if Centaur._plugin:
+            Centaur._plugin._start_engine(event,site,white,black,flags)
+
+    @staticmethod
+    def play_computer_move(uci_move:str):
+
+        if Centaur._plugin:
+            Centaur._plugin._play_computer_move(uci_move)
+
+    @staticmethod
+    def hint():
+        if Centaur._plugin:
+            Centaur._plugin._hint()
+
+    @staticmethod
+    def board() -> chess.Board:
+        if Centaur._plugin:
+            return Centaur._plugin._board()
+
+    @staticmethod
+    def pause_plugin():
+        if Centaur._plugin:
+            Centaur._plugin._started = False
+
 
 class Plugin():
 
@@ -78,6 +119,10 @@ class Plugin():
     def __init__(self, id:str):
         self._exit_requested = False
         self._id = id
+        
+        self._started:bool = False
+
+        Centaur._attach_plugin(self)
 
         SCREEN.clear_area()
 
@@ -131,6 +176,14 @@ class Plugin():
             # The key has been handled
             return True
         
+        if key == Enums.Btn.PLAY and not self._started:
+            self._started = True
+            self.on_start_callback()
+            return True
+        
+        if not self._started:
+            return False
+
         return self.key_callback(key)
 
     def __engine_key_callback(self, args):
@@ -141,16 +194,23 @@ class Plugin():
                 field_action:Enums.PieceAction,
                 web_move:bool = False):
 
-        self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
+        if self._started:
+            self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
 
     def __event_callback(self, event:Enums.Event):
-        self.event_callback(event)
+        
+        if self._started:
+            self.event_callback(event)
 
     def __engine_event_callback(self, args):
         return self.__event_callback(args["event"])
     
     def __move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
-        return self.move_callback(uci_move, san_move, color, field_index)
+        
+        if self._started:
+            return self.move_callback(uci_move, san_move, color, field_index)
+        
+        return False
     
     def __engine_move_callback(self, args):
         return self.__move_callback(args["uci_move"], args["san_move"], args["color"], args["field_index"])
@@ -158,32 +218,30 @@ class Plugin():
     def _running(self):
         return not self._exit_requested
 
-    def board(self):
+    # Invoked from Centaur API
+    def _board(self):
         if not self._game_engine:
             raise Exception("Game engine not started!")
         
         return self._game_engine.get_board()
     
-    def hint(self):
+    # Invoked from Centaur API
+    def _hint(self):
         if not self._game_engine:
             raise Exception("Game engine not started!")
         
         self._game_engine.flash_hint()
 
-    def play_computer_move(self, uci_move:str):
+    # Invoked from Centaur API
+    def _play_computer_move(self, uci_move:str):
         if not self._game_engine:
             raise Exception("Game engine not started!")
         
         self._game_engine.set_computer_move(uci_move)
 
         
-
-    def start_engine(self,
-                     event:str="",
-                     site:str="",
-                     white:str="",
-                     black:str="",
-                     flags:Enums.BoardOption=Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES):
+    # Invoked from Centaur API
+    def _start_engine(self, event:str, site:str, white:str, black:str, flags:Enums.BoardOption):
         
         if self._game_engine == None:
             self._game_engine = GameFactory.Engine(
@@ -206,7 +264,9 @@ class Plugin():
 
     def start(self):
         Log.info(f'Starting plugin "{self._id}"...')
-        return
+        if not self.splash_screen():
+            self._started = True
+            self.on_start_callback()
 
     def stop(self):
         Log.info(f'Stopping plugin "{self._id}"...')
@@ -216,6 +276,9 @@ class Plugin():
             self._game_engine = None
 
         CENTAUR_BOARD.unsubscribe_events()
+
+        Centaur._detach_plugin()
+
         self._socket.disconnect()
         self._exit_requested = True
 
@@ -233,3 +296,10 @@ class Plugin():
     
     def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
         return True
+    
+    def on_start_callback(self):
+        return
+
+    def splash_screen(self):
+        self._started = True
+        return False

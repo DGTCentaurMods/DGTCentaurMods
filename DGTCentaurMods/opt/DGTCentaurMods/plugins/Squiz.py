@@ -40,9 +40,10 @@ class Squiz(Plugin):
     # Initialization function,
     # invoked on each new game.
     def initialize(self):
-        self._started:bool = False
         self._qindex:int = 0
         self._bonus:int = QUESTIONS_COUNT*3
+
+        Centaur.pause_plugin()
 
     # Game ends.
     def game_over(self):
@@ -92,14 +93,9 @@ class Squiz(Plugin):
     # This function is automatically invoked when
     # the user launches the plugin.
     def start(self):
-        super().start()
 
-        Centaur.clear_screen()
-        Centaur.print("SQUIZ", font=fonts.DIGITAL_FONT, row=2)
-        Centaur.print("Push PLAY", row=5)
-        Centaur.print("to")
-        Centaur.print("start")
-        Centaur.print("the game!")
+        # The plugin starts.
+        super().start()
 
     # This function is (automatically) invoked when
     # the user stops the plugin
@@ -109,32 +105,22 @@ class Squiz(Plugin):
         super().stop()
 
     # This function is automatically invoked each
-    # time the player press a key.
+    # time the player pushes a key.
     # Except the BACK key which is handled by the engine.
     def key_callback(self, key:Enums.Btn):
 
-        if key == Enums.Btn.PLAY and not self._started:
-            Centaur.sound(Enums.Sound.COMPUTER_MOVE)
-
-            self._started = True
-            
-            self.generate_question()
-
         # If the user press HELP,
         # we display the correct square.
-        if key == Enums.Btn.HELP and self._started:
+        if key == Enums.Btn.HELP:
             Centaur.sound(Enums.Sound.TAKEBACK_MOVE)
             Centaur.flash(self._random_square)
 
-    # This function is automatically invoked each
+    # When exists, this function is automatically invoked each
     # time the player moves a piece.
     def field_callback(self,
                 square:str,
                 field_action:Enums.PieceAction,
                 web_move:bool):
-        
-        if not self._started:
-            return
         
         # We care only when the user drop a piece.
         if field_action == Enums.PieceAction.PLACE:
@@ -157,3 +143,24 @@ class Squiz(Plugin):
 
                 if self._bonus == 0:
                     self.game_over()
+
+     # When exists, this function is automatically invoked
+     # when at start, after splash screen.
+    def on_start_callback(self):
+
+        Centaur.sound(Enums.Sound.COMPUTER_MOVE)
+        self.generate_question()
+
+     # This function is automatically invoked
+     # when the plugin starts.
+    def splash_screen(self):
+
+        Centaur.clear_screen()
+        Centaur.print("SQUIZ", font=fonts.DIGITAL_FONT, row=2)
+        Centaur.print("Push PLAY", row=5)
+        Centaur.print("to")
+        Centaur.print("start")
+        Centaur.print("the game!")
+
+        # The splash screen is activated
+        return True

@@ -40,17 +40,6 @@ class RandomBot(Plugin):
     def start(self):
         super().start()
 
-        self._started:bool = False
-
-        Centaur.clear_screen()
-        Centaur.print("RANDOM", row=2)
-        Centaur.print("BOT", font=fonts.DIGITAL_FONT, row=4)
-        Centaur.print("Push PLAY", row=8)
-        Centaur.print("to")
-        Centaur.print("start")
-        Centaur.print("the game!")
-
-
     # This function is (automatically) invoked when
     # the user stops the plugin
     def stop(self):
@@ -63,17 +52,10 @@ class RandomBot(Plugin):
     # Except the BACK key which is handled by the engine.
     def key_callback(self, key:Enums.Btn):
 
-        if key == Enums.Btn.PLAY and not self._started:
-            Centaur.sound(Enums.Sound.COMPUTER_MOVE)
-
-            # Start chess engine
-            self.start_engine(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
-
-
         # If the user pushes HELP,
         # we display an hint using Stockfish engine.
-        if key == Enums.Btn.HELP and self._started:
-            self.hint()
+        if key == Enums.Btn.HELP:
+            Centaur.hint()
 
             # Key has been handled.
             return True
@@ -81,7 +63,7 @@ class RandomBot(Plugin):
         # Key can be handled by the engine.
         return False
         
-    # This function is automatically invoked
+    # When exits, this function is automatically invoked
     # when the game engine state is affected.
     def event_callback(self, event:Enums.Event):
 
@@ -92,7 +74,7 @@ class RandomBot(Plugin):
 
         if event == Enums.Event.PLAY:
 
-            turn = self.board().turn
+            turn = Centaur.board().turn
 
             current_player = "You" if turn == chess.WHITE else "Random bot"
 
@@ -102,12 +84,11 @@ class RandomBot(Plugin):
             if turn == (not HUMAN_COLOR):
 
                 # We choose a random move
-                uci_move = str(random.choice(list(self.board().legal_moves)))
+                uci_move = str(random.choice(list(Centaur.board().legal_moves)))
 
-                self.play_computer_move(uci_move)
+                Centaur.play_computer_move(uci_move)
 
-
-    # This function is automatically invoked
+    # When exits, this function is automatically invoked
     # when the we physically play a move.
     def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
         
@@ -118,4 +99,27 @@ class RandomBot(Plugin):
             return True
 
         # White move is accepted
+        return True
+
+     # When exits, this function is automatically invoked
+     # when at start, after splash screen.
+    def on_start_callback(self):
+        Centaur.sound(Enums.Sound.COMPUTER_MOVE)
+
+        # Start chess engine
+        Centaur.start_engine(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
+
+     # When exits, this function is automatically invoked
+     # when the plugin starts.
+    def splash_screen(self):
+
+        Centaur.clear_screen()
+        Centaur.print("RANDOM", row=2)
+        Centaur.print("BOT", font=fonts.DIGITAL_FONT, row=4)
+        Centaur.print("Push PLAY", row=8)
+        Centaur.print("to")
+        Centaur.print("start")
+        Centaur.print("the game!")
+
+        # The splash screen is activated
         return True
