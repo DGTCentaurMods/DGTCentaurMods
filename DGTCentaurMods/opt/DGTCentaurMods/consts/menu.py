@@ -142,15 +142,11 @@ _MENU_ITEMS = [
             },
         ] },
 
+        { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+
         # Current tag version label
         { Tag.LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
 ]
-
-if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
-    _MENU_ITEMS.insert(len(_MENU_ITEMS)-1, { Tag.ID:"centaur", Tag.LABEL:"Launch Centaur", Tag.SHORT_LABEL:"Centaur", Tag.ACTION:{ Tag.TYPE: "socket_sys", Tag.VALUE: "centaur"} })
-else:
-    _MENU_ITEMS.insert(len(_MENU_ITEMS)-1, { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },)
-
 
 class _Menu(common.Singleton):
 
@@ -218,7 +214,9 @@ class _Menu(common.Singleton):
                   engine_menu[Tag.ITEMS].append({
                           Tag.LABEL: "⭐ "+option.capitalize(), Tag.SHORT_LABEL:option.capitalize(),
                           Tag.ACTION: { Tag.TYPE: "socket_execute", "dialogbox": "color", Tag.VALUE: "uci_module.py {value} "+engine[Tag.ID]+' "'+option+'"' } })
-                
+                  
+          if os.path.exists(f"{consts.HOME_DIRECTORY}/centaur/centaur"):
+              play_item[Tag.ITEMS].append({ Tag.ID:"centaur", Tag.LABEL:"Launch Centaur", Tag.SHORT_LABEL:"Centaur", Tag.ACTION:{ Tag.TYPE: "socket_sys", Tag.VALUE: "centaur"} })
 
         # Famous PGN editor menu items
         # UCI editor menu items
