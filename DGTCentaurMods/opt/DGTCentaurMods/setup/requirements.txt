@@ -25,7 +25,7 @@ python-dotenv==0.19.1
 requests==2.26.0
 spidev==3.5
 SQLAlchemy==1.4.26
-typing-extensions==3.10.0.2
+typing-extensions==4.7.1
 urllib3==1.26.7
 Werkzeug==2.0.2
 wrapt==1.13.1
