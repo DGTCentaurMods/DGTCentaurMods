@@ -115,15 +115,15 @@ def doMenu(menu, title=None):
     global quickselect
     global event_key
     epaper.epapermode = 0
-    epaper.clearScreen()
+    epaper.clearScreen()  
+    
     selection = ""
     curmenu = menu
     # Display the given menu
     menuitem = 1
     quickselect = 0
 
-    quickselect = 1
-    epaper.clearScreen()    
+    quickselect = 1    
     if title:
         row = 2
         shift = 20
