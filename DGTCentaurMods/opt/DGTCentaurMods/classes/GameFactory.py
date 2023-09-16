@@ -805,11 +805,11 @@ class Engine():
                                 # Log a new game in the db
                                 self._dal.insert_new_game(
                                     source = self.source,
-                                    event  = self._game_informations["event"],
-                                    site   = self._game_informations["site"],
-                                    round  = self._game_informations["round"],
-                                    white  = self._game_informations["white"],
-                                    black  = self._game_informations["black"]
+                                    event  = self._game_informations.get("event",""),
+                                    site   = self._game_informations.get("site",""),
+                                    round  = self._game_informations.get("round",""),
+                                    white  = self._game_informations.get("white","Player white"),
+                                    black  = self._game_informations.get("black","Player black")
                                 )
 
                                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
