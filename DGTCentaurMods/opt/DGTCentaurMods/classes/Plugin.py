@@ -24,8 +24,6 @@ from DGTCentaurMods.consts import Enums, consts, fonts
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import menu
 
-from PIL import ImageFont
-
 import chess
 
 SCREEN = CentaurScreen.get()
@@ -33,8 +31,8 @@ CENTAUR_BOARD = CentaurBoard.get()
 
 class Centaur():
 
-    _current_row = 1
-
+    _current_row:int = 1
+   
     @staticmethod
     def clear_screen():
         SCREEN.clear_area()
@@ -65,9 +63,17 @@ class Centaur():
     @staticmethod
     def sound(sound:Enums.Sound):
         CENTAUR_BOARD.beep(sound)
-    
+
+    @staticmethod
+    def header(text:str,web_text:str=None):
+        SCREEN.write_text(1, text, font=fonts.MEDIUM_FONT)
+
+        SocketClient.get().send_message({"turn_caption":web_text or text})
+
 
 class Plugin():
+
+    _game_engine:GameFactory.Engine = None
 
     def __init__(self, id:str):
         self._exit_requested = False
@@ -121,9 +127,14 @@ class Plugin():
 
         if key == Enums.Btn.BACK:
             self.stop()
-            return
+
+            # The key has been handled
+            return True
         
-        self.key_callback(key)
+        return self.key_callback(key)
+
+    def __engine_key_callback(self, args):
+        return self.__key_callback(args["key"])
 
     def __field_callback(self,
                 field_index:chess.Square,
@@ -132,15 +143,78 @@ class Plugin():
 
         self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
 
+    def __event_callback(self, event:Enums.Event):
+        self.event_callback(event)
+
+    def __engine_event_callback(self, args):
+        return self.__event_callback(args["event"])
+    
+    def __move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
+        return self.move_callback(uci_move, san_move, color, field_index)
+    
+    def __engine_move_callback(self, args):
+        return self.__move_callback(args["uci_move"], args["san_move"], args["color"], args["field_index"])
+
     def _running(self):
         return not self._exit_requested
+
+    def board(self):
+        if not self._game_engine:
+            raise Exception("Game engine not started!")
+        
+        return self._game_engine.get_board()
+    
+    def hint(self):
+        if not self._game_engine:
+            raise Exception("Game engine not started!")
+        
+        self._game_engine.flash_hint()
+
+    def play_computer_move(self, uci_move:str):
+        if not self._game_engine:
+            raise Exception("Game engine not started!")
+        
+        self._game_engine.set_computer_move(uci_move)
+
+        
+
+    def start_engine(self,
+                     event:str="",
+                     site:str="",
+                     white:str="",
+                     black:str="",
+                     flags:Enums.BoardOption=Enums.BoardOption.CAN_FORCE_MOVES | Enums.BoardOption.CAN_UNDO_MOVES):
+        
+        if self._game_engine == None:
+            self._game_engine = GameFactory.Engine(
+            
+                event_callback = self.__engine_event_callback,
+                key_callback = self.__engine_key_callback,
+                move_callback= self.__engine_move_callback,
+
+                flags = flags,
+                
+                game_informations = {
+                    "event" : event,
+                    "site"  : site,
+                    "round" : "",
+                    "white" : white,
+                    "black" : black,
+                })
+
+            self._game_engine.start()
 
     def start(self):
         Log.info(f'Starting plugin "{self._id}"...')
         return
 
     def stop(self):
-        Log.info(f'Stopped plugin "{self._id}"...')
+        Log.info(f'Stopping plugin "{self._id}"...')
+
+        if self._game_engine:
+            self._game_engine.stop()
+            self._game_engine = None
+
         CENTAUR_BOARD.unsubscribe_events()
         self._socket.disconnect()
         self._exit_requested = True
@@ -152,4 +226,10 @@ class Plugin():
                 square:str,
                 field_action:Enums.PieceAction,
                 web_move:bool):
-        raise NotImplementedError("Your plugin must override key_callback!")
+        return
+    
+    def event_callback(self, event:Enums.Event):
+        return
+    
+    def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
+        return True
