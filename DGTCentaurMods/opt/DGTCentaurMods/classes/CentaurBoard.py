@@ -387,25 +387,30 @@ class CentaurBoard(common.Singleton):
 
         self.pause_events()
 
-        response = []
-        while (len(response) < 64):
-            response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
+        try:
+            response = []
+            while (len(response) < 64):
+                response = self.ask_serial(b'\xf0\x00\x07', b'\x7f')
 
-        response = response = response[6:(64 * 2) + 6]
-        
-        result = EMPTY_STATE
+            response = response = response[6:(64 * 2) + 6]
+            
+            result = EMPTY_STATE
 
-        for x in range(0, 127, 2):
-            tval = (response[x] * 256) + response[x+1]
-            result[(int)(x/2)] = tval
+            for x in range(0, 127, 2):
+                tval = (response[x] * 256) + response[x+1]
+                result[(int)(x/2)] = tval
 
-        # Any square lower than 400 is empty
-        # Any square higher than upper limit is also empty
-        upperlimit = 32000
-        lowerlimit = 300
+            # Any square lower than 400 is empty
+            # Any square higher than upper limit is also empty
+            upperlimit = 32000
+            lowerlimit = 300
 
-        for x in range(0,64):
-            result[x] = 0 if (result[x] < lowerlimit) or (result[x] > upperlimit) else 1
+            for x in range(0,64):
+                result[x] = 0 if (result[x] < lowerlimit) or (result[x] > upperlimit) else 1
+            
+        except:
+            result = EMPTY_STATE
+            pass
         
         self.unpause_events()
         

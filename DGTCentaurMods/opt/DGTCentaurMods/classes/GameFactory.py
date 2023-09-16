@@ -569,9 +569,6 @@ class Engine():
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
 
-        # We backup the current board state
-        board_state = self._invalid_board_state
-
         if not self._initialized:
             return False
         self._previous_move_displayed = False
@@ -579,9 +576,9 @@ class Engine():
             result = self._piece_handler(field_index, field_action, web_move)
 
             # The board has not been physically updated.
-            # We restore the previous board state
+            # We don't care about the board state...
             if web_move:
-                self._invalid_board_state = board_state
+                self._invalid_board_state = False
 
             return result
 
@@ -725,12 +722,15 @@ class Engine():
                                 last_uci_move = uci_move
 
                                 if len(uci_move)>3:
-                                    move = self._chessboard.parse_uci(uci_move)
-                                    san_move = self._chessboard.san(move)
+                                    try:
+                                        move = self._chessboard.parse_uci(uci_move)
+                                        san_move = self._chessboard.san(move)
 
-                                    self._chessboard.push(move)
+                                        self._chessboard.push(move)
 
-                                    self._san_move_list.append(san_move)
+                                        self._san_move_list.append(san_move)
+                                    except:
+                                        pass
                             
                             del uci_moves_history
 
@@ -802,13 +802,6 @@ class Engine():
                                     "clear_board_graphic_moves":True
                                 })
 
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
-                                
-                                self._initialized = True
-
-                                self.update_evaluation()
-
                                 # Log a new game in the db
                                 self._dal.insert_new_game(
                                     source = self.source,
@@ -818,6 +811,13 @@ class Engine():
                                     white  = self._game_informations["white"],
                                     black  = self._game_informations["black"]
                                 )
+
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                                
+                                self._initialized = True
+
+                                self.update_evaluation()
                             
                             ticks = 0
                         except:
@@ -980,6 +980,7 @@ class Engine():
 
         except Exception as e:
             Log.exception(Engine.flash_hint, e)
+            pass
 
     def get_last_uci_move(self):
         return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()
