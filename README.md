@@ -52,7 +52,8 @@ Currently we are working on...
 6. Improving screen performance (and support if we get our hands on a v1 board!)
 7. Abstracting the board controller interface specifics
 8. Web interface
-9. Other stuff :)
+9. Documentation/the wiki
+10. Other stuff :)
 
 ## Install procedure
 See the install procedure in the release info page.
