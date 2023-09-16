@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import os, logging, logging.handlers
+import os, sys, logging, logging.handlers
 
 from logging.handlers import RotatingFileHandler
 
@@ -88,6 +88,16 @@ class _Log:
 
         _Log.__logger.debug(message)
 
+def last_exception() -> str:
+    exception_type, exception_object, exception_traceback = sys.exc_info()
+
+    log = f"Exception -> {exception_object}\nException type -> {exception_type}\n\n"
+
+    while(exception_traceback):
+        traceback = f"File name -> {exception_traceback.tb_frame}\n\nLine number -> {exception_traceback.tb_lineno}"
+        exception_traceback = exception_traceback.tb_next
+
+    return log + traceback
 
 def info(message):
     _Log._info(message)

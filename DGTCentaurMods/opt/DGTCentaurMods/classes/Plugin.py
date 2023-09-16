@@ -137,7 +137,7 @@ class Plugin():
         if self._socket:
             self._socket.send_message({ 
                     "turn_caption":"Plugin "+self._id,
-                    "clear_board_graphic_moves":False,
+                    "clear_board_graphic_moves":True,
                     "loading_screen":False,
                     "evaluation_disabled":True,
                     "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system", "plugin_edit"])
@@ -166,26 +166,34 @@ class Plugin():
                     CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
         except Exception as e:
-            Log.exception(Plugin._on_socket_request, e)
-            pass
-
-    def __key_callback(self, key:Enums.Btn):
-
-        if key == Enums.Btn.BACK:
+            if self._socket:
+                self._socket.send_message({ "script_output":Log.last_exception() })
+            
             self.stop()
 
-            # The key has been handled
-            return True
-        
-        if key == Enums.Btn.PLAY and not self._started:
-            self._started = True
-            self.on_start_callback()
-            return True
-        
-        if not self._started:
-            return False
+    def __key_callback(self, key:Enums.Btn):
+        try:
+            if key == Enums.Btn.BACK:
+                self.stop()
 
-        return self.key_callback(key)
+                # The key has been handled
+                return True
+            
+            if key == Enums.Btn.PLAY and not self._started:
+                self._started = True
+                self.on_start_callback()
+                return True
+            
+            if not self._started:
+                return False
+
+            return self.key_callback(key)
+
+        except:
+            if self._socket:
+                self._socket.send_message({ "script_output":Log.last_exception() })
+            
+            self.stop()
 
     def __engine_key_callback(self, args):
         return self.__key_callback(args["key"])
@@ -194,22 +202,40 @@ class Plugin():
                 field_index:chess.Square,
                 field_action:Enums.PieceAction,
                 web_move:bool = False):
+        try:
+            if self._started:
+                self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
+        
+        except:
+            if self._socket:
+                self._socket.send_message({ "script_output":Log.last_exception() })
 
-        if self._started:
-            self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
+            self.stop()
 
     def __event_callback(self, event:Enums.Event):
-        
-        if self._started:
-            self.event_callback(event)
+        try:
+            if self._started:
+                self.event_callback(event)
+
+        except:
+            if self._socket:
+                self._socket.send_message({ "script_output":Log.last_exception() })
+
+            self.stop()
 
     def __engine_event_callback(self, args):
         return self.__event_callback(args["event"])
     
     def __move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
+        try:
+            if self._started:
+                return self.move_callback(uci_move, san_move, color, field_index)
         
-        if self._started:
-            return self.move_callback(uci_move, san_move, color, field_index)
+        except:
+            if self._socket:
+                self._socket.send_message({ "script_output":Log.last_exception() })
+
+            self.stop()
         
         return False
     

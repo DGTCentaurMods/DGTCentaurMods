@@ -43,24 +43,27 @@ class Squiz(Plugin):
         self._qindex:int = 0
         self._bonus:int = QUESTIONS_COUNT*3
 
+        # Plugin is paused - the player needs to push PLAY.
         Centaur.pause_plugin()
 
     # Game ends.
     def game_over(self):
 
+        print = Centaur.print
+
         Centaur.clear_screen()
 
-        Centaur.print("GAME", row=2, font=fonts.DIGITAL_FONT)
-        Centaur.print("OVER", row=4, font=fonts.DIGITAL_FONT)
-        
-        Centaur.print("SCORE", row=7)
+        print("GAME", row=2, font=fonts.DIGITAL_FONT)
+        print("OVER", row=4, font=fonts.DIGITAL_FONT)
+    
+        print("SCORE", row=7)
 
         score = int(self._bonus * 100 / (QUESTIONS_COUNT*3))
 
-        Centaur.print('%'+str(score), font=fonts.DIGITAL_FONT)
+        print('%'+str(score), font=fonts.DIGITAL_FONT)
 
-        Centaur.print("Press PLAY", row=11)
-        Centaur.print("To retry!")
+        print("Press PLAY", row=11)
+        print("To retry!")
 
         self.initialize()
 
@@ -76,19 +79,21 @@ class Squiz(Plugin):
             self.game_over()
             return
 
+        print = Centaur.print
+
         Centaur.clear_screen()
 
         # We create a random square.
         # The square_name function needs a number from 0 to 63.
         self._random_square = chess.square_name(random.randint(0,63))
 
-        Centaur.print("Question", row=2)
-        Centaur.print(str(self._qindex), font=fonts.DIGITAL_FONT)
+        print("Question", row=2)
+        print(str(self._qindex), font=fonts.DIGITAL_FONT)
 
-        Centaur.print("Please place", row=5)
-        Centaur.print("a piece on")
-        Centaur.print()
-        Centaur.print(self._random_square, font=fonts.DIGITAL_FONT)
+        print("Please place", row=5)
+        print("a piece on")
+        print()
+        print(self._random_square, font=fonts.DIGITAL_FONT)
 
     """
     
@@ -100,7 +105,7 @@ class Squiz(Plugin):
         super().start()
 
     # This function is (automatically) invoked when
-    # the user stops the plugin
+    # the user stops the plugin.
     def stop(self):
 
         # Back to the main menu.
@@ -125,7 +130,7 @@ class Squiz(Plugin):
                 square:str,
                 field_action:Enums.PieceAction,
                 web_move:bool):
-        
+
         # We care only when the user drop a piece.
         if field_action == Enums.PieceAction.PLACE:
 
@@ -149,7 +154,7 @@ class Squiz(Plugin):
                     self.game_over()
 
      # When exists, this function is automatically invoked
-     # at start, after splash screen.
+     # at start, after splash screen, on PLAY button.
     def on_start_callback(self):
 
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
@@ -159,12 +164,15 @@ class Squiz(Plugin):
      # when the plugin starts.
     def splash_screen(self):
 
-        Centaur.clear_screen()
-        Centaur.print("SQUIZ", font=fonts.DIGITAL_FONT, row=2)
-        Centaur.print("Push PLAY", row=5)
-        Centaur.print("to")
-        Centaur.print("start")
-        Centaur.print("the game!")
+        print = Centaur.print
 
-        # The splash screen is activated
+        Centaur.clear_screen()
+
+        print("SQUIZ", font=fonts.DIGITAL_FONT, row=2)
+        print("Push PLAY", row=5)
+        print("to")
+        print("start")
+        print("the game!")
+
+        # The splash screen is activated.
         return True

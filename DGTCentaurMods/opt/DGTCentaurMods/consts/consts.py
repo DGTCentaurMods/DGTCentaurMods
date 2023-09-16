@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23091604"
+TAG_RELEASE = "ON23091605"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 

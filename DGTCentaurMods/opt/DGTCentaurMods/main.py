@@ -199,8 +199,8 @@ class Main:
                             del instance
                             del class_
                             del module
-                        except Exception as e:
-                            Log.info("Error during module execution : "+e)
+                        except:
+                            self._socket.send_message({ "script_output":Log.last_exception() })
                             pass
 
                         self.end_child_module()

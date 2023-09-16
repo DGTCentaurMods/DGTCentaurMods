@@ -43,7 +43,7 @@ class RandomBot(Plugin):
         super().start()
 
     # This function is (automatically) invoked when
-    # the user stops the plugin
+    # the user stops the plugin.
     def stop(self):
         # Back to the main menu.
         super().stop()
@@ -105,24 +105,31 @@ class RandomBot(Plugin):
                 Centaur.play_computer_move(uci_move)
 
      # When exists, this function is automatically invoked
-     # at start, after splash screen.
+     # at start, after splash screen, on PLAY button.
     def on_start_callback(self):
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
 
         # Start a new game.
-        Centaur.start_game(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
+        Centaur.start_game(
+            white="You", 
+            black="Random bot", 
+            event="Bots chess event 2024",
+            flags=Enums.BoardOption.CAN_UNDO_MOVES)
 
      # When exists, this function is automatically invoked
      # when the plugin starts.
     def splash_screen(self):
 
-        Centaur.clear_screen()
-        Centaur.print("RANDOM", row=2)
-        Centaur.print("BOT", font=fonts.DIGITAL_FONT, row=4)
-        Centaur.print("Push PLAY", row=8)
-        Centaur.print("to")
-        Centaur.print("start")
-        Centaur.print("the game!")
+        print = Centaur.print
 
-        # The splash screen is activated
+        Centaur.clear_screen()
+
+        print("RANDOM", row=2)
+        print("BOT", font=fonts.DIGITAL_FONT, row=4)
+        print("Push PLAY", row=8)
+        print("to")
+        print("start")
+        print("the game!")
+
+        # The splash screen is activated.
         return True
