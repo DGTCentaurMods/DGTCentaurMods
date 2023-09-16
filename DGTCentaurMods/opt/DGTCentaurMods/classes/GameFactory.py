@@ -573,6 +573,9 @@ class Engine():
 
     def __key_callback(self, key):
 
+        if not self._started:
+            return
+
         if Engine.__invoke_callback(self._key_callback_function, key=key) == False:
             # Key has not been handled by the client!
 
@@ -623,8 +626,9 @@ class Engine():
     # Numbering 0 = a1, 63 = h8
     def __field_callback(self, field_index, field_action, web_move = False):
 
-        if not self._initialized:
+        if not self._initialized or not self._started:
             return False
+
         self._previous_move_displayed = False
         try:
             result = self._piece_handler(field_index, field_action, web_move)

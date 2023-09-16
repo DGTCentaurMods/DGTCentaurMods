@@ -71,6 +71,7 @@ class CentaurBoard(common.Singleton):
 
     _socket = None
 
+    _last_push_time = time.time()
     _last_battery_check = time.time()-18 # Little starting delay before first check
 
     def _initialize(self):
@@ -594,7 +595,14 @@ class CentaurBoard(common.Singleton):
             pass
 
     def push_button(self, button):
+
+        if time.time()-self._last_push_time<.2:
+            Log.debug(f"Virtual button push -> {button} (TOO FAST: IGNORED!)")
+            return
+
+        self._last_push_time = time.time()
         Log.debug(f"Virtual button push -> {button}")
+
         if self._key_callback:
             self._key_callback(button)
 
