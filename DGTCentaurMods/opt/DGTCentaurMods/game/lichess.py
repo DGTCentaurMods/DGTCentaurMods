@@ -160,7 +160,12 @@ def moveCallback(move):
 		print("white player name is set")
 		if (curturn == 1 and playeriswhite == 1) or (curturn == 0 and playeriswhite == 0):
 			print("making move")
-			ret = client.board.make_move(gameid, move)
+			ret = False
+			while ret == False:
+				ret = client.board.make_move(gameid, move)
+				if ret == False:
+					print("api failed to respond, trying again")
+					time.sleep(1)
 			lastmove = str(move).lower()
 			print(ret)
 
