@@ -19,16 +19,18 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+import chess, random
+
 from DGTCentaurMods.classes.Plugin import Plugin, Centaur
 from DGTCentaurMods.consts import Enums, fonts
-
-import chess, random
 
 HUMAN_COLOR = chess.WHITE
 
 # The plugin must inherits of the Plugin class.
 # Filename must match the class name.
 class RandomBot(Plugin):
+
+    """
 
     # Constructor for initialization stuff
     # The id is the name of the plugin/class
@@ -43,9 +45,23 @@ class RandomBot(Plugin):
     # This function is (automatically) invoked when
     # the user stops the plugin
     def stop(self):
-
         # Back to the main menu.
         super().stop()
+
+    # When exists, this function is automatically invoked
+    # when the player physically plays a move.
+    def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
+        
+        # Nothing to do there...
+
+        if color == (not HUMAN_COLOR):
+            # Black move is accepted
+            return True
+
+        # White move is accepted
+        return True
+
+    """
 
     # This function is automatically invoked each
     # time the player pushes a key.
@@ -63,7 +79,7 @@ class RandomBot(Plugin):
         # Key can be handled by the engine.
         return False
         
-    # When exits, this function is automatically invoked
+    # When exists, this function is automatically invoked
     # when the game engine state is affected.
     def event_callback(self, event:Enums.Event):
 
@@ -88,28 +104,15 @@ class RandomBot(Plugin):
 
                 Centaur.play_computer_move(uci_move)
 
-    # When exits, this function is automatically invoked
-    # when the we physically play a move.
-    def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
-        
-        # Nothing to do there...
-
-        if color == (not HUMAN_COLOR):
-            # Black move is accepted
-            return True
-
-        # White move is accepted
-        return True
-
-     # When exits, this function is automatically invoked
-     # when at start, after splash screen.
+     # When exists, this function is automatically invoked
+     # at start, after splash screen.
     def on_start_callback(self):
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
 
-        # Start chess engine
+        # Start a new game.
         Centaur.start_game(white="You", black="Random bot", event="Bots chess event 2024",flags=Enums.BoardOption.CAN_UNDO_MOVES)
 
-     # When exits, this function is automatically invoked
+     # When exists, this function is automatically invoked
      # when the plugin starts.
     def splash_screen(self):
 

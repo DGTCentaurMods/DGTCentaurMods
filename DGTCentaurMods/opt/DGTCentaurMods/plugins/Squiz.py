@@ -19,10 +19,10 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
+import chess, random
+
 from DGTCentaurMods.classes.Plugin import Plugin, Centaur
 from DGTCentaurMods.consts import Enums, fonts
-
-import chess, random
 
 QUESTIONS_COUNT:int = 20
 
@@ -90,6 +90,8 @@ class Squiz(Plugin):
         Centaur.print()
         Centaur.print(self._random_square, font=fonts.DIGITAL_FONT)
 
+    """
+    
     # This function is automatically invoked when
     # the user launches the plugin.
     def start(self):
@@ -103,6 +105,8 @@ class Squiz(Plugin):
 
         # Back to the main menu.
         super().stop()
+
+    """
 
     # This function is automatically invoked each
     # time the player pushes a key.
@@ -145,7 +149,7 @@ class Squiz(Plugin):
                     self.game_over()
 
      # When exists, this function is automatically invoked
-     # when at start, after splash screen.
+     # at start, after splash screen.
     def on_start_callback(self):
 
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
