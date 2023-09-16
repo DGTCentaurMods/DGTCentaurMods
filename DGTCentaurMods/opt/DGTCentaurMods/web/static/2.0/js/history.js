@@ -91,14 +91,16 @@ angular.module("dgt-centaur-mods.lib", [])
                     uciMoves.forEach(m => {
                         if (m) {
                             const move = c.move(m, { sloppy:true })
-                            if (move.color == 'w') {
-                                ++moveIndex
-                                _pgn = _pgn + moveIndex + '. ' + move.san
+                            if (move) {
+                                if (move.color == 'w') {
+                                    ++moveIndex
+                                    _pgn = _pgn + moveIndex + '. ' + move.san
+                                }
+                                else {
+                                    _pgn = _pgn + ' ' + move.san + '\n'
+                                }
+                                _fens.push(c.fen())
                             }
-                            else {
-                                _pgn = _pgn + ' ' + move.san + '\n'
-                            }
-                            _fens.push(c.fen())
                         }
                     })
 
