@@ -24,7 +24,7 @@ from DGTCentaurMods.lib import common
 
 import socketio
 
-class _SocketClient(common.Singleton):
+class SocketClient(common.Singleton):
 
     __socket = None
     _on_socket_request = None
@@ -46,36 +46,33 @@ class _SocketClient(common.Singleton):
 
                 @sio.on('request')
                 def request(data):
-
                     if self._on_socket_request:
                         self._on_socket_request(data, self)
 
                 self.__socket = sio
 
-            return self
-
         except:
-            Log.exception(_SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
+            Log.exception(SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
             pass
 
-    def send_request(self, message):
+        return self
 
+    def send_request(self, message):
         try:
             if self.__socket != None:
                 self.__socket.emit('request', message)
 
-        except Exception as e:
-            Log.exception(_SocketClient.send_request, e)
+        except:
+            Log.info("Socket disconnected...")
             pass
 
     def send_message(self, message):
-
         try:
             if self.__socket != None:
                 self.__socket.emit('message', message)
 
         except Exception as e:
-            Log.exception(_SocketClient.send_message, e)
+            Log.info("Socket disconnected...")
             pass
 
     def disconnect(self):
@@ -94,9 +91,9 @@ class _SocketClient(common.Singleton):
                     pass
 
         except Exception as e:
-            Log.exception(_SocketClient.disconnect, e)
+            Log.exception(SocketClient.disconnect, e)
             pass
 
 
 def get(on_socket_request=None):
-    return _SocketClient().initialize(on_socket_request)
+    return SocketClient().initialize(on_socket_request)

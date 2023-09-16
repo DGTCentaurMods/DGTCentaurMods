@@ -559,7 +559,7 @@ def main():
 
                     gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 
-                    gfe.send_to_web_clients({ 
+                    gfe.send_message_to_web_ui({ 
                         "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
                     })
 

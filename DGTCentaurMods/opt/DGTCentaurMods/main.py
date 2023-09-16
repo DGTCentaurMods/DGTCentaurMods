@@ -39,8 +39,6 @@ _NODES = "nodes"
 
 class Main:
 
-    _browser_connected = False
-
     _is_root = False
 
     def refresh_screen(self):
@@ -52,13 +50,12 @@ class Main:
 
         self._is_root = False
 
-        self.draw_menu()
+        self.print_menu()
         #SCREEN.save_screen()
 
-    def draw_menu(self):
+    def print_menu(self):
 
         # TODO to be optimized...
-
         is_root = len(self._menu[_NODES]) == 0
 
         current_row = 10 if is_root else 2
@@ -110,11 +107,7 @@ class Main:
         Log.info(f"Starting {consts.MAIN_ID} service...")
 
         def _on_socket_request(data, socket):
-
-            #Log.debug(data)
             try:
-            
-                #response = {}
 
                 if "screen_message" in data:
                     SCREEN.home_screen(data["screen_message"])
@@ -124,7 +117,7 @@ class Main:
                         SCREEN.pause()
                     else:
                         SCREEN.unpause()
-                        self.draw_menu()
+                        self.print_menu()
 
                 if "battery" in  data:
                     SCREEN.set_battery_value(data["battery"])
@@ -134,21 +127,18 @@ class Main:
 
                 if "web_move" in data:
                     # No game in progress - we send back the current FEN
-                    self._socket.send_message({ "fen":common.get_Centaur_FEN() })
+                    socket.send_message({ "fen":common.get_Centaur_FEN() })
 
                 if "web_button" in data:
                     CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
 
                 if "pong" in data:
                     # Browser is connected (server ping)
-                    self._browser_connected = True
-                    #socket.send_message(response)
+                    pass
 
                 if "sys" in data:
                    
                     command = data["sys"]
-
-                    Log.debug(command)
 
                     if command == "homescreen":
                         CENTAUR_BOARD.push_button(Enums.Btn.BACK)
@@ -191,7 +181,7 @@ class Main:
 
                             instance.start()
 
-                            self._socket.send_message({ "loading_screen":False })
+                            socket.send_message({ "loading_screen":False })
 
                             while instance._running():
                                 time.sleep(0.1)
@@ -200,7 +190,7 @@ class Main:
                             del class_
                             del module
                         except:
-                            self._socket.send_message({ "script_output":Log.last_exception() })
+                            socket.send_message({ "script_output":Log.last_exception() })
                             pass
 
                         self.end_child_module()
@@ -211,8 +201,6 @@ class Main:
                 if "execute" in data:
 
                     command = data["execute"]
-
-                    Log.debug(command)
 
                     match = re.search('1vs1_module|uci_resume|uci_module|famous_module|wifi_module|lichess_module', command)
 
@@ -267,30 +255,27 @@ class Main:
 
         Log.info(f"Service {consts.MAIN_ID} up and running.")
 
-    def _key_callback(self, key_index):
-        #print(key_index)
-
-        #SCREEN.restore_screen()
+    def _key_callback(self, key):
 
         m = self._menu
 
         node = m[_CURRENT_NODE]
         index = m[_CURRENT_INDEX]
 
-        if key_index == Enums.Btn.UP:
+        if key == Enums.Btn.UP:
             if index>0:
                 m[_CURRENT_INDEX] = index-1
             else:
                 m[_CURRENT_INDEX] = len(node)-1
 
-        if key_index == Enums.Btn.DOWN:
+        if key == Enums.Btn.DOWN:
 
             if index<len(node)-1:
                 m[_CURRENT_INDEX] = index+1
             else:
                 m[_CURRENT_INDEX] = 0
 
-        if key_index == Enums.Btn.TICK or key_index == Enums.Btn.PLAY:
+        if key == Enums.Btn.TICK or key == Enums.Btn.PLAY:
 
             if menu.Tag.ITEMS in node[index]:
                 m[_CURRENT_NODE] = node[index][menu.Tag.ITEMS]
@@ -352,7 +337,7 @@ class Main:
                         else:
                             self._socket.send_request({'execute':value})
 
-        if key_index == Enums.Btn.BACK:
+        if key == Enums.Btn.BACK:
             nodes = m[_NODES]
             if len(nodes) >0:
 
@@ -361,9 +346,9 @@ class Main:
 
         # We bypass the disabled items
         if menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
-            CENTAUR_BOARD.push_button(key_index)
+            CENTAUR_BOARD.push_button(key)
         else:
-            self.draw_menu()
+            self.print_menu()
 
     def initialize_web_menu(self, message={}):
 
@@ -375,34 +360,23 @@ class Main:
             "latest_tag":LASTEST_TAG
         }
 
-        if self._socket != None:
-            self._socket.send_message(message)
+        self._socket.send_message(message)
 
     def start_child_module(self):
 
-        if self._socket != None:
-
-            SCREEN.clear_area()
-            SCREEN.write_text(8, "Loading...")
-     
-            self._socket.send_message({ 
-                "loading_screen":True,
-                "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
-            })
+        SCREEN.clear_area()
+        SCREEN.write_text(8, "Loading...")
+    
+        self._socket.send_message({ 
+            "loading_screen":True,
+            "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
+        })
 
     def end_child_module(self):
 
         self.initialize_web_menu({"loading_screen":False, "fen":common.get_Centaur_FEN()})
 
         self.refresh_screen()
-
-    def disconnect(self):
-
-        if self._socket != None:
-            self._socket.disconnect()
-
-    def browser_connected(self):
-        return self._browser_connected
 
 
 if os.path.exists(f"{consts.HOME_DIRECTORY}/{consts.MAIN_ID}_latest.deb"):

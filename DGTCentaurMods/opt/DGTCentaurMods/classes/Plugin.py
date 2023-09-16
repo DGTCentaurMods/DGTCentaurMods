@@ -134,14 +134,14 @@ class Plugin():
         self._initialize_web_menu()
 
     def _initialize_web_menu(self):
-        if self._socket:
-            self._socket.send_message({ 
-                    "turn_caption":"Plugin "+self._id,
-                    "clear_board_graphic_moves":True,
-                    "loading_screen":False,
-                    "evaluation_disabled":True,
-                    "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system", "plugin_edit"])
-                })
+
+        self._socket.send_message({ 
+                "turn_caption":"Plugin "+self._id,
+                "clear_board_graphic_moves":True,
+                "loading_screen":False,
+                "evaluation_disabled":True,
+                "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system", "plugin_edit"])
+            })
 
     def _on_socket_request(self, data, socket):
         try:
@@ -165,10 +165,8 @@ class Plugin():
                 if data["sys"] == "homescreen":
                     CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
-        except Exception as e:
-            if self._socket:
-                self._socket.send_message({ "script_output":Log.last_exception() })
-            
+        except:
+            self._socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __key_callback(self, key:Enums.Btn):
@@ -190,9 +188,7 @@ class Plugin():
             return self.key_callback(key)
 
         except:
-            if self._socket:
-                self._socket.send_message({ "script_output":Log.last_exception() })
-            
+            self._socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __engine_key_callback(self, args):
@@ -207,9 +203,7 @@ class Plugin():
                 self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
         
         except:
-            if self._socket:
-                self._socket.send_message({ "script_output":Log.last_exception() })
-
+            self._socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __event_callback(self, event:Enums.Event):
@@ -218,9 +212,7 @@ class Plugin():
                 self.event_callback(event)
 
         except:
-            if self._socket:
-                self._socket.send_message({ "script_output":Log.last_exception() })
-
+            self._socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __engine_event_callback(self, args):
@@ -232,9 +224,7 @@ class Plugin():
                 return self.move_callback(uci_move, san_move, color, field_index)
         
         except:
-            if self._socket:
-                self._socket.send_message({ "script_output":Log.last_exception() })
-
+            self._socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
         
         return False

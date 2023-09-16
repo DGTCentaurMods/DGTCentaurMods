@@ -110,7 +110,7 @@ def main(pgn):
             retry_count=0
             show_uci_move_on_board(correct_uci_move)
 
-            gfe.send_to_web_clients({ 
+            gfe.send_message_to_web_ui({ 
                 "clear_board_graphic_moves":False,
                 "tip_uci_move":correct_uci_move,
             })
@@ -152,7 +152,7 @@ def main(pgn):
 
             gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
 
-            gfe.send_to_web_clients({ 
+            gfe.send_message_to_web_ui({ 
                 "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
             })
 
@@ -165,7 +165,7 @@ def main(pgn):
 
                 show_uci_move_on_board(uci_move)
 
-                gfe.send_to_web_clients({ 
+                gfe.send_message_to_web_ui({ 
                     "clear_board_graphic_moves":False,
                     "computer_uci_move":uci_move,
                 })
@@ -198,7 +198,7 @@ def main(pgn):
                 if retry_count==0:
                     show_uci_move_on_board(correct_uci_move)
 
-                    gfe.send_to_web_clients({ 
+                    gfe.send_message_to_web_ui({ 
                         "clear_board_graphic_moves":False,
                         "tip_uci_move":correct_uci_move,
                     })

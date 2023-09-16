@@ -29,7 +29,7 @@ import time, threading, queue, os, chess, chess.engine
 
 
 # Wrapper intercepts inner engine exceptions that could occur...
-class _ChessEngine():
+class ChessEngineWrapper():
 
     __engine = None
     __engine_options = None
@@ -50,7 +50,7 @@ class _ChessEngine():
 
             self.__q = queue.Queue()
 
-            # Turn-on the enfine worker thread
+            # Turn-on the engine worker thread
             self.__worker = threading.Thread(target=self.__engine_worker, daemon=True)
             self.__worker.start()
 
@@ -88,7 +88,7 @@ class _ChessEngine():
                     self.__q.task_done()
 
                 except Exception as e:
-                    Log.exception(_ChessEngine.__engine_worker, e)
+                    Log.exception(ChessEngineWrapper.__engine_worker, e)
                     pass
 
             time.sleep(.5)
@@ -103,7 +103,7 @@ class _ChessEngine():
             self.__engine = None
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
             
-            Log.debug(f'{_ChessEngine.__instanciate.__name__}({id(self.__engine)})')
+            Log.debug(f'{ChessEngineWrapper.__instanciate.__name__}({id(self.__engine)})')
             
             if self.__engine_options != None:
 
@@ -111,7 +111,7 @@ class _ChessEngine():
                 self.__engine.configure(self.__engine_options)
 
         except Exception as e:
-            Log.exception(_ChessEngine.__instanciate, e)
+            Log.exception(ChessEngineWrapper.__instanciate, e)
             self.__engine = None
             pass
 
@@ -163,7 +163,7 @@ class _ChessEngine():
                     return self.__engine.analyse(board=board, limit=limit)
 
             except Exception as e:
-                Log.info(f"{_ChessEngine.analyse.__name__}:{e}")
+                Log.info(f"{ChessEngineWrapper.analyse.__name__}:{e}")
                 pass
 
             return None
@@ -193,7 +193,7 @@ class _ChessEngine():
                     return self.__engine.play(board=board, limit=limit, info=info)
 
             except Exception as e:
-                Log.info(f"{_ChessEngine.play.__name__}:{e}")
+                Log.info(f"{ChessEngineWrapper.play.__name__}:{e}")
                 pass
 
             return None
@@ -216,7 +216,7 @@ class _ChessEngine():
         try:
             if self.__engine != None:
 
-                Log.debug(f'{_ChessEngine.quit.__name__}({id(self.__engine)})')
+                Log.debug(f'{ChessEngineWrapper.quit.__name__}({id(self.__engine)})')
                 self.__engine.quit()
             
             self.__destroyed = True
@@ -225,8 +225,8 @@ class _ChessEngine():
                 self.__worker.join()
 
         except Exception as e:
-            Log.exception(_ChessEngine.quit, e)
+            Log.exception(ChessEngineWrapper.quit, e)
             pass
 
 def get(uci_path, async_mode = True):
-    return _ChessEngine(uci_path, async_mode)
+    return ChessEngineWrapper(uci_path, async_mode)

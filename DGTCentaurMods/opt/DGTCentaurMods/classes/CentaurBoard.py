@@ -430,6 +430,8 @@ class CentaurBoard(common.Singleton):
     
     def subscribe_events(self, key_callback, field_callback, socket = None):
 
+        #Log.debug(CentaurBoard.subscribe_events.__name__)
+
         # We backup the current callbacks
         # In order to restore them in the next unsubscribe_events call
         self._callbacks_queue.append({"field_callback":self._field_callback, "key_callback":self._key_callback})
@@ -441,6 +443,8 @@ class CentaurBoard(common.Singleton):
             self._socket = socket
 
     def unsubscribe_events(self):
+
+        #Log.debug(CentaurBoard.unsubscribe_events.__name__)
 
         # We cannot unsubscribe from the root callbacks!
         if len(self._callbacks_queue) > 1:
@@ -590,6 +594,7 @@ class CentaurBoard(common.Singleton):
             pass
 
     def push_button(self, button):
+        Log.debug(f"Virtual button push -> {button}")
         if self._key_callback:
             self._key_callback(button)
 

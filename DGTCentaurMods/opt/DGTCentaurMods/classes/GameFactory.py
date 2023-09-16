@@ -426,12 +426,11 @@ class PieceHandler:
 
         return self._interpret_actions()
 
-# Game manager class
+# Game engine
 class Engine():
 
     _started = False
 
-    _thread_is_alive = False
     _initialized = False
     _new_evaluation_requested = False
 
@@ -445,7 +444,7 @@ class Engine():
 
     _socket = None
 
-    _chess_engine: ChessEngine = None
+    _chess_engine: ChessEngine.ChessEngineWrapper = None
 
     _show_evaluation = True
 
@@ -493,7 +492,62 @@ class Engine():
 
         self._dal.set_read_only(db_record_disabled)
 
-        #CENTAUR_BOARD.clear_serial()
+
+    def _on_socket_request(self, data, socket):
+
+        if not self._initialized or not self._started or data is None:
+            return
+
+        try:
+            response = {}
+
+            if "pgn" in data:
+                response["pgn"] = self.get_current_pgn()
+                socket.send_message(response)
+
+            if "fen" in data:
+                response["fen"] = self._chessboard.fen()
+                socket.send_message(response)
+
+            if "uci_move" in data:
+                response["uci_move"] = self.get_last_uci_move()
+                socket.send_message(response)
+
+            if "web_menu" in data:
+                self.initialize_web_menu()
+
+            if "battery" in  data:
+                SCREEN.set_battery_value(data["battery"])
+
+            if "web_move" in data:
+                # A move has been triggered from web UI
+                self.__field_callback(common.Converters.to_square_index(data["web_move"]["source"]), Enums.PieceAction.LIFT, web_move=True)
+                
+                if not self.__field_callback(common.Converters.to_square_index(data["web_move"]["target"]), Enums.PieceAction.PLACE, web_move=True):
+                    response["fen"] = self._chessboard.fen()
+                    socket.send_message(response)
+
+            if "web_button" in data:
+                CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
+
+            if "sys" in data:
+                if data["sys"] == "homescreen":
+                    CENTAUR_BOARD.push_button(Enums.Btn.BACK)
+
+            if "standby" in data:
+                if data["standby"]:
+                    SCREEN.home_screen("Game paused!")
+                else:
+                    self.display_partial_PGN()
+                    self.display_board()
+                    self.update_web_ui({ 
+                        "clear_board_graphic_moves":True,
+                        "uci_move":self.get_last_uci_move(),
+                    })
+
+        except Exception as e:
+            Log.exception(Engine._on_socket_request, e)
+            pass
 
     @staticmethod
     def __invoke_callback(callback, **args):
@@ -517,13 +571,13 @@ class Engine():
 
         self._new_evaluation_requested = False
 
-    def __key_callback(self, key_index):
+    def __key_callback(self, key):
 
-        if Engine.__invoke_callback(self._key_callback_function, key=key_index) == False:
+        if Engine.__invoke_callback(self._key_callback_function, key=key) == False:
             # Key has not been handled by the client!
 
             # Default tick key
-            if not self._evaluation_disabled and key_index == Enums.Btn.TICK:
+            if not self._evaluation_disabled and key == Enums.Btn.TICK:
                 self._show_evaluation = not self._show_evaluation
 
                 self.update_evaluation(force=True, text="evaluation enabled" if self._show_evaluation else "evaluation disabled")
@@ -534,13 +588,13 @@ class Engine():
                 self.display_board()
 
             # Default exit key
-            if key_index == Enums.Btn.BACK:
+            if key == Enums.Btn.BACK:
                 
                 Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
                 self.stop()
         
             # Default down key: show previous move
-            if key_index == Enums.Btn.DOWN:
+            if key == Enums.Btn.DOWN:
 
                 if self._previous_move_displayed:
                      
@@ -613,7 +667,7 @@ class Engine():
             
             self.update_evaluation(force=True, text=str_outcome)
 
-            self.send_to_web_clients({ 
+            self.send_message_to_web_ui({ 
                 "turn_caption":str_outcome
             })
 
@@ -622,9 +676,7 @@ class Engine():
     def _evaluation_thread_instance(self):
 
         try:
-            #sf_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
-
-            while self._thread_is_alive:
+            while self._started:
 
                 if self._new_evaluation_requested and self._initialized:
 
@@ -632,8 +684,6 @@ class Engine():
 
                     if self._show_evaluation and not self._evaluation_disabled:
 
-                        #result = sf_engine.analyse(self._chessboard, chess.engine.Limit(time=1))
-                        
                         def evaluation_callback(result):
 
                             if result != None and result["score"]:
@@ -664,10 +714,7 @@ class Engine():
 
                                     del eval
 
-                        if self._chess_engine == None:
-                            self._chess_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
-
-                        self._chess_engine.analyse(
+                        self.chess_engine().analyse(
                             self._chessboard, 
                             chess.engine.Limit(time=1), 
                             on_taskengine_done = evaluation_callback)
@@ -677,8 +724,6 @@ class Engine():
                         self.update_evaluation(force=True, disabled=True)
 
                 time.sleep(.5)
-
-            #sf_engine.quit()
 
         except Exception as e:
             Log.exception(Engine._evaluation_thread_instance, e)
@@ -698,7 +743,7 @@ class Engine():
         ticks = -1
 
         try:
-            while self._thread_is_alive:
+            while self._started:
 
                 # First time we are here
                 # We might need to resume a game...
@@ -828,29 +873,35 @@ class Engine():
         except Exception as e:
             Log.exception(Engine._game_thread_instance_worker, e)
 
+    def chess_engine(self):
+
+        # By default we use Stockfish engine.
+        if self._chess_engine is None:
+            self._chess_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
+
+        return self._chess_engine
 
     def initialize_web_menu(self):
-        
-        if self._socket:
-            self._socket.send_message({ 
-                "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
-            })
+
+        self._socket.send_message({ 
+            "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
+        })
     
     def is_started(self):
         return self._started
 
     def start(self, uci_moves = []):
 
-        if self._thread_is_alive:
+        if self._started:
             return
-
-        self._uci_moves_at_start = uci_moves
         
         self._started = True
 
-        self._need_starting_position_check = True
+        self._socket = SocketClient.get(on_socket_request=self._on_socket_request)
 
-        self._thread_is_alive = True
+        self._uci_moves_at_start = uci_moves
+        
+        self._need_starting_position_check = True
 
         self._game_thread_instance = Thread(target=self._game_thread_instance_worker)
         self._game_thread_instance.daemon = True
@@ -860,77 +911,20 @@ class Engine():
         self._evaluation_thread_instance.daemon = True
         self._evaluation_thread_instance.start()
 
-        def _on_socket_request(data, socket):
-
-            if self._initialized == False:
-                pass
-
-            try:
-            
-                response = {}
-
-                if "pgn" in data:
-                    response["pgn"] = self.get_current_pgn()
-                    socket.send_message(response)
-
-                if "fen" in data:
-                    response["fen"] = self._chessboard.fen()
-                    socket.send_message(response)
-
-                if "uci_move" in data:
-                    response["uci_move"] = self.get_last_uci_move()
-                    socket.send_message(response)
-
-                if "web_menu" in data:
-                    self.initialize_web_menu()
-
-                if "battery" in  data:
-                    SCREEN.set_battery_value(data["battery"])
-
-                if "web_move" in data:
-                    # A move has been triggered from web UI
-                    self.__field_callback(common.Converters.to_square_index(data["web_move"]["source"]), Enums.PieceAction.LIFT, web_move=True)
-                    
-                    if not self.__field_callback(common.Converters.to_square_index(data["web_move"]["target"]), Enums.PieceAction.PLACE, web_move=True):
-                        response["fen"] = self._chessboard.fen()
-                        socket.send_message(response)
-
-                if "web_button" in data:
-                    CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
-
-                if "sys" in data:
-                    if data["sys"] == "homescreen":
-                        CENTAUR_BOARD.push_button(Enums.Btn.BACK)
-
-                if "standby" in data:
-                    if data["standby"]:
-                        SCREEN.home_screen("Game paused!")
-                    else:
-                        self.display_partial_PGN()
-                        self.display_board()
-                        self.update_web_ui({ 
-                            "clear_board_graphic_moves":True,
-                            "uci_move":self.get_last_uci_move(),
-                        })
-
-            except Exception as e:
-                Log.exception(Engine._on_socket_request, e)
-                pass
-
-        self._socket = SocketClient.get(on_socket_request=_on_socket_request)
-
         self.initialize_web_menu()
 
         Log.info(f"{Engine.__name__} thread started.")
 
 
     def stop(self):
-        # Stops the game manager
-        CENTAUR_BOARD.leds_off()
-        self._thread_is_alive = False
+        
+        if not self._started:
+            return
 
-        if self._socket:
-            self._socket.disconnect()
+        CENTAUR_BOARD.leds_off()
+        self._started = False
+
+        self._socket.disconnect()
 
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
@@ -943,9 +937,17 @@ class Engine():
         Log.info(f"{Engine.__name__} thread has been stopped.")
 
     def cancel_evaluation(self):
+
+        if not self._started:
+            return
+
         self._new_evaluation_requested = False
 
     def update_evaluation(self, value=None, force=False, text=None, disabled=False):
+        
+        if not self._started:
+            return
+        
         if force:
             self._new_evaluation_requested = False
             SCREEN.draw_evaluation_bar(text=text, value=value, disabled=disabled)
@@ -954,17 +956,17 @@ class Engine():
 
     def flash_hint(self, thinking_time = 1):
 
+        if not self._started:
+            return
+
         try:
-            if self._chess_engine == None:
-                self._chess_engine = ChessEngine.get(consts.STOCKFISH_ENGINE_PATH)
-            
             self.update_evaluation(force=True, text="thinking...")
 
             def hint_callback(moves):
                 uci_hint_move = str(moves["pv"][0])
                 Log.info(f'Engine help requested :"{uci_hint_move}"')
 
-                self.send_to_web_clients({ 
+                self.send_message_to_web_ui({ 
                     "tip_uci_move":uci_hint_move
                 })
 
@@ -976,16 +978,24 @@ class Engine():
 
                 self.update_evaluation()
 
-            self._chess_engine.analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
+            self.chess_engine().analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
 
         except Exception as e:
             Log.exception(Engine.flash_hint, e)
             pass
 
     def get_last_uci_move(self):
+        
+        if not self._started:
+            return None
+        
         return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()
 
     def get_last_san_move(self):
+
+        if not self._started:
+            return None
+
         try:
             move = self._chessboard.pop()
             san = self._chessboard.san(move)
@@ -997,6 +1007,10 @@ class Engine():
             return None
 
     def _update_board_state(self):
+
+        if not self._started:
+            return
+
         board_state = CENTAUR_BOARD.get_board_state()
         business_board_state = common.Converters.fen_to_board_state(self._chessboard.fen())
         invalid_squares = []
@@ -1013,58 +1027,66 @@ class Engine():
 
     def display_board(self):
 
+        if not self._started:
+            return
+
         SCREEN.draw_fen(self._chessboard.fen(), startrow=1.6)
 
-    def send_to_web_clients(self, message={}):
+    def send_message_to_web_ui(self, message={}):
         # We send the message to all connected clients
+
+        if not self._started:
+            return
 
         if self._evaluation_disabled:
             message["evaluation_disabled"] = True
 
-        if self._socket:
-            self._socket.send_message(message)
+        self._socket.send_message(message)
 
     def update_web_ui(self, args={}):
         # We send the new FEN to all connected clients
-        if self._socket:
 
-            message = {**{
-                "pgn":self.get_current_pgn(), 
-                "fen":self._chessboard.fen(),
-                "uci_move":self.get_last_uci_move(),
-                "checkers":list(map(lambda item:common.Converters.to_square_name(item), self._chessboard.checkers())),
-                "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
-            }, **args}
+        if not self._started:
+            return
 
-            self._socket.send_message(message)
+        message = {**{
+            "pgn":self.get_current_pgn(), 
+            "fen":self._chessboard.fen(),
+            "uci_move":self.get_last_uci_move(),
+            "checkers":list(map(lambda item:common.Converters.to_square_name(item), self._chessboard.checkers())),
+            "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
+        }, **args}
+
+        self._socket.send_message(message)
 
     def get_current_pgn(self):
 
         current_pgn = ""
 
-        if len(self._san_move_list) > 0:
+        if self._started:
+            if len(self._san_move_list) > 0:
 
-            # We always start to show a white move
-            current_turn = chess.WHITE
+                # We always start to show a white move
+                current_turn = chess.WHITE
 
-            current_row_index = 1
-    
-            for san in self._san_move_list:
+                current_row_index = 1
+        
+                for san in self._san_move_list:
 
-                # White move
-                if current_turn == chess.WHITE:
-                    if (san != None):
-                        current_pgn = current_pgn + f"{current_row_index}. "+san
+                    # White move
+                    if current_turn == chess.WHITE:
+                        if (san != None):
+                            current_pgn = current_pgn + f"{current_row_index}. "+san
 
-                # Black move
-                else:
-                    if san != None:
-                        current_pgn = current_pgn + " "+ san + '\n'
+                    # Black move
+                    else:
+                        if san != None:
+                            current_pgn = current_pgn + " "+ san + '\n'
 
-                    current_row_index = current_row_index + 1
+                        current_row_index = current_row_index + 1
 
-                # We switch the color
-                current_turn = not current_turn
+                    # We switch the color
+                    current_turn = not current_turn
 
         return current_pgn
     
@@ -1073,7 +1095,7 @@ class Engine():
 
     def display_partial_PGN(self, row=9.3, move_count=10):
 
-        if not self._partial_pgn_disabled:
+        if not self._partial_pgn_disabled and self._started:
 
             # Maximum displayed moves
             move_count = 10
@@ -1124,7 +1146,7 @@ class Engine():
             
         try:
 
-            if self._thread_is_alive == False:
+            if not self._started:
                 return
 
             if uci_move == None:
@@ -1153,7 +1175,7 @@ class Engine():
             # Then light it up!
             CENTAUR_BOARD.led_from_to(from_num,to_num)
 
-            self.send_to_web_clients({ 
+            self.send_message_to_web_ui({ 
                 "clear_board_graphic_moves":False,
                 "computer_uci_move":uci_move,
             })
