@@ -97,8 +97,8 @@ class _ChessEngine():
 
         try:
             # Only for RodentIV...
-            os.environ["RODENT4PERSONALITIES"] = consts.OPT_DIRECTORY+'/engines/personalities'
-            os.environ["RODENT4BOOKS"] = consts.OPT_DIRECTORY+'/engines/books'
+            os.environ["RODENT4PERSONALITIES"] = consts.ENGINES_DIRECTORY+'/personalities'
+            os.environ["RODENT4BOOKS"] = consts.ENGINES_DIRECTORY+'/books'
 
             self.__engine = None
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)

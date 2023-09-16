@@ -141,21 +141,21 @@ def on_request(message):
 
 		_get_file_descriptor = lambda action:{
 			"plugin":{
-				"directory":f"{consts.OPT_DIRECTORY}/plugins",
+				"directory":consts.PLUGINS_DIRECTORY,
 				"label":"plugin script",
 				"extension":"py",
 				"editable_name":True,
 				"can_delete":False,
 			},
 			"uci":{
-				"directory":f"{consts.OPT_DIRECTORY}/engines",
+				"directory":consts.ENGINES_DIRECTORY,
 				"label":"UCI File",
 				"extension":"uci",
 				"editable_name":False,
 				"can_delete":False,
 			},
 			"famous_pgn":{
-				"directory":f"{consts.OPT_DIRECTORY}/famous_pgns",
+				"directory":consts.FAMOUS_DIRECTORY,
 				"label":"famous PGN File",
 				"extension":"pgn",
 				"editable_name":True,

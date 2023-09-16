@@ -60,7 +60,7 @@ def main(color, engine_name, engine_parameters):
         if result != None:
             gfe.set_computer_move(str(result.move))
 
-    engine = ChessEngine.get(f"{consts.OPT_DIRECTORY}/engines/{engine_name}")
+    engine = ChessEngine.get(f"{consts.ENGINES_DIRECTORY}/{engine_name}")
 
     if len(engine_parameters) > 3:
         
@@ -68,7 +68,7 @@ def main(color, engine_name, engine_parameters):
         uci_options_desc = engine_parameters
         
         # These options we should derive form the uci file
-        uci_file = f"{consts.OPT_DIRECTORY}/engines/{engine_name}.uci"
+        uci_file = f"{consts.ENGINES_DIRECTORY}/{engine_name}.uci"
         
         config = configparser.ConfigParser()
         config.optionxform = str

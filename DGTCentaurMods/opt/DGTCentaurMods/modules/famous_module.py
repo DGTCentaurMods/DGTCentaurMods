@@ -35,7 +35,6 @@ exit_requested = False
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
 
-FAMOUS_PGNS_DIR = consts.OPT_DIRECTORY+"/famous_pgns/"
 MAX_RETRIES = 2
 AUTO_MOVES_COUNT = 4
 
@@ -55,7 +54,7 @@ def main(pgn):
     exit_requested = False
 
     # Expect the first argument to be the PGN file name
-    pgn_file = FAMOUS_PGNS_DIR+pgn
+    pgn_file = consts.FAMOUS_DIRECTORY+'/'+pgn
 
     if not os.path.exists(pgn_file):
         Log.exception(main, f"'{pgn_file}' does not exist!")

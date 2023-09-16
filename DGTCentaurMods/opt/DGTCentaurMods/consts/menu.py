@@ -172,9 +172,6 @@ class _Menu(common.Singleton):
         play_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "play", result), None)
         sys_item = next(filter(lambda item:Tag.ID in item and item[Tag.ID] == "system", result), None)
 
-        ENGINE_PATH = consts.OPT_DIRECTORY+"/engines"
-        PGNS_PATH = consts.OPT_DIRECTORY+"/famous_pgns"
-
         def get_sections(uci_file):
             parser = configparser.ConfigParser()
             parser.read(uci_file)
@@ -187,10 +184,10 @@ class _Menu(common.Singleton):
 
         # We read the available engines + their options
         engines = list(map(lambda f:{Tag.ID:Path(f.name).stem, "options":get_sections(f.path)}, 
-                           filter(lambda f: f.name.endswith(".uci"), os.scandir(ENGINE_PATH))))
+                           filter(lambda f: f.name.endswith(".uci"), os.scandir(consts.ENGINES_DIRECTORY))))
         
         famous_pgns = list(map(lambda f:Path(f.name).stem, 
-                           filter(lambda f: f.name.endswith(".pgn"), os.scandir(PGNS_PATH))))
+                           filter(lambda f: f.name.endswith(".pgn"), os.scandir(consts.FAMOUS_DIRECTORY))))
 
 
         # Plugins
@@ -238,7 +235,7 @@ class _Menu(common.Singleton):
             
             for engine in engines:
 
-                if os.path.exists(f"{consts.OPT_DIRECTORY}/engines/{engine['id']}.uci"):
+                if os.path.exists(f"{consts.ENGINES_DIRECTORY}/{engine['id']}.uci"):
 
                     editor_menu = { Tag.LABEL: "Edit UCI of "+common.capitalize_string(engine[Tag.ID]), Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "uci", Tag.FILE:engine[Tag.ID] }} }
 
