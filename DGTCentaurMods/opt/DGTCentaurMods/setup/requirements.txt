@@ -22,7 +22,7 @@ PyChromecast==9.2.1
 PyGithub==1.55
 pyserial==3.5
 python-dotenv==0.19.1
-requests==2.26.0
+requests==2.28.2
 spidev==3.5
 SQLAlchemy==1.4.26
 typing-extensions==4.7.1
