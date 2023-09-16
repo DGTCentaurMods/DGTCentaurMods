@@ -107,6 +107,8 @@ class Main:
 
     def __init__(self):
 
+        Log.info(f"Starting {consts.MAIN_ID} service...")
+
         def _on_socket_request(data, socket):
 
             #Log.debug(data)
@@ -218,6 +220,8 @@ class Main:
 
                         script = match.group()
 
+                        Log.info(f'Starting module "{script}"...')
+
                         self.start_child_module()
 
                         module = importlib.import_module(name=f".modules.{script}", package=consts.MAIN_ID)
@@ -233,6 +237,8 @@ class Main:
                             module.main()
 
                         del module
+
+                        Log.info(f'Stopping module "{script}"...')
 
                         self.end_child_module()
 
@@ -258,6 +264,8 @@ class Main:
         self.refresh_screen()
 
         CENTAUR_BOARD.subscribe_events(self._key_callback, None, self._socket)
+
+        Log.info(f"Service {consts.MAIN_ID} up and running.")
 
     def _key_callback(self, key_index):
         #print(key_index)
