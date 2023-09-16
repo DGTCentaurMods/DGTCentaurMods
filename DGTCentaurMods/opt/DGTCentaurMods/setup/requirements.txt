@@ -4,7 +4,7 @@ certifi==2021.10.8
 charset-normalizer==2.0.6
 chess==1.6.1
 click==8.0.3
-Deprecated==1.2.13
+Deprecated==1.2.14
 Flask==2.0.2
 idna==3.2
 ifaddr==0.1.7
