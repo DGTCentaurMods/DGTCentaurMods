@@ -91,7 +91,7 @@ _MENU_ITEMS = [
         Tag.NO_HOMESCREEN: True,
         Tag.ONLY_WEB:True,
         Tag.LABEL:"Edit plugin", 
-        Tag.ACTION: { "type": "js", Tag.VALUE: "() => alert('Not implemented!')"}
+        Tag.ACTION: { "type": "js", Tag.VALUE: "() => SOCKET.emit('request', {'read':{ id: 'plugin', file:me.board.plugin }})"}
     },
 
     {   Tag.ID:"system", 

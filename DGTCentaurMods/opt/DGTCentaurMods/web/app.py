@@ -140,6 +140,13 @@ def on_request(message):
 	else:
 
 		_get_file_descriptor = lambda action:{
+			"plugin":{
+				"directory":f"{consts.OPT_DIRECTORY}/plugins",
+				"label":"plugin script",
+				"extension":"py",
+				"editable_name":True,
+				"can_delete":False,
+			},
 			"uci":{
 				"directory":f"{consts.OPT_DIRECTORY}/engines",
 				"label":"UCI File",
