@@ -69,6 +69,7 @@ forcemove = 0
 source = ""
 gamedbid = -1
 session = None
+showingpromotion = False
 
 gameinfo_event = ""
 gameinfo_site = ""
@@ -120,6 +121,7 @@ def fieldcallback(field):
     global source
     global gamedbid
     global session
+    global showingpromotion
     lift = 0
     place = 0
     if field >= 0:
@@ -211,6 +213,7 @@ def fieldcallback(field):
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)
                 if forcemove == 0:
+                    showingpromotion = True
                     epaper.promotionOptions(13)
                     pausekeys = 1
                     time.sleep(1)
@@ -242,6 +245,7 @@ def fieldcallback(field):
                             pr = "r"
                         time.sleep(0.1)
                     epaper.epaperbuffer = screenback.copy()
+                    showingpromotion = False
                     pausekeys = 2
             if (field // 8) == 0 and pname == "p":
                 screenback = epaper.epaperbuffer.copy()
@@ -251,6 +255,7 @@ def fieldcallback(field):
                 tosend[len(tosend) - 1] = board.checksum(tosend)
                 board.ser.write(tosend)
                 if forcemove == 0:
+                    showingpromotion = True
                     epaper.promotionOptions(13)
                     pausekeys = 1
                     time.sleep(1)
@@ -281,6 +286,7 @@ def fieldcallback(field):
                             buttonPress = 4  # DOWN
                             pr = "r"
                         time.sleep(0.1)
+                    showingpromotion = False
                     epaper.epaperbuffer = screenback.copy()
                     pausekeys = 2
                     
@@ -456,6 +462,7 @@ def clockThread():
     global curturn
     global kill
     global cboard
+    global showingpromotion
     while kill == 0:
         time.sleep(2) # epaper refresh rate means we can only have an accuracy of around 2 seconds :(
         if whitetime > 0 and curturn == 1 and cboard.fen() != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1":
@@ -468,7 +475,8 @@ def clockThread():
         bsec = blacktime % 60
         timestr = "{:02d}".format(wmin) + ":" + "{:02d}".format(wsec) + "       " + "{:02d}".format(
             bmin) + ":" + "{:02d}".format(bsec)
-        epaper.writeText(13, timestr)
+        if showingpromotion == False:
+            epaper.writeText(13, timestr)
 
 whitetime = 0
 blacktime = 0

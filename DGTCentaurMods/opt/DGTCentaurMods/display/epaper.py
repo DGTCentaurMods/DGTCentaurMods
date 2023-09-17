@@ -339,6 +339,7 @@ def promotionOptions(row):
     print("drawing promotion options")
     global epaperprocesschange
     font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+    writeText(13, "                    ")
     if epaperprocesschange == 1:    
         offset = row * 20
         draw = ImageDraw.Draw(epaperbuffer)
