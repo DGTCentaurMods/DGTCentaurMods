@@ -47,7 +47,7 @@ class Singleton:
 def get_lastest_tag() -> str:
 
     try:
-        response = requests.get("https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest")
+        response = requests.get(consts.GITHUB_URI)
 
         # if file was downloaded
         if response.status_code == 200:
