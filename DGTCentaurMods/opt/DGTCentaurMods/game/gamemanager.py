@@ -491,7 +491,7 @@ def startClock():
     clockthread.daemon = True
     clockthread.start()
 
-def computerMove(mv):
+def computerMove(mv, forced = True):
     # Set the computer move that the player is expected to make
     # in the format b2b4 , g7g8q , etc
     global computermove
@@ -500,7 +500,8 @@ def computerMove(mv):
         return
     # First set the globals so that the thread knows there is a computer move
     computermove = mv
-    forcemove = 1
+    if forced == True:
+        forcemove = 1
     # Next indicate this on the board. First convert the text representation to the field number
     fromnum = ((ord(mv[1:2]) - ord("1")) * 8) + (ord(mv[0:1]) - ord("a"))
     tonum = ((ord(mv[3:4]) - ord("1")) * 8) + (ord(mv[2:3]) - ord("a"))
