@@ -533,9 +533,9 @@ class CentaurBoard(common.Singleton):
             Log.exception(CentaurBoard._read_keys, e)
             pass
 
-    def push_button(self, button):
+    def push_button(self, button, force:bool=False):
 
-        if time.time()-self._last_push_time<.2:
+        if not force and time.time()-self._last_push_time<.2:
             Log.debug(f"Virtual button push -> {button} (TOO FAST: IGNORED!)")
             return
 

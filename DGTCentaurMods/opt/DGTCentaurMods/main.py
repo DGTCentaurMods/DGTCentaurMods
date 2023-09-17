@@ -347,7 +347,9 @@ class Main:
 
         # We bypass the disabled items
         if menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
-            CENTAUR_BOARD.push_button(key)
+            # Because of the temporization, push might be ignored if too fast.
+            # We force the push.
+            CENTAUR_BOARD.push_button(key, True)
         else:
             self.print_menu()
 
