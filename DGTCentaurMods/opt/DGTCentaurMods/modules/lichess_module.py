@@ -25,6 +25,8 @@ from DGTCentaurMods.consts import Enums, consts
 
 import time, chess, berserk, threading
 
+from typing import Optional
+
 exit_requested = False
 stream_game_state = None
 stream_incoming_events = None
@@ -273,44 +275,44 @@ def main():
 
         seeking_engine.print_all(3)
 
-    def _key_callback(key_index):
+    def _key_callback(key:Enums.Btn):
         global exit_requested
         global stream_incoming_events
 
-        if key_index == Enums.Btn.PLAY or key_index == Enums.Btn.TICK:
+        if key == Enums.Btn.PLAY or key == Enums.Btn.TICK:
 
             seeking_engine.stop()
             CENTAUR_BOARD.leds_off()
             _criterias_screen()
 
-            def _seeking_key_callback(key_index):
+            def _seeking_key_callback(key:Enums.Btn):
 
-                if key_index == Enums.Btn.BACK:
+                if key == Enums.Btn.BACK:
 
                     CENTAUR_BOARD.unsubscribe_events()
                     seeking_engine.stop()
 
                     _welcome_screen()
 
-                if key_index == Enums.Btn.PLAY:
+                if key == Enums.Btn.PLAY:
                     CENTAUR_BOARD.unsubscribe_events()
                     _seeking_screen()
                     CentaurConfig.update_lichess_seeking_params(seeking_engine.get_all())
                     seeking_engine.start()
 
-                if key_index == Enums.Btn.UP:
+                if key == Enums.Btn.UP:
                     seeking_engine.previous()
 
-                if key_index == Enums.Btn.DOWN:
+                if key == Enums.Btn.DOWN:
                     seeking_engine.next()
 
-                if key_index == Enums.Btn.TICK:
+                if key == Enums.Btn.TICK:
                     seeking_engine.next_value()
 
             CENTAUR_BOARD.subscribe_events(_seeking_key_callback)
 
 
-        if key_index == Enums.Btn.BACK:
+        if key == Enums.Btn.BACK:
 
             CENTAUR_BOARD.unsubscribe_events()
             seeking_engine.stop()
@@ -496,11 +498,7 @@ def main():
                             ongoing_games[0].get('opponent').get(_RATING))
                         break
 
-            def key_callback(args):
-
-                assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-                key = args["key"]
+            def key_callback(key:Enums.Btn):
 
                 if key == Enums.Btn.TICK:
                     CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
@@ -508,9 +506,9 @@ def main():
 
                     def wait_for_resignation_input():
 
-                        def _confirm_key_callback(key_index):
+                        def _confirm_key_callback(key:Enums.Btn):
 
-                            if key_index == Enums.Btn.TICK:
+                            if key == Enums.Btn.TICK:
                                 # Back to original callbacks
                                 CENTAUR_BOARD.unsubscribe_events()
 
@@ -520,7 +518,7 @@ def main():
                                 CENTAUR_BOARD.push_button(Enums.Btn.BACK)
                                 pass
 
-                            if key_index == Enums.Btn.BACK:
+                            if key == Enums.Btn.BACK:
                                 # Back to original callbacks
                                 CENTAUR_BOARD.unsubscribe_events()
                                 gfe.display_board()
@@ -537,21 +535,19 @@ def main():
                 return False
 
 
-            def event_callback(args):
-
-                assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+            def event_callback(event:Enums.Event, outcome:Optional[chess.Outcome]):
 
                 global exit_requested
                 global stream_game_state
 
-                if args["event"] == Enums.Event.QUIT:
+                if event == Enums.Event.QUIT:
 
                     CLOCK_PANEL.enable(False)
 
                     exit_requested = True
                     del stream_game_state
 
-                if args["event"] == Enums.Event.PLAY:
+                if event == Enums.Event.PLAY:
 
                     CLOCK_PANEL.push(gfe.get_board().turn)
 
@@ -564,24 +560,18 @@ def main():
                     })
 
             
-            def move_callback(args):
-
-                # field_index, san_move, uci_move are available
-                assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-                assert "san_move" in args, "args needs to contain 'san_move' key!"
-                assert "color" in args, "args needs to contain 'color' key!"
-                assert "field_index" in args, "args needs to contain 'field_index' key!"
+            def move_callback(uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
 
                 current_game[_YOUR_LAST_BOARD_MOVE] = None
 
                 # Your turn?
-                if args[_COLOR] == current_game[_COLOR]:
+                if color == current_game[_COLOR]:
                     
                     Log.info(f'Sending move of "{current_game[_USERNAME]}".')
 
-                    current_game[_YOUR_LAST_BOARD_MOVE] = args["uci_move"]
+                    current_game[_YOUR_LAST_BOARD_MOVE] = uci_move
                     
-                    lichess_client.board.make_move(current_game[_ID], args["uci_move"])
+                    lichess_client.board.make_move(current_game[_ID], uci_move)
 
                     return True
 

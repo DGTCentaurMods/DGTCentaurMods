@@ -24,6 +24,8 @@ import chess, random
 from DGTCentaurMods.classes.Plugin import Plugin, Centaur
 from DGTCentaurMods.consts import Enums, fonts
 
+from typing import Optional
+
 HUMAN_COLOR = chess.WHITE
 
 # The plugin must inherits of the Plugin class.
@@ -81,7 +83,7 @@ class RandomBot(Plugin):
         
     # When exists, this function is automatically invoked
     # when the game engine state is affected.
-    def event_callback(self, event:Enums.Event):
+    def event_callback(self, event:Enums.Event, outcome:Optional[chess.Outcome]):
 
         # If the user chooses to leave,
         # we quit the plugin.

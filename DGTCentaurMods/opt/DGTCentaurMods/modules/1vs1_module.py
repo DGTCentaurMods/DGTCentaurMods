@@ -24,6 +24,8 @@ from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.consts import Enums
 from DGTCentaurMods.lib import common
 
+from typing import Optional
+
 import time, chess
 
 exit_requested = False
@@ -39,11 +41,7 @@ def main():
 
     CentaurConfig.update_last_uci_command("1vs1_module")
 
-    def key_callback(args):
-
-        assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        key = args["key"]
+    def key_callback(key:Enums.Btn):
 
         if key == Enums.Btn.HELP:
             gfe.flash_hint()
@@ -54,16 +52,14 @@ def main():
         return False
 
 
-    def event_callback(args):
-
-        assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+    def event_callback(event:Enums.Event, outcome:Optional[chess.Outcome]):
 
         global exit_requested
 
-        if args["event"] == Enums.Event.QUIT:
+        if event == Enums.Event.QUIT:
             exit_requested = True
 
-        if args["event"] == Enums.Event.PLAY:
+        if event== Enums.Event.PLAY:
 
             current_player = "White player" if gfe.get_board().turn else "Black player"
 

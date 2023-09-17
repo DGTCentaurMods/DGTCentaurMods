@@ -26,6 +26,8 @@ from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import Enums, consts
 
+from typing import Optional, Callable
+
 SOCKET = SocketClient.get()
 
 def _rotate_field(index):
@@ -429,7 +431,7 @@ class CentaurBoard(common.Singleton):
         print("+---+---+---+---+---+---+---+---+")
 
     
-    def subscribe_events(self, key_callback = None, field_callback = None):
+    def subscribe_events(self, key_callback:Optional[Callable] = None, field_callback:Optional[Callable] = None):
 
         # We backup the current callbacks
         # In order to restore them in the next unsubscribe_events call

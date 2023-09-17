@@ -256,8 +256,8 @@ class PieceHandler:
         Enums.Btn.DOWN: "r",
     }
 
-    def _promote_key_callback(self, key_index) -> bool:
-        if promoted_piece := self._PROMOTION_KEYS.get(key_index):
+    def _promote_key_callback(self, key) -> bool:
+        if promoted_piece := self._PROMOTION_KEYS.get(key):
             CENTAUR_BOARD.unsubscribe_events()
             self._engine.display_board()
 
@@ -317,7 +317,8 @@ class PieceHandler:
         
         Engine._Engine__invoke_callback(
             self._engine._event_callback_function,
-            event=Enums.Event.PLAY)
+            event=Enums.Event.PLAY,
+            outcome=None)
 
         self._engine.update_evaluation()
 
@@ -555,7 +556,7 @@ class Engine():
         if callback != None:
             try:
                 Log.debug(f"{Engine.__invoke_callback.__name__}[{callback.__name__}({args})]")
-                return callback(args)
+                return callback(**args)
             except Exception as e:
                 Log.exception(Engine.__invoke_callback, e)
         else:
@@ -594,7 +595,7 @@ class Engine():
             # Default exit key
             if key == Enums.Btn.BACK:
                 
-                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT)
+                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT, outcome=None)
                 self.stop()
         
             # Default down key: show previous move
@@ -650,7 +651,7 @@ class Engine():
         outcome = self._chessboard.outcome(claim_draw=True)
         if outcome == None or outcome == "None" or outcome == 0:
             # Switch the turn
-            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+            Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY, outcome=None)
         else:
             # Depending on the outcome we can update the game information for the result
             self._dal.terminate_game(str(self._chessboard.result()))
@@ -802,7 +803,7 @@ class Engine():
                                     "clear_board_graphic_moves":True,
                                     "uci_move":last_uci_move })
 
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.RESUME_GAME, outcome=None)
                                 
                                 self.update_evaluation()
 
@@ -862,8 +863,8 @@ class Engine():
                                     black  = self._game_informations.get("black","Player black")
                                 )
 
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME)
-                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.NEW_GAME, outcome=None)
+                                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.PLAY, outcome=None)
                                 
                                 self._initialized = True
 

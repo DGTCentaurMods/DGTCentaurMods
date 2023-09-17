@@ -148,11 +148,11 @@ def main():
 
         return
     
-    def _wifi_key_callback(key_index):
+    def _wifi_key_callback(key:Enums.Btn):
         global exit_requested
         global current_input
 
-        if key_index == Enums.Btn.TICK and len(wifi[NETWORKS]) > 0:
+        if key == Enums.Btn.TICK and len(wifi[NETWORKS]) > 0:
 
             selected_network = wifi[NETWORKS][wifi[INDEX]]
             Log.info(f'Network "{selected_network.ssid}" selected!')
@@ -176,31 +176,31 @@ def main():
 
             return
         
-        if key_index == Enums.Btn.DOWN:
+        if key == Enums.Btn.DOWN:
             wifi[INDEX] += 1
             if wifi[INDEX]==len(wifi[NETWORKS]):
                 wifi[INDEX]=0
             _print_networks()
             return
         
-        if key_index == Enums.Btn.UP:
+        if key == Enums.Btn.UP:
             wifi[INDEX]  -= 1
             if wifi[INDEX] ==-1:
                 wifi[INDEX]=len(wifi[NETWORKS]) -1
             _print_networks()
             return
 
-        if key_index == Enums.Btn.BACK:
+        if key == Enums.Btn.BACK:
             CENTAUR_BOARD.unsubscribe_events()
             exit_requested = True
 
-    def _password_key_callback(key_index):
+    def _password_key_callback(key:Enums.Btn):
 
         global exit_requested
         global keyboard_index
         global current_input
 
-        if key_index == Enums.Btn.TICK:
+        if key == Enums.Btn.TICK:
 
             try:
 
@@ -231,27 +231,27 @@ def main():
 
             return
         
-        if key_index == Enums.Btn.UP:
+        if key == Enums.Btn.UP:
             keyboard_index += 1
             if keyboard_index==len(KEYBOARDS):
                 keyboard_index=0
             SCREEN.draw_board(KEYBOARDS[keyboard_index], is_keyboard=True)
             return
         
-        if key_index == Enums.Btn.DOWN:
+        if key == Enums.Btn.DOWN:
             keyboard_index -= 1
             if keyboard_index==-1:
                 keyboard_index=len(KEYBOARDS) -1
             SCREEN.draw_board(KEYBOARDS[keyboard_index], is_keyboard=True)
             return
         
-        if key_index == Enums.Btn.HELP:
+        if key == Enums.Btn.HELP:
 
             if len(current_input)>0:
                 current_input = current_input[:len(current_input)-1]
                 _print_current_password()
 
-        if key_index == Enums.Btn.BACK:
+        if key == Enums.Btn.BACK:
 
             CENTAUR_BOARD.unsubscribe_events()
             _print_wifi_ui()

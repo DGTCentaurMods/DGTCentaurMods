@@ -25,8 +25,9 @@ from DGTCentaurMods.consts import consts, Enums
 from DGTCentaurMods.lib import common
 
 from random import randint
+from typing import Optional
 
-import sys, time, chess, configparser
+import chess, sys, time, chess, configparser
 
 #from lmnotify import LaMetricManager, Model, SimpleFrame, Sound;
 
@@ -82,11 +83,7 @@ def main(color, engine_name, engine_parameters):
 
     engine.configure(uci_options)
 
-    def key_callback(args):
-
-        assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        key = args["key"]
+    def key_callback(key:Enums.Btn):
 
         if key == Enums.Btn.HELP:
 
@@ -99,23 +96,21 @@ def main(color, engine_name, engine_parameters):
         return False
 
 
-    def event_callback(args):
-
-        assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+    def event_callback(event:Enums.Event, outcome:Optional[chess.Outcome]):
 
         global exit_requested
 
-        if args["event"] == Enums.Event.QUIT:
+        if event == Enums.Event.QUIT:
             exit_requested = True
 
-        if args["event"] == Enums.Event.TERMINATION:
+        if event == Enums.Event.TERMINATION:
 
-            if args["outcome"].winner == (not computer_color):
+            if outcome.winner == (not computer_color):
                 CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
             else:
                 CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
 
-        if args["event"] == Enums.Event.PLAY:
+        if event == Enums.Event.PLAY:
 
             current_player = engine_name if gfe.get_board().turn == computer_color else "You"
 
@@ -134,23 +129,11 @@ def main(color, engine_name, engine_parameters):
                     info=chess.engine.INFO_NONE, 
                     on_taskengine_done = on_computer_move_done)
 
-    def move_callback(args):
-
-        # field_index, san_move, uci_move are available
-        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-        assert "san_move" in args, "args needs to contain 'san_move' key!"
-        assert "field_index" in args, "args needs to contain 'field_index' key!"
-
+    def move_callback(uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
         # Move is accepted!
         return True
 
-    def undo_callback(args):
-
-        # field_index, san_move, uci_move are available
-        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-        assert "san_move" in args, "args needs to contain 'san_move' key!"
-        assert "field_index" in args, "args needs to contain 'field_index' key!"
-
+    def undo_callback(uci_move:str, san_move:str, field_index:chess.Square):
         return
 
     # Subscribe to the game factory

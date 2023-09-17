@@ -24,6 +24,8 @@ from DGTCentaurMods.consts import Enums, consts, fonts
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import menu
 
+from typing import Optional
+
 import chess
 
 SCREEN = CentaurScreen.get()
@@ -190,9 +192,6 @@ class Plugin():
             SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
-    def __engine_key_callback(self, args):
-        return self.__key_callback(args["key"])
-
     def __field_callback(self,
                 field_index:chess.Square,
                 field_action:Enums.PieceAction,
@@ -205,17 +204,14 @@ class Plugin():
             SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
-    def __event_callback(self, event:Enums.Event):
+    def __event_callback(self, event:Enums.Event, outcome:Optional[chess.Outcome]):
         try:
             if self._started:
-                self.event_callback(event)
+                self.event_callback(event, outcome)
 
         except:
             SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
-
-    def __engine_event_callback(self, args):
-        return self.__event_callback(args["event"])
     
     def __move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
         try:
@@ -228,9 +224,6 @@ class Plugin():
         
         return False
     
-    def __engine_move_callback(self, args):
-        return self.__move_callback(args["uci_move"], args["san_move"], args["color"], args["field_index"])
-
     def _running(self):
         return not self._exit_requested
 
@@ -262,9 +255,9 @@ class Plugin():
         if self._game_engine == None:
             self._game_engine = GameFactory.Engine(
             
-                event_callback = self.__engine_event_callback,
-                key_callback = self.__engine_key_callback,
-                move_callback= self.__engine_move_callback,
+                event_callback = self.__event_callback,
+                key_callback = self.__key_callback,
+                move_callback= self.__move_callback,
 
                 flags = flags,
                 
@@ -307,7 +300,7 @@ class Plugin():
                 web_move:bool):
         return
     
-    def event_callback(self, event:Enums.Event):
+    def event_callback(self, event:Enums.Event, outcome:Optional[chess.Outcome]):
         return
     
     def move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):

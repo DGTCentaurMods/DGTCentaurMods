@@ -30,6 +30,8 @@ import chess.pgn
 import sys
 import os
 
+from typing import Optional
+
 exit_requested = False
 
 SCREEN = CentaurScreen.get()
@@ -96,11 +98,7 @@ def main(pgn):
 
         CENTAUR_BOARD.led_from_to(from_num,to_num)
 
-    def key_callback(args):
-
-        assert "key" in args, "key_callback args needs to contain the 'key' entry!"
-
-        key = args["key"]
+    def key_callback(key:Enums.Btn):
 
         if key == Enums.Btn.UP:
 
@@ -128,17 +126,15 @@ def main(pgn):
         return False
 
 
-    def event_callback(args):
-
-        assert "event" in args, "event_callback args needs to contain the 'event' entry!"
+    def event_callback(event:Enums.Event, outcome:Optional[chess.Outcome]):
 
         global current_index
         global exit_requested
 
-        if args["event"] == Enums.Event.QUIT:
+        if event == Enums.Event.QUIT:
             exit_requested = True
 
-        if args["event"] == Enums.Event.NEW_GAME:
+        if event == Enums.Event.NEW_GAME:
             current_index = 0
 
             SCREEN.write_text(9.5,game.headers["Event"], bordered=True)
@@ -146,7 +142,7 @@ def main(pgn):
             SCREEN.write_text(12,game.headers["Black"], bordered=True)
             SCREEN.write_text(13,"You play "+("white" if human_color else "black")+"!", bordered=True)
             
-        if args["event"] == Enums.Event.PLAY:
+        if event == Enums.Event.PLAY:
 
             current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
 
@@ -171,18 +167,10 @@ def main(pgn):
                 })
 
 
-    def move_callback(args):
+    def move_callback(uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
 
         global current_index
         global retry_count
-
-        # field_index, san_move, uci_move are available
-        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-        assert "san_move" in args, "args needs to contain 'san_move' key!"
-        assert "field_index" in args, "args needs to contain 'field_index' key!"
-
-        uci_move = args["uci_move"]
-        field_index = args["field_index"]
 
         correct_uci_move = moves_history[current_index].uci().strip()
 
@@ -213,15 +201,9 @@ def main(pgn):
 
         return success
 
-    def undo_callback(args):
+    def undo_callback(uci_move:str, san_move:str, field_index:chess.Square):
 
         global current_index
-
-        # field_index, san_move, uci_move are available
-        assert "uci_move" in args, "args needs to contain 'uci_move' key!"
-        assert "san_move" in args, "args needs to contain 'san_move' key!"
-        assert "field_index" in args, "args needs to contain 'field_index' key!"
-
         current_index = current_index -1
 
         return
