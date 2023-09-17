@@ -30,6 +30,7 @@ import time, os, re, importlib, shlex
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
+SOCKET = SocketClient.get()
 
 _CURRENT_INDEX = "current_index"
 _CURRENT_NODE = "current_node"
@@ -234,9 +235,9 @@ class Main:
                 Log.exception(_on_socket_request, e)
                 pass
 
-        self._socket = SocketClient.get(on_socket_request=_on_socket_request)
+        SOCKET.initialize(on_socket_request=_on_socket_request)
 
-        SCREEN.on_change(lambda image:self._socket.send_message({ "centaur_screen":image }))
+        SCREEN.on_change(lambda image:SOCKET.send_message({ "centaur_screen":image }))
 
         self.initialize_web_menu({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 
@@ -251,7 +252,7 @@ class Main:
 
         self.refresh_screen()
 
-        CENTAUR_BOARD.subscribe_events(self._key_callback, None, self._socket)
+        CENTAUR_BOARD.subscribe_events(self._key_callback)
 
         Log.info(f"Service {consts.MAIN_ID} up and running.")
 
@@ -294,25 +295,25 @@ class Main:
 
                         value = m[_CURRENT_VALUE].replace("{value}", value)
 
-                        self._socket.send_request({'execute':value})
+                        SOCKET.send_request({'execute':value})
 
                     if item_type == 'socket_sys':
                         # The server will excute the command
-                        self._socket.send_request({'sys':value})
+                        SOCKET.send_request({'sys':value})
 
                     if item_type == 'script_execute':
 
                         SCREEN.home_screen("Processing...")
 
                         # The server will excute the command
-                        self._socket.send_request({'script':value})
+                        SOCKET.send_request({'script':value})
 
                         time.sleep(3)
 
                         CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
                     if item_type == 'socket_plugin':
-                        self._socket.send_request({'plugin_execute':value})
+                        SOCKET.send_request({'plugin_execute':value})
 
                     if item_type == 'socket_execute':
 
@@ -335,7 +336,7 @@ class Main:
                             m[_CURRENT_VALUE] = value
 
                         else:
-                            self._socket.send_request({'execute':value})
+                            SOCKET.send_request({'execute':value})
 
         if key == Enums.Btn.BACK:
             nodes = m[_NODES]
@@ -360,14 +361,14 @@ class Main:
             "latest_tag":LASTEST_TAG
         }
 
-        self._socket.send_message(message)
+        SOCKET.send_message(message)
 
     def start_child_module(self):
 
         SCREEN.clear_area()
         SCREEN.write_text(8, "Loading...")
     
-        self._socket.send_message({ 
+        SOCKET.send_message({ 
             "loading_screen":True,
             "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
         })

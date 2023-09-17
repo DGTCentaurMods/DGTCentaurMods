@@ -21,10 +21,12 @@
 
 import time, threading, serial, chess
 
-from DGTCentaurMods.classes import Log
+from DGTCentaurMods.classes import Log, SocketClient
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import Enums, consts
+
+SOCKET = SocketClient.get()
 
 def _rotate_field(index):
     R = (index // 8)
@@ -68,8 +70,6 @@ class CentaurBoard(common.Singleton):
     _power_connected = False
 
     _stand_by_thread = None
-
-    _socket = None
 
     _last_push_time = time.time()
     _last_battery_check = time.time()-18 # Little starting delay before first check
@@ -429,7 +429,7 @@ class CentaurBoard(common.Singleton):
         print("+---+---+---+---+---+---+---+---+")
 
     
-    def subscribe_events(self, key_callback, field_callback, socket = None):
+    def subscribe_events(self, key_callback = None, field_callback = None):
 
         # We backup the current callbacks
         # In order to restore them in the next unsubscribe_events call
@@ -439,9 +439,6 @@ class CentaurBoard(common.Singleton):
 
         self._field_callback = field_callback
         self._key_callback = key_callback
-
-        if socket:
-            self._socket = socket
 
     def unsubscribe_events(self):
 
@@ -525,65 +522,6 @@ class CentaurBoard(common.Singleton):
                 if response_is("b10010", "00140a0504000000002a"):
                     button = Enums.Btn.PLAY
 
-            # TODO standby mode to be reviewed
-            """
-            if (response.hex()[:-2] == "b10010" 
-                + A1_HEX
-                + A2_HEX 
-                + "00140a0504000000002a"):
-
-                breaktime = time.time() + 0.5
-
-                while time.time() < breaktime:
-                    
-                    expected = bytearray(b'\xb1\x00\x06' 
-                                            + self.address_1.to_bytes(1, byteorder='big') 
-                                            + self.address_2.to_bytes(1, byteorder='big'))
-                    expected.append(_checksum(expected))
-                    
-                    response = self.ask_serial(b'\x94', b'')
-                    
-                    if response.hex().startswith("b10011" 
-                                                    + A1_HEX
-                                                    + A2_HEX 
-                                                    + "00140a0500040"):
-                
-                        if self._stand_by == False:
-
-                            Log.info("Standby mode invoked...")
-
-                            self.beep(Enums.Sound.POWER_OFF)
-                            if self._socket:
-                                self._socket.send_request({"standby":True})
-
-                            self._stand_by = True
-
-                            self.leds_off()
-
-                            self._stand_by_thread = threading.Timer(600,self.shutdown)
-                            self._stand_by_thread.start()
-                            
-                            self.time_limit = time.time() + 100000
-                            break
-                        else:
-
-                            Log.info("Standby mode cancelled...")
-                            self.clear_serial()
-                            if self._socket:
-                                self._socket.send_request({"standby":False})
-                            
-                            if self._stand_by_thread:
-                                self._stand_by_thread.cancel()
-
-                            self._stand_by = False
-                            self.time_limit = time.time() + timeout
-                            break
-
-                else:
-                    self.shutdown()
-
-            """
-
             if button != Enums.Btn.NONE:
                 self.time_limit = time.time() + timeout
 
@@ -616,9 +554,8 @@ class CentaurBoard(common.Singleton):
 
     def shutdown(self):
         
-        if self._socket:
-            self.beep(Enums.Sound.POWER_OFF)
-            self._socket.send_request({"sys":"shutdown"})
+        self.beep(Enums.Sound.POWER_OFF)
+        SOCKET.send_request({"sys":"shutdown"})
 
     # TODO to be reviewed
     def _read_battery(self, timeout):
@@ -652,8 +589,7 @@ class CentaurBoard(common.Singleton):
                     else:
                         self._power_connected = False
 
-                    if self._socket:
-                        self._socket.send_request({"battery":-1 if self._power_connected else self._battery_level})
+                    SOCKET.send_request({"battery":-1 if self._power_connected else self._battery_level})
         
         except Exception as e:
             print(e)

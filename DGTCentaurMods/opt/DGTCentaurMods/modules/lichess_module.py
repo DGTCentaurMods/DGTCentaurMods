@@ -307,7 +307,7 @@ def main():
                 if key_index == Enums.Btn.TICK:
                     seeking_engine.next_value()
 
-            CENTAUR_BOARD.subscribe_events(_seeking_key_callback, None)
+            CENTAUR_BOARD.subscribe_events(_seeking_key_callback)
 
 
         if key_index == Enums.Btn.BACK:
@@ -319,7 +319,7 @@ def main():
 
             exit_requested = True
 
-    CENTAUR_BOARD.subscribe_events(_key_callback, None)
+    CENTAUR_BOARD.subscribe_events(_key_callback)
 
     current_game = {
         _USERNAME:None,
@@ -528,7 +528,7 @@ def main():
 
                         # We temporary disable the board field callback
                         # and we add a new temporary board key callback
-                        CENTAUR_BOARD.subscribe_events(_confirm_key_callback, None)
+                        CENTAUR_BOARD.subscribe_events(_confirm_key_callback)
 
                     wait_for_resignation_input()
 

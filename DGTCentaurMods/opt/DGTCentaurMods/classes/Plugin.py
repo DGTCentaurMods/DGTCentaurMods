@@ -28,7 +28,7 @@ import chess
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
-
+SOCKET = SocketClient.get()
 
 class Centaur():
 
@@ -129,13 +129,13 @@ class Plugin():
 
         CENTAUR_BOARD.subscribe_events(self.__key_callback, self.__field_callback)
 
-        self._socket = SocketClient.get(on_socket_request=self._on_socket_request)
+        SOCKET.initialize(on_socket_request=self._on_socket_request)
 
         self._initialize_web_menu()
 
     def _initialize_web_menu(self):
 
-        self._socket.send_message({ 
+        SOCKET.send_message({ 
                 "turn_caption":"Plugin "+self._id,
                 "clear_board_graphic_moves":True,
                 "loading_screen":False,
@@ -165,7 +165,7 @@ class Plugin():
                     CENTAUR_BOARD.push_button(Enums.Btn.BACK)
 
         except:
-            self._socket.send_message({ "script_output":Log.last_exception() })
+            socket.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __key_callback(self, key:Enums.Btn):
@@ -187,7 +187,7 @@ class Plugin():
             return self.key_callback(key)
 
         except:
-            self._socket.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __engine_key_callback(self, args):
@@ -202,7 +202,7 @@ class Plugin():
                 self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
         
         except:
-            self._socket.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __event_callback(self, event:Enums.Event):
@@ -211,7 +211,7 @@ class Plugin():
                 self.event_callback(event)
 
         except:
-            self._socket.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __engine_event_callback(self, args):
@@ -223,7 +223,7 @@ class Plugin():
                 return self.move_callback(uci_move, san_move, color, field_index)
         
         except:
-            self._socket.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_message({ "script_output":Log.last_exception() })
             self.stop()
         
         return False
@@ -295,7 +295,7 @@ class Plugin():
 
         Centaur._detach_plugin()
 
-        self._socket.disconnect()
+        SOCKET.disconnect()
         self._exit_requested = True
 
     def key_callback(self, key:Enums.Btn):

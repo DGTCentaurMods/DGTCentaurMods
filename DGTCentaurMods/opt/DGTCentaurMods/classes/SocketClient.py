@@ -31,7 +31,7 @@ class SocketClient(common.Singleton):
 
     __callbacks_queue = []
         
-    def initialize(self, on_socket_request):
+    def initialize(self, on_socket_request = None):
 
         try:
             if on_socket_request:
@@ -95,5 +95,5 @@ class SocketClient(common.Singleton):
             pass
 
 
-def get(on_socket_request=None):
-    return SocketClient().initialize(on_socket_request)
+def get() -> SocketClient:
+    return SocketClient().initialize()

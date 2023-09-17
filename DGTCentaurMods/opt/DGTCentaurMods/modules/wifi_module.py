@@ -258,7 +258,7 @@ def main():
     
     _print_wifi_ui()
 
-    CENTAUR_BOARD.subscribe_events(_wifi_key_callback, None)
+    CENTAUR_BOARD.subscribe_events(_wifi_key_callback)
 
 
     while exit_requested == False:

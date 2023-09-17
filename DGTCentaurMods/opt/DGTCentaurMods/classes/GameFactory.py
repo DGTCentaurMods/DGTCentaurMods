@@ -36,6 +36,7 @@ import re
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
+SOCKET = SocketClient.get()
 
 UNDEFINED_SQUARE: chess.Square = -1
 
@@ -268,7 +269,7 @@ class PieceHandler:
 
         CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
         SCREEN.draw_promotion_window()
-        CENTAUR_BOARD.subscribe_events(self._promote_key_callback, None)
+        CENTAUR_BOARD.subscribe_events(self._promote_key_callback)
 
     def _attempt_move(self) -> bool:
         """Piece has been moved"""
@@ -443,8 +444,6 @@ class Engine():
     _chessboard = None
 
     _san_move_list = []
-
-    _socket = None
 
     _chess_engine: ChessEngine.ChessEngineWrapper = None
 
@@ -889,7 +888,7 @@ class Engine():
 
     def initialize_web_menu(self):
 
-        self._socket.send_message({ 
+        SOCKET.send_message({ 
             "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
         })
     
@@ -903,7 +902,7 @@ class Engine():
         
         self._started = True
 
-        self._socket = SocketClient.get(on_socket_request=self._on_socket_request)
+        SOCKET.initialize(on_socket_request=self._on_socket_request)
 
         self._uci_moves_at_start = uci_moves
         
@@ -930,7 +929,7 @@ class Engine():
         CENTAUR_BOARD.leds_off()
         self._started = False
 
-        self._socket.disconnect()
+        SOCKET.disconnect()
 
         self._game_thread_instance.join()
         self._evaluation_thread_instance.join()
@@ -1047,7 +1046,7 @@ class Engine():
         if self._evaluation_disabled:
             message["evaluation_disabled"] = True
 
-        self._socket.send_message(message)
+        SOCKET.send_message(message)
 
     def update_web_ui(self, args={}):
         # We send the new FEN to all connected clients
@@ -1063,7 +1062,7 @@ class Engine():
             "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
         }, **args}
 
-        self._socket.send_message(message)
+        SOCKET.send_message(message)
 
     def get_current_pgn(self):
 
