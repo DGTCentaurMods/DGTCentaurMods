@@ -135,17 +135,17 @@ class PieceHandler:
          # We test there the basic board move, from square to square,
          # ignoring the promotion if exists
 
-        if self._engine._is_computer_move and not self._can_force_moves:
-            return uci_move == self._computer_uci_move[0:4]
+        if self._engine._computer_move_is_set and not self._can_force_moves:
+            return uci_move[0:4] == self._computer_uci_move[0:4]
         else:
             legal_board_moves = (str(move)[0:4] for move in self._chessboard.legal_moves)
 
-            return uci_move in legal_board_moves
+            return uci_move[0:4] in legal_board_moves
 
     def _commit_move(self, uci_move: str, san_move: str) -> None:
         if self._dal.insert_new_game_move(uci_move, str(self._fen())):
             Log.debug(f'Move "{uci_move}/{san_move}" has been committed.')
-            self._engine._is_computer_move = False
+            self._engine._computer_move_is_set = False
             self._engine._san_move_list.append(san_move)
             
             CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
@@ -200,7 +200,7 @@ class PieceHandler:
             self, player_uci_move: str, promoted_piece: str = "") -> str:
 
         player_move = player_uci_move + promoted_piece
-        if self._engine._is_computer_move:
+        if self._engine._computer_move_is_set:
             if self._can_force_moves and \
                     player_uci_move != self._computer_uci_move:
                 # Player has overridden computer's choice of move
@@ -245,7 +245,7 @@ class PieceHandler:
     def _ask_user_for_promotion(self) -> bool:
         """Promotion menu display if player is human or if player
         overrides computer move"""
-        return not self._engine._is_computer_move or \
+        return not self._engine._computer_move_is_set or \
             self._move_name() != self._computer_uci_move
 
     _PROMOTION_KEYS = {
@@ -296,6 +296,8 @@ class PieceHandler:
 
         Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
         self._dal.delete_last_game_move()
+
+        self._engine._computer_move_is_set = False
 
         CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
         CENTAUR_BOARD.led(self._place1)
@@ -521,9 +523,9 @@ class Engine():
 
             if "web_move" in data:
                 # A move has been triggered from web UI
-                self.__field_callback(common.Converters.to_square_index(data["web_move"]["source"]), Enums.PieceAction.LIFT, web_move=True)
+                CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("source", None)), Enums.PieceAction.LIFT)
                 
-                if not self.__field_callback(common.Converters.to_square_index(data["web_move"]["target"]), Enums.PieceAction.PLACE, web_move=True):
+                if not CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("target", None)), Enums.PieceAction.PLACE):
                     response["fen"] = self._chessboard.fen()
                     socket.send_message(response)
 
@@ -565,7 +567,7 @@ class Engine():
         CENTAUR_BOARD.leds_off()
 
         self._computer_uci_move = ""
-        self._is_computer_move = False
+        self._computer_move_is_set = False
         self._san_move_list = []
         self._piece_handler = PieceHandler(self)
 
@@ -603,7 +605,7 @@ class Engine():
                      
                      self._previous_move_displayed = False
                      
-                     if self._is_computer_move:
+                     if self._computer_move_is_set:
                         self.set_computer_move()
                           
                      else:
@@ -624,7 +626,7 @@ class Engine():
     # Receives field events from the board.
     # Positive is a field lift, negative is a field place.
     # Numbering 0 = a1, 63 = h8
-    def __field_callback(self, field_index, field_action, web_move = False):
+    def __field_callback(self, field_index, field_action, web_move = False) -> bool:
 
         if not self._initialized or not self._started:
             return False
@@ -1143,8 +1145,8 @@ class Engine():
     def get_board(self):
         return self._chessboard
     
-    def computer_move_available(self):
-        return self._is_computer_move
+    def computer_move_is_set(self):
+        return self._computer_move_is_set
 
     def set_computer_move(self, uci_move = None):
             
@@ -1168,7 +1170,7 @@ class Engine():
 
             # First set the globals so that the thread knows there is a computer move
             self._computer_uci_move = uci_move
-            self._is_computer_move = True
+            self._computer_move_is_set = True
             
             # Next indicate this on the board. First convert the text representation to the field number
             from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)

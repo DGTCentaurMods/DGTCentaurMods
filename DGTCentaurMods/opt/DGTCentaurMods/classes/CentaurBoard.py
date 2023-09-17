@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-import time, threading, serial
+import time, threading, serial, chess
 
 from DGTCentaurMods.classes import Log
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
@@ -431,11 +431,11 @@ class CentaurBoard(common.Singleton):
     
     def subscribe_events(self, key_callback, field_callback, socket = None):
 
-        #Log.debug(CentaurBoard.subscribe_events.__name__)
-
         # We backup the current callbacks
         # In order to restore them in the next unsubscribe_events call
-        self._callbacks_queue.append({"field_callback":self._field_callback, "key_callback":self._key_callback})
+        self._callbacks_queue.append({
+            "field_callback":self._field_callback,
+            "key_callback":self._key_callback})
 
         self._field_callback = field_callback
         self._key_callback = key_callback
@@ -445,15 +445,16 @@ class CentaurBoard(common.Singleton):
 
     def unsubscribe_events(self):
 
-        #Log.debug(CentaurBoard.unsubscribe_events.__name__)
-
         # We cannot unsubscribe from the root callbacks!
         if len(self._callbacks_queue) > 1:
             callbacks = self._callbacks_queue.pop()
 
             # We restore the previous callbacks.
-            self._field_callback = callbacks["field_callback"]
-            self._key_callback = callbacks["key_callback"]
+            self._field_callback = callbacks.get("field_callback", None)
+            self._key_callback = callbacks.get("key_callback", None)
+        else:
+            # Should never happen.
+            Log.debug("WARNING: unable to unsubscribe board events: no more callbacks in the queue!")
 
     def pause_events(self):
         self._events_enabled = False
@@ -605,6 +606,13 @@ class CentaurBoard(common.Singleton):
 
         if self._key_callback:
             self._key_callback(button)
+
+    def move_piece(self, field_index:chess.Square, action:Enums.PieceAction) -> bool:
+
+        Log.debug(f"Virtual field move {field_index} -> {action}")
+
+        if self._field_callback:
+            return self._field_callback(field_index, action, True)
 
     def shutdown(self):
         

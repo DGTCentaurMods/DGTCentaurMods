@@ -153,10 +153,9 @@ class Plugin():
                 SCREEN.set_battery_value(data["battery"])
 
             if "web_move" in data:
-
                 # A move has been triggered from web UI
-                self.field_callback(data["web_move"]["source"], Enums.PieceAction.LIFT, web_move=True)
-                self.field_callback(data["web_move"]["target"], Enums.PieceAction.PLACE, web_move=True)
+                CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("source", None)), Enums.PieceAction.LIFT)
+                CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("target", None)), Enums.PieceAction.PLACE)
 
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))

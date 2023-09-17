@@ -590,7 +590,7 @@ def main():
 
                 # From GameFactory perspective,
                 # Computer move == Lichess opponent move
-                return gfe.computer_move_available()
+                return gfe.computer_move_is_set()
 
             # Subscribe to the game factory
             gfe = GameFactory.Engine(
