@@ -89,7 +89,7 @@ Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 """
         expected = license.splitlines(keepends=True)
-        with open("../../../LICENSE.md", "r") as f:
+        with open("../../../../LICENSE.md", "r") as f:
             actual = common.tail(f, len(expected))
         self.assertEqual(expected, actual)
 
