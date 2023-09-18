@@ -351,7 +351,7 @@ class Main:
                 m[_CURRENT_INDEX] = 0
 
         # We bypass the disabled items
-        if m[_CURRENT_INDEX] in node and menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
+        if m[_CURRENT_INDEX]<len(node) and menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
             # Because of the temporization, push might be ignored if too fast.
             # We force the push.
             CENTAUR_BOARD.push_button(key, True)
