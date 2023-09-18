@@ -59,6 +59,7 @@ newgame = 0
 keycallbackfunction = None
 movecallbackfunction = None
 eventcallbackfunction = None
+takebackcallbackfunction = None
 cboard = chess.Board()
 curturn = 1
 sourcesq = -1
@@ -78,6 +79,46 @@ gameinfo_white = ""
 gameinfo_black = ""
 
 inmenu = 0
+
+boardstates = []
+
+def collectBoardState():
+    # Append the board state to boardstates
+    global boardstates
+    boardstates.append(board.getBoardState())    
+
+def checkLastBoardState():
+    # If the current board state is the state of the board from the move before
+    # then a takeback is in progress
+    global boardstates
+    global gamebid
+    global session
+    global cboard
+    global takebackcallbackfunction
+    global curturn
+    if takebackcallbackfunction != None:
+        c = board.getBoardState()
+        if c == boardstates[len(boardstates) - 2]:    
+            board.ledsOff()            
+            boardstates = boardstates[:-1] 
+            # For a takeback we need to remove the last move logged to the database,
+            # update the fen. Switch the turn and alert the calling script of a takeback
+            lastmovemade = session.query(models.GameMove).order_by(models.GameMove.id.desc()).first()
+            session.delete(lastmovemade)
+            session.commit()
+            cboard.pop()
+            fenlog = "/home/pi/centaur/fen.log"
+            f = open(fenlog, "w")
+            f.write(cboard.fen())
+            f.close()            
+            if curturn == 0:
+                curturn = 1
+            else:
+                curturn = 0
+            board.beep(board.SOUND_GENERAL)
+            takebackcallbackfunction()
+            return True    
+    return False    
 
 def keycallback(keypressed):
     # Receives the key pressed and passes back to the script calling game manager
@@ -184,6 +225,7 @@ def fieldcallback(field):
             legalsquares.append(tsq)
     if place == 1 and field not in legalsquares:
         board.beep(board.SOUND_WRONG_MOVE)
+        checkLastBoardState()
     if place == 1 and field in legalsquares:
         newgame = 0
         if field == sourcesq:
@@ -307,6 +349,7 @@ def fieldcallback(field):
             )
             session.add(gamemove)
             session.commit()
+            collectBoardState()
             legalsquares = []
             sourcesq = -1
             board.ledsOff()
@@ -372,7 +415,7 @@ def drawGame():
     session.commit()
     eventcallbackfunction("Termination.DRAW")
 
-def gameThread(eventCallback, moveCallback, keycallbacki):
+def gameThread(eventCallback, moveCallback, keycallbacki, takebackcallbacki):
     # The main thread handles the actual chess game functionality and calls back to
     # eventCallback with game events and
     # moveCallback with the actual moves made
@@ -384,6 +427,7 @@ def gameThread(eventCallback, moveCallback, keycallbacki):
     global keycallbackfunction
     global movecallbackfunction
     global eventcallbackfunction
+    global takebackcallbackfunction
     global pausekeys
     global source
     global gamedbid
@@ -396,6 +440,7 @@ def gameThread(eventCallback, moveCallback, keycallbacki):
     keycallbackfunction = keycallbacki
     movecallbackfunction = moveCallback
     eventcallbackfunction = eventCallback
+    takebackcallbackfunction = takebackcallbacki
     board.ledsOff()
     board.subscribeEvents(keycallback, fieldcallback)
     t = 0
@@ -421,6 +466,7 @@ def gameThread(eventCallback, moveCallback, keycallbacki):
                         board.beep(board.SOUND_GENERAL)
                         time.sleep(0.3)
                         board.beep(board.SOUND_GENERAL)
+                        board.ledsOff()
                         eventCallback(EVENT_NEW_GAME)
                         eventCallback(EVENT_WHITE_TURN)
                         # Log a new game in the db
@@ -434,7 +480,7 @@ def gameThread(eventCallback, moveCallback, keycallbacki):
                         )
                         print(game)
                         session.add(game)
-                        session.commit()
+                        session.commit()                        
                         # Get the max game id as that is this game id and fill it into gamedbid
                         gamedbid = session.query(func.max(models.Game.id)).scalar()
                         # Now make an entry in GameMove for this start state
@@ -445,6 +491,8 @@ def gameThread(eventCallback, moveCallback, keycallbacki):
                         )
                         session.add(gamemove)
                         session.commit()
+                        boardstates = []
+                        collectBoardState()
                     t = 0
                 except:
                     pass
@@ -529,17 +577,24 @@ def setGameInfo(gi_event,gi_site,gi_round,gi_white,gi_black):
     gameinfo_white = gi_white
     gameinfo_black = gi_black
 
-def subscribeGame(eventCallback, moveCallback, keyCallback):
+def subscribeGame(eventCallback, moveCallback, keyCallback, takebackCallback = None):
     # Subscribe to the game manager
     global source
     global gamedbid
     global session
+    global boardstates
+    
+    boardstates = []
+    board.getBoardState()
+    board.getBoardState()
+    collectBoardState()
+    
     source = inspect.getsourcefile(sys._getframe(1))
     Session = sessionmaker(bind=models.engine)
     session = Session()
 
-    board.clearSerial()
-    gamethread = threading.Thread(target=gameThread, args=([eventCallback, moveCallback, keyCallback]))
+    board.clearSerial()    
+    gamethread = threading.Thread(target=gameThread, args=([eventCallback, moveCallback, keyCallback, takebackCallback]))
     gamethread.daemon = True
     gamethread.start()
 

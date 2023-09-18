@@ -150,6 +150,20 @@ def moveCallback(move):
     # This function receives valid moves made on the board
     # Note: the board state is in python-chess object gamemanager.board
     pass
+
+def takebackCallback():
+    # This function gets called when the user takes back a move   
+    global curturn     
+    # First the turn switches
+    if curturn == 1:
+        curturn = 0
+    else:
+        curturn = 1    
+    # Now call eventCallback from the new state
+    if curturn == 0:
+        eventCallback(gamemanager.EVENT_BLACK_TURN)    
+    else:
+        eventCallback(gamemanager.EVENT_WHITE_TURN)
     
 def evaluationGraphs(info):
     # Draw the evaluation graphs to the screen
@@ -320,7 +334,7 @@ epaper.initEpaper()
 #epaper.pauseEpaper()
 
 # Subscribe to the game manager to activate the previous functions
-gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback)
+gamemanager.subscribeGame(eventCallback, moveCallback, keyCallback, takebackCallback)
 writeTextLocal(0,"Place pieces in")
 writeTextLocal(1,"Starting Pos")
 
