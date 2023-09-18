@@ -1142,9 +1142,11 @@ class Engine():
                 # We switch the color
                 current_turn = not current_turn
 
-    def get_board(self):
+    @property
+    def chessboard(self):
         return self._chessboard
     
+    @property
     def computer_move_is_set(self):
         return self._computer_move_is_set
 

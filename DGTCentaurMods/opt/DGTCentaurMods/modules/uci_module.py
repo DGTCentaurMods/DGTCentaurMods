@@ -87,7 +87,7 @@ def main(color, engine_name, engine_parameters):
 
         if key == Enums.Btn.HELP:
 
-            if gfe.get_board().turn != computer_color:
+            if gfe.chessboard.turn != computer_color:
                 gfe.flash_hint()
             
             return True
@@ -112,19 +112,19 @@ def main(color, engine_name, engine_parameters):
 
         if event == Enums.Event.PLAY:
 
-            current_player = engine_name if gfe.get_board().turn == computer_color else "You"
+            current_player = engine_name if gfe.chessboard.turn == computer_color else "You"
 
-            gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
+            gfe.display_board_header(f"{current_player} {'W' if gfe.chessboard.turn == chess.WHITE else 'B'}")
 
             gfe.send_message_to_web_ui({ 
-                "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+                "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.chessboard.turn == chess.WHITE else 'BLACK'})"
             })
 
-            if gfe.get_board().turn == computer_color:
+            if gfe.chessboard.turn == computer_color:
                 
                 # Async request
                 engine.play(
-                    gfe.get_board(), 
+                    gfe.chessboard, 
                     chess.engine.Limit(time=5), 
                     info=chess.engine.INFO_NONE, 
                     on_taskengine_done = on_computer_move_done)

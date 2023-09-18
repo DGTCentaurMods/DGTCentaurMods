@@ -117,7 +117,7 @@ def main(pgn):
 
         if key == Enums.Btn.HELP:
 
-            if gfe.get_board().turn == human_color:
+            if gfe.chessboard.turn == human_color:
                 gfe.flash_hint()
 
             return True
@@ -144,16 +144,16 @@ def main(pgn):
             
         if event == Enums.Event.PLAY:
 
-            current_player = player_names["white"].capitalize() if gfe.get_board().turn else player_names["black"].capitalize()
+            current_player = player_names["white"].capitalize() if gfe.chessboard.turn else player_names["black"].capitalize()
 
-            gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
+            gfe.display_board_header(f"{current_player} {'W' if gfe.chessboard.turn == chess.WHITE else 'B'}")
 
             gfe.send_message_to_web_ui({ 
-                "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+                "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.chessboard.turn == chess.WHITE else 'BLACK'})"
             })
 
             # We show the opponent moves and the first moves
-            if gfe.get_board().turn != human_color or current_index<AUTO_MOVES_COUNT:
+            if gfe.chessboard.turn != human_color or current_index<AUTO_MOVES_COUNT:
 
                 uci_move = moves_history[current_index].uci().strip()
 
@@ -179,7 +179,7 @@ def main(pgn):
         if not success:
             CENTAUR_BOARD.beep(Enums.Sound.WRONG_MOVE)
 
-            if current_index<AUTO_MOVES_COUNT or gfe.get_board().turn == human_color:
+            if current_index<AUTO_MOVES_COUNT or gfe.chessboard.turn == human_color:
                 # We do nothing...
                 pass
             else:

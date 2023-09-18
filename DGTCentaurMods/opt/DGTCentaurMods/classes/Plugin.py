@@ -105,11 +105,6 @@ class Centaur():
             Centaur._plugin._hint()
 
     @staticmethod
-    def board() -> chess.Board:
-        if Centaur._plugin:
-            return Centaur._plugin._board()
-
-    @staticmethod
     def pause_plugin():
         if Centaur._plugin:
             Centaur._plugin._started = False
@@ -226,13 +221,6 @@ class Plugin():
     
     def _running(self):
         return not self._exit_requested
-
-    # Invoked from Centaur API
-    def _board(self):
-        if not self._game_engine:
-            raise Exception("Game engine not started!")
-        
-        return self._game_engine.get_board()
     
     # Invoked from Centaur API
     def _hint(self):
@@ -270,6 +258,17 @@ class Plugin():
                 })
 
             self._game_engine.start()
+
+    @property
+    def chessboard(self):
+        if not self._game_engine:
+            raise Exception("Game engine not started!")
+        
+        return self._game_engine.chessboard
+    
+    @property
+    def started(self):
+        return self._started
 
     def start(self):
         Log.info(f'Starting plugin "{self._id}"...')

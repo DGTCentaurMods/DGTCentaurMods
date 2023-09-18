@@ -61,9 +61,9 @@ def main():
 
         if event== Enums.Event.PLAY:
 
-            current_player = "White player" if gfe.get_board().turn else "Black player"
+            current_player = "White player" if gfe.chessboard.turn else "Black player"
 
-            gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
+            gfe.display_board_header(f"{current_player} {'W' if gfe.chessboard.turn == chess.WHITE else 'B'}")
 
     exit_requested = False
 

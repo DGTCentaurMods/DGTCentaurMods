@@ -549,14 +549,14 @@ def main():
 
                 if event == Enums.Event.PLAY:
 
-                    CLOCK_PANEL.push(gfe.get_board().turn)
+                    CLOCK_PANEL.push(gfe.chessboard.turn)
 
-                    current_player = current_game[_USERNAME] if gfe.get_board().turn == current_game[_COLOR] else current_game[_OPPONENT]
+                    current_player = current_game[_USERNAME] if gfe.chessboard.turn == current_game[_COLOR] else current_game[_OPPONENT]
 
-                    gfe.display_board_header(f"{current_player} {'W' if gfe.get_board().turn == chess.WHITE else 'B'}")
+                    gfe.display_board_header(f"{current_player} {'W' if gfe.chessboard.turn == chess.WHITE else 'B'}")
 
                     gfe.send_message_to_web_ui({ 
-                        "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.get_board().turn == chess.WHITE else 'BLACK'})"
+                        "turn_caption":f"turn → {current_player} ({'WHITE' if gfe.chessboard.turn == chess.WHITE else 'BLACK'})"
                     })
 
             
@@ -580,7 +580,7 @@ def main():
 
                 # From GameFactory perspective,
                 # Computer move == Lichess opponent move
-                return gfe.computer_move_is_set()
+                return gfe.computer_move_is_set
 
             # Subscribe to the game factory
             gfe = GameFactory.Engine(
@@ -689,7 +689,7 @@ def main():
                                 Log.info(f'Last board move "{uci_move}" validated by Lichess.')
 
                             else:
-                                CLOCK_PANEL.push(not gfe.get_board().turn)
+                                CLOCK_PANEL.push(not gfe.chessboard.turn)
 
                                 Log.info(f'Player "{current_game[_OPPONENT]}" played "{uci_move}".')
 

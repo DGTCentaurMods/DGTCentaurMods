@@ -92,7 +92,7 @@ class RandomBot(Plugin):
 
         if event == Enums.Event.PLAY:
 
-            turn = Centaur.board().turn
+            turn = self.chessboard.turn
 
             current_player = "You" if turn == chess.WHITE else "Random bot"
 
@@ -102,7 +102,7 @@ class RandomBot(Plugin):
             if turn == (not HUMAN_COLOR):
 
                 # We choose a random move
-                uci_move = str(random.choice(list(Centaur.board().legal_moves)))
+                uci_move = str(random.choice(list(self.chessboard.legal_moves)))
 
                 Centaur.play_computer_move(uci_move)
 
