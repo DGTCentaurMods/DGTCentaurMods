@@ -67,6 +67,10 @@ sudo apt install -y ./_DGTCentaurMods_A.alpha-latest.deb
 - Multiple chess engines
 - DGT Centaur board Reverse engineering work of the [original](https://github.com/EdNekebno/DGTCentaurMods) project
 
+## Support & Requests
+
+You can send a mail to: dgtcentaurmods@moult.org.
+
 ## Contributors welcome!
 
 If you can offer some time and effort to the project please get in contact! Everybody is more than welcome!
