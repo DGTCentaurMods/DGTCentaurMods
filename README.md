@@ -29,7 +29,7 @@ Web Interface - on http://IP_ADDRESS or the hostname of you board. Shows live vi
 
 PGN Download - For all played games from web interface
 
-Game Analysis - Simple playback/analysis of played games from web interface.
+Game Analysis - Simple playback/analysis of played games from web interface. (supports takebacks)
 
 Streaming Video - On the web interface /video provides a live mjpeg stream (for example for live streaming in OBS)
 
@@ -37,7 +37,7 @@ Chromecast - Stream live board view to Chromecast
 
 Wifi - Capability to join wifi from the board (WPS/WPA2)
 
-Play Engines - Stockfish (without centaur adaptive mode), ct800, zahak, rodentIV, maia . Upload your own engines from the web interface.
+Play Engines - Stockfish (without centaur adaptive mode), ct800, zahak, rodentIV, maia . Upload your own engines from the web interface. (supports takebacks, overriding computer moves)
 
 General Settings - Connect Wifi, Pair bluetooth, sound, lichess api token
 
