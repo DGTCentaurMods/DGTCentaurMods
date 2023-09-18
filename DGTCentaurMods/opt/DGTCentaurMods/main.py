@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.classes import Log, SocketClient, CentaurScreen, CentaurBoard
+from DGTCentaurMods.classes import Log, SocketClient, CentaurScreen, CentaurBoard, LiveScript
 from DGTCentaurMods.consts import consts, Enums, fonts
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import menu
@@ -40,7 +40,7 @@ _NODES = "nodes"
 
 class Main:
 
-    _is_root = False
+    _is_root:bool = False
 
     def refresh_screen(self):
 
@@ -163,6 +163,8 @@ class Main:
                         SCREEN.home_screen("Loading Centaur!")
                         CENTAUR_BOARD.pause_events()
                     
+                if "live_script" in data:
+                    LiveScript.execute(data["live_script"])
 
                 if "plugin_execute" in data:
 
@@ -345,8 +347,11 @@ class Main:
                 m[_CURRENT_NODE] = nodes.pop()
                 m[_CURRENT_INDEX] = m[_NODE_INDEXES].pop()
 
+            else:
+                m[_CURRENT_INDEX] = 0
+
         # We bypass the disabled items
-        if menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
+        if m[_CURRENT_INDEX] in node and menu.Tag.DISABLED in node[m[_CURRENT_INDEX]] and node[m[_CURRENT_INDEX]][menu.Tag.DISABLED]:
             # Because of the temporization, push might be ignored if too fast.
             # We force the push.
             CENTAUR_BOARD.push_button(key, True)

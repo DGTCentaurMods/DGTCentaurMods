@@ -93,8 +93,10 @@ def last_exception() -> str:
 
     log = f"Exception -> {exception_object}\nException type -> {exception_type}\n\n"
 
+    traceback = ""
+
     while(exception_traceback):
-        traceback = f"File name -> {exception_traceback.tb_frame}\n\nLine number -> {exception_traceback.tb_lineno}"
+        traceback += f"File name -> {exception_traceback.tb_frame}\nLine number -> {exception_traceback.tb_lineno}\n\n"
         exception_traceback = exception_traceback.tb_next
 
     return log + traceback

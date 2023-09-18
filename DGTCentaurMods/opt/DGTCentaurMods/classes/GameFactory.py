@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard
+from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard, LiveScript
 from DGTCentaurMods.consts import Enums, consts, fonts, menu
 from DGTCentaurMods.lib import common
 
@@ -111,7 +111,7 @@ class PieceHandler:
 
     def _undo_name(self) -> str:
         """Move that undoes the previous move"""
-        if prev_move := self._engine.get_last_uci_move():
+        if prev_move := self._engine.last_uci_move:
             return prev_move[2:4] + prev_move[0:2]
         else:
             # No previous move
@@ -136,7 +136,7 @@ class PieceHandler:
          # ignoring the promotion if exists
 
         if self._engine._computer_move_is_set and not self._can_force_moves:
-            return uci_move[0:4] == self._computer_uci_move[0:4]
+            return uci_move[0:4] == self._computer_uci_move
         else:
             legal_board_moves = (str(move)[0:4] for move in self._chessboard.legal_moves)
 
@@ -224,7 +224,7 @@ class PieceHandler:
         try:
             move = chess.Move.from_uci(uci_move)
             self._chessboard.push(move)
-            san_move = self._engine.get_last_san_move()
+            san_move = self._engine.last_san_move
             return self._accept_move(uci_move, san_move)
         except:
             Log.debug(f'INVALID move "{uci_move}"')
@@ -305,7 +305,7 @@ class PieceHandler:
         self._engine.update_web_ui({
             "clear_board_graphic_moves": True,
             "uci_undo_move": self._undo_name(),
-            "uci_move": self._engine.get_last_uci_move(),
+            "uci_move": self._engine.last_uci_move,
         })
 
         Engine._Engine__invoke_callback(
@@ -511,7 +511,7 @@ class Engine():
                 socket.send_message(response)
 
             if "uci_move" in data:
-                response["uci_move"] = self.get_last_uci_move()
+                response["uci_move"] = self.last_uci_move
                 socket.send_message(response)
 
             if "web_menu" in data:
@@ -543,8 +543,11 @@ class Engine():
                     self.display_board()
                     self.update_web_ui({ 
                         "clear_board_graphic_moves":True,
-                        "uci_move":self.get_last_uci_move(),
+                        "uci_move":self.last_uci_move,
                     })
+
+            if "live_script" in data:
+                    LiveScript.execute(data["live_script"])
 
         except Exception as e:
             Log.exception(Engine._on_socket_request, e)
@@ -605,14 +608,14 @@ class Engine():
                      self._previous_move_displayed = False
                      
                      if self._computer_move_is_set:
-                        self.set_computer_move()
+                        self.set_computer_move(self._computer_uci_move)
                           
                      else:
                         CENTAUR_BOARD.leds_off()
 
                 else:
                     # We read the last move that has been recorded
-                    previous_uci_move = self.get_last_uci_move()
+                    previous_uci_move = self.last_uci_move
 
                     if previous_uci_move:
                         from_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.ORIGIN)
@@ -719,7 +722,7 @@ class Engine():
 
                                     del eval
 
-                        self.chess_engine().analyse(
+                        self.chess_engine.analyse(
                             self._chessboard, 
                             chess.engine.Limit(time=1), 
                             on_taskengine_done = evaluation_callback)
@@ -879,6 +882,12 @@ class Engine():
         except Exception as e:
             Log.exception(Engine._game_thread_instance_worker, e)
 
+    @property
+    def computer_uci_move(self) -> str:
+        """Computer's choice of move, stripping off promotion suffix"""
+        return self._computer_uci_move[0:4]
+
+    @property
     def chess_engine(self):
 
         # By default we use Stockfish engine.
@@ -893,6 +902,7 @@ class Engine():
             "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
         })
     
+    @property
     def is_started(self):
         return self._started
 
@@ -902,6 +912,8 @@ class Engine():
             return
         
         self._started = True
+
+        LiveScript.attach_game_engine(self)
 
         SOCKET.initialize(on_socket_request=self._on_socket_request)
 
@@ -932,13 +944,22 @@ class Engine():
 
         SOCKET.disconnect()
 
-        self._game_thread_instance.join()
-        self._evaluation_thread_instance.join()
+        try:
+            self._game_thread_instance.join()
+        except:
+            pass
+
+        try:
+            self._evaluation_thread_instance.join()
+        except:
+            pass
 
         if self._chess_engine:
             self._chess_engine.quit()
 
         CENTAUR_BOARD.unsubscribe_events()
+
+        LiveScript.detach_game_engine()
 
         Log.info(f"{Engine.__name__} thread has been stopped.")
 
@@ -984,20 +1005,22 @@ class Engine():
 
                 self.update_evaluation()
 
-            self.chess_engine().analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
+            self.chess_engine.analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
 
         except Exception as e:
             Log.exception(Engine.flash_hint, e)
             pass
 
-    def get_last_uci_move(self):
+    @property
+    def last_uci_move(self):
         
         if not self._started:
             return None
         
         return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()
 
-    def get_last_san_move(self):
+    @property
+    def last_san_move(self):
 
         if not self._started:
             return None
@@ -1019,9 +1042,13 @@ class Engine():
 
         board_state = CENTAUR_BOARD.get_board_state()
 
-        if bytearray(board_state) == consts.BOARD_START_STATE:
-            self._need_starting_position_check = True
-            return
+        # TODO: handle the bytearray exception.
+        try:
+            if bytearray(board_state) == consts.BOARD_START_STATE:
+                self._need_starting_position_check = True
+                return
+        except:
+            pass
 
         business_board_state = common.Converters.fen_to_board_state(self._chessboard.fen())
         invalid_squares = []
@@ -1063,7 +1090,7 @@ class Engine():
         message = {**{
             "pgn":self.get_current_pgn(), 
             "fen":self._chessboard.fen(),
-            "uci_move":self.get_last_uci_move(),
+            "uci_move":self.last_uci_move,
             "checkers":list(map(lambda item:common.Converters.to_square_name(item), self._chessboard.checkers())),
             "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
         }, **args}
@@ -1155,24 +1182,23 @@ class Engine():
     def computer_move_is_set(self):
         return self._computer_move_is_set
 
-    def set_computer_move(self, uci_move = None):
+    def set_computer_move(self, uci_move) -> bool:
             
         try:
 
             if not self._started:
-                return
+                return False
 
-            if uci_move == None:
-                uci_move = self._computer_uci_move
-
-            # Set the computer move that the player is expected to make
-            # in the format b2b4 , g7g8q , etc
             try:
                 chess.Move.from_uci(uci_move)
             except:
                 Log.debug(f'INVALID uci_computer_move:"{uci_move}"')
-                return
-
+                return False
+            
+            if uci_move not in (str(move) for move in self._chessboard.legal_moves):
+                Log.debug(f'ILLEGAL uci_computer_move:"{uci_move}"')
+                return False
+            
             Log.debug(f'uci_computer_move:"{uci_move}"')
 
             # First set the globals so that the thread knows there is a computer move
@@ -1192,6 +1218,8 @@ class Engine():
                 "clear_board_graphic_moves":False,
                 "computer_uci_move":uci_move,
             })
+
+            return True
  
         except Exception as e:
             Log.exception(Engine.set_computer_move, e)

@@ -660,7 +660,7 @@ def main():
                     if 'btime' in state.keys():
                         CLOCK_PANEL.initialize(None, state.get('btime'))
                     
-                    if gfe.is_started() == False:
+                    if not gfe.is_started:
 
                         seeking_engine.stop()
 

@@ -92,6 +92,12 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 				this.busy = false
 			},
 
+			execute: function() {
+				this.visible = false
+				$store.set('live_script', this.value.text)
+				SOCKET.emit('request', {'live_script':this.value.text})
+			},
+
 			delete: function() {
 				if (this.busy) return
 				this.busy = true

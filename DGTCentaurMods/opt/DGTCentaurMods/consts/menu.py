@@ -140,6 +140,13 @@ _MENU_ITEMS = [
             { Tag.LABEL: "📋 Last log events", Tag.ONLY_WEB:True,
               Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": None, Tag.VALUE: "log_events"}
             },
+            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
+            {
+              Tag.ID:"live_script",
+              Tag.ONLY_WEB:True,
+              Tag.LABEL:"🎦 Live script editor", 
+              Tag.ACTION: { Tag.TYPE: "js", Tag.VALUE: "() => { me.editor.value = { id:'live_script', file:'Live Script', can_execute:true, text:$store.get('live_script')}; me.editor.visible = true }"},
+            },
         ] },
 
         { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },

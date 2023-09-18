@@ -130,7 +130,6 @@ def update_Centaur_FEN(fen: str) -> None:
     except:
         pass
 
-
 def delayed_command(command, delay):
     def _start_delayed(args, delay):
         time.sleep(delay)
@@ -138,8 +137,7 @@ def delayed_command(command, delay):
 
     t = Thread(target=_start_delayed, kwargs={'args': [{command}], 'delay': delay})
     t.start()
-
-
+    
 class Converters:
   
     @staticmethod

@@ -126,8 +126,9 @@
 							<span data-ng-if="!main.editor.value.editable_name"><h2>[[main.editor.value.file]].[[main.editor.value.extension]]</h2></span>
 							<span data-ng-if="main.editor.value.editable_name"><input ng-model="main.editor.value.new_file"><span>.[[main.editor.value.extension]]</span></span>
 							<span flex md-truncate></span>
-							<md-button class="md-raised" ng-click="main.editor.save()" aria-label="Save">Save</md-button>
+							<md-button ng-if="!main.editor.value.can_execute" class="md-raised" ng-click="main.editor.save()" aria-label="Save">Save</md-button>
 							<md-button ng-if="main.editor.value.can_delete" class="md-raised md-warn" ng-click="main.editor.delete()" aria-label="Save">Delete</md-button>
+							<md-button ng-if="main.editor.value.can_execute" class="md-raised md-warn" ng-click="main.editor.execute()" aria-label="Execute">Execute</md-button>
 							<md-button class="md-raised md-primary" ng-click="main.editor.close()" aria-label="Back">Back</md-button>
 						</div>
 					</md-toolbar>

@@ -19,7 +19,7 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.classes import GameFactory, Log, CentaurBoard, CentaurScreen, SocketClient
+from DGTCentaurMods.classes import GameFactory, Log, CentaurBoard, CentaurScreen, SocketClient, LiveScript
 from DGTCentaurMods.consts import Enums, consts, fonts
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import menu
@@ -112,7 +112,7 @@ class Centaur():
 
 class Plugin():
 
-    _game_engine:GameFactory.Engine = None
+    _game_engine:Optional[GameFactory.Engine] = None
 
     def __init__(self, id:str):
         self._exit_requested = False
@@ -160,6 +160,9 @@ class Plugin():
             if "sys" in data:
                 if data["sys"] == "homescreen":
                     CENTAUR_BOARD.push_button(Enums.Btn.BACK)
+
+            if "live_script" in data:
+                    LiveScript.execute(data["live_script"])
 
         except:
             socket.send_message({ "script_output":Log.last_exception() })
