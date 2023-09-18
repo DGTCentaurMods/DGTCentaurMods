@@ -275,7 +275,7 @@ def main():
 
         seeking_engine.print_all(3)
 
-    def _key_callback(key:Enums.Btn):
+    def _main_key_callback(key:Enums.Btn):
         global exit_requested
         global stream_incoming_events
 
@@ -311,17 +311,15 @@ def main():
 
             CENTAUR_BOARD.subscribe_events(_seeking_key_callback)
 
-
         if key == Enums.Btn.BACK:
 
-            CENTAUR_BOARD.unsubscribe_events()
             seeking_engine.stop()
 
             CENTAUR_BOARD.leds_off()
 
             exit_requested = True
 
-    CENTAUR_BOARD.subscribe_events(_key_callback)
+    CENTAUR_BOARD.subscribe_events(_main_key_callback)
 
     current_game = {
         _USERNAME:None,
@@ -369,6 +367,8 @@ def main():
         if lichess_token != None:
 
             _welcome_screen()
+
+            _stream_game_worker:threading.Thread = None
 
             stream_incoming_events = lichess_client.board.stream_incoming_events()
 
@@ -498,7 +498,7 @@ def main():
                             ongoing_games[0].get('opponent').get(_RATING))
                         break
 
-            def key_callback(key:Enums.Btn):
+            def _game_engine_key_callback(key:Enums.Btn):
 
                 if key == Enums.Btn.TICK:
                     CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
@@ -545,7 +545,6 @@ def main():
                     CLOCK_PANEL.enable(False)
 
                     exit_requested = True
-                    del stream_game_state
 
                 if event == Enums.Event.PLAY:
 
@@ -582,12 +581,15 @@ def main():
                 # Computer move == Lichess opponent move
                 return gfe.computer_move_is_set
 
+            stream_incoming_events.close()
+            stream_incoming_events = None
+
             # Subscribe to the game factory
             gfe = GameFactory.Engine(
                 
                 event_callback = event_callback,
                 move_callback = move_callback,
-                key_callback = key_callback,
+                key_callback = _game_engine_key_callback,
 
                 flags = Enums.BoardOption.EVALUATION_DISABLED | Enums.BoardOption.DB_RECORD_DISABLED | Enums.BoardOption.PARTIAL_PGN_DISABLED,
 
@@ -604,117 +606,139 @@ def main():
 
             CLOCK_PANEL.enable(True)
 
-            # Game stream
-            stream_game_state = lichess_client.board.stream_game_state(current_game[_ID])
             
-            # The game starts or is being resumed
-            while True:
+            def _stream_game_thread():
 
-                try:
-                    state = next(stream_game_state)
-                except:
-                    state = None
-                    pass
+                # Game stream
+                stream_game_state = lichess_client.board.stream_game_state(current_game[_ID])
 
-                if exit_requested:
-                    break
+                # The game starts or is being resumed
+                while True:
 
-                if state:
-                    #print(state)
-                    """
-                    {
-                        "type": "gameState",
-                        "moves": "e2e4",
-                        "wtime": datetime.datetime(1970, 1, 1, 0, 10, tzinfo=datetime.timezone.utc),
-                        "btime": datetime.datetime(1970, 1, 1, 0, 10, tzinfo=datetime.timezone.utc),
-                        "winc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
-                        "binc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
-                        "status": "started",
-                    }
-                    {
-                        "type": "chatLine",
-                        "room": "player",
-                        _USERNAME: "maia1",
-                        "text": "Hi Jack Bauer, I'm currently taking my time like a human. If you type 'go' or 'fast' in the chat I'll play faster. gl hf",
-                    }
-                    {
-                        "type": "gameState",
-                        "moves": "e2e4 e7e5 b1c3 g8f6 f2f4 e5f4 e4e5 f6g8 g1f3 d7d6 d2d4 d6e5 f3e5 f8d6 c1f4 d6e5 f4e5 f7f6 e5g3 d8e7 d1e2 e7e2 f1e2 b8c6 e1c1 g8e7 h1e1 e8g8 e2c4 g8h8 g3c7 c8g4 d1d2 a8c8 c7d6 f8e8 d4d5 c6a5 c4b5 e8d8 d6e7 d8e8 b5e8 c8e8 d5d6 a5c4 d2d4 c4e5 h2h3 g4h5 e1e5 f6e5 d4d5 h5f7 d5e5 h7h6 e5f5 f7e6 f5f8 e8f8 e7f8 h8g8 f8e7 g8f7 a2a3 f7e8 b2b4 e8d7 c1d2 g7g5 d2e3 h6h5 c3a4 g5g4 a4c5 d7c6 c5e6 g4h3 g2h3 h5h4 c2c4 c6d7 e6c5 d7c6 d6d7 c6c7 d7d8q c7c6 d8d7 c6b6 d7b7",
-                        "wtime": datetime.datetime(
-                            1970, 1, 1, 0, 5, 17, 950000, tzinfo=datetime.timezone.utc
-                        ),
-                        "btime": datetime.datetime(
-                            1970, 1, 1, 0, 9, 8, 370000, tzinfo=datetime.timezone.utc
-                        ),
-                        "winc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
-                        "binc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
-                        "status": "mate",
-                        "winner": "white",
-                    }
-                    """
+                    if exit_requested:
+                        break
 
-                    # Clocks initialization then synchronization
-                    if 'wtime' in state.keys():
-                        CLOCK_PANEL.initialize(state.get('wtime'), None)
-
-                    if 'btime' in state.keys():
-                        CLOCK_PANEL.initialize(None, state.get('btime'))
-                    
-                    if not gfe.is_started:
-
-                        seeking_engine.stop()
-
-                        CENTAUR_BOARD.leds_off()
-
-                        if 'state' in state.keys():
-
-                            # Game is being resumed...
-                            uci_moves = state.get('state').get('moves').split()
-
-                            gfe.start(uci_moves)
-
-
-                    if 'wdraw' in state.keys() or 'bdraw' in state.keys():
-                        # TODO handle draw proposal
-                        lichess_client.board.decline_draw(current_game[_ID])
+                    try:
+                        state = next(stream_game_state)
+                    except:
+                        state = None
                         pass
 
-                    else:
-                        if 'type' in state.keys() and state.get('type') == "gameState" and 'moves' in state.keys():
-                            
-                            # We take the last move of the list
-                            uci_move = state.get('moves').split()[-1]
+                    if state:
+                        #print(state)
+                        """
+                        {
+                            "type": "gameState",
+                            "moves": "e2e4",
+                            "wtime": datetime.datetime(1970, 1, 1, 0, 10, tzinfo=datetime.timezone.utc),
+                            "btime": datetime.datetime(1970, 1, 1, 0, 10, tzinfo=datetime.timezone.utc),
+                            "winc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
+                            "binc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
+                            "status": "started",
+                        }
+                        {
+                            "type": "chatLine",
+                            "room": "player",
+                            _USERNAME: "maia1",
+                            "text": "Hi Jack Bauer, I'm currently taking my time like a human. If you type 'go' or 'fast' in the chat I'll play faster. gl hf",
+                        }
+                        {
+                            "type": "gameState",
+                            "moves": "e2e4 e7e5 b1c3 g8f6 f2f4 e5f4 e4e5 f6g8 g1f3 d7d6 d2d4 d6e5 f3e5 f8d6 c1f4 d6e5 f4e5 f7f6 e5g3 d8e7 d1e2 e7e2 f1e2 b8c6 e1c1 g8e7 h1e1 e8g8 e2c4 g8h8 g3c7 c8g4 d1d2 a8c8 c7d6 f8e8 d4d5 c6a5 c4b5 e8d8 d6e7 d8e8 b5e8 c8e8 d5d6 a5c4 d2d4 c4e5 h2h3 g4h5 e1e5 f6e5 d4d5 h5f7 d5e5 h7h6 e5f5 f7e6 f5f8 e8f8 e7f8 h8g8 f8e7 g8f7 a2a3 f7e8 b2b4 e8d7 c1d2 g7g5 d2e3 h6h5 c3a4 g5g4 a4c5 d7c6 c5e6 g4h3 g2h3 h5h4 c2c4 c6d7 e6c5 d7c6 d6d7 c6c7 d7d8q c7c6 d8d7 c6b6 d7b7",
+                            "wtime": datetime.datetime(
+                                1970, 1, 1, 0, 5, 17, 950000, tzinfo=datetime.timezone.utc
+                            ),
+                            "btime": datetime.datetime(
+                                1970, 1, 1, 0, 9, 8, 370000, tzinfo=datetime.timezone.utc
+                            ),
+                            "winc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
+                            "binc": datetime.datetime(1970, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc),
+                            "status": "mate",
+                            "winner": "white",
+                        }
+                        """
 
-                            if uci_move == current_game[_YOUR_LAST_BOARD_MOVE]:
-                                Log.info(f'Last board move "{uci_move}" validated by Lichess.')
+                        def _sync_clocks(_state):
+                            # Clocks initialization then synchronization
+                            if 'wtime' in _state.keys():
+                                CLOCK_PANEL.initialize(state.get('wtime'), None)
 
-                            else:
-                                CLOCK_PANEL.push(not gfe.chessboard.turn)
+                            if 'btime' in _state.keys():
+                                CLOCK_PANEL.initialize(None, state.get('btime'))
+                        
+                        if not gfe.is_started:
 
-                                Log.info(f'Player "{current_game[_OPPONENT]}" played "{uci_move}".')
+                            seeking_engine.stop()
 
-                                gfe.set_computer_move(uci_move)
+                            CENTAUR_BOARD.leds_off()
 
-                            if 'status' in state.keys() and state.get('status') != "started":
-                                # Might be mate...
+                            if 'state' in state.keys():
 
-                                CLOCK_PANEL.stop()
+                                state = state.get('state')
 
-                                if 'winner' in state.keys():
-                                    if state.get('winner') == ("white" if current_game[_COLOR] else "black"):
-                                        CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
-                                    else:
-                                        CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
+                                # Game is being resumed...
+                                uci_moves = state.get('moves', '').split()
 
-                                gfe.update_evaluation(force=True, text=state.get('status'))
-                                pass
+                                gfe.start(uci_moves)
 
+                        # Clocks synchronization
+                        _sync_clocks(state)
+
+                        if 'wdraw' in state.keys() or 'bdraw' in state.keys():
+                            # TODO handle draw proposal
+                            lichess_client.board.decline_draw(current_game[_ID])
+                            pass
+
+                        else:
+                            if 'type' in state.keys() and state.get('type') == "gameState" and 'moves' in state.keys():
+                                
+                                uci_moves = state.get('moves', '').split()
+
+                                if len(uci_moves):
+                                    # We take the last move of the list
+                                    uci_move = state.get('moves').split()[-1]
+
+                                    # If moves count is even then white turn
+                                    your_turn:bool = current_game[_COLOR] == ((len(state.get('moves').split()) % 2) == 0)
+
+                                    if uci_move == current_game[_YOUR_LAST_BOARD_MOVE]:
+                                        Log.info(f'Last board move "{uci_move}" validated by Lichess.')
+
+                                    if your_turn:
+                                        CLOCK_PANEL.push(not gfe.chessboard.turn)
+
+                                        Log.info(f'Player "{current_game[_OPPONENT]}" played "{uci_move}".')
+
+                                        gfe.set_computer_move(uci_move)
+
+                                if 'status' in state.keys() and state.get('status') != "started":
+                                    # Might be mate...
+
+                                    CLOCK_PANEL.stop()
+
+                                    if 'winner' in state.keys():
+                                        if state.get('winner') == ("white" if current_game[_COLOR] else "black"):
+                                            CENTAUR_BOARD.beep(Enums.Sound.VICTORY)
+                                        else:
+                                            CENTAUR_BOARD.beep(Enums.Sound.GAME_LOST)
+
+                                    gfe.update_evaluation(force=True, text=state.get('status'))
+                                    pass
+            
+            _stream_game_worker = threading.Thread(target=_stream_game_thread)
+            _stream_game_worker.daemon = True
+            _stream_game_worker.start()
+   
     while exit_requested == False:
         time.sleep(0.1)
+
+    CENTAUR_BOARD.unsubscribe_events()
 
     CLOCK_PANEL.enable(False)
 
     SCREEN.on_paint(None)
+
+    SCREEN.clear_area()
 
 if __name__ == '__main__':
     main()

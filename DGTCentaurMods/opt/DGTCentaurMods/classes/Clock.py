@@ -23,7 +23,7 @@ from DGTCentaurMods.classes import Log, CentaurScreen
 from DGTCentaurMods.consts import fonts
 from DGTCentaurMods.lib import common
 
-import datetime
+import datetime, pytz
 
 SCREEN = CentaurScreen.get()
 
@@ -63,7 +63,7 @@ class _Clock():
             self._is_paused = True
 
         except Exception as e:
-            Log.Exception(_Clock.pause, e)
+            Log.exception(_Clock.pause, e)
 
     def resume(self):
         try:
@@ -77,7 +77,7 @@ class _Clock():
             self._is_paused = False
 
         except Exception as e:
-            Log.Exception(_Clock.resume, e)
+            Log.exception(_Clock.resume, e)
 
     def set(self, time):
         try:
@@ -85,7 +85,7 @@ class _Clock():
             self._initial_time = datetime.datetime.now()
             self._paused_time = datetime.datetime.now()
         except Exception as e:
-            Log.Exception(_Clock.set, e)
+            Log.exception(_Clock.set, e)
 
     def get(self):
         try:
@@ -102,7 +102,8 @@ class _Clock():
             return _BASE_TIME if result<_BASE_TIME else result
 
         except Exception as e:
-            Log.Exception(_Clock.get, e)
+            Log.exception(_Clock.get, e)
+            pass
 
 class ClockPanel(common.Singleton):
 
@@ -127,6 +128,10 @@ class ClockPanel(common.Singleton):
     def initialize(self, wtime = None, btime = None):
         
         if wtime:
+
+            if type(wtime) is int:
+                wtime = pytz.UTC.localize(datetime.datetime.fromtimestamp(wtime / 1e3))
+
             # First call - clocks need to be initialized
             if self._wclock == None:
                 self._wclock = _Clock(wtime)
@@ -135,6 +140,9 @@ class ClockPanel(common.Singleton):
             self._wclock.set(wtime)
 
         if btime and self._bclock:
+            if type(btime) is int:
+                btime = pytz.UTC.localize(datetime.datetime.fromtimestamp(btime / 1e3))
+
             self._bclock.set(btime)
 
     def enable(self, value):

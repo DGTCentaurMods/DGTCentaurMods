@@ -94,7 +94,7 @@
 						<board main="main" item="main.board" on-analyze="" on-lichess="" on-play="" on-undo="" on-pgn="" on-fen=""></board>
 						<div data-ng-show="main.board.synchronized">[[ main.board.turn_caption ]]</div>
 						<md-progress-linear data-ng-show="main.board.synchronized && main.board.live_evaluation" md-mode="determinate" value="[[main.board.eval]]"></md-progress-linear>
-						<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn"><div>&#9842; archive view &#9842;</div></div>
+						<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn">-</div>
 					</div>
 					<div></div>
 					<div data-ng-show="main.board.pgn_panel" class="pgnarea" style="overflow-y: scroll; height: {{ data.boardsize-6 }}px">

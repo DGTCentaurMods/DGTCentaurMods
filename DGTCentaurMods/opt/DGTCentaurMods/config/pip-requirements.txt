@@ -35,3 +35,4 @@ py-flags==1.1.4
 Flask-SocketIO==5.3.5
 python-socketio==5.8.0
 ifconfig-parser==0.0.5
+pytz==2023.3.post1
