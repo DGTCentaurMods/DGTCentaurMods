@@ -129,7 +129,6 @@ class PieceHandler:
         # Could be a reset request...
         if not self._web_move:
             self._engine._update_board_state()
-            self._engine._need_starting_position_check = True
 
     def _is_legal_move(self, uci_move: str) -> bool:
 
@@ -837,6 +836,7 @@ class Engine():
                                 #sum1 = summary.summarize(all_objects)
                                 #summary.print_(sum1)
 
+                                self._invalid_board_state = False
                                 self._need_starting_position_check = False
 
                                 self._chessboard = chess.Board(chess.STARTING_FEN)
@@ -1018,6 +1018,11 @@ class Engine():
             return
 
         board_state = CENTAUR_BOARD.get_board_state()
+
+        if bytearray(board_state) == consts.BOARD_START_STATE:
+            self._need_starting_position_check = True
+            return
+
         business_board_state = common.Converters.fen_to_board_state(self._chessboard.fen())
         invalid_squares = []
         for square in range(0,64):
