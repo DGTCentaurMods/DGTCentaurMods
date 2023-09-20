@@ -168,6 +168,7 @@ class Plugin():
 
         SOCKET.send_message({ 
                 "turn_caption":"Plugin "+self._id,
+                "plugin":self._id,
                 "clear_board_graphic_moves":True,
                 "loading_screen":False,
                 "evaluation_disabled":True,
