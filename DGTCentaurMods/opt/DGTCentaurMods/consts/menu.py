@@ -26,7 +26,7 @@ from DGTCentaurMods.consts.latest_tag import LASTEST_TAG
 
 from pathlib import Path
 
-import os, configparser, copy
+import os, configparser, copy, re
 
 
 class Tag():
@@ -186,7 +186,8 @@ class _Menu(common.Singleton):
             return list(map(lambda section:section, parser.sections()))
 
         # We read the available plugins
-        plugins = list(map(lambda f:{Tag.ID:Path(f.name).stem, Tag.LABEL:Path(f.name).stem}, 
+        # Plugin label is built from Camel case to snake case
+        plugins = list(map(lambda f:{Tag.ID:Path(f.name).stem, Tag.LABEL:re.sub(r'(?<!^)(?=[A-Z])', ' ', Path(f.name).stem).capitalize() },
                            filter(lambda f: f.name.endswith(".py"), os.scandir(consts.PLUGINS_DIRECTORY))))
 
         # We read the available engines + their options

@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.classes import GameFactory, Log, ChessEngine, CentaurBoard, CentaurScreen, SocketClient, LiveScript
 from DGTCentaurMods.consts import Enums, consts, fonts
-from DGTCentaurMods.lib import common
+from DGTCentaurMods.lib import common, sys_requests
 from DGTCentaurMods.consts import menu
 
 from typing import Optional
@@ -178,11 +178,11 @@ class Plugin():
     def _on_socket_request(self, data, socket):
         try:
 
+            # Common sys requests handling
+            sys_requests.handle_socket_requests(data)
+
             if "web_menu" in data:
                 self._initialize_web_menu()
-
-            if "battery" in  data:
-                SCREEN.set_battery_value(data["battery"])
 
             if "web_move" in data:
                 # A move has been triggered from web UI
@@ -191,13 +191,6 @@ class Plugin():
 
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
-
-            if "sys" in data:
-                if data["sys"] == "homescreen":
-                    CENTAUR_BOARD.push_button(Enums.Btn.BACK)
-
-            if "live_script" in data:
-                    LiveScript.execute(data["live_script"] or "")
 
         except:
             socket.send_message({ "script_output":Log.last_exception() })

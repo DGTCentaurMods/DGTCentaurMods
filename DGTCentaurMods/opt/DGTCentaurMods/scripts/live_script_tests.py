@@ -131,7 +131,7 @@ def stage_randombot():
     LS.select_menu("PLUGINS")
 
     # Launch RandomBot
-    LS.select_menu("RANDOMBOT")
+    LS.select_menu("RANDOM BOT")
     time.sleep(2)
 
     # Splash screen

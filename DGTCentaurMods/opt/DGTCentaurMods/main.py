@@ -19,9 +19,9 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.classes import Log, SocketClient, CentaurScreen, CentaurBoard, LiveScript
+from DGTCentaurMods.classes import Log, SocketClient, CentaurScreen, CentaurBoard
 from DGTCentaurMods.consts import consts, Enums, fonts
-from DGTCentaurMods.lib import common
+from DGTCentaurMods.lib import common, sys_requests
 from DGTCentaurMods.consts import menu
 
 from DGTCentaurMods.consts.latest_tag import LASTEST_TAG
@@ -113,18 +113,11 @@ class Main:
         def _on_socket_request(data, socket):
             try:
 
+                # Common sys requests handling
+                sys_requests.handle_socket_requests(data)
+
                 if "screen_message" in data:
                     SCREEN.home_screen(data["screen_message"])
-
-                if "standby" in data:
-                    if data["standby"]:
-                        SCREEN.pause()
-                    else:
-                        SCREEN.unpause()
-                        self.print_menu()
-
-                if "battery" in  data:
-                    SCREEN.set_battery_value(data["battery"])
 
                 if "web_menu" in data:
                     self.initialize_web_menu()
@@ -135,39 +128,6 @@ class Main:
 
                 if "web_button" in data:
                     CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
-
-                if "pong" in data:
-                    # Browser is connected (server ping)
-                    pass
-
-                if "sys" in data:
-                   
-                    command = data["sys"]
-
-                    if command == "homescreen":
-                        CENTAUR_BOARD.push_button(Enums.Btn.BACK)
-
-                    # The system actions are executed on server side
-                    # We only handle the UI here (as the browser does)
-
-                    if command=="reboot":
-                        SCREEN.home_screen("Rebooting!")
-                    
-                    if command=="shutdown":
-                        CENTAUR_BOARD.led_from_to(7,7)
-                        SCREEN.home_screen("Bye!")
-                        time.sleep(1)
-                        CENTAUR_BOARD.sleep()
-
-                    if command=="restart_service":
-                        SCREEN.home_screen("Reloading!")
-
-                    if command=="centaur":
-                        SCREEN.home_screen("Loading Centaur!")
-                        CENTAUR_BOARD.pause_events()
-                    
-                if "live_script" in data:
-                    LiveScript.execute(data["live_script"] or "")
 
                 if "plugin_execute" in data:
 

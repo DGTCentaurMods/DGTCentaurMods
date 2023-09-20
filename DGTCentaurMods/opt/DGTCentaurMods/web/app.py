@@ -102,6 +102,9 @@ def on_request(message):
 			socketio.emit('request', message)
 
 		if action == "centaur":
+			# We relay the message to the app
+			socketio.emit('request', message)
+			time.sleep(4)
 
 			os.system(f"sudo systemctl stop {consts.MAIN_ID}.service")
 
@@ -112,23 +115,35 @@ def on_request(message):
 		if action == "shutdown":
 			# We relay the message to the app
 			socketio.emit('request', message)
-			os.system("sudo pkill centaur")
 			time.sleep(4)
+
+			os.system("sudo pkill centaur")
+			time.sleep(.5)
 			os.system("sudo poweroff")
 
 		if action == "reboot":
 			# We relay the message to the app
 			socketio.emit('request', message)
+			time.sleep(4)
+
 			os.system("sudo pkill centaur")
 			time.sleep(.5)
 			os.system("sudo reboot")
 
 		if action == "restart_service":
+			# We relay the message to the app
+			socketio.emit('request', message)
+			time.sleep(4)
+
 			os.system("sudo pkill centaur")
 			time.sleep(.5)
 			os.system(f"sudo systemctl restart {consts.MAIN_ID}.service")
 
 		if action == "restart_web_service":
+			# We relay the message to the app
+			socketio.emit('request', message)
+			time.sleep(4)
+
 			os.system("sudo pkill centaur")
 			time.sleep(.5)
 			os.system(f"sudo systemctl restart {consts.MAIN_ID}Web.service")

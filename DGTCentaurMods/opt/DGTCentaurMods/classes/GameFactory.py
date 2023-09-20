@@ -21,7 +21,7 @@
 
 from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurScreen, CentaurBoard, LiveScript
 from DGTCentaurMods.consts import Enums, consts, fonts, menu
-from DGTCentaurMods.lib import common
+from DGTCentaurMods.lib import common, sys_requests
 
 #from pympler import muppy, summary
 
@@ -495,7 +495,10 @@ class Engine():
 
     def _on_socket_request(self, data, socket):
 
-        if not self._initialized or not self._started or data is None:
+        # Common sys requests handling
+        sys_requests.handle_socket_requests(data)
+
+        if not self._initialized or not self._started:
             return
 
         try:
@@ -516,9 +519,6 @@ class Engine():
             if "web_menu" in data:
                 self.initialize_web_menu()
 
-            if "battery" in  data:
-                SCREEN.set_battery_value(data["battery"])
-
             if "web_move" in data:
                 # A move has been triggered from web UI
                 CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("source", None)), Enums.PieceAction.LIFT)
@@ -529,24 +529,6 @@ class Engine():
 
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
-
-            if "sys" in data:
-                if data["sys"] == "homescreen":
-                    CENTAUR_BOARD.push_button(Enums.Btn.BACK)
-
-            if "standby" in data:
-                if data["standby"]:
-                    SCREEN.home_screen("Game paused!")
-                else:
-                    self.display_partial_PGN()
-                    self.display_board()
-                    self.update_web_ui({ 
-                        "clear_board_graphic_moves":True,
-                        "uci_move":self.last_uci_move,
-                    })
-
-            if "live_script" in data:
-                    LiveScript.execute(data["live_script"] or "")
 
         except Exception as e:
             Log.exception(Engine._on_socket_request, e)
