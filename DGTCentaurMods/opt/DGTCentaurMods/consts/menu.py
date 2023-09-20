@@ -97,6 +97,12 @@ _MENU_ITEMS = [
     {   Tag.ID:"system", 
         Tag.LABEL:"System", Tag.ITEMS: [
 
+            { Tag.LABEL: "📴 Power off board", Tag.SHORT_LABEL: "Power off",
+              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", Tag.VALUE: "shutdown"}
+            },
+
+            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
+
             { Tag.LABEL: "✏ Edit configuration file", Tag.ONLY_WEB:True, Tag.ITEMS: [], Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID: "conf", Tag.FILE:"centaur" }}},
             { Tag.ID:"uci", Tag.LABEL:"✏ Edit engines UCI", Tag.TYPE: "subitem", Tag.ITEMS: [], Tag.ONLY_WEB:True },
             { Tag.ID:"famous", Tag.LABEL:"✏ Edit famous PGN", Tag.TYPE: "subitem", Tag.ITEMS: [
@@ -104,13 +110,16 @@ _MENU_ITEMS = [
                 { Tag.LABEL: "➕ Create a new PGN", Tag.ACTION:{ Tag.TYPE: "socket_read", Tag.VALUE: { Tag.ID:"famous_pgn", Tag.FILE:"__new__" }}}], Tag.ONLY_WEB:True },
 
             { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
-
-            { Tag.LABEL: "📴 Power off board", Tag.SHORT_LABEL: "Power off",
-              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", Tag.VALUE: "shutdown"}
+            {
+              Tag.ID:"live_script",
+              Tag.ONLY_WEB:True,
+              Tag.LABEL:"🎦 Live script editor", 
+              Tag.ACTION: { Tag.TYPE: "js", Tag.VALUE: "() => { me.editor.value = { id:'live_script', file:'Live Script', can_execute:true, text:$store.get('live_script')}; me.editor.visible = true }"},
             },
-            { Tag.LABEL: "🌀 Reboot board", Tag.SHORT_LABEL: "Reboot",
-              Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", Tag.VALUE: "reboot"}
-            },
+            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
+            #{ Tag.LABEL: "🌀 Reboot board", Tag.SHORT_LABEL: "Reboot",
+            #  Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", Tag.VALUE: "reboot"}
+            #},
             { Tag.LABEL: "⚡ Restart CORE service", Tag.ONLY_WEB:True,
               Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A restart request has been sent to the board!", Tag.VALUE: "restart_service"}
             },
@@ -131,6 +140,7 @@ _MENU_ITEMS = [
             { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
+            { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             
             { Tag.LABEL: f"tag:{consts.TAG_RELEASE}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
             { Tag.LABEL: f"last:{LASTEST_TAG}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
@@ -139,14 +149,7 @@ _MENU_ITEMS = [
             
             { Tag.LABEL: "📋 Last log events", Tag.ONLY_WEB:True,
               Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": None, Tag.VALUE: "log_events"}
-            },
-            { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
-            {
-              Tag.ID:"live_script",
-              Tag.ONLY_WEB:True,
-              Tag.LABEL:"🎦 Live script editor", 
-              Tag.ACTION: { Tag.TYPE: "js", Tag.VALUE: "() => { me.editor.value = { id:'live_script', file:'Live Script', can_execute:true, text:$store.get('live_script')}; me.editor.visible = true }"},
-            },
+            }
         ] },
 
         { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },

@@ -117,18 +117,9 @@ def on_request(message):
 			socketio.emit('request', message)
 			time.sleep(4)
 
-			os.system("sudo pkill centaur")
+			os.system(f"sudo systemctl stop {consts.MAIN_ID}.service")
 			time.sleep(.5)
-			os.system("sudo poweroff")
-
-		if action == "reboot":
-			# We relay the message to the app
-			socketio.emit('request', message)
-			time.sleep(4)
-
-			os.system("sudo pkill centaur")
-			time.sleep(.5)
-			os.system("sudo reboot")
+			os.system("sudo init 0")
 
 		if action == "restart_service":
 			# We relay the message to the app

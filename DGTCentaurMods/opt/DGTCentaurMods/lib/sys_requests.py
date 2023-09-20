@@ -59,19 +59,17 @@ def handle_socket_requests(data):
 
         # The system actions are executed on server side
         # We only handle the UI here (as the browser does)
-
-        if command=="reboot":
-            _back_home()
-
-            SCREEN.home_screen("Rebooting!")
         
         if command=="shutdown":
             _back_home()
             
             SCREEN.home_screen("Bye!")
+            CENTAUR_BOARD.sleep()
 
         if command=="restart_service" or command=="restart_web_service":
             _back_home()
+
+            CENTAUR_BOARD.leds_off()
 
             SCREEN.home_screen("Reloading!")
 
