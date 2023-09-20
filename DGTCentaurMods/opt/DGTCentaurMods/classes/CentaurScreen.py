@@ -24,7 +24,7 @@ from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 from DGTCentaurMods.classes import Log
 
-from DGTCentaurMods.consts import consts, fonts
+from DGTCentaurMods.consts import consts, fonts, Enums
 from DGTCentaurMods.lib import common
 
 from PIL import Image, ImageDraw
@@ -258,7 +258,7 @@ class CentaurScreen(common.Singleton):
             Log.exception(CentaurScreen.draw_fen, e)
             pass
 
-    def draw_back_button(self, canvas, x):
+    def _draw_back_button(self, canvas, x):
         canvas.line(
             (x,16,x+16,16), fill=0, width=5)
         canvas.line(
@@ -268,19 +268,39 @@ class CentaurScreen(common.Singleton):
         canvas.polygon(
             [(x+8, 2), (x+8, 10), (x, 6)], fill=0)
 
-    def draw_tick_button(self, canvas, x):
+    def _draw_tick_button(self, canvas, x):
         canvas.line(
             (x+6,16,x+16,4), fill=0, width=5)
         canvas.line(
             (x+2,10, x+8,16), fill=0, width=5)
         
-    def draw_up_button(self, canvas, x):
+    def _draw_up_button(self, canvas, x):
         canvas.polygon(
             [(x, 18), (x+16, 18), (x+8, 3)], fill=0)
         
-    def draw_down_button(self, canvas, x):
+    def _draw_down_button(self, canvas, x):
         canvas.polygon(
             [(x, 3), (x+16, 3), (x+8, 18)], fill=0)
+        
+    def draw_button_label(self, button:Enums.Btn, text:str, row:float, x:int):
+
+        image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
+
+        canvas = ImageDraw.Draw(image)
+
+        canvas_drawer = {
+
+            Enums.Btn.UP:self._draw_up_button,
+            Enums.Btn.DOWN:self._draw_down_button,
+            Enums.Btn.BACK:self._draw_back_button,
+            Enums.Btn.TICK:self._draw_tick_button,
+        
+        }.get(button, None)
+        
+        if canvas_drawer:
+            canvas_drawer(canvas, x)
+            canvas.text((x+20, 0), text=text, font=fonts.MAIN_FONT, fill=0)
+            self._buffer.paste(image, box=(0, int(row * HEADER_HEIGHT)))
 
     def draw_resignation_window(self):
 
@@ -299,8 +319,8 @@ class CentaurScreen(common.Singleton):
 
             canvas = ImageDraw.Draw(image)
 
-            self.draw_back_button(canvas, 28)
-            self.draw_tick_button(canvas, 82)
+            self._draw_back_button(canvas, 28)
+            self._draw_tick_button(canvas, 82)
 
             self._buffer.paste(image, (0, (7 * HEADER_HEIGHT)))
 
@@ -323,10 +343,10 @@ class CentaurScreen(common.Singleton):
 
             canvas = ImageDraw.Draw(image)
 
-            self.draw_up_button(canvas, 10)
-            self.draw_down_button(canvas, 38)
-            self.draw_back_button(canvas, 70)
-            self.draw_tick_button(canvas, 100)
+            self._draw_up_button(canvas, 10)
+            self._draw_down_button(canvas, 38)
+            self._draw_back_button(canvas, 70)
+            self._draw_tick_button(canvas, 100)
 
             self._buffer.paste(image, (0, (7 * HEADER_HEIGHT)))
 

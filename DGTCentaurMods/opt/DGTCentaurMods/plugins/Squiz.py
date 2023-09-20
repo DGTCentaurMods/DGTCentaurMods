@@ -155,14 +155,17 @@ class Squiz(Plugin):
 
      # When exists, this function is automatically invoked
      # at start, after splash screen, on PLAY button.
-    def on_start_callback(self):
+    def on_start_callback(self, key:Enums.Btn) -> bool:
 
         Centaur.sound(Enums.Sound.COMPUTER_MOVE)
         self.generate_question()
 
+        # Game started.
+        return True
+
      # This function is automatically invoked
      # when the plugin starts.
-    def splash_screen(self):
+    def splash_screen(self) -> bool:
 
         print = Centaur.print
 

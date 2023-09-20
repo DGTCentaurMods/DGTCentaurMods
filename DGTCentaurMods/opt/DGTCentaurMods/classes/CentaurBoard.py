@@ -60,6 +60,8 @@ class CentaurBoard(common.Singleton):
 
     _callbacks_queue = []
 
+    _current_menu = ""
+
     _battery_level = 0
 
     _stand_by = False
@@ -430,7 +432,13 @@ class CentaurBoard(common.Singleton):
             print("|\r")
         print("+---+---+---+---+---+---+---+---+")
 
-    
+    def set_current_menu(self, menu_label:str):
+        self._current_menu = menu_label.upper()
+
+    @property
+    def current_menu(self) -> str:
+        return self._current_menu
+
     def subscribe_events(self, key_callback:Optional[Callable] = None, field_callback:Optional[Callable] = None):
 
         # We backup the current callbacks

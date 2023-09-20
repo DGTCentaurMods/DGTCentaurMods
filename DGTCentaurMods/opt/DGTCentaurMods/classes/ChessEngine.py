@@ -120,9 +120,12 @@ class ChessEngineWrapper():
         # 3 retries
         for _ in range(0,3):
 
-            result = function_invoker()
+            try:
+                result = function_invoker()
+            except:
+                result = None
 
-            if result != None:
+            if result:
                 return result
             
             # Failure...
@@ -163,7 +166,7 @@ class ChessEngineWrapper():
                     return self.__engine.analyse(board=board, limit=limit)
 
             except Exception as e:
-                Log.info(f"{ChessEngineWrapper.analyse.__name__}:{e}")
+                Log.exception(ChessEngineWrapper.analyse, e)
                 pass
 
             return None
@@ -193,7 +196,7 @@ class ChessEngineWrapper():
                     return self.__engine.play(board=board, limit=limit, info=info)
 
             except Exception as e:
-                Log.info(f"{ChessEngineWrapper.play.__name__}:{e}")
+                Log.exception({ChessEngineWrapper.play}, e)
                 pass
 
             return None

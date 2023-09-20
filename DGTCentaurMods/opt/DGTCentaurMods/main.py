@@ -85,10 +85,13 @@ class Main:
         # We draw all the visible items
         for item in current_items:
 
-            SCREEN.write_text(current_row, item[menu.Tag.SHORT_LABEL if menu.Tag.SHORT_LABEL in item else menu.Tag.LABEL], font=fonts.MAIN_FONT if "font" not in item else getattr(fonts, item["font"]))
+            current_label = item[menu.Tag.SHORT_LABEL if menu.Tag.SHORT_LABEL in item else menu.Tag.LABEL]
+
+            SCREEN.write_text(current_row, current_label, font=fonts.MAIN_FONT if "font" not in item else getattr(fonts, item["font"]))
             
             # Current selected item?
             if current_index == self._menu[_CURRENT_INDEX]:
+                CENTAUR_BOARD.set_current_menu(current_label)
                 current_item_row = current_row
 
             current_index = current_index +1
@@ -164,7 +167,7 @@ class Main:
                         CENTAUR_BOARD.pause_events()
                     
                 if "live_script" in data:
-                    LiveScript.execute(data["live_script"])
+                    LiveScript.execute(data["live_script"] or "")
 
                 if "plugin_execute" in data:
 

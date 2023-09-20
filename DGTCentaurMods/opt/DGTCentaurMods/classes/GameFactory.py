@@ -127,8 +127,7 @@ class PieceHandler:
         CENTAUR_BOARD.led_from_to(self._place1, self._lift1)
 
         # Could be a reset request...
-        if not self._web_move:
-            self._engine._update_board_state()
+        self._engine._update_board_state(self._web_move)
 
     def _is_legal_move(self, uci_move: str) -> bool:
 
@@ -355,7 +354,7 @@ class PieceHandler:
         self._normalize_event_order()
 
         if self._lift1 == self._place1:
-            self._engine._update_board_state()
+            self._engine._update_board_state(self._web_move)
 
             # Piece has simply been placed back
             pass
@@ -364,7 +363,7 @@ class PieceHandler:
         elif self._is_takeback():
             result = self._takeback_move()
         else:
-            self._engine._update_board_state()
+            self._engine._update_board_state(self._web_move)
 
             # A LIFT and PLACE of a piece of the wrong color, that is
             # not a takeback, is assumed to be the completion of a
@@ -405,7 +404,7 @@ class PieceHandler:
             
             # If the state was not OK, we check again.
             if self._engine._invalid_board_state:
-                self._engine._update_board_state()
+                self._engine._update_board_state(self._web_move)
 
             if self._lift1 == UNDEFINED_SQUARE:
                 # A PLACE action with no corresponding LIFT is
@@ -547,7 +546,7 @@ class Engine():
                     })
 
             if "live_script" in data:
-                    LiveScript.execute(data["live_script"])
+                    LiveScript.execute(data["live_script"] or "")
 
         except Exception as e:
             Log.exception(Engine._on_socket_request, e)
@@ -696,37 +695,31 @@ class Engine():
 
                             if result != None and result["score"]:
 
-                                score = str(result["score"])
+                                str_score = str(result["score"])
 
                                 del result
 
-                                Log.debug(score)
+                                Log.debug(str_score)
 
-                                if "Mate" in score:
+                                if "Mate" in str_score:
                                     
-                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', score)[1])
+                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', str_score)[1])
 
-                                    self.update_evaluation(force=True, text=f" mate in {mate}")
-
-                                    del mate
+                                    if mate>0:
+                                        self.update_evaluation(force=True, text=f" mate in {mate}")
                                 else:
-                                    eval = score[11:24]
-                                    eval = eval[1:eval.find(")")]
-                        
-                                    eval = int(eval)
 
-                                    if "BLACK" in score:
+                                    eval = int(re.search(r'PovScore\(Cp\(([-+]\d+)\)', str_score)[1])
+
+                                    if "BLACK" in str_score:
                                         eval = eval * -1
 
                                     self.update_evaluation(force=True, value=eval)
-
-                                    del eval
 
                         self.chess_engine.analyse(
                             self._chessboard, 
                             chess.engine.Limit(time=1), 
                             on_taskengine_done = evaluation_callback)
-
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
@@ -794,7 +787,7 @@ class Engine():
                             else:
                                 CENTAUR_BOARD.beep(Enums.Sound.MUSIC)
 
-                                self._update_board_state()
+                                self._update_board_state(False)
 
                                 common.update_Centaur_FEN(self._chessboard.fen())
 
@@ -1035,9 +1028,9 @@ class Engine():
         except:
             return None
 
-    def _update_board_state(self):
+    def _update_board_state(self, web_move:bool):
 
-        if not self._started:
+        if not self._started or web_move:
             return
 
         board_state = CENTAUR_BOARD.get_board_state()

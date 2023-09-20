@@ -108,8 +108,7 @@ class RandomBot(Plugin):
 
      # When exists, this function is automatically invoked
      # at start, after splash screen, on PLAY button.
-    def on_start_callback(self):
-        Centaur.sound(Enums.Sound.COMPUTER_MOVE)
+    def on_start_callback(self, key:Enums.Btn) -> bool:
 
         # Start a new game.
         Centaur.start_game(
@@ -117,10 +116,13 @@ class RandomBot(Plugin):
             black="Random bot", 
             event="Bots chess event 2024",
             flags=Enums.BoardOption.CAN_UNDO_MOVES)
+        
+        # Game started.
+        return True
 
      # When exists, this function is automatically invoked
      # when the plugin starts.
-    def splash_screen(self):
+    def splash_screen(self) -> bool:
 
         print = Centaur.print
 

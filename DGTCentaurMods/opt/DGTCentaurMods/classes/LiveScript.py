@@ -21,11 +21,27 @@ class _api():
         time.sleep(.5)
 
     @staticmethod
-    def move_from(source:str):
+    def select_menu(name:str):
+        count = 15
+        name = name.upper()
+        while CENTAUR_BOARD.current_menu != name:
+            count -= 1
+
+            if count == 0:
+                raise Exception(f'Menu "{name}" not found!')
+
+            CENTAUR_BOARD.push_button(Enums.Btn.DOWN)
+            time.sleep(.5)
+
+        CENTAUR_BOARD.push_button(Enums.Btn.TICK)
+        time.sleep(.5)
+
+    @staticmethod
+    def lift_piece(source:str):
         CENTAUR_BOARD.move_piece(common.Converters.to_square_index(source), Enums.PieceAction.LIFT)
 
     @staticmethod
-    def move_to(target:str):
+    def place_piece(target:str):
         CENTAUR_BOARD.move_piece(common.Converters.to_square_index(target), Enums.PieceAction.PLACE)
     
     @staticmethod

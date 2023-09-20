@@ -57,9 +57,8 @@ def stage_1vs1():
     home()
 
     # Choose PLAY/1VS1
-    LS.push_button(Enums.Btn.TICK)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.TICK)
+    LS.select_menu("PLAY")
+    LS.select_menu("PLAY 1 VS 1")
     time.sleep(2)
 
     # Italian game
@@ -129,12 +128,10 @@ def stage_randombot():
     home()
 
     # Choose PLUGINS
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.TICK)
+    LS.select_menu("PLUGINS")
 
     # Launch RandomBot
-    LS.push_button(Enums.Btn.TICK)
-    LS.push_button(Enums.Btn.TICK)
+    LS.select_menu("RANDOMBOT")
     time.sleep(2)
 
     # Splash screen
@@ -234,17 +231,9 @@ def stage_Maia():
     home()
 
     # Choose PLAY/Maia-1200
-    LS.push_button(Enums.Btn.TICK)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-
-    LS.push_button(Enums.Btn.TICK)
-
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.TICK)
+    LS.select_menu("PLAY")
+    LS.select_menu("MAIA")
+    LS.select_menu("E-1200")
 
     _stage_engine()
 
@@ -259,17 +248,9 @@ def stage_RodentIV():
     home()
 
     # Choose PLAY/Rodent IV-Spassky
-    LS.push_button(Enums.Btn.TICK)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-
-    LS.push_button(Enums.Btn.TICK)
-
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.DOWN)
-    LS.push_button(Enums.Btn.TICK)
+    LS.select_menu("PLAY")
+    LS.select_menu("RODENTIV")
+    LS.select_menu("Spassky")
 
     _stage_engine()
 
