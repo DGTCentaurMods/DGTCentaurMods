@@ -45,14 +45,18 @@ def play_random_move():
   return LS.play(uci_move)
 
 def play_or_die(uci_move:str):
+  
+  global stage
+
   if not LS.play(uci_move):
     SCREEN.write_text(5, "ERROR!")
-    raise Exception(f'Unable to play "{uci_move}"!')
-
-
+    raise Exception(f'Module "{stage}" -> Unable to play "{uci_move}"!')
 
 # Stage 1 - test 1vs1 module + promotion on both sides.
 def stage_1vs1():
+
+    global stage
+    stage = "1 vs 1"
 
     home()
 
@@ -124,6 +128,9 @@ def stage_1vs1():
 # Stage 2 - RandomBot.
 # Random play against RandomBot
 def stage_randombot():
+
+    global stage
+    stage = "Ramdom bot"
   
     home()
 
@@ -148,7 +155,17 @@ def stage_randombot():
 
     time.sleep(2)
 
-def _stage_engine():
+def stage_engine(id:str, conf:str):
+
+    global stage
+    stage = "Engine "+id
+
+    home()
+
+    # Choose PLAY/ENGINE/LEVEL
+    LS.select_menu("PLAY")
+    LS.select_menu(id)
+    LS.select_menu(conf)
 
     # Launch WHITE
     LS.push_button(Enums.Btn.TICK)
@@ -167,25 +184,13 @@ def _stage_engine():
     LS.take_back()
     LS.take_back()
     LS.take_back()
-    LS.take_back()
 
-    # Forced moves
-    # Petrov trap
-    play_or_die("e7e5")
-    play_or_die("g1f3")
-    play_or_die("g8f6")
-    play_or_die("f3e5")
-    play_or_die("f6e4")
-    play_or_die("d1e2")
-    play_or_die("e4f6")
-    play_or_die("e5c6")
-    play_or_die("f8e7")
-    play_or_die("c6d8")
-
-    # Castle
-    play_or_die("e8g8")
-
-    play_or_die("e2e7")
+    # Random moves
+    for index in range(3):
+        play_random_move()
+        SCREEN.write_text(4, "Random")
+        SCREEN.write_text(5, "move #"+str(index+1))
+        LS.play(LS.waitfor_computer_move())
 
     # Trying with BLACK
     LS.push_button(Enums.Btn.BACK)
@@ -210,60 +215,41 @@ def _stage_engine():
     LS.take_back()
     LS.take_back()
     LS.take_back()
-    LS.take_back()
 
-    # Forced moves
-    # Petrov trap
-    play_or_die("e2e4")
-    play_or_die("e7e5")
-    play_or_die("g1f3")
-    play_or_die("g8f6")
-    play_or_die("f3e5")
-    play_or_die("f6e4")
-    play_or_die("d1e2")
-    play_or_die("e4f6")
-    play_or_die("e5c6")
+    # Random moves
+    for index in range(3):
+        play_random_move()
+        SCREEN.write_text(4, "Random")
+        SCREEN.write_text(5, "move #"+str(index+1))
+        LS.play(LS.waitfor_computer_move())
 
+    SCREEN.write_text(4, "STAGE "+id)
+    SCREEN.write_text(5, "OK!")
 
-# Stage 3 - Maia.
-def stage_Maia():
+    time.sleep(2)
 
-    home()
+# Stage 3 - engines.
+def stage_engines():
 
-    # Choose PLAY/Maia-1200
-    LS.select_menu("PLAY")
-    LS.select_menu("MAIA")
-    LS.select_menu("E-1200")
-
-    _stage_engine()
+    for args in (
+       ("RODENTIV","Spassky"),
+       ("MAIA","E-1200"),
+       ("TEXEL","L-01"),
+       ("WYLDCHESS","DRUNKEN"),
+       ("GALJOEN","E-1500"),
+       ("ZAHAK","E-1440"),
+       ("STOCKFISH","E-1350"),
+       ("CT800","E-1100")):
+       stage_engine(args[0],args[1])
 
     SCREEN.write_text(4, "STAGE 3")
     SCREEN.write_text(5, "OK!")
 
     time.sleep(2)
 
-# Stage 4 - Rodent IV.
-def stage_RodentIV():
-
-    home()
-
-    # Choose PLAY/Rodent IV-Spassky
-    LS.select_menu("PLAY")
-    LS.select_menu("RODENTIV")
-    LS.select_menu("Spassky")
-
-    _stage_engine()
-
-    SCREEN.write_text(4, "STAGE 4")
-    SCREEN.write_text(5, "OK!")
-
-    time.sleep(2)
-
 stage_1vs1()
 stage_randombot()
-stage_Maia()
-stage_RodentIV()
+stage_engines()
 
 SCREEN.write_text(4, "ALL")
 SCREEN.write_text(5, "GOOD!")
-

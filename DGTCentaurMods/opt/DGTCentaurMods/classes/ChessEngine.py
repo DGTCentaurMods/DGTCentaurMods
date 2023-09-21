@@ -93,7 +93,24 @@ class ChessEngineWrapper():
 
             time.sleep(.5)
 
-    def __instanciate(self):
+    def __quit_engine(self):
+
+        try:
+            if self.__engine != None:
+
+                Log.debug(f'{ChessEngineWrapper.__quit_engine.__name__}({id(self.__engine)})')
+                self.__engine.quit()
+            
+            self.__destroyed = True
+
+            if self.__worker:
+                self.__worker.join()
+
+        except Exception as e:
+            Log.exception(ChessEngineWrapper.__quit_engine, e)
+            pass
+
+    def __instanciate_engine(self):
 
         try:
             # Only for RodentIV...
@@ -103,7 +120,7 @@ class ChessEngineWrapper():
             self.__engine = None
             self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
             
-            Log.debug(f'{ChessEngineWrapper.__instanciate.__name__}({id(self.__engine)})')
+            Log.debug(f'{ChessEngineWrapper.__instanciate_engine.__name__}({id(self.__engine)})')
             
             if self.__engine_options != None:
 
@@ -111,7 +128,7 @@ class ChessEngineWrapper():
                 self.__engine.configure(self.__engine_options)
 
         except Exception as e:
-            Log.exception(ChessEngineWrapper.__instanciate, e)
+            Log.exception(ChessEngineWrapper.__instanciate_engine, e)
             self.__engine = None
             pass
 
@@ -131,12 +148,14 @@ class ChessEngineWrapper():
             # Failure...
             # We try anyway to quit the current engine...
             try:
+                Log.debug("Trying properly stopping engine...")
                 self.__engine.quit()
             except:
                 pass
 
             # Another try with a FRESH engine!
-            self.__engine == None
+            Log.debug("And let's retry with a fresh engine!")
+            self.__engine = None
 
             time.sleep(.5)
 
@@ -160,7 +179,7 @@ class ChessEngineWrapper():
         def _analyse(board, limit):
             try:
                 if self.__engine == None:
-                    self.__instanciate()
+                    self.__instanciate_engine()
 
                 if self.__engine != None:
                     return self.__engine.analyse(board=board, limit=limit)
@@ -190,7 +209,7 @@ class ChessEngineWrapper():
         def _play(board, limit, info):
             try:
                 if self.__engine == None:
-                    self.__instanciate()
+                    self.__instanciate_engine()
 
                 if self.__engine != None:
                     return self.__engine.play(board=board, limit=limit, info=info)
@@ -215,21 +234,8 @@ class ChessEngineWrapper():
             return resultor()
 
     def quit(self):
+        self.__quit_engine()
 
-        try:
-            if self.__engine != None:
-
-                Log.debug(f'{ChessEngineWrapper.quit.__name__}({id(self.__engine)})')
-                self.__engine.quit()
-            
-            self.__destroyed = True
-
-            if self.__worker:
-                self.__worker.join()
-
-        except Exception as e:
-            Log.exception(ChessEngineWrapper.quit, e)
-            pass
 
 def get(uci_path, async_mode = True):
     return ChessEngineWrapper(uci_path, async_mode)

@@ -685,13 +685,21 @@ class Engine():
 
                                 if "Mate" in str_score:
                                     
-                                    mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', str_score)[1])
+                                    try:
+                                        mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', str_score)[1])
+                                    except:
+                                        mate = 0
+                                        pass
 
                                     if mate>0:
                                         self.update_evaluation(force=True, text=f" mate in {mate}")
                                 else:
 
-                                    eval = int(re.search(r'PovScore\(Cp\(([-+]\d+)\)', str_score)[1])
+                                    try:
+                                        eval = int(re.search(r'PovScore\(Cp\(([-+]\d+)\)', str_score)[1])
+                                    except:
+                                        eval = 0
+                                        pass
 
                                     if "BLACK" in str_score:
                                         eval = eval * -1
