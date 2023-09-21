@@ -30,6 +30,8 @@ Inside the DGT Centaur is a Raspberry Pi Zero with an SD Card, by replacing that
 
 - New Lichess module.
 
+- New chess engines.
+
 - New WIFI module.
   
 - New Plugins engine with several plugin samples.
@@ -69,7 +71,16 @@ sudo apt install -y ./_DGTCentaurMods_A.alpha-latest.deb
 - [Flask server](https://flask.palletsprojects.com/)
 - [flask-socketio library](https://flask-socketio.readthedocs.io/)
 - [wpa-pyfi](https://pypi.org/project/wpa-pyfi/)
-- Multiple chess engines
+
+- [Maia chess engine](https://maiachess.com/)
+- [Rodent IV chess engine](https://github.com/nescitus/rodent-iv)
+- [CT800 chess engine](https://www.chessprogramming.org/CT800)
+- [Zahak chess engine](https://github.com/amanjpro/zahak)
+- [Galjoen chess engine](http://www.goudengaljoen.be/)
+- [Texel chess engine](https://github.com/peterosterlund2/texel)
+- [WyldChess chess engine](https://github.com/Mk-Chan/WyldChess)
+- [Stockfish chess engine](https://stockfishchess.org/)
+
 - DGT Centaur board Reverse engineering work of the [original](https://github.com/EdNekebno/DGTCentaurMods) project
 
 ## Support & Requests
@@ -230,4 +241,3 @@ for _ in range(10):
 SCREEN.write_text(4, "SCRIPT")
 SCREEN.write_text(5, "DONE!")
 ```
-
