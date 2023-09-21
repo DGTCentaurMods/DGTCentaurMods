@@ -383,7 +383,7 @@ def drawCurrentBoard():
 			pieces[x]='k'
 		if pieces[x] == EMPTY:
 			pieces[x]=' '
-	epaper.drawBoard(pieces)
+	epaper.drawBoard(pieces,3)
 
 boardtoscreen = 0
 
