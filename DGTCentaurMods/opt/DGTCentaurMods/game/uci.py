@@ -132,9 +132,9 @@ def eventCallback(event):
         if graphson == 1:            
             info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))
             epaper.pauseEpaper()
-            evaluationGraphs(info)            
-            drawBoardLocal(gamemanager.cboard.fen())            
+            evaluationGraphs(info)                                  
             epaper.unPauseEpaper()
+        drawBoardLocal(gamemanager.cboard.fen())  
         if curturn == computeronturn:            
             if ucioptions != {}:
                 options = (ucioptions)
@@ -148,9 +148,9 @@ def eventCallback(event):
         if graphson == 1:            
             info = aengine.analyse(gamemanager.cboard, chess.engine.Limit(time=0.5))    
             epaper.pauseEpaper()    
-            evaluationGraphs(info)                                 
-            drawBoardLocal(gamemanager.cboard.fen())              
+            evaluationGraphs(info)                                                       
             epaper.unPauseEpaper()
+        drawBoardLocal(gamemanager.cboard.fen())    
         if curturn == computeronturn:            
             if ucioptions != {}:
                 options = (ucioptions)
