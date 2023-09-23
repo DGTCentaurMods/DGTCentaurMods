@@ -353,6 +353,14 @@ while True:
                                 "policy": "Plcy: " + update.getPolicy(),
                             }
                         )
+                    # Check for .deb files in the /home/pi folder that have been uploaded by webdav
+                    debfiles = os.listdir("/home/pi")
+                    logging.debug("Check for deb files that system can update to")
+                    for debfile in debfiles:        
+                        if debfile[-4:] == ".deb" and debfile[:15] == "dgtcentaurmods_":
+                            logging.debug("Found " + debfile)
+                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]
+                    
                     selection = ""
                     result = doMenu(updatemenu, "Update opts")
                     if result == "status":
@@ -376,6 +384,12 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
+                    if os.path.exists("/home/pi/dgtcentaurmods_" + result + "_armhf.deb"):
+                        logging.debug("User selected .deb file. Doing update")
+                        logging.debug("Copying .deb file to /tmp")
+                        os.system("/bin/sh cp -f /home/pi/dgtcentaurmods_" + result + "_armhf.deb /tmp/dgtcentaurmods_armhf.deb")
+                        logging.debug("Starting update")
+                        update.updateInstall()
                     if selection == "BACK":
                         # Trigger the update system to appply new settings
                         try:
