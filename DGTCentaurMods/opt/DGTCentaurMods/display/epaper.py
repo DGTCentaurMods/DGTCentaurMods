@@ -32,6 +32,9 @@ import os, time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import threading
+import logging
+
+logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
 
 driver = epaperDriver()
 
@@ -62,9 +65,9 @@ def epaperUpdate():
     global screeninverted
     global screensleep
     global sleepcount
-    print("started epaper update thread")    
+    logging.debug("started epaper update thread")    
     driver.display(epaperbuffer)    
-    print("epaper init image sent")
+    logging.debug("epaper init image sent")
     tepaperbytes = ""
     screensleep = 0
     sleepcount = 0
@@ -112,7 +115,6 @@ def epaperUpdate():
             event_refresh.set() 
         sleepcount = sleepcount + 1
         if sleepcount == 15000 and screensleep == 0:
-            print("sleeping")
             screensleep = 1
             driver.sleepDisplay()       
         time.sleep(0.1)
@@ -131,7 +133,7 @@ def loadingScreen():
     lg = Image.open(filename)
     epaperbuffer.paste(lg,(0,20))
     writeText(10,'     Loading')
-    print('Display loading screen')
+    logging.debug('Display loading screen')
     
 
 def welcomeScreen():
@@ -153,7 +155,7 @@ def standbyScreen(show):
     global epaperbuffer
     f = '/tmp/epapersave.bmp'
     if show:
-        print('Saving buffer')
+        logging.debug('Saving buffer')
         epaperbuffer.save(f)
         statusBar().print()
         
@@ -168,7 +170,7 @@ def standbyScreen(show):
             drawImagePartial(0,0,epaperbuffer.crop((0,0,128,292)))
 
     if not show:
-        print('Restore buffer')
+        logging.debug('Restore buffer')
         restore = Image.open(f)
         epaperbuffer.paste(restore,(0,0))
         if epaperprocesschange == 0:
@@ -184,7 +186,7 @@ def initEpaper(mode = 0):
     global epapermode    
     epapermode = mode
     epaperbuffer = Image.new('1', (128, 296), 255)
-    print("init epaper")
+    logging.debug("init epaper")
     driver.reset()
     driver.init()    
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
@@ -336,7 +338,7 @@ def drawFen(fen, startrow=2):
 def promotionOptions(row):
     # Draws the promotion options to the screen buffer
     global epaperbuffer
-    print("drawing promotion options")
+    logging.debug("drawing promotion options")
     global epaperprocesschange
     font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
     writeText(13, "                    ")
@@ -370,9 +372,9 @@ def promotionOptions(row):
         o = 97
         draw.line((6+o,offset+16,16+o,offset+4), fill=0, width=5)
         draw.line((2+o,offset+10, 8+o,offset+16), fill=0, width=5)
-        print("drawing promotion options")
+        logging.debug("drawing promotion options")
         drawImagePartial(0, 270, timage)
-        print("drawn")
+        logging.debug("drawn")
 
 def resignDrawMenu(row):
     # Draws draw or resign options to the screen buffer
@@ -507,7 +509,7 @@ class statusBar():
         return
 
     def init(self):
-        print("Starting status bar update thread")
+        logging.debug("Starting status bar update thread")
         self.statusbar = threading.Thread(target=self.display, args=())
         self.statusbar.daemon = True
         self.statusbar.start()
@@ -517,7 +519,7 @@ class statusBar():
         self.init()
 
     def stop(self):
-        print("Kill status bar thread")
+        logging.debug("Kill status bar thread")
         self.is_running = False
 
 
@@ -527,9 +529,9 @@ class MenuDraw:
 
 
     def draw_page(self, title, items):
-        print('-------------')
-        print(title)
-        print('-------------')
+        logging.debug('-------------')
+        logging.debug(title)
+        logging.debug('-------------')
         global epaperbuffer
         draw = ImageDraw.Draw(epaperbuffer)
         draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
@@ -537,7 +539,7 @@ class MenuDraw:
         row = 2
         for item in items:
             writeText(row, "  " + item)
-            print(item)
+            logging.debug(item)
             row += 1
         self.statusbar.print()
         # draw epaperbuffer to the screen
@@ -567,9 +569,6 @@ class MenuDraw:
 
 
     def highlight(self, index, rollaround = 0):
-        print("----")
-        print(index)
-        print(rollaround)
         if rollaround == 1:
             epd.send_command(0x91)
             epd.send_command(0x90)
@@ -600,11 +599,9 @@ class MenuDraw:
         epd.send_data(120+5) #x end
         epd.send_data(0) #y start high
         epd.send_data(pos) #y start low
-        print(pos)
         pos = pos + 23 + 8 + 20
         if index == 0:
             pos = pos - 20
-        print(pos)
         epd.send_data(pos//256) #y end high
         epd.send_data((pos % 256))  # y end low
         epd.send_command(0x28) # Send data
