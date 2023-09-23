@@ -222,6 +222,17 @@ while True:
         menu.update({"EmulateEB": "e-Board"})
     if centaur.get_menuCast() != "unchecked":
         menu.update({"Cast": "Chromecast"})
+    logging.debug("Checking for custom files")
+    pyfiles = os.listdir("/home/pi")
+    foundpyfiles = 0
+    for pyfile in pyfiles:        
+        if pyfile[-3:] == ".py" and pyfile != "firstboot.py":
+            logging.debug("found custom files")
+            foundpyfiles = 1
+            break
+    logging.debug("Custom file check complete")
+    if foundpyfiles == 1:
+        menu.update({"Custom": "Custom"})
     if centaur.get_menuSettings() != "unchecked":
         menu.update({"settings": "Settings"})
     if centaur.get_menuAbout() != "unchecked":
@@ -799,6 +810,17 @@ while True:
                     )
                     board.unPauseEvents()
                     statusbar.start()
+    if result == "Custom":
+        pyfiles = os.listdir("/home/pi")
+        menuitems = {}
+        for pyfile in pyfiles:        
+            if pyfile[-3:] == ".py" and pyfile != "firstboot.py":                
+                menuitems[pyfile] = pyfile
+        result = doMenu(menuitems,"Custom Scripts")
+        if result.find("..") < 0:
+            logging.debug("Running custom file: " + result)
+            os.system("python /home/pi/" + result)
+
     if result == "About" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()
