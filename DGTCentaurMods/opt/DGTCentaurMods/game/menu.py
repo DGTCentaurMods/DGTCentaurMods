@@ -384,10 +384,10 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
-                    if os.path.exists("/home/pi/dgtcentaurmods_" + result + "_armhf.deb"):
+                    if os.path.exists("/home/pi/" + result):
                         logging.debug("User selected .deb file. Doing update")
                         logging.debug("Copying .deb file to /tmp")
-                        os.system("/bin/sh cp -f /home/pi/dgtcentaurmods_" + result + "_armhf.deb /tmp/dgtcentaurmods_armhf.deb")
+                        os.system("cp -f /home/pi/" + result + " /tmp/dgtcentaurmods_armhf.deb")
                         logging.debug("Starting update")
                         update.updateInstall()
                     if selection == "BACK":
