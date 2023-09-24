@@ -26,14 +26,11 @@ import os
 from lib import *
 import os, time
 import threading
-import subprocess
 
 global animate
 global progress
 
-epaper.initEpaper(1)
-epaper.clearScreen()
-
+epaper.initEpaper()
 sb = epaper.statusBar()
 sb.start()
 sb.print()
@@ -67,11 +64,10 @@ sb.stop()
 time.sleep(3)
 epaper.clearScreen()
 time.sleep(1)
-print('Setup done')
+print('Setup dome')
 
 epaper.writeText(3,'     Shutting')
 epaper.writeText(4,'       down')
 time.sleep(5)
-
 epaper.stopEpaper()
 os.system("sudo systemctl start stopDGTController.service")
