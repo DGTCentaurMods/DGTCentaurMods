@@ -31,6 +31,9 @@ from PIL import Image, ImageDraw, ImageFont
 import pathlib
 import socket
 import queue
+import logging
+
+logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
 
 #
 # Useful constants
@@ -56,7 +59,7 @@ dev = conf.read_value('system', 'developer')
 
 # Various setup
 if dev == "True":
-    print("Developer mode is: ",dev)
+    logging.debug("Developer mode is: ",dev)
     # Enable virtual serial port
     # TODO: setup as a service
     os.system("socat -d -d pty,raw,echo=0 pty,raw,echo=0 &")
@@ -81,7 +84,7 @@ batterylevel = -1
 batterylastchecked = 0
 
 # But the address might not be that :( Here we send an initial 0x4d to ask the board to provide its address
-print("Detecting board adress")
+logging.debug("Detecting board adress")
 try:
     ser.read(1000)
 except:
@@ -92,15 +95,15 @@ try:
     ser.read(1000)
 except:
     ser.read(1000)
-print('Sent payload 1')
+logging.debug('Sent payload 1')
 tosend = bytearray(b'\x4e')
 ser.write(tosend)
 try:
     ser.read(1000)
 except:
     ser.read(1000)
-print('Sent payload 2')
-print('Serial is open. Waiting for response.')
+logging.debug('Sent payload 2')
+logging.debug('Serial is open. Waiting for response.')
 resp = ""
 # This is the most common address of the board
 addr1 = 00
@@ -118,10 +121,10 @@ while len(resp) < 4 and time.time() < timeout:
     if len(resp) > 3:
         addr1 = resp[3]
         addr2 = resp[4]
-        print("Discovered new address:" + hex(addr1) + hex(addr2))
+        logging.debug("Discovered new address:" + hex(addr1) + hex(addr2))
         break
 else:
-    print('FATAL: No response from serial')
+    logging.debug('FATAL: No response from serial')
     sys.exit(1)
 
 def checksum(barr):
@@ -144,7 +147,7 @@ def sendPacket(command, data):
 
 
 def clearSerial():
-    print('Checking and clear the serial line.')
+    logging.debug('Checking and clear the serial line.')
     resp1 = ""
     resp2 = ""
     while dev == "False" and True:
@@ -162,10 +165,10 @@ def clearSerial():
             pass
         #If board is idle, return True
         if expect1 == resp1 and expect2 == resp2:
-            print('Board is idle. Serial is clear.')
+            logging.debug('Board is idle. Serial is clear.')
             return True
         else:
-            print('  Attempting to clear serial')
+            logging.debug('  Attempting to clear serial')
 
 # Screen functions - deprecated, use epaper.py if possible
 #
@@ -467,7 +470,6 @@ def beep(beeptype):
 
 def ledsOff():
     # Switch the LEDs off on the centaur
-    print("switching off leds")
     sendPacket(b'\xb0\x00\x07', b'\x00')
 
 def ledArray(inarray, speed = 3, intensity=5):
@@ -538,7 +540,7 @@ def shutdown():
         epaper.clearScreen()
         update.updateInstall()
         return
-    print('Normal shutdown')
+    logging.debug('Normal shutdown')
     epaper.clearScreen()
     time.sleep(1)
     ledFromTo(7,7)
@@ -580,7 +582,6 @@ def waitMove():
                         fieldHex = resp[x + 1]
                         newsquare = rotateFieldHex(fieldHex)
                         lifted = newsquare
-                        print(lifted)
                         moves.append((newsquare+1) * -1)
                     if (resp[x] == 65):
                         # Calculate the square to 0(a1)-63(h8) so that
@@ -589,12 +590,10 @@ def waitMove():
                         newsquare = rotateFieldHex(fieldHex)
                         placed = newsquare
                         moves.append(newsquare + 1)
-                        print(placed)
         sendPacket(b'\x94', b'')
         expect = buildPacket(b'\xb1\x00\x06', b'')
         resp = ser.read(10000)
         resp = bytearray(resp)
-    print(moves)
     return moves
 
 def poll():
@@ -611,36 +610,32 @@ def poll():
         if (resp[0] == 133 and resp[1] == 0):
             for x in range(0, len(resp) - 1):
                 if (resp[x] == 64):
-                    print("PIECE LIFTED")
                     # Calculate the square to 0(a1)-63(h8) so that
                     # all functions match
                     fieldHex = resp[x + 1]
                     newsquare = rotateFieldHex(fieldHex)
-                    print(newsquare)
                 if (resp[x] == 65):
-                    print("PIECE PLACED")
                     # Calculate the square to 0(a1)-63(h8) so that
                     # all functions match
                     fieldHex = resp[x + 1]
                     newsquare = rotateFieldHex(fieldHex)
-                    print(newsquare)
     sendPacket(b'\x94', b'')
     expect = buildPacket(b'\xb1\x00\x06', b'')
     resp = ser.read(10000)
     resp = bytearray(resp)
     if (resp != expect):
         if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0501000000007d47"):
-            print("BACK BUTTON")
+            logging.debug("BACK BUTTON")
         if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0510000000007d17"):
-            print("TICK BUTTON")
+            logging.debug("TICK BUTTON")
         if (resp.hex()[:-2] == "b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0508000000007d3c"):
-            print("UP BUTTON")
+            logging.debug("UP BUTTON")
         if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a05020000000061"):
-            print("DOWN BUTTON")
+            logging.debug("DOWN BUTTON")
         if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0540000000006d"):
-            print("HELP BUTTON")
+            logging.debug("HELP BUTTON")
         if (resp.hex()[:-2] == "b10010" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0504000000002a"):
-            print("PLAY BUTTON")
+            logging.debug("PLAY BUTTON")
 
 def getText(title):
     # Allows text to be entered using a virtual keyboard where a chess piece
@@ -794,10 +789,7 @@ def getChargingState():
             pass
         else:  
             if resp[0] == 181:
-                print("connected state")
-                print(resp.hex())                
                 vall = (resp[5] >> 5) & 7
-                print(vall)
                 if vall == 1:
                     return 1
                 else:
@@ -820,7 +812,6 @@ def getBatteryLevel():
         return -1
     else:        
         if resp[0] == 181:
-            print(resp.hex())
             vall = resp[5] & 31
             return vall
     
@@ -835,7 +826,7 @@ def checkInternetSocket(host="8.8.8.8", port=53, timeout=1):
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
         return True
     except socket.error as ex:
-        print(ex)
+        logging.debug(ex)
         return False
 
 #
@@ -884,7 +875,7 @@ def eventsThread(keycallback, fieldcallback, tout):
     hold_timeout = False
     events_paused = False
     to = time.time() + tout
-    print('Timeout at ' + str(tout) + ' seconds')
+    logging.debug('Timeout at ' + str(tout) + ' seconds')
     while time.time() < to:
         loopstart = time.time()
         if eventsrunning == 1:
@@ -965,12 +956,12 @@ def eventsThread(keycallback, fieldcallback, tout):
                         resp = ser.read(1000)
                         resp = bytearray(resp)
                         if resp.hex().startswith("b10011" + "{:02x}".format(addr1) + "{:02x}".format(addr2) + "00140a0500040"):
-                            print('Play btn pressed. Stanby is:',standby)
+                            logging.debug('Play btn pressed. Stanby is:',standby)
                             if standby == False:
-                                print('Calling standbyScreen()')
+                                logging.debug('Calling standbyScreen()')
                                 epaper.standbyScreen(True)
                                 standby = True
-                                print('Starting shutdown countdown')
+                                logging.debug('Starting shutdown countdown')
                                 sd = threading.Timer(600,shutdown)
                                 sd.start()
                                 to = time.time() + 100000
@@ -978,7 +969,7 @@ def eventsThread(keycallback, fieldcallback, tout):
                             else:
                                 clearSerial()
                                 epaper.standbyScreen(False)
-                                print('Cancel shutdown')
+                                logging.debug('Cancel shutdown')
                                 sd.cancel()
                                 standby = False
                                 to = time.time() + tout
@@ -1030,7 +1021,7 @@ def eventsThread(keycallback, fieldcallback, tout):
         time.sleep(0.05)
     else:
         # Timeout reached, while loop breaks. Shutdown.
-        print('Timeout. Shutting doen')
+        logging.debug('Timeout. Shutting doen')
         shutdown()
 
 

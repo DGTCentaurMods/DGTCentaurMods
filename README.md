@@ -39,6 +39,8 @@ Wifi - Capability to join wifi from the board (WPS/WPA2)
 
 Play Engines - Stockfish (without centaur adaptive mode), ct800, zahak, rodentIV, maia . Upload your own engines from the web interface. (supports takebacks, overriding computer moves)
 
+Network Drive - using webdav it is possible to connect a drive letter or use explorer to access files on your Centaur. The last 100 PGNs are accessible as files in here. Run customer scripts and DGT Centaur Mods installations
+
 General Settings - Connect Wifi, Pair bluetooth, sound, lichess api token
 
 ## Roadmap

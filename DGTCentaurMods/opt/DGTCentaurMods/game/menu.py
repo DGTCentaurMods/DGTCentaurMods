@@ -27,11 +27,11 @@ import threading
 import time
 import logging
 
+logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
 from PIL import Image, ImageDraw, ImageFont
-
-logging.basicConfig(level=logging.DEBUG)
 
 menuitem = 1
 curmenu = None
@@ -163,7 +163,7 @@ board.clearSerial()
 statusbar = epaper.statusBar()
 statusbar.start()
 update = centaur.UpdateSystem()
-print("Setting checking for updates in 5 mins.")
+logging.debug("Setting checking for updates in 5 mins.")
 threading.Timer(300, update.main).start()
 # Subscribe to board events. First parameter is the function for key presses. The second is the function for
 # field activity
@@ -222,6 +222,17 @@ while True:
         menu.update({"EmulateEB": "e-Board"})
     if centaur.get_menuCast() != "unchecked":
         menu.update({"Cast": "Chromecast"})
+    logging.debug("Checking for custom files")
+    pyfiles = os.listdir("/home/pi")
+    foundpyfiles = 0
+    for pyfile in pyfiles:        
+        if pyfile[-3:] == ".py" and pyfile != "firstboot.py":
+            logging.debug("found custom files")
+            foundpyfiles = 1
+            break
+    logging.debug("Custom file check complete")
+    if foundpyfiles == 1:
+        menu.update({"Custom": "Custom"})
     if centaur.get_menuSettings() != "unchecked":
         menu.update({"settings": "Settings"})
     if centaur.get_menuAbout() != "unchecked":
@@ -329,7 +340,7 @@ while True:
         topmenu = False
         while topmenu == False:
             result = doMenu(setmenu, "Settings")
-            print(result)
+            logging.debug(result)
             if result == "update":
                 topmenu = False
                 while topmenu == False:
@@ -342,13 +353,21 @@ while True:
                                 "policy": "Plcy: " + update.getPolicy(),
                             }
                         )
+                    # Check for .deb files in the /home/pi folder that have been uploaded by webdav
+                    debfiles = os.listdir("/home/pi")
+                    logging.debug("Check for deb files that system can update to")
+                    for debfile in debfiles:        
+                        if debfile[-4:] == ".deb" and debfile[:15] == "dgtcentaurmods_":
+                            logging.debug("Found " + debfile)
+                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]
+                    
                     selection = ""
                     result = doMenu(updatemenu, "Update opts")
                     if result == "status":
                         result = doMenu(
                             {"enable": "Enable", "disable": "Disable"}, "Status"
                         )
-                        print(result)
+                        logging.debug(result)
                         if result == "enable":
                             update.enable()
                         if result == "disable":
@@ -365,6 +384,12 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
+                    if os.path.exists("/home/pi/dgtcentaurmods_" + result + "_armhf.deb"):
+                        logging.debug("User selected .deb file. Doing update")
+                        logging.debug("Copying .deb file to /tmp")
+                        os.system("/bin/sh cp -f /home/pi/dgtcentaurmods_" + result + "_armhf.deb /tmp/dgtcentaurmods_armhf.deb")
+                        logging.debug("Starting update")
+                        update.updateInstall()
                     if selection == "BACK":
                         # Trigger the update system to appply new settings
                         try:
@@ -374,7 +399,7 @@ while True:
                         finally:
                             threading.Thread(target=update.main, args=()).start()
                         topmenu = True
-                        print("Return to settings")
+                        logging.debug("return to settings")
                         selection = ""
             topmenu = False
             if selection == "BACK":
@@ -402,8 +427,7 @@ while True:
                         'sudo sh -c "'
                         + str(pathlib.Path(__file__).parent.resolve())
                         + '/../scripts/wifi_backup.sh backup"'
-                    )
-                    print(cmd)
+                    )                    
                     centaur.shell_run(cmd)
                 result = doMenu(wifimenu, "Wifi Setup")
                 if result != "BACK":
@@ -446,8 +470,7 @@ while True:
                             + str(pathlib.Path(__file__).parent.resolve())
                             + '/../scripts/wifi_backup.sh restore"'
                         )
-                        centaur.shell_run(cmd)
-                        print(cmd)
+                        centaur.shell_run(cmd)                    
                         timeout = time.time() + 20
                         epaper.clearScreen()
                         epaper.writeText(0, "Waiting for")
@@ -596,19 +619,19 @@ while True:
         enginefiles = os.listdir(enginepath)
         enginefiles = list(
             filter(lambda x: os.path.isfile(enginepath + x), os.listdir(enginepath))
-        )
-        print(enginefiles)
+        )        
         for f in enginefiles:
             fn = str(f)
             if "." not in fn:
                 # If this file don't have an extension then it is an engine
                 enginemenu[fn] = fn
         result = doMenu(enginemenu, "Engines")
-        print(result)
+        logging.debug("Engines")
+        logging.debug(result)
         if result == "stockfish":
             sfmenu = {"white": "White", "black": "Black", "random": "Random"}
             color = doMenu(sfmenu, "Color")
-            print(color)
+            logging.debug(color)
             # Current game will launch the screen for the current
             if color != "BACK":
                 ratingmenu = {
@@ -651,7 +674,7 @@ while True:
                         # Read the uci file and build a menu
                         config = configparser.ConfigParser()
                         config.read(ucifile)
-                        print(config.sections())
+                        logging.debug(config.sections())
                         smenu = {}
                         for sect in config.sections():
                             smenu[sect] = sect
@@ -660,7 +683,7 @@ while True:
                             epaper.loadingScreen()
                             board.pauseEvents()
                             statusbar.stop()
-                            print(
+                            logging.debug(
                                 str(pathlib.Path(__file__).parent.resolve())
                                 + "/../game/uci.py "
                                 + color
@@ -692,7 +715,7 @@ while True:
                         epaper.loadingScreen()
                         board.pauseEvents()
                         statusbar.stop()
-                        print(
+                        logging.debug(
                             str(pathlib.Path(__file__).parent.resolve())
                             + "/../game/uci.py "
                             + color
@@ -721,14 +744,14 @@ while True:
         enginefiles = list(
             filter(lambda x: os.path.isfile(enginepath + x), os.listdir(enginepath))
         )
-        print(enginefiles)
+        logging.debug(enginefiles)
         for f in enginefiles:
             fn = str(f)
             if ".uci" not in fn:
                 # If this file is not .uci then assume it is an engine
                 enginemenu[fn] = fn
         result = doMenu(enginemenu, "Engines")
-        print(result)
+        logging.debug(result)
         if result != "BACK":
             # There are two options here. Either a file exists in the engines folder as enginename.uci which will give us menu options, or one doesn't and we run it as default
             enginefile = enginepath + result
@@ -741,7 +764,7 @@ while True:
                     # Read the uci file and build a menu
                     config = configparser.ConfigParser()
                     config.read(ucifile)
-                    print(config.sections())
+                    logging.debug(config.sections())
                     smenu = {}
                     for sect in config.sections():
                         smenu[sect] = sect
@@ -750,7 +773,7 @@ while True:
                         epaper.loadingScreen()
                         board.pauseEvents()
                         statusbar.stop()
-                        print(
+                        logging.debug(
                             str(pathlib.Path(__file__).parent.resolve())
                             + "/../game/uci.py "
                             + color
@@ -781,7 +804,7 @@ while True:
                     epaper.loadingScreen()
                     board.pauseEvents()
                     statusbar.stop()
-                    print(
+                    logging.debug(
                         str(pathlib.Path(__file__).parent.resolve())
                         + "/../game/uci.py "
                         + color
@@ -801,6 +824,17 @@ while True:
                     )
                     board.unPauseEvents()
                     statusbar.start()
+    if result == "Custom":
+        pyfiles = os.listdir("/home/pi")
+        menuitems = {}
+        for pyfile in pyfiles:        
+            if pyfile[-3:] == ".py" and pyfile != "firstboot.py":                
+                menuitems[pyfile] = pyfile
+        result = doMenu(menuitems,"Custom Scripts")
+        if result.find("..") < 0:
+            logging.debug("Running custom file: " + result)
+            os.system("python /home/pi/" + result)
+
     if result == "About" or result == "BTNHELP":
         selection = ""
         epaper.clearScreen()

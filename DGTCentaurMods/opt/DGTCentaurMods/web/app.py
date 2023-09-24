@@ -40,7 +40,440 @@ import json
 app = Flask(__name__)
 app.config['UCI_UPLOAD_EXTENSIONS'] = ['.txt']
 app.config['UCI_UPLOAD_PATH'] = str(pathlib.Path(__file__).parent.resolve()) + "/../engines/"
-@app.route("/")
+
+@app.before_request
+def handle_preflight():
+    # Override the OPTIONS response so that the webdav methods are available
+    if request.method == "OPTIONS":
+        res = Response()
+        res.headers['Allow'] = 'OPTIONS, GET, HEAD, PROPFIND, DELETE, PUT, MOVE, MKCOL, LOCK, UNLOCK, PROPPATCH'
+        res.headers['DAV'] = "1,2"
+        return res
+
+    # Override PROPFIND
+    if request.method == "PROPFIND":                            
+        res = Response()
+        #if request.headers["Depth"] == 0:            
+        thispath = request.path.replace("\n","")        
+        if thispath != "/" and thispath[-1:] == "/":            
+            thispath = thispath[:len(thispath)-1]        
+        if request.path == "/":            
+            response = '<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n'
+            response = response + '<D:response>\n'
+            response = response + '<D:href>/</D:href>\n'
+            response = response + '<D:propstat>\n'
+            response = response + '<D:prop>\n'
+            response = response + '<D:getcontentlength>'
+            response = response + '0'
+            response = response + '</D:getcontentlength>\n'
+            response = response + '<D:resourcetype>\n'
+            response = response + '<D:collection/>\n'
+            response = response + '</D:resourcetype>\n'
+            response = response + '<D:creationdate>'
+            response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi")));            
+            response = response + '</D:creationdate>\n'
+            response = response + '<D:lastmodified>'
+            response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getctime("/home/pi")));
+            response = response + '</D:lastmodified>\m'
+            response = response + '</D:prop>\n'
+            response = response + '<D:status>HTTP/1.1 200 OK</D:status>\n'
+            response = response + '</D:propstat>\n'
+            response = response + '</D:response>\n'
+            if int(request.headers["Depth"]) == 1:
+                if os.path.isdir("/home/pi" + thispath):
+                    for fn in os.listdir("/home/pi" + thispath):                    
+                        response = response + "<D:response>\n"
+                        response = response + '<D:href>' + thispath + fn + '</D:href>\n'
+                        response = response + "<D:propstat>\n"
+                        response = response + "<D:prop>\n"
+                        if os.path.isfile("/home/pi" + thispath + fn):
+                            response = response + "<D:getcontentlength>"
+                            response = response + str(os.path.getsize("/home/pi" + thispath + fn))
+                            response = response + "</D:getcontentlength>\n"
+                        response = response + "<D:resourcetype>\n"
+                        if os.path.isdir("/home/pi" + thispath + fn):
+                            response = response + "<D:collection/>\n"
+                        response = response + "</D:resourcetype>\n"
+                        response = response + "<D:creationdate>"
+                        response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi" + thispath + fn)))
+                        response = response + "</D:creationdate>\n"
+                        response = response + "<D:lastmodified>"
+                        response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getmtime("/home/pi" + thispath + fn)))
+                        response = response + "</D:lastmodified>\n"
+                        response = response + "</D:prop>\n"
+                        response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+                        response = response + "</D:propstat>\n"
+                        response = response + "</D:response>\n"; 
+                    # Now also here create a fake PNGs directory
+                    response = response + "<D:response>\n"
+                    response = response + '<D:href>' + "/PGNs" + '</D:href>\n'
+                    response = response + "<D:propstat>\n"
+                    response = response + "<D:prop>\n"                                       
+                    response = response + "<D:resourcetype>\n"
+                    response = response + "<D:collection/>\n"
+                    response = response + "</D:resourcetype>\n"
+                    response = response + "<D:creationdate>"
+                    response = response + '2003-07-01T01:01:00Z'
+                    response = response + "</D:creationdate>\n"
+                    response = response + "<D:lastmodified>"
+                    response = response + 'Thu, 21 Sep 2023 18:50:14 BST'
+                    response = response + "</D:lastmodified>\n"
+                    response = response + "</D:prop>\n"
+                    response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+                    response = response + "</D:propstat>\n"
+                    response = response + "</D:response>\n"
+            response = response + '</D:multistatus>\n'                       
+            return Response(response, mimetype='application/xml', status=207)
+        elif thispath == "/PGNs":
+            # Return a list of PGN games
+            response = '<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n'
+            response = response + "<D:response>\n"
+            response = response + '<D:href>' + "/PGNs" + '</D:href>\n'
+            response = response + "<D:propstat>\n"
+            response = response + "<D:prop>\n"                               
+            response = response + "<D:resourcetype>\n"
+            response = response + "<D:collection/>\n"
+            response = response + "</D:resourcetype>\n"
+            response = response + "<D:creationdate>"
+            response = response + '2003-07-01T01:01:00Z'
+            response = response + "</D:creationdate>\n"
+            response = response + "<D:lastmodified>"
+            response = response + 'Thu, 21 Sep 2023 18:50:14 BST'
+            response = response + "</D:lastmodified>\n"
+            response = response + "</D:prop>\n"
+            response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+            response = response + "</D:propstat>\n"
+            response = response + "</D:response>\n"
+            if int(request.headers["Depth"]) == 1:
+                Session = sessionmaker(bind=models.engine)
+                session = Session()
+                gamedata = session.execute(
+                    select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round,
+                        models.Game.white, models.Game.black, models.Game.result, models.Game.id).
+                        order_by(models.Game.id.desc())
+                ).all()
+                games = {}
+                try:
+                    for x in range(0,100):
+                        gameitem = {}
+                        gameitem["id"] = str(gamedata[x][8])
+                        gameitem["created_at"] = str(gamedata[x][0])
+                        src = os.path.basename(str(gamedata[x][1]))
+                        if src.endswith('.py'):
+                            src = src[:-3]
+                        gameitem["source"] = src
+                        gameitem["event"] = str(gamedata[x][2])
+                        gameitem["site"] = str(gamedata[x][3])
+                        gameitem["round"] = str(gamedata[x][4])
+                        gameitem["white"] = str(gamedata[x][5])
+                        gameitem["black"] = str(gamedata[x][6])
+                        gameitem["result"] = str(gamedata[x][7])
+                        response = response + "<D:response>\n"
+                        response = response + '<D:href>' + "/PGNs/" + gameitem["id"] + "_" + gameitem["source"] + "_" + gameitem["event"].replace(" ","_") + '.pgn</D:href>\n'
+                        response = response + "<D:propstat>\n"
+                        response = response + "<D:prop>\n"                    
+                        response = response + "<D:getcontentlength>"
+                        response = response + "0"
+                        response = response + "</D:getcontentlength>\n"
+                        response = response + "<D:resourcetype>\n"
+                        response = response + "</D:resourcetype>\n"
+                        response = response + "<D:creationdate>"
+                        #response = response + '2003-07-01T01:01:00:00Z'
+                        response = response + gameitem["created_at"].replace(" ","T") + "Z"
+                        #response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi" + thispath + fn)))
+                        response = response + "</D:creationdate>\n"
+                        response = response + "<D:lastmodified>"
+                        #response = response + 'Thu, 21 Sep 2023 18:50:14 BST'
+                        response = response + gameitem["created_at"]
+                        #response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getmtime("/home/pi" + thispath + fn)))
+                        response = response + "</D:lastmodified>\n"
+                        response = response + "</D:prop>\n"
+                        response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+                        response = response + "</D:propstat>\n"
+                        response = response + "</D:response>\n";                     
+                except:
+                    pass
+                session.close()
+            response = response + '</D:multistatus>\n'            
+            return Response(response, mimetype='application/xml', status=207)
+        elif thispath.find("/PGNs/") >= 0:
+            # A PGN file properties request
+            response = '<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n'
+            idnum = thispath[6:]
+            idnum = idnum[:idnum.find("_")]
+            if idnum.isdigit():
+                idnum = int(idnum)
+                Session = sessionmaker(bind=models.engine)
+                session = Session()
+                gamedata = session.execute(
+                    select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round,
+                        models.Game.white, models.Game.black, models.Game.result, models.Game.id).                        
+                        where(models.Game.id == idnum)                        
+                ).first()                
+                games = {}
+                try:                    
+                    gameitem = {}
+                    gameitem["id"] = str(gamedata[8])
+                    gameitem["created_at"] = str(gamedata[0])
+                    src = os.path.basename(str(gamedata[1]))
+                    if src.endswith('.py'):
+                        src = src[:-3]
+                    gameitem["source"] = src
+                    gameitem["event"] = str(gamedata[2])
+                    gameitem["site"] = str(gamedata[3])
+                    gameitem["round"] = str(gamedata[4])
+                    gameitem["white"] = str(gamedata[5])
+                    gameitem["black"] = str(gamedata[6])
+                    gameitem["result"] = str(gamedata[7])
+                    response = response + "<D:response>\n"
+                    response = response + '<D:href>' + "/PGNs/" + gameitem["id"] + "_" + gameitem["source"] + "_" + gameitem["event"].replace(" ","_") + '.pgn</D:href>\n'
+                    response = response + "<D:propstat>\n"
+                    response = response + "<D:prop>\n"                    
+                    response = response + "<D:getcontentlength>"
+                    response = response + "0"
+                    response = response + "</D:getcontentlength>\n"
+                    response = response + "<D:resourcetype>\n"
+                    response = response + "</D:resourcetype>\n"
+                    response = response + "<D:creationdate>"
+                    #response = response + '2003-07-01T01:01:00:00Z'
+                    response = response + gameitem["created_at"].replace(" ","T") + "Z"
+                    #response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi" + thispath + fn)))
+                    response = response + "</D:creationdate>\n"
+                    response = response + "<D:lastmodified>"
+                    #response = response + 'Thu, 21 Sep 2023 18:50:14 BST'
+                    response = response + gameitem["created_at"]
+                    #response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getmtime("/home/pi" + thispath + fn)))
+                    response = response + "</D:lastmodified>\n"
+                    response = response + "</D:prop>\n"
+                    response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+                    response = response + "</D:propstat>\n"
+                    response = response + "</D:response>\n";                     
+                except:
+                    pass
+                session.close()
+                response = response + '</D:multistatus>\n'                      
+                return Response(response, mimetype='application/xml', status=207)
+            else:
+                return Response("", mimetype='text/plain', status=404)            
+        else:
+            if os.path.exists("/home/pi" + thispath) and request.path.find("..") < 0:
+                # If a file or directory exists then return the propfind records
+                response = '<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n'
+                response = response + '<D:response>\n'
+                response = response + '<D:href>'
+                response = response + thispath
+                response = response + '</D:href>\n'
+                response = response + '<D:propstat>\n'
+                response = response + '<D:prop>\n'
+                response = response + '<D:getcontentlength>'
+                response = response + str(os.path.getsize("/home/pi" + thispath));
+                response = response + '</D:getcontentlength>\n'
+                response = response + '<D:resourcetype>\n'
+                if os.path.isdir("/home/pi" + thispath):
+                    response = response + '<D:collection/>\n'
+                response = response + '</D:resourcetype>\n'
+                response = response + '<D:creationdate>'
+                response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi" + thispath)))
+                response = response + '</D:creationdate>\n'
+                response = response + '<D:lastmodified>'
+                response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getmtime("/home/pi" + thispath)))
+                response = response + '</D:lastmodified>\m'
+                response = response + '</D:prop>\n'
+                response = response + '<D:status>HTTP/1.1 200 OK</D:status>\n'
+                response = response + '</D:propstat>\n'
+                response = response + '</D:response>\n'
+                if int(request.headers["Depth"]) == 1:
+                    if os.path.isdir("/home/pi" + thispath):
+                        for fn in os.listdir("/home/pi" + thispath):
+                            response = response + "<D:response>\n"
+                            response = response + '<D:href>' + thispath + "/" + fn + '</D:href>\n'
+                            response = response + "<D:propstat>\n"
+                            response = response + "<D:prop>\n"
+                            if os.path.isfile("/home/pi" + thispath + "/" + fn):
+                                response = response + "<D:getcontentlength>"
+                                response = response + str(os.path.getsize("/home/pi" + thispath + "/" + fn))
+                                response = response + "</D:getcontentlength>\n"
+                            response = response + "<D:resourcetype>\n"
+                            if os.path.isdir("/home/pi" + thispath + "/" + fn):
+                                response = response + "<D:collection/>\n"
+                            response = response + "</D:resourcetype>\n"
+                            response = response + "<D:creationdate>"
+                            response = response + time.strftime('%Y-%m-%dT%H:%M:%SZ',time.localtime(os.path.getctime("/home/pi" + thispath + "/" + fn)))
+                            response = response + "</D:creationdate>\n"
+                            response = response + "<D:lastmodified>"
+                            response = response + time.strftime('%a, %d %b %Y %H:%M:%S %Z',time.localtime(os.path.getmtime("/home/pi" + thispath + "/" + fn)))
+                            response = response + "</D:lastmodified>\n"
+                            response = response + "</D:prop>\n"
+                            response = response + "<D:status>HTTP/1.1 200 OK</D:status>\n"
+                            response = response + "</D:propstat>\n"
+                            response = response + "</D:response>\n"
+                response = response + '</D:multistatus>\n'
+                return Response(response, mimetype='application/xml', status=207)
+            else:
+                # If it is not found then return a 404
+                return Response('', mimetype='application/xml', status=404)
+        return res        
+    
+    if request.method == "DELETE":
+        # Deletes file or folder
+        if request.path != "/" and request.path.find("..") < 0:
+            try:
+                os.remove("/home/pi" + request.path)
+            except:
+                pass
+            try:
+                os.rmdir("/home/pi" + request.path)
+            except:
+                pass
+        res = Response()
+        return res   
+    
+    if request.method == "MOVE":     
+        destination = request.headers["Destination"]
+        destination = destination[7:]
+        destination = destination[destination.find("/"):]
+        if request.path != "/" and request.path.find("..") < 0:
+            os.rename("/home/pi" + request.path, "/home/pi" + destination)        
+        res = Response(status = 200)
+        return res 
+
+    if request.method == "PUT":    
+        if request.path != "/" and request.path.find("..") < 0:      
+            if request.path.find("/PGNs/") >= 0:
+                return Response(status = 404)      
+            f = open("/home/pi" + request.path, "wb")        
+            f.write(request.data)
+            f.close()
+            # If this file was called /777.txt then run chmod 777 on any path in it
+            if request.path == "/777.txt":
+                f = open("/home/pi/777.txt")                
+                lines = f.readlines()
+                for x in lines:
+                    try:
+                        os.chmod(x, 0o0777)
+                    except:
+                        pass
+                f.close()
+        res = Response(status = 201)
+        return res         
+    
+    if request.method == "MKCOL":
+        # Makes a folder
+        if request.path != "/" and request.path.find("..") < 0:
+            os.makedirs("/home/pi" + request.path, exist_ok=True)
+        res = Response()
+        return res  
+    
+    if request.method == "LOCK":                
+        s = str(request.data)        
+        lockscope = s.find("<D:lockscope>") + 13
+        lockscopee = s.find("</D:lockscope>")
+        lockscope = s[lockscope:lockscopee]
+        locktype = s.find("<D:locktype>") + 12
+        locktypee = s.find("</D:locktype>")
+        locktype = s[locktype:locktypee]
+        lockowner = s.find("<D:owner>") + 9
+        lockownere = s.find("</D:owner>")
+        lockowner = s[lockowner:lockownere]
+        # Lie to windows about the lock :)
+        r = "<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n";
+        r = r + "<D:response>\n";
+        r = r + "<D:href>" + request.path + "</D:href>\n";
+        r = r + "<D:propstat>\n";
+        r = r + "<D:prop>\n";
+        r = r + "<D:lockdiscovery>\n";
+        r = r + "<D:activelock>\n";
+        r = r + locktype + "\n";
+        r = r + lockscope + "\n";
+        r = r + "<D:depth>Infinity</D:depth>\n";
+        r = r + lockowner + "\n";
+        r = r + "<D:timeout>Second-3600</D:timeout>\n";
+        r = r + "<D:locktoken>\n";
+        r = r + "<D:href>opaquelocktoken:e71d4fae-5dec-22d6-fea5-00a0c91e6be4</D:href>\n";
+        r = r + "</D:locktoken>\n"; 
+        r = r + "</D:activelock>\n";
+        r = r + "</D:lockdiscovery>\n";
+        r = r + "</D:prop>\n";
+        r = r + "<D:status>HTTP/1.1 200 OK</D:status>\n";
+        r = r + "</D:propstat>\n";
+        r = r + "</D:response>\n";
+        r = r + "</D:multistatus>\n";
+        return Response(r, mimetype='application/xml', status=207)
+    
+    if request.method == "UNLOCK":        
+        return Response("", mimetype='text/html', status=204)     
+    
+    if request.method == "PROPPATCH":        
+        r = "<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus xmlns:D=\"DAV:\">\n";
+        r = r + "<D:response>\n";
+        r = r + "<D:href>" + request.path + "</D:href>\n";
+        r = r + "<D:propstat>\n";              
+        r = r + "<D:status>HTTP/1.1 200 OK</D:status>\n";
+        r = r + "</D:propstat>\n";
+        r = r + "</D:response>\n";
+        r = r + "</D:multistatus>\n";
+        return Response(r, mimetype='application/xml', status=207)        
+
+    if request.method == "GET":       
+        # a webdav request
+        if request.path != "/" and request.path.find("..") < 0:
+            if request.path.find("/PGNs/") >= 0 and request.path != "/PGNs/desktop.ini":
+                # PNG file                
+                thispath = request.path
+                idnum = thispath[6:]
+                idnum = idnum[:idnum.find("_")]
+                if idnum.isdigit():
+                    idnum = int(idnum)
+                    Session = sessionmaker(bind=models.engine)
+                    session = Session()
+                    g= chess.pgn.Game()
+                    gamedata = session.execute(
+                        select(models.Game.created_at, models.Game.source, models.Game.event, models.Game.site, models.Game.round, models.Game.white, models.Game.black, models.Game.result).
+                            where(models.Game.id == idnum)
+                    ).first()                    
+                    src = os.path.basename(str(gamedata[1]))
+                    if src.endswith('.py'):
+                        src = src[:-3]
+                    g.headers["Source"] = src
+                    g.headers["Date"] = str(gamedata[0])
+                    g.headers["Event"] = str(gamedata[2])
+                    g.headers["Site"] = str(gamedata[3])
+                    g.headers["Round"] = str(gamedata[4])
+                    g.headers["White"] = str(gamedata[5])
+                    g.headers["Black"] = str(gamedata[6])
+                    g.headers["Result"] = str(gamedata[7])
+                    for key in g.headers:
+                            if g.headers[key] == "None":
+                                g.headers[key] = ""                    
+                    moves = session.execute(
+                        select(models.GameMove.move_at, models.GameMove.move, models.GameMove.fen).
+                            where(models.GameMove.gameid == idnum)
+                    ).all()
+                    first = 1
+                    node = None
+                    for x in range(0,len(moves)):
+                        if moves[x][1] != '':
+                            if first == 1:
+                                node = g.add_variation(chess.Move.from_uci(moves[x][1]))
+                                first = 0
+                            else:
+                                node = node.add_variation(chess.Move.from_uci(moves[x][1]))
+                    exporter = chess.pgn.StringExporter(headers=True, variations=True, comments=True)
+                    pgn_string = g.accept(exporter)
+                    session.close()                    
+                    return Response(pgn_string, mimetype='application/xml', status=207)
+                else:
+                    return Response("", mimetype='text/plain', status=404)
+            else:
+                if request.headers["User-Agent"].lower().find("webdav") >= 0 or request.headers["User-Agent"].lower().find("cyberduck") >= 0:
+                    f = open("/home/pi" + request.path, "rb")
+                    contents = f.read()
+                    f.close()                
+                    resp = Response(contents, mimetype='application/binary', status=200)   
+                    return resp          
+
+
+@app.route("/", methods=["GET"])
 def index():
 	fenlog = "/home/pi/centaur/fen.log"
 	if os.path.isfile(fenlog) == True:
