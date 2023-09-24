@@ -19,14 +19,20 @@
 # This and any other notices must remain intact and unaltered in any
 # distribution, modification, variant, or derivative of this software.
 
-from DGTCentaurMods.classes import GameFactory, Log, ChessEngine, CentaurBoard, CentaurScreen, SocketClient, LiveScript
+from __future__ import annotations
+
+from DGTCentaurMods.classes import GameFactory, Log, ChessEngine, CentaurBoard, CentaurScreen, SocketClient
 from DGTCentaurMods.consts import Enums, consts, fonts
 from DGTCentaurMods.lib import common, sys_requests
 from DGTCentaurMods.consts import menu
 
-from typing import Optional
+from typing import Optional, Callable, Tuple, List
 
+from chess.engine import PovScore, Limit
 import chess
+
+TAnalyseResult = ChessEngine.TAnalyseResult
+TPlayResult = ChessEngine.TPlayResult
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
@@ -35,7 +41,7 @@ SOCKET = SocketClient.get()
 class Centaur():
 
     _current_row:int = 1
-    _plugin = None
+    _plugin:Plugin = None
     _chess_engine:Optional[ChessEngine.ChessEngineWrapper] = None
 
     @staticmethod
@@ -45,6 +51,14 @@ class Centaur():
     @staticmethod
     def _detach_plugin():
         Centaur._plugin = None
+
+    @staticmethod
+    def delayed_call(call:callable, delay:int):
+        common.delayed_call(call, delay)
+
+    @staticmethod
+    def push_button(button:Enums.Btn):
+        CENTAUR_BOARD.push_button(button)
    
     @staticmethod
     def clear_screen():
@@ -52,8 +66,17 @@ class Centaur():
         Centaur._current_row = 1
     
     @staticmethod
-    def print_button_label(button:Enums.Btn, row:float, x:int, text:str=""):
-        SCREEN.draw_button_label(button, text, row, x)
+    def print_button_label(button:Enums.Btn, x:int, row:float = -1, text:str=""):
+        if row>-1:
+            Centaur._current_row = row
+    
+        SCREEN.draw_button_label(button, text, Centaur._current_row, x)
+
+        Centaur._current_row += 1
+
+    @staticmethod
+    def messagebox(text_lines:Tuple[str,...], row:float=8, tick_button:bool=False):
+        SCREEN.draw_messagebox(text_lines, row=row, tick_button=tick_button)
 
     @staticmethod
     def print(text:str = consts.EMPTY_LINE, row:float = -1, font=fonts.MAIN_FONT):
@@ -68,10 +91,35 @@ class Centaur():
         CENTAUR_BOARD.led(common.Converters.to_square_index(square))
     
     @staticmethod
-    def light_move(uci_move:str):
+    def light_move(uci_move:str, web:bool=True):
         CENTAUR_BOARD.led_from_to(
             common.Converters.to_square_index(uci_move[0:2]),
             common.Converters.to_square_index(uci_move[2:4]))
+        
+        if web:
+            SOCKET.send_message({ 
+                "tip_uci_move":uci_move
+            })
+
+    @staticmethod
+    def light_moves(uci_moves:Tuple[str], web:bool=True):
+
+        squares = []
+        moves = []
+
+        for uci_move in uci_moves:
+
+            moves.append(uci_move[0:4])
+
+            squares.append(common.Converters.to_square_index(uci_move[0:2]))
+            squares.append(common.Converters.to_square_index(uci_move[2:4]))
+
+        CENTAUR_BOARD.led_array(squares)
+        
+        if web:
+            SOCKET.send_message({ 
+                "tip_uci_moves":moves
+            })
     
     @staticmethod
     def lights_off():
@@ -83,7 +131,7 @@ class Centaur():
 
     @staticmethod
     def header(text:str,web_text:str=None):
-        SCREEN.write_text(1, text, font=fonts.MEDIUM_FONT)
+        SCREEN.write_text(1, text, font=fonts.MEDIUM_MAIN_FONT)
 
         SocketClient.get().send_message({"turn_caption":web_text or text})
 
@@ -123,21 +171,47 @@ class Centaur():
             Centaur._chess_engine.configure(options)
 
     @staticmethod
-    def request_chess_engine_move(engine_callback:callable):
+    def request_chess_engine_move(engine_callback:Callable[[], ChessEngine.TPlayResult], time:int=5):
         if Centaur._chess_engine and Centaur._plugin:
+
             Centaur._chess_engine.play(
-                Centaur._plugin._game_engine.chessboard,
-                limit=chess.engine.Limit(time=5),
-                info=chess.engine.INFO_NONE, 
-                on_taskengine_done = engine_callback)
+                Centaur._plugin.game_engine.chessboard,
+                limit=Limit(time=time),
+
+                on_move_done = engine_callback)
                 
     @staticmethod
-    def request_chess_engine_evaluation(engine_callback:callable):
+    def request_chess_engine_evaluation(engine_callback:Callable[[PovScore, List[chess.Move]]], time:int=2, multipv:int=1):
         if Centaur._chess_engine and Centaur._plugin:
+
             Centaur._chess_engine.analyse(
-                Centaur._plugin._game_engine.chessboard,
-                limit=chess.engine.Limit(time=2),
-                on_taskengine_done = engine_callback)
+                Centaur._plugin.game_engine.chessboard,
+                multipv=multipv,
+                limit=Limit(time=time),
+    
+                on_analyse_done = engine_callback)
+            
+    '''
+    @staticmethod
+    def launch_chess_engine_analysis(
+        on_analysis:Callable[[PovScore, List[chess.Move]], bool], 
+        on_analysis_ended:Callable[[int], None],
+        engine_name:Optional[str]=None,
+        depth:int=5, time:int=2, multipv:int=3):
+
+        if Centaur._chess_engine and Centaur._plugin:
+            Centaur._chess_engine.launch_analysis(
+
+                Centaur._plugin.game_engine.chessboard,
+                limit = Limit(time=time, depth=depth),
+
+                multipv = multipv,
+
+                engine_name = engine_name,
+
+                on_analysis = on_analysis,
+                on_analysis_ended = on_analysis_ended)
+    '''
             
     @staticmethod
     def reverse_board(value:Optional[bool]=True):
@@ -147,6 +221,10 @@ class Centaur():
 class Plugin():
 
     _game_engine:Optional[GameFactory.Engine] = None
+
+    @property
+    def game_engine(self) -> Optional[GameFactory.Engine]:
+        return self._game_engine
 
     def __init__(self, id:str):
         self._exit_requested = False
@@ -167,11 +245,10 @@ class Plugin():
     def _initialize_web_menu(self):
 
         SOCKET.send_message({ 
-                "turn_caption":"Plugin "+self._id,
+                "turn_caption":"Plugin "+common.camel_case_to_snake_case(self._id),
                 "plugin":self._id,
                 "clear_board_graphic_moves":True,
                 "loading_screen":False,
-                "evaluation_disabled":True,
                 "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system", "plugin_edit"])
             })
 

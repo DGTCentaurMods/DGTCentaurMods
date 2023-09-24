@@ -22,14 +22,14 @@
 import chess, re, random
 
 from DGTCentaurMods.classes import Log
-from DGTCentaurMods.classes.Plugin import Plugin, Centaur
+from DGTCentaurMods.classes.Plugin import Plugin, Centaur, TAnalyseResult, TPlayResult
 from DGTCentaurMods.consts import Enums, fonts
 
-from typing import Optional
+from typing import Optional, Tuple
 
 
 _GAME_MODES = [_BLUNDER, _NORMAL, _EXPERT] = range(0,3)
-_CAPTIONS = ["Blunder mode", "Normal mode", "Expert mode"]
+_MODE_CAPTIONS = ["Blunder mode", "Normal mode", "Expert mode"]
 
 # CT800 is a FLOSS dedicated chess computer designed by Rasmus Althoff.
 # This plugin uses the CT800 with an adaptative mode that updates the level engine
@@ -91,7 +91,7 @@ class AlthoffBot(Plugin):
             # We display the board header.
             Centaur.header(
                 text=f"{current_player} {'W' if turn == chess.WHITE else 'B'}",
-                web_text=f"turn -> {current_player} {'(WHITE)' if turn == chess.WHITE else '(BLACK)'}")
+                web_text=f"turn → {current_player} {'(WHITE)' if turn == chess.WHITE else '(BLACK)'}")
 
             # Computer turn?
             if turn == (not self.HUMAN_COLOR):
@@ -136,17 +136,16 @@ class AlthoffBot(Plugin):
                             )
                             return
 
+                def engine_move_callback(result:TPlayResult):
 
-                def engine_callback(result):
-                    if result:
-                        Centaur.play_computer_move(str(result.move))
+                    Centaur.play_computer_move(str(result.move))
 
-                        # Position needs to be evaluated again.
-                        self._evaluate_position_and_adjust_level()
+                    # Position needs to be evaluated again.
+                    self._evaluate_position_and_adjust_level()
 
                 # Computer is going to play asynchronously.
                 # (in the meantime, user can takeback or force a move...)
-                Centaur.request_chess_engine_move(engine_callback)
+                Centaur.request_chess_engine_move(engine_move_callback)
 
     # When exists, this function is automatically invoked
     # when the player takes back a move.
@@ -184,7 +183,7 @@ class AlthoffBot(Plugin):
             if self._mode == len(_GAME_MODES):
                 self._mode = 0
 
-            Centaur.print(_CAPTIONS[self._mode], row=11.5)
+            Centaur.print(_MODE_CAPTIONS[self._mode], row=11.5)
 
             # We do not start the game yet.
             return False
@@ -211,14 +210,14 @@ class AlthoffBot(Plugin):
 
         Centaur.print("ALTHOFF", font=fonts.SMALL_DIGITAL_FONT, row=2)
         Centaur.print("BOT", font=fonts.SMALL_DIGITAL_FONT, row=4)
-        Centaur.print("Adaptative", font=fonts.SMALL_FONT, row=5.5)
-        Centaur.print("CT800 bot", font=fonts.SMALL_FONT)
+        Centaur.print("Adaptative", font=fonts.SMALL_MAIN_FONT, row=5.5)
+        Centaur.print("CT800 bot", font=fonts.SMALL_MAIN_FONT)
 
         Centaur.print_button_label(Enums.Btn.UP, row=8, x=6, text="Play white")
         Centaur.print_button_label(Enums.Btn.DOWN, row=9, x=6, text="Play black")
         Centaur.print_button_label(Enums.Btn.TICK, row=10.5, x=54)
 
-        Centaur.print(_CAPTIONS[self._mode], row=11.5)
+        Centaur.print(_MODE_CAPTIONS[self._mode], row=11.5)
 
         Centaur.print_button_label(Enums.Btn.BACK, row=13.5, x=6, text="Back home")
 
@@ -242,50 +241,34 @@ class AlthoffBot(Plugin):
     # Evaluate and adjust the chess engine level.
     def _evaluate_position_and_adjust_level(self):
         
-        def engine_callback(result):
-            if result and "score" in result:
+        def evaluation_callback(results: Tuple[TAnalyseResult, ...]):
+            result = results[0]
 
-                str_score = str(result["score"])
+            mate = result.score.pov(chess.WHITE).mate()
 
-                Log.debug(str_score)
+            if mate != None:
 
-                if "Mate" in str_score:
-
-                    # Player wins.
-                    if "WHITE" in str_score and self.HUMAN_COLOR:
-                        self._adjust_chess_engine(2400)
-                    else:
-                        self._adjust_chess_engine(1000)
-                    
+                # Player wins.
+                if (mate>0 and self.HUMAN_COLOR == chess.WHITE) or (mate<0 and self.HUMAN_COLOR == chess.BLACK):
+                    self._adjust_chess_engine(2400)
                 else:
+                    self._adjust_chess_engine(1000)
 
-                    # We capture the evaluation.
-                    # PovScore(Cp(-229), WHITE)
-                    value = int(re.search(r'PovScore\(Cp\(([-+]\d+)\)', str_score)[1])
+            else:
+                expectation = result.score.pov(self.HUMAN_COLOR).wdl().expectation()
 
-                    # We set the evaluation range from -100 to +100.
-                    if value>+100:
-                        value=+100
-                    if value<-100:
-                        value=-100
+                # We set the evaluation range from -100 to +100.
+                expectation = ((expectation*2) -1) * 100
 
-                    # We set WHITE point of view.
-                    if "BLACK" in str_score:
-                        value = value * -1
+                if abs(expectation)<5:
+                    Log.debug(f"Position is equal.")
+                else:
+                    Log.debug(f"Player LOSES ({expectation})." if expectation<0 else f"Player WINS (+{expectation}).")
 
-                    # We reverse the evaluation if player is BLACK
-                    if self.HUMAN_COLOR == chess.BLACK:
-                        value = value * -1
+                # Engine level range is 1000-2400 with 14 distinct values.
+                new_elo = 1000+(int(((expectation+100)/200)*14)*100)
 
-                    if abs(value)<3:
-                        Log.debug(f"Position is equal.")
-                    else:
-                        Log.debug(f"Player LOSES ({value})." if value<0 else f"Player WINS (+{value}).")
-
-                    # Engine level range is 1000-2400 with 14 distinct values.
-                    new_elo = 1000+(int(((value+100)/200)*14)*100)
-
-                    self._adjust_chess_engine(new_elo)
+                self._adjust_chess_engine(new_elo)
 
         # We ask for a new position evaluation.
-        Centaur.request_chess_engine_evaluation(engine_callback)
+        Centaur.request_chess_engine_evaluation(evaluation_callback)

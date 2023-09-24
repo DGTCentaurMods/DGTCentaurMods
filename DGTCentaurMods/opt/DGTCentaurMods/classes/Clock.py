@@ -167,8 +167,8 @@ class ClockPanel(common.Singleton):
 
         if self._clocks_enabled:
 
-            SCREEN.write_text(12.2, self._wheader, font=fonts.SMALL_FONT)
-            SCREEN.write_text(9.5, self._bheader, font=fonts.SMALL_FONT)
+            SCREEN.write_text(12.2, self._wheader, font=fonts.SMALL_MAIN_FONT)
+            SCREEN.write_text(9.5, self._bheader, font=fonts.SMALL_MAIN_FONT)
 
             if self._wclock:
                 SCREEN.write_text(13.2, self._wclock.get().strftime("%M:%S"), font=fonts.DIGITAL_FONT)

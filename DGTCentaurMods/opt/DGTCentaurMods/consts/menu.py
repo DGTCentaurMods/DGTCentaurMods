@@ -26,7 +26,7 @@ from DGTCentaurMods.consts.latest_tag import LASTEST_TAG
 
 from pathlib import Path
 
-import os, configparser, copy, re
+import os, configparser, copy
 
 
 class Tag():
@@ -97,7 +97,7 @@ _MENU_ITEMS = [
     {   Tag.ID:"system", 
         Tag.LABEL:"System", Tag.ITEMS: [
 
-            { Tag.LABEL: "📴 Power off board", Tag.SHORT_LABEL: "Power off",
+            { Tag.ID:"shutdown", Tag.LABEL: "📴 Power off board", Tag.SHORT_LABEL: "Power off",
               Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A shutdown request has been sent to the board!", Tag.VALUE: "shutdown"}
             },
 
@@ -120,7 +120,7 @@ _MENU_ITEMS = [
             #{ Tag.LABEL: "🌀 Reboot board", Tag.SHORT_LABEL: "Reboot",
             #  Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A reboot request has been sent to the board!", Tag.VALUE: "reboot"}
             #},
-            { Tag.LABEL: "⚡ Restart CORE service", Tag.ONLY_WEB:True,
+            { Tag.ID:"restart", Tag.LABEL: "⚡ Restart CORE service", Tag.ONLY_WEB:True,
               Tag.ACTION:{ Tag.TYPE: "socket_sys", "message": "A restart request has been sent to the board!", Tag.VALUE: "restart_service"}
             },
             { Tag.LABEL: "⚡ Restart WEB service", Tag.ONLY_WEB:True,
@@ -142,8 +142,8 @@ _MENU_ITEMS = [
             { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
             
-            { Tag.LABEL: f"tag:{consts.TAG_RELEASE}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
-            { Tag.LABEL: f"last:{LASTEST_TAG}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
+            { Tag.LABEL: f"tag:{consts.TAG_RELEASE}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_MAIN_FONT" },
+            { Tag.LABEL: f"last:{LASTEST_TAG}", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_MAIN_FONT" },
 
             { Tag.TYPE: "divider", Tag.ONLY_WEB:True },
             
@@ -155,7 +155,7 @@ _MENU_ITEMS = [
         { Tag.LABEL: consts.EMPTY_LINE, Tag.ONLY_BOARD:True, Tag.DISABLED:True },
 
         # Current tag version label
-        { Tag.LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_FONT" },
+        { Tag.LABEL: f"tag:{consts.TAG_RELEASE}" if LASTEST_TAG == consts.TAG_RELEASE else "Update available!", Tag.ONLY_BOARD:True, Tag.DISABLED:True, "font":"SMALL_MAIN_FONT" },
 ]
 
 class _Menu(common.Singleton):
@@ -190,16 +190,21 @@ class _Menu(common.Singleton):
 
         # We read the available plugins
         # Plugin label is built from Camel case to snake case
-        plugins = list(map(lambda f:{Tag.ID:Path(f.name).stem, Tag.LABEL:re.sub(r'(?<!^)(?=[A-Z])', ' ', Path(f.name).stem).capitalize() },
+        plugins = list(map(lambda f:{Tag.ID:Path(f.name).stem, Tag.LABEL:common.camel_case_to_snake_case(Path(f.name).stem) },
                            filter(lambda f: f.name.endswith(".py"), os.scandir(consts.PLUGINS_DIRECTORY))))
+
+        plugins = sorted(plugins, key=lambda x: x[Tag.LABEL])
 
         # We read the available engines + their options
         engines = list(map(lambda f:{Tag.ID:Path(f.name).stem, "options":get_sections(f.path)}, 
                            filter(lambda f: f.name.endswith(".uci"), os.scandir(consts.ENGINES_DIRECTORY))))
         
+        engines = sorted(engines, key=lambda x: common.capitalize_string(x[Tag.ID]))
+
         famous_pgns = list(map(lambda f:Path(f.name).stem, 
                            filter(lambda f: f.name.endswith(".pgn"), os.scandir(consts.FAMOUS_DIRECTORY))))
 
+        famous_pgns = sorted(famous_pgns)
 
         # Plugins
         if plugins_item:
@@ -256,3 +261,11 @@ class _Menu(common.Singleton):
     
 def get(flag: str, ids: tuple = ()):
     return _Menu()(flag, ids)
+
+def get_minimalist_menu() -> tuple:
+    
+    sys_items = filter(lambda item:Tag.ID in item and item[Tag.ID] in ("shutdown","restart"),
+                  next(
+                      filter(lambda item:Tag.ID in item and item[Tag.ID] == "system",
+                             _MENU_ITEMS), None)[Tag.ITEMS])
+    return tuple(sys_items)

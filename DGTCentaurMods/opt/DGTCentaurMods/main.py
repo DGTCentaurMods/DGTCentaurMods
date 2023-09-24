@@ -62,8 +62,6 @@ class Main:
         current_row = 10 if is_root else 2
         current_index = 0
 
-        #SCREEN.write_text(current_row-.7, "Choose one item", font=fonts.SMALL_FONT)
-
         if is_root:
 
             if not self._is_root:

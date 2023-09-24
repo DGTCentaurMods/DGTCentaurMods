@@ -650,7 +650,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								// We draw the previous move
 								uci_move: (value) => {
 								
-									if (me.board.previous_move) {
+									if (me.board.previous_move && value) {
 										square(me.chessboard, value.slice(0, 2), { color:"black" })
 										arrow(me.chessboard, value, { color:"black" })
 									}
@@ -660,7 +660,19 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 								computer_uci_move: (value) => arrow(me.chessboard, value, { color:"yellow" }),
 			
 								// We draw the hint
-								tip_uci_move: (value) => arrow(me.chessboard, value, { color:"green" }),
+								tip_uci_move: (value) => {
+									Chessboard.clearGraphicArrow(me.chessboard)
+									arrow(me.chessboard, value, { color:"green" })
+								},
+
+								// We draw the hints
+								tip_uci_moves: (value) => {
+									Chessboard.clearGraphicArrow(me.chessboard)
+									for(var i in value) {
+										square(me.chessboard, value[i].slice(0, 2), { color:"green" })
+										arrow(me.chessboard, value[i], { color:"green" })
+									}
+								},
 							
 								// We draw the checks
 								checkers: (value) => {

@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23092101"
+TAG_RELEASE = "ON23092401"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 
@@ -52,6 +52,7 @@ FEN_LOG = HOME_DIRECTORY+"/centaur/fen.log"
 
 FONT_FILE = OPT_DIRECTORY + "/resources/Typewriter Medium.ttf"
 DIGITAL_FONT_FILE = OPT_DIRECTORY + "/resources/DIGITALDREAMFAT.ttf"
+PACIFICO_FONT_FILE = OPT_DIRECTORY + "/resources/Pacifico.ttf"
 
 #STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
 STOCKFISH_ENGINE_PATH = OPT_DIRECTORY+"/engines/stockfish"
@@ -59,6 +60,7 @@ STOCKFISH_ENGINE_PATH = OPT_DIRECTORY+"/engines/stockfish"
 EMPTY_LINE = ' '*20
 
 SOUND_CORRECT_MOVES = "correct_moves"
+SOUND_VERY_GOOD_MOVES = "very_good_moves"
 SOUND_WRONG_MOVES = "wrong_moves"
 SOUND_TAKEBACK_MOVES = "takeback_moves"
 SOUND_COMPUTER_MOVES = "computer_moves"
@@ -69,6 +71,7 @@ SOUND_GAME_LOST= "game_lost_music"
 SOUNDS_SETTINGS = [
     { "id":SOUND_MUSIC, "label":"Starting music" },
     { "id":SOUND_CORRECT_MOVES, "label":"Correct moves" },
+    { "id":SOUND_VERY_GOOD_MOVES, "label":"Very good moves" },
     { "id":SOUND_WRONG_MOVES,"label":"Wrong moves" },
     { "id":SOUND_TAKEBACK_MOVES,"label":"Takebacks" },
     { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" },

@@ -23,6 +23,8 @@ from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurS
 from DGTCentaurMods.consts import Enums, consts, fonts, menu
 from DGTCentaurMods.lib import common, sys_requests
 
+from typing import Tuple
+
 #from pympler import muppy, summary
 
 from threading import Thread
@@ -673,43 +675,28 @@ class Engine():
 
                     if self._show_evaluation and not self._evaluation_disabled:
 
-                        def evaluation_callback(result):
+                        def evaluation_callback(results:Tuple[ChessEngine.TAnalyseResult, ...]):
 
-                            if result != None and result["score"]:
+                            result = results[0]
 
-                                str_score = str(result["score"])
+                            mate = result.score.pov(chess.WHITE).mate()
 
-                                del result
+                            if mate != None:
+                                    mate = abs(mate)
 
-                                Log.debug(str_score)
+                                    if mate == 0:
+                                        self.update_evaluation(force=True, text="checkmate")
+                                    else:
+                                        self.update_evaluation(force=True, text=f"mate in {mate}")
+                            else:
+                                expectation = result.score.pov(chess.WHITE).wdl().expectation()
 
-                                if "Mate" in str_score:
-                                    
-                                    try:
-                                        mate = int(re.search(r'PovScore\(Mate\([-+](\d+)\)', str_score)[1])
-                                    except:
-                                        mate = 0
-                                        pass
-
-                                    if mate>0:
-                                        self.update_evaluation(force=True, text=f" mate in {mate}")
-                                else:
-
-                                    try:
-                                        eval = int(re.search(r'PovScore\(Cp\(([-+]\d+)\)', str_score)[1])
-                                    except:
-                                        eval = 0
-                                        pass
-
-                                    if "BLACK" in str_score:
-                                        eval = eval * -1
-
-                                    self.update_evaluation(force=True, value=eval)
+                                self.update_evaluation(force=True, expectation=expectation)
 
                         self.chess_engine.analyse(
                             self._chessboard, 
                             chess.engine.Limit(time=1), 
-                            on_taskengine_done = evaluation_callback)
+                            on_analyse_done = evaluation_callback)
 
                     else:
                         self.update_evaluation(force=True, disabled=True)
@@ -953,14 +940,14 @@ class Engine():
 
         self._new_evaluation_requested = False
 
-    def update_evaluation(self, value=None, force=False, text=None, disabled=False):
+    def update_evaluation(self, expectation:float=None, force:bool=False, text:str=None, disabled:bool=False):
         
         if not self._started:
             return
         
         if force:
             self._new_evaluation_requested = False
-            SCREEN.draw_evaluation_bar(text=text, value=value, disabled=disabled)
+            SCREEN.draw_evaluation_bar(text=text, expectation=expectation, disabled=disabled)
         else:
             self._new_evaluation_requested = True
 
@@ -972,8 +959,10 @@ class Engine():
         try:
             self.update_evaluation(force=True, text="thinking...")
 
-            def hint_callback(moves):
-                uci_hint_move = str(moves["pv"][0])
+            def hint_callback(results:Tuple[ChessEngine.TAnalyseResult, ...]):
+
+                uci_hint_move = results[0].uci_move
+
                 Log.info(f'Engine help requested :"{uci_hint_move}"')
 
                 self.send_message_to_web_ui({ 
@@ -988,7 +977,7 @@ class Engine():
 
                 self.update_evaluation()
 
-            self.chess_engine.analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_taskengine_done=hint_callback)
+            self.chess_engine.analyse(self._chessboard, chess.engine.Limit(time=thinking_time), on_analyse_done=hint_callback)
 
         except Exception as e:
             Log.exception(Engine.flash_hint, e)
@@ -1112,7 +1101,7 @@ class Engine():
         return current_pgn
     
     def display_board_header(self, text):
-        SCREEN.write_text(1, text, font=fonts.MEDIUM_FONT)
+        SCREEN.write_text(1, text, font=fonts.MEDIUM_MAIN_FONT)
 
     def display_partial_PGN(self, row=9.3, move_count=10):
 

@@ -23,7 +23,11 @@ from PIL import ImageFont
 from DGTCentaurMods.consts import consts
 
 MAIN_FONT = ImageFont.truetype(consts.FONT_FILE, 16)
-SMALL_FONT = ImageFont.truetype(consts.FONT_FILE, 11)
-MEDIUM_FONT = ImageFont.truetype(consts.FONT_FILE, 13)
+SMALL_MAIN_FONT = ImageFont.truetype(consts.FONT_FILE, 11)
+MEDIUM_MAIN_FONT = ImageFont.truetype(consts.FONT_FILE, 13)
+
 DIGITAL_FONT = ImageFont.truetype(consts.DIGITAL_FONT_FILE, 30)
 SMALL_DIGITAL_FONT = ImageFont.truetype(consts.DIGITAL_FONT_FILE, 20)
+
+PACIFICO_FONT = ImageFont.truetype(consts.PACIFICO_FONT_FILE, 21)
+SMALL_PACIFICO_FONT = ImageFont.truetype(consts.PACIFICO_FONT_FILE, 15)

@@ -45,9 +45,11 @@ class _api():
         CENTAUR_BOARD.move_piece(common.Converters.to_square_index(target), Enums.PieceAction.PLACE)
     
     @staticmethod
-    def play(uci_move:str):
+    def play(uci_move:str) -> Optional[bool]:
         CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[0:2]), Enums.PieceAction.LIFT)
-        return CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.PLACE)
+        result = CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.PLACE)
+        time.sleep(.5)
+        return result
 
     @staticmethod
     def take_back():

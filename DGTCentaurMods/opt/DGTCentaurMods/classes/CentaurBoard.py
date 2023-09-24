@@ -268,6 +268,7 @@ class CentaurBoard(common.Singleton):
 
         _SOUND_TO_CONF_MAPPING = {
             Enums.Sound.CORRECT_MOVE : consts.SOUND_CORRECT_MOVES,
+            Enums.Sound.VERY_GOOD_MOVE : consts.SOUND_VERY_GOOD_MOVES,
             Enums.Sound.WRONG_MOVE : consts.SOUND_WRONG_MOVES,
             Enums.Sound.TAKEBACK_MOVE : consts.SOUND_TAKEBACK_MOVES,
             Enums.Sound.COMPUTER_MOVE : consts.SOUND_COMPUTER_MOVES,
@@ -282,6 +283,9 @@ class CentaurBoard(common.Singleton):
     
         if sound == Enums.Sound.CORRECT_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x48\x05\x52\x05')
+
+        if sound == Enums.Sound.VERY_GOOD_MOVE:
+            self.send_packet(b'\xb1\x00\x0c', b'\x50\x03\x51\x03\x52\x03')
 
         if sound == Enums.Sound.TAKEBACK_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x52\x05\x48\x05')

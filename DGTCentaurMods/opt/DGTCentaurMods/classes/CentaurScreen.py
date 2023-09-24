@@ -27,9 +27,11 @@ from DGTCentaurMods.classes import Log
 from DGTCentaurMods.consts import consts, fonts, Enums
 from DGTCentaurMods.lib import common
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps, ImageFont
 
 import threading, time, io
+
+from typing import Tuple
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 296
@@ -38,8 +40,8 @@ HEADER_HEIGHT = 20
 
 B_W_MODE = '1'
 
-MAIN_SCREEN_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg"),(0,0)
-CHESS_SHEET_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/chesssprites.bmp")
+MAIN_SCREEN_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/logo.jpg")
+CHESS_SHEET_IMAGE = Image.open(consts.OPT_DIRECTORY + "/resources/chess_sheet.bmp")
 
 class CentaurScreen(common.Singleton):
 
@@ -169,18 +171,17 @@ class CentaurScreen(common.Singleton):
 
     def home_screen(self, text=None):
 
-        logo = Image.open(consts.OPT_DIRECTORY + "/resources/logo_mods_screen.jpg")
-        self._buffer.paste(logo,(0,HEADER_HEIGHT))
+        self._buffer.paste(MAIN_SCREEN_IMAGE,(0,HEADER_HEIGHT))
         if text:
             self.write_text(10,text)
 
-    def system_message(self, message):
-        self.write_text(1, message)
+    def system_message(self, message, font=fonts.MAIN_FONT):
+        self.write_text(1, message, font=font)
 
     def write_text(self, row, text, font=fonts.MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
 
         if option != None or bordered:
-            font=fonts.SMALL_FONT
+            font=fonts.SMALL_MAIN_FONT
 
         i = Image.new(B_W_MODE, (0, 0), 255)
         canvas = ImageDraw.Draw(i)
@@ -195,8 +196,8 @@ class CentaurScreen(common.Singleton):
         canvas = ImageDraw.Draw(i)
 
         # Too large text?
-        if text_width>SCREEN_WIDTH and font!=fonts.SMALL_FONT:
-            font=fonts.SMALL_FONT
+        if text_width>SCREEN_WIDTH and font!=fonts.SMALL_MAIN_FONT:
+            font=fonts.SMALL_MAIN_FONT
             _, _, text_width, text_height = canvas.textbbox(xy=(0, 0), text=text, font=font)
 
         if bordered:
@@ -302,6 +303,33 @@ class CentaurScreen(common.Singleton):
             canvas.text((x+20, 0), text=text, font=fonts.MAIN_FONT, fill=0)
             self._buffer.paste(image, box=(0, int(row * HEADER_HEIGHT)))
 
+    def draw_messagebox(self, text_lines:Tuple[str,...], row:float=8, tick_button:bool=False):
+
+        try:
+            row += 1
+            row_offset = 0
+
+            length = len(text_lines)
+
+            if text_lines[length-1] == None:
+                row_offset = .5
+
+            # Last empty half row of the box
+            #self.write_text(length+row+1.8, consts.EMPTY_LINE)
+
+            self.write_text(row+.5, consts.EMPTY_LINE)
+            for index in range(length):
+                self.write_text(index+row+1+row_offset, text_lines[index] or consts.EMPTY_LINE)
+
+            if tick_button:
+                index += 1
+                self.draw_button_label(button=Enums.Btn.TICK, text="OK", row=row+index+row_offset+1.2, x=38)
+
+            self.draw_rectangle(0,HEADER_HEIGHT*(row+1),SCREEN_WIDTH-1,(row+index+2.2)*HEADER_HEIGHT)
+
+        except Exception as e:
+            Log.exception(CentaurScreen.draw_messagebox, e)
+
     def draw_resignation_window(self):
 
         try:
@@ -381,14 +409,15 @@ class CentaurScreen(common.Singleton):
                 piece_image = CHESS_SHEET_IMAGE.crop((offset_x, offset_y, offset_x+16, offset_y+16))
 
                 if is_keyboard and index<len(pieces):
-                    ImageDraw.Draw(piece_image).text((4, 0), pieces[index], font=fonts.SMALL_FONT, fill=0)
+                    ImageDraw.Draw(piece_image).text((4, 0), pieces[index], font=fonts.SMALL_MAIN_FONT, fill=0)
 
                 self._buffer.paste(piece_image,(col,row))
                 
         except Exception as e:
             Log.exception(CentaurScreen.draw_board, e)
 
-    def draw_evaluation_bar(self, row=8.5, value=0, text=None, disabled=False, font=fonts.SMALL_FONT):
+    #TODO to be reviewed
+    def draw_evaluation_bar(self, row:float=8.5, expectation:float=0, text:str=None, disabled:bool=False, font:ImageFont.FreeTypeFont=fonts.SMALL_MAIN_FONT):
 
         if disabled:
             text = "evaluation disabled"
@@ -397,26 +426,33 @@ class CentaurScreen(common.Singleton):
             self.write_text(row, text, font=font, bordered=True)
             return
         
-        canvas = ImageDraw.Draw(self._buffer)
+        #canvas = ImageDraw.Draw(self._buffer)
+        image = Image.new(B_W_MODE, (SCREEN_WIDTH, HEADER_HEIGHT), 255)
 
-        MAX_VALUE = 800
+        canvas = ImageDraw.Draw(image)
+
+        # Convert from 0-1 range to -1,+1
+        expectation = (expectation*2) -1
+
+        MAX_VALUE = 1
         HEIGHT = 14
         PADDING = 6
         BAR_WIDTH = SCREEN_WIDTH - (PADDING*2)
 
-        value = MAX_VALUE if disabled or text != None else value
+        expectation = MAX_VALUE if disabled or text != None else expectation
 
-        value = +MAX_VALUE if value>+MAX_VALUE else value
-        value = -MAX_VALUE if value<-MAX_VALUE else value
+        expectation = +MAX_VALUE if expectation>+MAX_VALUE else expectation
+        expectation = -MAX_VALUE if expectation<-MAX_VALUE else expectation
 
-        offset = (-(value/MAX_VALUE) * BAR_WIDTH *.5) + (BAR_WIDTH *.5)
+        offset = (-(expectation/MAX_VALUE) * BAR_WIDTH *.5) + (BAR_WIDTH *.5)
 
-        y = row * HEADER_HEIGHT
+        canvas.rounded_rectangle([(0,0),(127,HEIGHT)],radius=8, fill="white",outline='black', width=1)
+        canvas.rectangle([(PADDING,(PADDING *.5)),(127-PADDING,HEIGHT-(PADDING *.5))],fill="white",outline='black', width=1)
+        canvas.rectangle([(PADDING,(PADDING *.5)),(PADDING+offset,HEIGHT-(PADDING *.5))],fill="black",outline='black', width=1)
 
-        canvas.rounded_rectangle([(0,y),(127,y+HEIGHT)],radius=8, fill="white",outline='black', width=1)
-        canvas.rectangle([(PADDING,y+(PADDING *.5)),(127-PADDING,y+HEIGHT-(PADDING *.5))],fill="white",outline='black', width=1)
-        canvas.rectangle([(PADDING,y+(PADDING *.5)),(PADDING+offset,y+HEIGHT-(PADDING *.5))],fill="black",outline='black', width=1)
-
+        image = ImageOps.mirror(image)
+        
+        self._buffer.paste(image, (0, int(row * HEADER_HEIGHT)))
 
 def get():
     return CentaurScreen().initialize()

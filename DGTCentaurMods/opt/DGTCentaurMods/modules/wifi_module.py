@@ -164,7 +164,7 @@ def main():
 
             SCREEN.write_text(10, "Enter the")
             SCREEN.write_text(11, "password for")
-            SCREEN.write_text(12, f'"{selected_network.ssid}"', font=fonts.SMALL_FONT)
+            SCREEN.write_text(12, f'"{selected_network.ssid}"', font=fonts.SMALL_MAIN_FONT)
 
             network = Network.find(selected_network.ssid)
 

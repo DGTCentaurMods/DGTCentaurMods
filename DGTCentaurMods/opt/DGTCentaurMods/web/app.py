@@ -23,7 +23,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 
 from DGTCentaurMods.lib import common
-from DGTCentaurMods.consts import consts
+from DGTCentaurMods.consts import consts, menu
 from DGTCentaurMods.classes import DAL
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
@@ -73,7 +73,8 @@ def on_request(message):
 
 	if "web_menu" in message:
 
-		response["update_menu"] = [{"label":f"The {consts.MAIN_ID} service is not properly running, please check!", "action":{ "type": "js", "value": '() => null' }}]
+		# Minimalist menu when the core service is down
+		response["update_menu"] = menu.get_minimalist_menu()
 
 		socketio.emit('message', response)
 

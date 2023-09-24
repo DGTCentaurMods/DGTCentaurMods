@@ -57,9 +57,8 @@ def main(color, engine_name, engine_parameters):
 
     # Async chess engine result
     # The result should never be outdated since we test it before trigerring the callback...
-    def on_computer_move_done(result):
-        if result != None:
-            gfe.set_computer_move(str(result.move))
+    def on_computer_move_done(result:ChessEngine.TPlayResult):
+        gfe.set_computer_move(str(result.move))
 
     engine = ChessEngine.get(f"{consts.ENGINES_DIRECTORY}/{engine_name}")
 
@@ -125,9 +124,8 @@ def main(color, engine_name, engine_parameters):
                 # Async request
                 engine.play(
                     gfe.chessboard, 
-                    chess.engine.Limit(time=5), 
-                    info=chess.engine.INFO_NONE, 
-                    on_taskengine_done = on_computer_move_done)
+                    chess.engine.Limit(time=5),
+                    on_move_done = on_computer_move_done)
 
     def move_callback(uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
         # Move is accepted!

@@ -26,12 +26,12 @@ class Sound(Enum):
     MUSIC = 1
     WRONG_MOVE = 2
     CORRECT_MOVE = 3
-    TAKEBACK_MOVE = 4,
-    COMPUTER_MOVE = 5,
-    POWER_OFF = 6,
-    VICTORY = 7,
-    GAME_LOST = 8,
-
+    TAKEBACK_MOVE = 4
+    COMPUTER_MOVE = 5
+    POWER_OFF = 6
+    VICTORY = 7
+    GAME_LOST = 8
+    VERY_GOOD_MOVE = 9
 
 class Btn(Enum):
     NONE = 0
@@ -45,8 +45,8 @@ class Btn(Enum):
 
 class Event(Enum):
     NEW_GAME = 1
-    RESUME_GAME = 2,
-    PLAY = 3,
+    RESUME_GAME = 2
+    PLAY = 3
     REQUEST_DRAW = 4
     RESIGN_GAME = 5
     QUIT = 6

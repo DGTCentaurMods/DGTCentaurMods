@@ -24,7 +24,7 @@ from DGTCentaurMods.consts import consts, Enums
 
 from threading import Thread
 
-import os, requests, subprocess, time, chess
+import os, requests, subprocess, time, chess, re
 
 class Singleton:
     """Classes derived from Singleton only ever have one instance
@@ -43,6 +43,9 @@ class Singleton:
         if cls._self is None:
             cls._self = super().__new__(cls)
         return cls._self
+
+def camel_case_to_snake_case(name:str) -> str:
+    return re.sub(r'(?<!^)(?=[A-Z])', ' ', name)
 
 def get_lastest_tag() -> str:
 
@@ -130,12 +133,12 @@ def update_Centaur_FEN(fen: str) -> None:
     except:
         pass
 
-def delayed_command(command, delay):
-    def _start_delayed(args, delay):
+def delayed_call(delayed_call:callable, delay:int):
+    def _start_delayed():
         time.sleep(delay)
-        subprocess.run(args)
+        delayed_call()
 
-    t = Thread(target=_start_delayed, kwargs={'args': [{command}], 'delay': delay})
+    t = Thread(target=_start_delayed)
     t.start()
     
 class Converters:
