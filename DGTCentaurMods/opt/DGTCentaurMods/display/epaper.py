@@ -189,7 +189,7 @@ def initEpaper(mode = 0):
     epaperbuffer = Image.new('1', (128, 296), 255)
     logging.debug("init epaper")
     driver.reset()
-    driver.init()    
+    driver.init()      
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
     epaperUpd.daemon = True
     epaperUpd.start()
@@ -237,6 +237,7 @@ def writeText(row,txt):
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
     draw.text((0, 0), txt, font=font18, fill=0)
+    clearArea(0, (row * 20), 127, (row * 20) + 20)
     nimage.paste(image, (0, (row * 20)))
     epaperbuffer = nimage.copy()
 
@@ -246,7 +247,7 @@ def writeMenuTitle(title):
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 0)
     draw = ImageDraw.Draw(image)
-    draw.text((4, -2), title, font=font18, fill=255)
+    draw.text((4, -2), title, font=font18, fill=255)    
     nimage.paste(image, (0, 20))
     epaperbuffer = nimage.copy()
 

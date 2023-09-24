@@ -26,11 +26,14 @@ import os
 from lib import *
 import os, time
 import threading
+import subprocess
 
 global animate
 global progress
 
-epaper.initEpaper()
+epaper.initEpaper(1)
+epaper.clearScreen()
+
 sb = epaper.statusBar()
 sb.start()
 sb.print()
@@ -51,23 +54,49 @@ msg.start()
 time.sleep(0.5)
 epaper.writeText(3,"[1/2] Updating")
 epaper.writeText(4,"    Raspbian")
-os.system("sudo apt update")
-os.system("sudo apt full-upgrade -y")
+#os.system("sudo apt update")
+cmd = ["sudo", "apt", "update"]
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+try:
+    for line in proc.stdout:
+        epaper.writeText(10,str(line.decode()) + "                    ")
+        logging.debug(str(line))        
+except:    
+    pass
+cmd = ["sudo", "apt", "full-upgrade", "-y"]
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+try:
+    for line in proc.stdout:
+        epaper.writeText(10,str(line.decode()) + "                    ")
+        logging.debug(str(line))        
+except:    
+    pass
+#os.system("sudo apt full-upgrade -y")
 
 progress = 'Updating       '
 epaper.writeText(5,"[2/2] Updating")
 epaper.writeText(6,"    DGTCM")
-os.system("sudo apt install -y /tmp/dgtcentaurmods_armhf.deb")
+cmd = ["sudo", "apt", "install", "-y", "/tmp/dgtcentaurmods_armhf.deb"]
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+try:
+    for line in proc.stdout:
+        epaper.writeText(10,str(line.decode()) + "                    ")
+        logging.debug(str(line))        
+except:    
+    pass
+#os.system("sudo apt install -y /tmp/dgtcentaurmods_armhf.deb")
 
 animate = False
 sb.stop()
 time.sleep(3)
 epaper.clearScreen()
 time.sleep(1)
-print('Setup dome')
+print('Setup done')
 
 epaper.writeText(3,'     Shutting')
 epaper.writeText(4,'       down')
 time.sleep(5)
+epaper.initEpaper()
+epaper.clearScreen()
 epaper.stopEpaper()
 os.system("sudo systemctl start stopDGTController.service")

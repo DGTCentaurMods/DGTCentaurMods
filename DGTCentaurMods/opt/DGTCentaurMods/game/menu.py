@@ -391,6 +391,7 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
+                    logging.debug(result)
                     if os.path.exists("/home/pi/" + result):
                         logging.debug("User selected .deb file. Doing update")
                         logging.debug("Copying .deb file to /tmp")
