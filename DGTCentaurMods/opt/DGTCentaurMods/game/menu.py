@@ -28,9 +28,10 @@ import time
 import logging
 
 
-if os.path.exists("/home/pi/debug.log"):
-    os.system("sudo rm /home/pi/debug.log")
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper

@@ -34,7 +34,10 @@ import pathlib
 import threading
 import logging
 
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 driver = epaperDriver()
 
