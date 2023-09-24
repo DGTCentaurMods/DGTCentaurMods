@@ -109,10 +109,10 @@ def epaperUpdate():
                     re = 295
                 bb = im2.crop((0, rs + 1, 128, re))
                 bb = bb.transpose(Image.FLIP_TOP_BOTTOM)
-                bb = bb.transpose(Image.FLIP_LEFT_RIGHT)
-                driver.DisplayRegion(296 - re, 295 - rs, bb)
+                bb = bb.transpose(Image.FLIP_LEFT_RIGHT)                
+                driver.DisplayRegion(296 - re, 295 - rs, bb)                             
             lastepaperbytes = tepaperbytes
-            event_refresh.set() 
+            #event_refresh.set() 
         sleepcount = sleepcount + 1
         if sleepcount == 15000 and screensleep == 0:
             screensleep = 1
@@ -120,10 +120,8 @@ def epaperUpdate():
         time.sleep(0.1)
 
 def refresh():
-    # Just waits for a refresh
-    event_refresh.clear()
-    event_refresh.wait()
-    event_refresh.clear()
+    # Just waits for a refresh. Deprecated
+    return
 
 
 def loadingScreen():

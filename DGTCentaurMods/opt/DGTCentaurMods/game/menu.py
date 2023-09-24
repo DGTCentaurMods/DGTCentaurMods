@@ -27,6 +27,9 @@ import threading
 import time
 import logging
 
+
+if os.path.exists("/home/pi/debug.log"):
+    os.system("sudo rm /home/pi/debug.log")
 logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
 
 from DGTCentaurMods.board import *
@@ -121,7 +124,7 @@ def doMenu(menu, title=None):
     curmenu = menu
     # Display the given menu
     menuitem = 1
-    quickselect = 0
+    quickselect = 0    
 
     quickselect = 1    
     if title:
@@ -133,9 +136,12 @@ def doMenu(menu, title=None):
         row = 1
     # Print a fresh status bar.
     statusbar.print()
+    epaper.pauseEpaper()
     for k, v in menu.items():
         epaper.writeText(row, "    " + str(v))
         row = row + 1
+    epaper.unPauseEpaper()    
+    time.sleep(0.1)
     epaper.clearArea(0, 20 + shift, 17, 295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon(
@@ -147,7 +153,7 @@ def doMenu(menu, title=None):
         fill=0,
     )
     draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
-    statusbar.print()    
+    statusbar.print()         
     event_key.wait()
     event_key.clear()
     return selection
