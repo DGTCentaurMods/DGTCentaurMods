@@ -26,7 +26,8 @@ import sys
 import threading
 import time
 import logging
-
+import urllib.request
+import json
 
 try:
     logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
@@ -361,13 +362,13 @@ while True:
                             }
                         )
                     # Check for .deb files in the /home/pi folder that have been uploaded by webdav
+                    updatemenu["lastrelease"] = "Last Release"
                     debfiles = os.listdir("/home/pi")
                     logging.debug("Check for deb files that system can update to")
                     for debfile in debfiles:        
                         if debfile[-4:] == ".deb" and debfile[:15] == "dgtcentaurmods_":
                             logging.debug("Found " + debfile)
-                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]
-                    
+                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]                    
                     selection = ""
                     result = doMenu(updatemenu, "Update opts")
                     if result == "status":
@@ -391,7 +392,32 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
-                    logging.debug(result)
+                    if result == "lastrelease":
+                        logging.debug("Last Release")
+                        update_source = update.conf.read_value('update', 'source')
+                        logging.debug(update_source)
+                        url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(update_source)                   
+                        logging.debug(url)
+                        ver = None
+                        try:
+                            with urllib.request.urlopen(url) as versions:
+                                ver = json.loads(versions.read().decode())
+                                logging.debug(ver)
+                        except Exception as e:
+                            logging.debug('!! Cannot download update info: ', e)
+                        pass
+                        if ver != None:
+                            logging.debug(ver["stable"]["release"])
+                            download_url = 'https://github.com/{}/releases/download/v{}/dgtcentaurmods_{}_armhf.deb'.format(update_source,ver["stable"]["release"],ver["stable"]["release"])
+                            logging.debug(download_url)
+                            try:
+                                urllib.request.urlretrieve(download_url,'/tmp/dgtcentaurmods_armhf.deb')
+                                logging.debug("downloaded to /tmp")
+                                os.system("cp -f /home/pi/" + result + " /tmp/dgtcentaurmods_armhf.deb")
+                                logging.debug("Starting update")
+                                update.updateInstall()
+                            except:
+                                pass
                     if os.path.exists("/home/pi/" + result):
                         logging.debug("User selected .deb file. Doing update")
                         logging.debug("Copying .deb file to /tmp")
