@@ -466,7 +466,7 @@ class Engine():
 
         self._chessboard = chess.Board(chess.STARTING_FEN)
 
-        SCREEN.clear_text_cache()
+        SCREEN.clear_area()
 
         SCREEN.write_text(3,"Please place")
         SCREEN.write_text(4,"pieces in")
