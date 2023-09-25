@@ -31,7 +31,7 @@ from PIL import Image, ImageDraw, ImageOps, ImageFont
 
 import threading, time, io
 
-from typing import Tuple
+from typing import Tuple, List
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 296
@@ -52,6 +52,8 @@ class CentaurScreen(common.Singleton):
     _thread_worker = None
     _api = None
 
+    _last_written_text:List[str]
+
     _thread_is_alive = True
 
     _on_paint = None
@@ -65,6 +67,8 @@ class CentaurScreen(common.Singleton):
     _battery_value = -1 # -1 means "charging"
 
     def initialize(self):
+
+        self.clear_text_cache()
 
         if self._api == None:
 
@@ -87,6 +91,10 @@ class CentaurScreen(common.Singleton):
             print("Centaur screen initialized.")
 
         return self
+    
+    @property
+    def last_written_text(self) -> str:
+        return ' '.join(self._last_written_text)
     
     def set_reversed(self, value):
         self._screen_reversed = value
@@ -113,7 +121,7 @@ class CentaurScreen(common.Singleton):
 
                 # Header time
                 clock = time.strftime(self._clock_fmt)
-                self.write_text(0, clock, centered=False)
+                self.write_text(0, clock, centered=False, is_system=True)
 
                 # Paint event - (used for player clocks...)
                 if self._on_paint:
@@ -178,7 +186,7 @@ class CentaurScreen(common.Singleton):
     def system_message(self, message, font=fonts.MAIN_FONT):
         self.write_text(1, message, font=font)
 
-    def write_text(self, row, text, font=fonts.MAIN_FONT, centered=True, bordered=False, radius=8, option=None):
+    def write_text(self, row, text:str, font=fonts.MAIN_FONT, centered=True, bordered=False, radius=8, option=None, is_system:bool=False):
 
         if option != None or bordered:
             font=fonts.SMALL_MAIN_FONT
@@ -216,6 +224,10 @@ class CentaurScreen(common.Singleton):
         
         self._buffer = buffer_copy.copy()
 
+        if not is_system and text != consts.EMPTY_LINE:
+            self._last_written_text.pop(0)
+            self._last_written_text.append(text.upper())
+
     def draw_rectangle(self, x1, y1, x2, y2, fill=None, outline=None, width=1):
 
         canvas = ImageDraw.Draw(self._buffer)
@@ -223,8 +235,13 @@ class CentaurScreen(common.Singleton):
 
     def clear_area(self, x1 = 0, y1 = 0, x2 = SCREEN_WIDTH, y2 = SCREEN_HEIGHT):
 
+        self.clear_text_cache()
+
         self.draw_rectangle(x1,y1,x2,y2,255,255)
         time.sleep(.2)
+
+    def clear_text_cache(self):
+        self._last_written_text = ["","","",""]
 
     def draw_fen(self, fen, startrow=2):
 
@@ -423,7 +440,7 @@ class CentaurScreen(common.Singleton):
             text = "evaluation disabled"
 
         if text:
-            self.write_text(row, text, font=font, bordered=True)
+            self.write_text(row, text, font=font, bordered=True, is_system=True)
             return
         
         #canvas = ImageDraw.Draw(self._buffer)

@@ -91,7 +91,7 @@ class ElProfessor(Plugin):
 
         # New game
         if event == Enums.Event.NEW_GAME:
-            pass
+            Centaur.messagebox(("New","game!", None))
 
         # Player must physically play a move.
         if event == Enums.Event.PLAY:
@@ -191,7 +191,7 @@ class ElProfessor(Plugin):
             if uci_move in (m.uci_move for m in self._best_moves):
 
                 if len(self._best_moves) == 1:
-                    Centaur.messagebox(("YES", "The unique", "good move!"))
+                    Centaur.messagebox(("YES!", "The unique", "good move!"))
                 else:
                     Centaur.messagebox(("YES!", "You found a", "good move!"))
 

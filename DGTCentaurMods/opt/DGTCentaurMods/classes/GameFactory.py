@@ -462,7 +462,11 @@ class Engine():
                  
                  game_informations = {}):
 
-        SCREEN.clear_area()
+        LiveScript.attach_game_engine(self)
+
+        self._chessboard = chess.Board(chess.STARTING_FEN)
+
+        SCREEN.clear_text_cache()
 
         SCREEN.write_text(3,"Please place")
         SCREEN.write_text(4,"pieces in")
@@ -715,8 +719,6 @@ class Engine():
         CENTAUR_BOARD.subscribe_events(self.__key_callback, self.__field_callback)
 
         self._dal.delete_empty_games()
-
-        self._chessboard = chess.Board(chess.STARTING_FEN)
         
         ticks = -1
 
@@ -803,6 +805,8 @@ class Engine():
 
                                 del board_state
 
+                                SCREEN.clear_area()
+
                                 #all_objects = muppy.get_objects()
                                 #global_len = len(all_objects)
                                 #print(f"Global size:{global_len}")
@@ -812,7 +816,7 @@ class Engine():
                                 self._invalid_board_state = False
                                 self._need_starting_position_check = False
 
-                                self._chessboard = chess.Board(chess.STARTING_FEN)
+                                self._chessboard.reset()
                                 
                                 self.__initialize()
                                 
@@ -883,8 +887,6 @@ class Engine():
         
         self._started = True
 
-        LiveScript.attach_game_engine(self)
-
         SOCKET.initialize(on_socket_request=self._on_socket_request)
 
         self._uci_moves_at_start = uci_moves
@@ -923,7 +925,7 @@ class Engine():
             self._evaluation_thread_instance.join()
         except:
             pass
-
+        
         if self._chess_engine:
             self._chess_engine.quit()
 

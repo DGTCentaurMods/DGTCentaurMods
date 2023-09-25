@@ -1,6 +1,6 @@
 from DGTCentaurMods.classes import Log, GameFactory, CentaurBoard, CentaurScreen, SocketClient
 from DGTCentaurMods.lib import common
-from DGTCentaurMods.consts import Enums
+from DGTCentaurMods.consts import Enums, fonts
 
 import types, threading, time
 from typing import Optional
@@ -14,6 +14,10 @@ SOCKET = SocketClient.get()
 class _api():
 
     _game_engine:Optional[GameFactory.Engine] = None
+
+    @staticmethod
+    def write_text(row, text:str, font=fonts.MAIN_FONT, centered=True):
+        SCREEN.write_text(row, text, is_system=True)
 
     @staticmethod
     def push_button(button:Enums.Btn):
@@ -72,9 +76,63 @@ class _api():
         return _api._game_engine.computer_uci_move
     
     @staticmethod
+    def waitfor_screen_text(text:str, timeout:int=5, raise_exception:bool=True) -> bool:
+        
+        time_start = time.time()
+
+        Log.debug(f"Waiting for text '{text}'...")
+
+        text = text.upper()
+
+        while text not in SCREEN.last_written_text:
+
+            if time.time()-time_start>timeout:
+                if raise_exception:
+                    raise Exception(f'Timeout when waiting for text "{text}"!')
+                else:
+                    return False
+            time.sleep(.1)
+
+        return True
+    
+    @staticmethod
+    def waitfor_fen_position(timeout:int=5, fen:str=chess.STARTING_FEN):
+
+        time_start = time.time()
+
+        Log.debug(f"Waiting for fen '{fen}'...")
+
+        while _api.chessboard().fen() != fen:
+
+            if time.time()-time_start>timeout:
+                raise Exception(f'Timeout when waiting for fen position "{fen}"!')
+
+            time.sleep(.1)
+    
+    @staticmethod
+    def waitfor_sound(sound:Enums.Sound, timeout:int=5, raise_exception:bool=True) -> bool:
+        
+        time_start = time.time()
+
+        Log.debug(f"Waiting for sound '{sound}'...")
+
+        while sound != CENTAUR_BOARD.last_sound:
+
+            if time.time()-time_start>timeout:
+                if raise_exception:
+                    raise Exception(f'Timeout when waiting for sound {sound}!')
+                else:
+                    return False
+            time.sleep(.1)
+
+        return True
+
+    @staticmethod
     def waitfor_computer_move(timeout:int=15) -> str:
         if not _api._game_engine:
             raise Exception("Game engine not started!")
+        
+        Log.debug("Waiting for computer move...")
         
         time_start = time.time()
 

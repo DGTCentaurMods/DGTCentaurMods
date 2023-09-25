@@ -24,46 +24,47 @@
 
 # YOU CENTAUR BOARD NEEDS TO BE IN STARTING POSITION
 
-from DGTCentaurMods.classes import LiveScript, CentaurScreen
+from DGTCentaurMods.classes import LiveScript
 from DGTCentaurMods.consts import Enums
 
 import time, random
 
-SCREEN = CentaurScreen.get()
 LS = LiveScript.get()
 
+stage_id :str = None
+
 def home():
-  # Back to home menu
-  LS.push_button(Enums.Btn.BACK)
-  LS.push_button(Enums.Btn.BACK)
-  LS.push_button(Enums.Btn.BACK)
-  LS.push_button(Enums.Btn.BACK)
+    # Back to home menu
+    LS.push_button(Enums.Btn.BACK)
+    LS.push_button(Enums.Btn.BACK)
+    LS.push_button(Enums.Btn.BACK)
+    LS.push_button(Enums.Btn.BACK)
+
+def raise_exception(error:str):
+    LS.write_text(4, stage_id)
+    LS.write_text(5, "ERROR!")
+    raise Exception(f'Stage "{stage_id}" -> {error}')
 
 def play_random_move():
-  legal_moves = LS.chessboard().legal_moves
-  uci_move = str(random.choice(list(legal_moves)))[0:4]
-  return LS.play(uci_move)
+    legal_moves = LS.chessboard().legal_moves
+    uci_move = str(random.choice(list(legal_moves)))[0:4]
+    return LS.play(uci_move)
 
 def play_or_die(uci_move:str):
-  
-  global stage
+    if not LS.play(uci_move):
+        raise_exception(f'Unable to play "{uci_move}"!')
 
-  if not LS.play(uci_move):
-    SCREEN.write_text(5, "ERROR!")
-    raise Exception(f'Module "{stage}" -> Unable to play "{uci_move}"!')
 
-# Stage 1 - test 1vs1 module + promotion on both sides.
 def stage_1vs1():
-
-    global stage
-    stage = "1 vs 1"
 
     home()
 
     # Choose PLAY/1VS1
     LS.select_menu("PLAY")
     LS.select_menu("PLAY 1 VS 1")
-    time.sleep(2)
+
+    # Start from fresh position
+    LS.waitfor_fen_position()
 
     # Italian game
     play_or_die("e2e4")
@@ -117,20 +118,10 @@ def stage_1vs1():
     play_or_die("h8h3")
     play_or_die("c1d1")
 
-    assert LS.chessboard().fen() == "rnbqkb2/1ppp1pp1/8/4p3/4P3/7R/P1PP1P1P/RN1qKBNR w KQq - 0 9", "FEN is incorrect - stage 1."
+    if LS.chessboard().fen() != "rnbqkb2/1ppp1pp1/8/4p3/4P3/7R/P1PP1P1P/RN1qKBNR w KQq - 0 9":
+        raise_exception("FEN is incorrect!")
 
-    SCREEN.write_text(4, "STAGE 1")
-    SCREEN.write_text(5, "OK!")
-
-    time.sleep(2)
-
-
-# Stage 2 - RandomBot.
-# Random play against RandomBot
 def stage_randombot():
-
-    global stage
-    stage = "Ramdom bot"
   
     home()
 
@@ -143,22 +134,16 @@ def stage_randombot():
 
     # Splash screen
     LS.push_button(Enums.Btn.PLAY)
-    time.sleep(2)
+
+    # Start from fresh position
+    LS.waitfor_fen_position()
 
     # Random moves
     for _ in range(8):
         play_random_move()
         LS.play(LS.waitfor_computer_move())
 
-    SCREEN.write_text(4, "STAGE 2")
-    SCREEN.write_text(5, "OK!")
-
-    time.sleep(2)
-
-def stage_engine(id:str, conf:str):
-
-    global stage
-    stage = "Engine "+id
+def _stage_engine(id:str, conf:str):
 
     home()
 
@@ -170,8 +155,8 @@ def stage_engine(id:str, conf:str):
     # Launch WHITE
     LS.push_button(Enums.Btn.TICK)
 
-    # Engine loading...
-    time.sleep(4)
+    # Start from fresh position
+    LS.waitfor_fen_position()
 
     # Italian game
     play_or_die("e2e4")
@@ -188,8 +173,8 @@ def stage_engine(id:str, conf:str):
     # Random moves
     for index in range(3):
         play_random_move()
-        SCREEN.write_text(4, "Random")
-        SCREEN.write_text(5, "move #"+str(index+1))
+        LS.write_text(4, "Random")
+        LS.write_text(5, "move #"+str(index+1))
         LS.play(LS.waitfor_computer_move())
 
     # Trying with BLACK
@@ -219,17 +204,16 @@ def stage_engine(id:str, conf:str):
     # Random moves
     for index in range(3):
         play_random_move()
-        SCREEN.write_text(4, "Random")
-        SCREEN.write_text(5, "move #"+str(index+1))
+        LS.write_text(4, "Random")
+        LS.write_text(5, "move #"+str(index+1))
         LS.play(LS.waitfor_computer_move())
 
-    SCREEN.write_text(4, "STAGE "+id)
-    SCREEN.write_text(5, "OK!")
+    LS.write_text(4, id)
+    LS.write_text(5, "OK!")
 
-    time.sleep(2)
-
-# Stage 3 - engines.
 def stage_engines():
+
+    global stage_id
 
     for args in (
        ("RODENTIV","Spassky"),
@@ -240,16 +224,70 @@ def stage_engines():
        ("ZAHAK","E-1440"),
        ("STOCKFISH","E-1350"),
        ("CT800","E-1100")):
-       stage_engine(args[0],args[1])
 
-    SCREEN.write_text(4, "STAGE 3")
-    SCREEN.write_text(5, "OK!")
+       stage_id = args[0]
+
+       _stage_engine(args[0],args[1])
+       time.sleep(2)
+
+def stage_el_professor():
+
+    home()
+
+    # Choose PLUGINS
+    LS.select_menu("PLUGINS")
+
+    # Launch RandomBot
+    LS.select_menu("EL PROFESSOR")
+    time.sleep(2)
+
+    # Splash screen
+    # Expert mode
+    LS.push_button(Enums.Btn.TICK)
+    time.sleep(1)
+
+    # White
+    LS.push_button(Enums.Btn.UP)
+    
+    # Start from fresh position
+    LS.waitfor_fen_position()
+
+    time.sleep(3)
+
+    # Wait for "Please find a good move" message
+    LS.waitfor_screen_text("Please find a good move")
+
+    play_or_die("d2d4")
+    LS.waitfor_screen_text("YES")
+
+    LS.play(LS.waitfor_computer_move())
+
+    LS.waitfor_screen_text("Please find a good move")
+
+    play_or_die("c2c4")
+    LS.waitfor_screen_text("YES")
+
+    LS.play(LS.waitfor_computer_move())
+    LS.waitfor_screen_text("Please find a good move")
+    
+    if LS.play("c1g5"):
+       raise Exception(f'c1g5 is not a correct move!')
+
+
+for stager in [
+    stage_1vs1,
+    stage_randombot,
+    stage_el_professor,
+    stage_engines,
+]:
+    stage_id = stager.__name__
+
+    stager()
+
+    LS.write_text(4, stage_id)
+    LS.write_text(5, "OK")
 
     time.sleep(2)
 
-stage_1vs1()
-stage_randombot()
-stage_engines()
-
-SCREEN.write_text(4, "ALL")
-SCREEN.write_text(5, "GOOD!")
+LS.write_text(4, "ALL")
+LS.write_text(5, "GOOD!")

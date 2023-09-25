@@ -61,6 +61,7 @@ class CentaurBoard(common.Singleton):
     _callbacks_queue = []
 
     _sound_override = {}
+    _last_sound:Enums.Sound = None
 
     _current_menu = ""
 
@@ -168,6 +169,10 @@ class CentaurBoard(common.Singleton):
         self.time_limit = 0
         self._events_worker.join()
         self._SERIAL = None
+
+    @property
+    def last_sound(self) -> Enums.Sound:
+        return self._last_sound
 
     def serial(self):
         return self._SERIAL
@@ -290,10 +295,12 @@ class CentaurBoard(common.Singleton):
             Enums.Sound.VICTORY : consts.SOUND_VICTORY,
         }
 
+        self._last_sound = sound
+
         if sound in _SOUND_TO_CONF_MAPPING:
             if not CentaurConfig.get_sound_settings(_SOUND_TO_CONF_MAPPING[sound]):
                 return
-    
+
         if sound == Enums.Sound.CORRECT_MOVE:
             self.send_packet(b'\xb1\x00\x0a', b'\x48\x05\x52\x05')
 

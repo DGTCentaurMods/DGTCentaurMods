@@ -403,6 +403,11 @@ class Plugin():
             self._game_engine.stop()
             self._game_engine = None
 
+        if Centaur._chess_engine:
+            Centaur._chess_engine.quit()
+
+        Centaur._chess_engine = None
+
         CENTAUR_BOARD.unsubscribe_events()
 
         Centaur._detach_plugin()

@@ -66,17 +66,13 @@ class ChessEngineWrapper():
     __q = None
     __worker = None
 
-    __destroyed = False
+    __running = False
     
     def __init__(self, engine_path:str, async_mode:bool = True):
 
         assert engine_path != None, "Need an engine_path!"
 
         self.__engine_path = engine_path
-
-        # 5 analysis can be cached
-        for _ in range(5):
-            self.__cache.append({"fen":None})
 
         # Async mode
         if async_mode:
@@ -85,10 +81,13 @@ class ChessEngineWrapper():
 
             # Turn-on the engine worker thread
             self.__worker = threading.Thread(target=self.__engine_worker, daemon=True)
+            
+            self.__running = True
+            
             self.__worker.start()
 
     def __engine_worker(self):
-        while self.__destroyed == False:
+        while self.__running:
             #item = self.__q.get(block=True)
 
             if self.__q.empty() == False:
@@ -156,7 +155,8 @@ class ChessEngineWrapper():
                 Log.debug(f'{ChessEngineWrapper.__quit_engine.__name__}({id(self.__engine)})')
                 self.__engine.quit()
             
-            self.__destroyed = True
+            self.__running = False
+            self.__engine = None
 
             if self.__worker:
                 self.__worker.join()
@@ -168,6 +168,12 @@ class ChessEngineWrapper():
     def __instanciate_engine(self):
 
         try:
+            self.__cache.clear()
+
+            # 5 analysis can be cached
+            for _ in range(5):
+                self.__cache.append({"fen":None})
+
             if not self.__engine:
 
                 # Only for RodentIV...
@@ -177,6 +183,8 @@ class ChessEngineWrapper():
                 self.__engine = None
                 self.__engine = chess.engine.SimpleEngine.popen_uci(self.__engine_path)
                 
+                Log.debug(f'{ChessEngineWrapper.__instanciate_engine.__name__}({id(self.__engine)})')
+
                 if self.__engine_options != None:
 
                     Log.debug(self.__engine_options)
