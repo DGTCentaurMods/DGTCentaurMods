@@ -2,13 +2,18 @@
 ### * ***This release only works on the second version of DGT centaur board*** *
 You own a first verion of the board if your board has visible black circles on the fields. If you decide to install this software anyway, you can use the web interface to display in real time what should be on the screen. The web interface allows you to safely power off the board too.
 
-## What's new in 1.3.1
-- Tampermonkey script for quick import to lichess analysis
-- Wrap menu indicator around when using up/down at top or bottom of menu
-- Fix updates for revisions on always policy
-- Tweaks to reduce ghosting (especially in the menu)
-- Ugly hack to allow hiding menu items (set from web interface, restart)
-- Upgraded berserk python package for lichess + sleep retry on fail
+## What's new in 1.3.2
+- Adds a webdav based network drive (basic/experimental) with a PGN folder providing up to the latest 100 PGNs
+- Allow update to latest release option in updates menu
+- Update and display improvements
+- Update from deb file in network share
+- Fix various chess board outlines not aligned properly
+- Fix epaper update when playing engines with analysis off
+- Adds takebacks in UCI (engines) and 1v1Analysis
+- Adds ignore computer move (and choose your own) in UCI (engines) and 1v1Analysis
+- Logging to /home/pi/debug.log so available on network share
+- Enable a shell on port 7777 from the menu (in case someone has ssh access problems)
+
 
 ## Installation
 ### Bootstrap install (new setup or upgrade)
@@ -21,6 +26,7 @@ This method will always install the LATEST release of DGTCentaurMods. In case yo
 - enter a desired version or press ENTER to install the latest
 - setup will start
 - restart the board on finish to enable all features such as bluetooth, etc.
+or try the new installation tool: https://github.com/EdNekebno/DGTCentaurMods/wiki/Creating-a-DGT-Centaur-Mods-SD-Card-on-Windows
 
 #### Linux
 - open a terminal window
