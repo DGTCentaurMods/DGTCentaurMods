@@ -32,6 +32,7 @@ class Sound(Enum):
     VICTORY = 7
     GAME_LOST = 8
     VERY_GOOD_MOVE = 9
+    BAD_MOVE = 10
 
 class Btn(Enum):
     NONE = 0

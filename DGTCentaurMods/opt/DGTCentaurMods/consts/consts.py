@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23092401"
+TAG_RELEASE = "ON23092501"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 
@@ -61,6 +61,7 @@ EMPTY_LINE = ' '*20
 
 SOUND_CORRECT_MOVES = "correct_moves"
 SOUND_VERY_GOOD_MOVES = "very_good_moves"
+SOUND_BAD_MOVES = "bad_moves"
 SOUND_WRONG_MOVES = "wrong_moves"
 SOUND_TAKEBACK_MOVES = "takeback_moves"
 SOUND_COMPUTER_MOVES = "computer_moves"
@@ -71,10 +72,11 @@ SOUND_GAME_LOST= "game_lost_music"
 SOUNDS_SETTINGS = [
     { "id":SOUND_MUSIC, "label":"Starting music" },
     { "id":SOUND_CORRECT_MOVES, "label":"Correct moves" },
-    { "id":SOUND_VERY_GOOD_MOVES, "label":"Very good moves" },
     { "id":SOUND_WRONG_MOVES,"label":"Wrong moves" },
     { "id":SOUND_TAKEBACK_MOVES,"label":"Takebacks" },
     { "id":SOUND_COMPUTER_MOVES,"label":"Computer moves" },
+    { "id":SOUND_VERY_GOOD_MOVES, "label":"Very good moves" },
+    { "id":SOUND_BAD_MOVES, "label":"Bad moves" },
     { "id":SOUND_VICTORY,"label":"Victory music" },
     { "id":SOUND_GAME_LOST,"label":"Game lost/draw music" },
 ]

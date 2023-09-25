@@ -127,17 +127,17 @@ class ElProfessor(Plugin):
                         # If expert mode or forced move
                         # we choose the unique move.
                         if self._mode == _EXPERT or len(candidate_moves) == 1:
-                            Centaur.play_computer_move(str(candidate_moves[0].uci_move))
+                            Centaur.play_computer_move(candidate_moves[0].uci_move)
 
                         # If easy mode or if 1-3 candidates
                         # we choose a random candidate.
                         elif self._mode == _EASY or len(candidate_moves) <4:
-                            Centaur.play_computer_move(str(candidate_moves[random.randint(0,len(candidate_moves)-1)].uci_move))
+                            Centaur.play_computer_move(candidate_moves[random.randint(0,len(candidate_moves)-1)].uci_move)
 
                         # If normal mode
                         # we choose a random candidate among the first half.
                         else:
-                            Centaur.play_computer_move(str(candidate_moves[random.randint(0,int(len(candidate_moves)/2)-1)].uci_move))
+                            Centaur.play_computer_move(candidate_moves[random.randint(0,int(len(candidate_moves)/2)-1)].uci_move)
 
                     else:
 
@@ -195,8 +195,7 @@ class ElProfessor(Plugin):
                 else:
                     Centaur.messagebox(("YES!", "You found a", "good move!"))
 
-                Centaur.delayed_call(
-                    lambda:Centaur.sound(Enums.Sound.VERY_GOOD_MOVE), 1)
+                Centaur.sound(Enums.Sound.VERY_GOOD_MOVE, override=Enums.Sound.CORRECT_MOVE)
 
                 return True
 
@@ -218,10 +217,15 @@ class ElProfessor(Plugin):
             if self._try >= 3:
                 Centaur.messagebox(("You failed!", "Pick one of", "the moves!"))
 
+                four_moves = list(m.uci_move for m in self._candidate_moves[:4])
+                random.shuffle(four_moves)
+
                 #TODO to be reviewed
                 # Call is delayed since the board will show the wrong move.
                 Centaur.delayed_call(
-                    lambda:Centaur.light_moves(tuple(m.uci_move for m in self._candidate_moves[:4])), 2)
+                    lambda:Centaur.light_moves(tuple(four_moves)), 2)
+                
+            Centaur.sound(Enums.Sound.BAD_MOVE, override=Enums.Sound.WRONG_MOVE)
 
             return False
         

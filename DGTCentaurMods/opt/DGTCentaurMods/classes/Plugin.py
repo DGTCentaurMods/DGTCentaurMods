@@ -126,8 +126,8 @@ class Centaur():
         CENTAUR_BOARD.leds_off()
     
     @staticmethod
-    def sound(sound:Enums.Sound):
-        CENTAUR_BOARD.beep(sound)
+    def sound(sound:Enums.Sound, override:Optional[Enums.Sound]=None):
+        CENTAUR_BOARD.beep(sound, override)
 
     @staticmethod
     def header(text:str,web_text:str=None):
