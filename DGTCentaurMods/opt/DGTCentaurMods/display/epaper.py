@@ -34,7 +34,10 @@ import pathlib
 import threading
 import logging
 
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 driver = epaperDriver()
 
@@ -109,10 +112,10 @@ def epaperUpdate():
                     re = 295
                 bb = im2.crop((0, rs + 1, 128, re))
                 bb = bb.transpose(Image.FLIP_TOP_BOTTOM)
-                bb = bb.transpose(Image.FLIP_LEFT_RIGHT)
-                driver.DisplayRegion(296 - re, 295 - rs, bb)
+                bb = bb.transpose(Image.FLIP_LEFT_RIGHT)                
+                driver.DisplayRegion(296 - re, 295 - rs, bb)                             
             lastepaperbytes = tepaperbytes
-            event_refresh.set() 
+            #event_refresh.set() 
         sleepcount = sleepcount + 1
         if sleepcount == 15000 and screensleep == 0:
             screensleep = 1
@@ -120,10 +123,8 @@ def epaperUpdate():
         time.sleep(0.1)
 
 def refresh():
-    # Just waits for a refresh
-    event_refresh.clear()
-    event_refresh.wait()
-    event_refresh.clear()
+    # Just waits for a refresh. Deprecated
+    return
 
 
 def loadingScreen():
@@ -188,7 +189,7 @@ def initEpaper(mode = 0):
     epaperbuffer = Image.new('1', (128, 296), 255)
     logging.debug("init epaper")
     driver.reset()
-    driver.init()    
+    driver.init()      
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
     epaperUpd.daemon = True
     epaperUpd.start()
@@ -236,6 +237,7 @@ def writeText(row,txt):
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
     draw.text((0, 0), txt, font=font18, fill=0)
+    clearArea(0, (row * 20), 127, (row * 20) + 20)
     nimage.paste(image, (0, (row * 20)))
     epaperbuffer = nimage.copy()
 
@@ -245,7 +247,7 @@ def writeMenuTitle(title):
     nimage = epaperbuffer.copy()
     image = Image.new('1', (128, 20), 0)
     draw = ImageDraw.Draw(image)
-    draw.text((4, -2), title, font=font18, fill=255)
+    draw.text((4, -2), title, font=font18, fill=255)    
     nimage.paste(image, (0, 20))
     epaperbuffer = nimage.copy()
 

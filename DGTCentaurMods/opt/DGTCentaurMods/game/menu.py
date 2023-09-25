@@ -26,8 +26,16 @@ import sys
 import threading
 import time
 import logging
+import urllib.request
+import json
+import socket
+import subprocess
+import os
 
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 from DGTCentaurMods.board import *
 from DGTCentaurMods.display import epaper
@@ -121,7 +129,7 @@ def doMenu(menu, title=None):
     curmenu = menu
     # Display the given menu
     menuitem = 1
-    quickselect = 0
+    quickselect = 0    
 
     quickselect = 1    
     if title:
@@ -133,9 +141,12 @@ def doMenu(menu, title=None):
         row = 1
     # Print a fresh status bar.
     statusbar.print()
+    epaper.pauseEpaper()
     for k, v in menu.items():
         epaper.writeText(row, "    " + str(v))
         row = row + 1
+    epaper.unPauseEpaper()    
+    time.sleep(0.1)
     epaper.clearArea(0, 20 + shift, 17, 295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon(
@@ -147,7 +158,7 @@ def doMenu(menu, title=None):
         fill=0,
     )
     draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
-    statusbar.print()    
+    statusbar.print()         
     event_key.wait()
     event_key.clear()
     return selection
@@ -333,7 +344,8 @@ while True:
             "Pairing": "BT Pair",
             "Sound": "Sound",
             "LichessAPI": "Lichess API",
-            "update": "Update opts",
+            "reverseshell": "Shell 7777",
+            "update": "Update opts",            
             "Shutdown": "Shutdown",
             "Reboot": "Reboot",
         }
@@ -354,13 +366,13 @@ while True:
                             }
                         )
                     # Check for .deb files in the /home/pi folder that have been uploaded by webdav
+                    updatemenu["lastrelease"] = "Last Release"
                     debfiles = os.listdir("/home/pi")
                     logging.debug("Check for deb files that system can update to")
                     for debfile in debfiles:        
                         if debfile[-4:] == ".deb" and debfile[:15] == "dgtcentaurmods_":
                             logging.debug("Found " + debfile)
-                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]
-                    
+                            updatemenu[debfile] = debfile[15:debfile.find("_",15)]                    
                     selection = ""
                     result = doMenu(updatemenu, "Update opts")
                     if result == "status":
@@ -384,6 +396,32 @@ while True:
                             {"always": "Always", "revision": "Revisions"}, "Policy"
                         )
                         update.setPolicy(result)
+                    if result == "lastrelease":
+                        logging.debug("Last Release")
+                        update_source = update.conf.read_value('update', 'source')
+                        logging.debug(update_source)
+                        url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(update_source)                   
+                        logging.debug(url)
+                        ver = None
+                        try:
+                            with urllib.request.urlopen(url) as versions:
+                                ver = json.loads(versions.read().decode())
+                                logging.debug(ver)
+                        except Exception as e:
+                            logging.debug('!! Cannot download update info: ', e)
+                        pass
+                        if ver != None:
+                            logging.debug(ver["stable"]["release"])
+                            download_url = 'https://github.com/{}/releases/download/v{}/dgtcentaurmods_{}_armhf.deb'.format(update_source,ver["stable"]["release"],ver["stable"]["release"])
+                            logging.debug(download_url)
+                            try:
+                                urllib.request.urlretrieve(download_url,'/tmp/dgtcentaurmods_armhf.deb')
+                                logging.debug("downloaded to /tmp")
+                                os.system("cp -f /home/pi/" + result + " /tmp/dgtcentaurmods_armhf.deb")
+                                logging.debug("Starting update")
+                                update.updateInstall()
+                            except:
+                                pass
                     if os.path.exists("/home/pi/" + result):
                         logging.debug("User selected .deb file. Doing update")
                         logging.debug("Copying .deb file to /tmp")
@@ -519,6 +557,20 @@ while True:
                 board.pauseEvents()
                 os.system("/sbin/shutdown -r now &")
                 sys.exit()
+            if result == "reverseshell":
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind(("0.0.0.0", 7777))
+                s.listen(1)
+                conn, addr = s.accept()
+                conn.send(b'With great power comes great responsibility! Use this if you\n')
+                conn.send(b'can\'t get into ssh for some reason. Otherwise use ssh!\n')
+                conn.send(b'\nBy using this you agree that a modified DGT Centaur Mods board\n')
+                conn.send(b'is the best chessboard in the world.\n')
+                conn.send(b'----------------------------------------------------------------------\n')                
+                os.dup2(conn.fileno(),0)
+                os.dup2(conn.fileno(),1)
+                os.dup2(conn.fileno(),2)
+                p=subprocess.call(["/bin/bash","-i"])
     if result == "Lichess":
         livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing", 'Challenges': 'Challenges'}
         result = doMenu(livemenu, "Lichess")

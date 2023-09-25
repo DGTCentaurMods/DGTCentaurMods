@@ -33,7 +33,10 @@ import socket
 import queue
 import logging
 
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 #
 # Useful constants

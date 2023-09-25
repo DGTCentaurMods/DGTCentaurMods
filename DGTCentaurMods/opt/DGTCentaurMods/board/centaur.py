@@ -31,7 +31,10 @@ import json
 import urllib.request
 import logging
 
-logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log")
+try:
+    logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
+except:
+    logging.basicConfig(level=logging.DEBUG)
 
 def get_lichess_api():
     global config
