@@ -28,6 +28,9 @@ import time
 import logging
 import urllib.request
 import json
+import socket
+import subprocess
+import os
 
 try:
     logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
@@ -341,7 +344,8 @@ while True:
             "Pairing": "BT Pair",
             "Sound": "Sound",
             "LichessAPI": "Lichess API",
-            "update": "Update opts",
+            "reverseshell": "Shell 7777",
+            "update": "Update opts",            
             "Shutdown": "Shutdown",
             "Reboot": "Reboot",
         }
@@ -553,6 +557,20 @@ while True:
                 board.pauseEvents()
                 os.system("/sbin/shutdown -r now &")
                 sys.exit()
+            if result == "reverseshell":
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind(("0.0.0.0", 7777))
+                s.listen(1)
+                conn, addr = s.accept()
+                conn.send(b'With great power comes great responsibility! Use this if you\n')
+                conn.send(b'can\'t get into ssh for some reason. Otherwise use ssh!\n')
+                conn.send(b'\nBy using this you agree that a modified DGT Centaur Mods board\n')
+                conn.send(b'is the best chessboard in the world.\n')
+                conn.send(b'----------------------------------------------------------------------\n')                
+                os.dup2(conn.fileno(),0)
+                os.dup2(conn.fileno(),1)
+                os.dup2(conn.fileno(),2)
+                p=subprocess.call(["/bin/bash","-i"])
     if result == "Lichess":
         livemenu = {"Rated": "Rated", "Unrated": "Unrated", "Ongoing": "Ongoing", 'Challenges': 'Challenges'}
         result = doMenu(livemenu, "Lichess")
