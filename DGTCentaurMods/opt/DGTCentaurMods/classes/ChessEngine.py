@@ -161,6 +161,8 @@ class ChessEngineWrapper():
             if self.__worker:
                 self.__worker.join()
 
+            self.__cache.clear()
+
         except Exception as e:
             Log.exception(ChessEngineWrapper.__quit_engine, e)
             pass
@@ -168,13 +170,14 @@ class ChessEngineWrapper():
     def __instanciate_engine(self):
 
         try:
-            self.__cache.clear()
-
-            # 5 analysis can be cached
-            for _ in range(5):
-                self.__cache.append({"fen":None})
 
             if not self.__engine:
+
+                self.__cache.clear()
+
+                # 5 analysis can be cached
+                for _ in range(5):
+                    self.__cache.append({"fen":None})
 
                 # Only for RodentIV...
                 os.environ["RODENT4PERSONALITIES"] = consts.ENGINES_DIRECTORY+'/personalities'
