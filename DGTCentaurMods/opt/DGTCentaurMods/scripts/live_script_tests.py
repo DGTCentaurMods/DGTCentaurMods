@@ -188,9 +188,9 @@ def _stage_engine(id:str, conf:str):
     LS.play(LS.waitfor_computer_move())
     play_or_die("d7d5")
     LS.play(LS.waitfor_computer_move())
-    play_or_die("e7e5")
+    play_or_die("e7e6")
     LS.play(LS.waitfor_computer_move())
-    play_or_die("g8f6")
+    play_random_move()
     LS.play(LS.waitfor_computer_move())
 
     # Rollback

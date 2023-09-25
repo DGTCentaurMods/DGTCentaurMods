@@ -108,6 +108,8 @@ class _api():
                 raise Exception(f'Timeout when waiting for fen position "{fen}"!')
 
             time.sleep(.1)
+
+        time.sleep(2)
     
     @staticmethod
     def waitfor_sound(sound:Enums.Sound, timeout:int=5, raise_exception:bool=True) -> bool:
