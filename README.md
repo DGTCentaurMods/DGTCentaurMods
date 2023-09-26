@@ -238,6 +238,6 @@ for _ in range(10):
   bot_move = LS.waitfor_computer_move()
   LS.play(bot_move)
 
-SCREEN.write_text(4, "SCRIPT")
-SCREEN.write_text(5, "DONE!")
+LS.write_text(4, "SCRIPT")
+LS.write_text(5, "DONE!")
 ```

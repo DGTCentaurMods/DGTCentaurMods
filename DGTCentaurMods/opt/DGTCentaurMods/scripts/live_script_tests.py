@@ -67,56 +67,29 @@ def stage_1vs1():
     LS.waitfor_fen_position()
 
     # Italian game
-    play_or_die("e2e4")
-    play_or_die("e7e5")
-    play_or_die("g1f3")
-    play_or_die("b8c6")
-    play_or_die("f1c4")
+    play_or_die("e2e4 e7e5 g1f3 b8c6 f1c4")
 
     # Rollback
-    LS.take_back()
-    LS.take_back()
+    LS.take_back(2)
 
     # Petrov trap
-    play_or_die("g8f6")
-    play_or_die("f3e5")
-    play_or_die("f6e4")
-    play_or_die("d1e2")
-    play_or_die("e4f6")
-    play_or_die("e5c6")
+    play_or_die("g8f6 f3e5 f6e4 d1e2 e4f6 e5c6")
 
     # Rollback
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
+    LS.take_back(7)
 
     # Go to promotion
-    play_or_die("g2g4")
-    play_or_die("a7a6")
-    play_or_die("g4g5")
-    play_or_die("a6a5")
-    play_or_die("g5g6")
-    play_or_die("a5a4")
-    play_or_die("g6h7")
-    play_or_die("a4a3")
-    play_or_die("h7g8")
+    play_or_die("g2g4 a7a6 g4g5 a6a5 g5g6 a5a4 g6h7 a4a3 h7g8")
 
     # Choose the ROOK promotion
     LS.push_button(Enums.Btn.DOWN)
 
-    play_or_die("a3b2")
-    play_or_die("g8h8")
-    play_or_die("b2c1")
+    play_or_die("a3b2 g8h8 b2c1")
 
     # Choose the QUEEN promotion
     LS.push_button(Enums.Btn.UP)
 
-    play_or_die("h8h3")
-    play_or_die("c1d1")
+    play_or_die("h8h3 c1d1")
 
     if LS.chessboard().fen() != "rnbqkb2/1ppp1pp1/8/4p3/4P3/7R/P1PP1P1P/RN1qKBNR w KQq - 0 9":
         raise_exception("FEN is incorrect!")
@@ -166,9 +139,7 @@ def _stage_engine(id:str, conf:str):
     play_or_die("f1c4")
 
     # Rollback
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
+    LS.take_back(3)
 
     # Random moves
     for index in range(3):
@@ -194,12 +165,7 @@ def _stage_engine(id:str, conf:str):
     LS.play(LS.waitfor_computer_move())
 
     # Rollback
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
-    LS.take_back()
+    LS.take_back(6)
 
     # Random moves
     for index in range(3):

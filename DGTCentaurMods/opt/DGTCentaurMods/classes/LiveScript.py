@@ -1,3 +1,24 @@
+# This file is part of the DGTCentaur Mods open source software
+# ( https://github.com/Alistair-Crompton/DGTCentaurMods )
+#
+# DGTCentaur Mods is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# DGTCentaur Mods is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see
+#
+# https://github.com/Alistair-Crompton/DGTCentaurMods/blob/master/LICENSE.md
+#
+# This and any other notices must remain intact and unaltered in any
+# distribution, modification, variant, or derivative of this software.
+
 from DGTCentaurMods.classes import Log, GameFactory, CentaurBoard, CentaurScreen, SocketClient
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import Enums, fonts
@@ -16,6 +37,10 @@ class _api():
     _game_engine:Optional[GameFactory.Engine] = None
 
     @staticmethod
+    def _debug(text:str):
+        Log.debug("[LiveScript] -> "+text)
+
+    @staticmethod
     def write_text(row, text:str, font=fonts.MAIN_FONT, centered=True):
         SCREEN.write_text(row, text, is_system=True)
 
@@ -26,6 +51,9 @@ class _api():
 
     @staticmethod
     def select_menu(name:str):
+
+        _api._debug(f"Selecting menu '{name}'...")
+
         count = 15
         name = name.upper()
         while CENTAUR_BOARD.current_menu != name:
@@ -49,24 +77,53 @@ class _api():
         CENTAUR_BOARD.move_piece(common.Converters.to_square_index(target), Enums.PieceAction.PLACE)
     
     @staticmethod
-    def play(uci_move:str) -> Optional[bool]:
-        CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[0:2]), Enums.PieceAction.LIFT)
-        result = CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.PLACE)
-        time.sleep(.5)
+    def play(uci_move_string:str) -> Optional[bool]:
+
+        _api._debug(f"Playing '{uci_move_string}'...")
+
+        uci_moves = uci_move_string.split(' ')
+
+        result = False
+
+        for uci_move in uci_moves:
+            if len(uci_move) != 4:
+                raise Exception(f'"{uci_move}" is not a valid move!')
+
+            CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[0:2]), Enums.PieceAction.LIFT)
+            result = CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.PLACE)
+            time.sleep(.5)
+
+            if not result:
+                _api._debug(f"Failing to play '{uci_move}'...")
+                break
+            
         return result
 
     @staticmethod
-    def take_back():
+    def take_back(count:int=1) -> bool:
         if not _api._game_engine:
             raise Exception("Game engine not started!")
         
         if not _api._game_engine:
             raise Exception("No move to take back!")
         
-        uci_move = _api._game_engine.last_uci_move
+        result = True
 
-        CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.LIFT)
-        return CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[0:2]), Enums.PieceAction.PLACE)
+        while result and count>0:
+
+            uci_move = _api._game_engine.last_uci_move
+
+            if not uci_move:
+                raise Exception("No more move to take back!")
+            
+            _api._debug(f"Taking back move '{uci_move}'...")
+
+            count -= 1
+
+            CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[2:4]), Enums.PieceAction.LIFT)
+            result = CENTAUR_BOARD.move_piece(common.Converters.to_square_index(uci_move[0:2]), Enums.PieceAction.PLACE)
+
+        return result
 
     @staticmethod
     def read_computer_move() -> str:
@@ -80,7 +137,7 @@ class _api():
         
         time_start = time.time()
 
-        Log.debug(f"Waiting for text '{text}'...")
+        _api._debug(f"Waiting for text '{text}'...")
 
         text = text.upper()
 
@@ -100,7 +157,7 @@ class _api():
 
         time_start = time.time()
 
-        Log.debug(f"Waiting for fen '{fen}'...")
+        _api._debug(f"Waiting for fen '{fen}'...")
 
         while _api.chessboard().fen() != fen:
 
@@ -116,7 +173,7 @@ class _api():
         
         time_start = time.time()
 
-        Log.debug(f"Waiting for sound '{sound}'...")
+        _api._debug(f"Waiting for sound '{sound}'...")
 
         while sound != CENTAUR_BOARD.last_sound:
 
@@ -134,7 +191,7 @@ class _api():
         if not _api._game_engine:
             raise Exception("Game engine not started!")
         
-        Log.debug("Waiting for computer move...")
+        _api._debug("Waiting for computer move...")
         
         time_start = time.time()
 
@@ -172,7 +229,7 @@ class _LiveScript(common.Singleton):
                 try:
                     exec(script, module.__dict__)
                     SOCKET.send_message({ "popup":"Live script ended successfully!" })
-                except:
+                except Exception as e:
                     SOCKET.send_message({ "script_output":Log.last_exception() })
                     pass
 
