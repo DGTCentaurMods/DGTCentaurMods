@@ -12,18 +12,18 @@ app.get('/', (req, res) => {
 })
 
 io.on('connection', (socket) => {
-    console.log('a user connected')
+    console.log('A user is connected.')
 
     socket.on('disconnect', () => {
-        console.log('user disconnected')
+        console.log('A user is disconnected.')
     })
 
     socket.on('request', (request) => {
         io.emit('request', request)
     })
 
-    socket.on('message', (message) => {
-        io.emit('message', message)
+    socket.on('web_message', (message) => {
+        io.emit('web_message', message)
     })
 })
 
