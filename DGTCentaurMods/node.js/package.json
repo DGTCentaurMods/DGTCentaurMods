@@ -1,0 +1,20 @@
+{
+    "name": "alistair-centaur-mods",
+    "version": "0.0.1",
+    "description": "Alistair-Centaur-Mods Node.js server",
+    "main": "main.js",
+    "repository": "https://github.com/Alistair-Crompton/DGTCentaurMods",
+    "author": "Alistair Crompton",
+    "license": "LGPL-3.0-or-later",
+    "private": false,
+    "scripts": {
+        "start": "node main.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "socket.io": "^4.7.2"
+    },
+    "engines": {
+        "node": ">=16"
+    }
+}
