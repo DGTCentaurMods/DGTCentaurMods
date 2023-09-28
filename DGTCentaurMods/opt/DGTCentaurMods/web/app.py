@@ -49,33 +49,36 @@ if __name__ == '__main__':
 	#socketio.run(appFlask, port=5000, host='0.0.0.0', ssl_context='adhoc', allow_unsafe_werkzeug=True)
 	socketio.run(appFlask, port=5000, host='0.0.0.0', allow_unsafe_werkzeug=True)
 
-def on_external_socket_request(message, socket):
+def get_external_server():
+	def on_external_socket_request(message, socket):
 
+		try:
+			# The chat message comes from outside
+			if "chat_message" in message:
+				# External message
+				# Broadcast to all connected local clients
+				# We reject anonymous messages
+				if not "cuuid" in message["chat_message"]:
+					return
+
+				socketio.emit('web_message', message)
+
+		except Exception as e:
+			Log.exception(on_external_socket_request.__name__, e)
+			pass
+
+	# Node.js connection - external socket server
 	try:
-		# The chat message comes from outside
-		if "chat_message" in message:
-			# External message
-			# Broadcast to all connected local clients
-			# We reject anonymous messages
-			if not "cuuid" in message["chat_message"]:
-				return
+		sio = SocketClient.connect_external_server()
 
-			socketio.emit('web_message', message)
-
-	except Exception as e:
-		Log.exception(on_external_socket_request.__name__, e)
+		if sio:
+			sio.initialize(on_socket_request = on_external_socket_request)
+	
+	except:
+		sio = None
 		pass
 
-# Node.js connection - external socket server
-try:
-	SOCKET_EX = SocketClient.connect_external_server()
-
-	if SOCKET_EX:
-		SOCKET_EX.initialize(on_socket_request = on_external_socket_request)
-except:
-	SOCKET_EX = None
-	pass
-
+	return sio
 
 @socketio.on('connect')
 def on_connect():
@@ -98,8 +101,7 @@ def on_web_message(message):
 
 		message["chat_message"]["cuuid"] = CUUID
 
-		if SOCKET_EX:
-			SOCKET_EX.send_request(message)
+		EXTERNAL_SOCKET.send_request(message)
 
 	else:
 		# Internal message
@@ -349,3 +351,5 @@ def on_request(message):
 @appFlask.route("/")
 def index():
 	return render_template('2.0/index.html', data={"title":consts.WEB_NAME, "boardsize": 550, "iconsize": int(550/9)})
+
+EXTERNAL_SOCKET = get_external_server()
