@@ -16,6 +16,7 @@
 		<script src="{{ url_for('static', filename='js/chess.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/angular-codearea.js') }}"></script>
 
+		<script src="{{ url_for('static', filename='2.0/js/chat.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/history.js') }}"></script>
 		<script src="{{ url_for('static', filename='2.0/js/index.js') }}"></script>
 
@@ -66,7 +67,7 @@
 											<md-menu-content width="3">
 												<md-menu-item data-ng-repeat="sitem in item.items" ng-switch on="sitem.type">
 													<md-menu-item ng-switch-when="checkbox">
-														<md-button ng-click="main.executeCheckboxMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ main.board[sitem.id]?' ✅':'⬜' ]] [[ sitem.label ]] </md-button>
+														<md-button ng-click="main.executeCheckboxMenu(sitem.id, $event)" aria-label="[[ sitem.label ]]">[[ main.board[sitem.id]?' ✅':'⬜' ]] [[ sitem.label ]] </md-button>
 													</md-menu-item>
 													<md-menu-item ng-switch-default>
 														<md-button ng-click="main.executeMenu(sitem, $event)" aria-label="[[ sitem.label ]]">[[ sitem.label ]]</md-button>
@@ -76,7 +77,7 @@
 										</md-menu>
 									</md-menu-item>
 									<md-menu-item ng-switch-when="checkbox">
-										<md-button ng-click="main.executeCheckboxMenu(item, $event)" aria-label="[[ item.label ]]">[[ main.board[item.id]?' ✅':'⬜' ]] [[ item.label ]] </md-button>
+										<md-button ng-click="main.executeCheckboxMenu(item.id, $event)" aria-label="[[ item.label ]]">[[ main.board[item.id]?' ✅':'⬜' ]] [[ item.label ]] </md-button>
 									</md-menu-item>
 									<md-menu-item ng-switch-when="divider"></md-menu-item>
 									<md-menu-item ng-switch-default>
@@ -97,14 +98,15 @@
 						<div layout="row" layout-align="center" data-ng-show="main.board.synchronized == false" class="md-warn">-</div>
 					</div>
 					<div></div>
-					<div data-ng-show="main.board.pgn_panel" class="pgnarea" style="overflow-y: scroll; height: {{ data.boardsize-6 }}px">
+					<div data-ng-show="main.board.pgn_panel" class="pgnarea fade-out" style="overflow-y: scroll; height: {{ data.boardsize-6 }}px">
+						<md-button data-ng-click="main.executeCheckboxMenu('pgn_panel', $event)" class="md-fab md-raised md-mini close_button">✘</md-button>
 						<div data-ng-repeat="item in main.board.history.pgnlist()">
 							<span ng-class="{ 'currentmove':item.index == main.board.history.index() || item.index+1 == main.board.history.index()}">[[$index+1]].</span>&nbsp;
 							<span class="clickable" data-ng-click="main.board.history.go(main.chessboard, item.index+0)" ng-class="{ 'currentmove':item.index+0 == main.board.history.index() }">[[item.wsan]]</span>&nbsp;
 							<span class="clickable" data-ng-click="main.board.history.go(main.chessboard, item.index+1)" ng-class="{ 'currentmove':item.index+1 == main.board.history.index() }">[[item.bsan]]</span>
 						</div>
 					</div>
-					<div data-ng-show="main.board.centaur_screen" class="centaurarea" style="height: {{ data.boardsize-6 }}px">
+					<div data-ng-show="main.board.centaur_screen" class="centaurarea fade-out" style="height: {{ data.boardsize-6 }}px">
 						<div layout="column" layout-align="center center">
 							<img id="centaur_screen" ng-src="{{ url_for('static', filename='2.0/images/blank_screen.png') }}" style="width:70%"/>
 							<div layout="row" layout-align="center center">
@@ -114,6 +116,24 @@
 								<md-button class="md-fab md-raised md-mini" ng-click="main.pushButton(4, $event)" aria-label="">⬇</md-button>
 								<md-button class="md-fab md-raised md-mini" ng-click="main.pushButton(5, $event)" aria-label="">?</md-button>
 								<md-button class="md-fab md-raised md-mini" ng-click="main.pushButton(6, $event)" aria-label="">▶</md-button>
+							</div>
+						</div>
+						<md-button data-ng-click="main.executeCheckboxMenu('centaur_screen', $event)" class="md-fab md-raised md-mini cs_close_button">✘</md-button>
+					</div>
+					<div data-ng-show="main.board.chat_panel" class="chatarea fade-out" style="height: {{ data.boardsize-6 }}px">
+						<md-button data-ng-click="main.executeCheckboxMenu('chat_panel', $event)" class="md-fab md-raised md-mini close_button">✘</md-button>
+						<div layout="column" layout-align="end stretch" style="height:105%">
+							<div layout="column" layout-align="end stretch" style="overflow-y: scroll; height:80%">
+								<div data-ng-repeat="item in main.chat.items()">
+									<div style="color:[[item.color]]">[[item.ts]] [[item.author]]:</div>
+									<div style="color:[[item.color]]">[[item.message]]</div>
+								</div>
+							</div>
+							<div>
+								<md-input-container style="width:98%">
+									<label>Send message</label>
+									<input ng-enter="main.chat.submit(main.chat)" ng-model="main.chat.message">
+								</md-input-container>
 							</div>
 						</div>
 					</div>

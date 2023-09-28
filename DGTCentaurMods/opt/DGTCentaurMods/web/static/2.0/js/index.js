@@ -21,13 +21,27 @@
 
 "use strict"
 
-angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate', 'ivl.angular-codearea', 'dgt-centaur-mods.lib'])
+angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate', 'ivl.angular-codearea', 'dgt-centaur-mods.lib.history', 'dgt-centaur-mods.lib.chat'])
 
 // Only there because of Flask conflict
 .config(['$interpolateProvider', function($interpolateProvider) {
 	$interpolateProvider.startSymbol('[[');
 	$interpolateProvider.endSymbol(']]');
 }])
+
+.directive('ngEnter', function () {
+	return function (scope, element, attrs) {
+		 element.bind("keydown keypress", function (event) {
+			if (event.which === 13) {
+				scope.$apply(function () {
+				scope.$eval(attrs.ngEnter)
+			})
+
+			event.preventDefault()
+			}
+		})
+	}
+})
 
 .directive('board', function() {
 	return {
@@ -54,8 +68,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 })
 
 // Main page controller
-.controller("MainController", ['$scope', '$rootScope', 'store','$timeout', '$mdDialog', '$history',
-	function ($scope, $rootScope, $store, $timeout, $mdDialog, $history) {
+.controller("MainController", ['$scope', 'store','$timeout', '$mdDialog', '$history', '$chat',
+	function ($scope, $store, $timeout, $mdDialog, $history, $chat) {
 		const me = this
 
 		const stockfish = new Worker('static/stockfish/stockfish.js')
@@ -63,6 +77,8 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		stockfish._lasteval = 0
 		
 		me.currentGame = { id: -1 }
+
+		me.chat = $chat,
 
 		// Board data
 		me.board = {
@@ -138,6 +154,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			{ id:"live_evaluation", default:true, label: "Live evaluation displayed", type:"checkbox"},
 			{ id:"centaur_screen", default:true, label: "Centaur screen displayed", type:"checkbox"},
 			{ id:"pgn_panel", default:true, label: "PGN panel displayed", type:"checkbox"},
+			{ id:"chat_panel", default:true, label: "Chat panel displayed", type:"checkbox"},
 			{ id:"reversed_board", default:false, label: "Board is reversed", type:"checkbox", callback:(value) => { me.chessboard.orientation(value ? 'black' : 'white'); me.chessboard.resize(); }},
 			{ id:"active_board", default:false, label: "Board is active", type:"checkbox", callback:(value) => { me.chessboard.draggable = value; me.chessboard.resize(); }},
 		]
@@ -186,11 +203,11 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 		}
 
 		// Checkbox menus function
-		me.executeCheckboxMenu = function(item, ev) {
-			if (item.id) {
+		me.executeCheckboxMenu = function(itemId, ev) {
+			if (itemId) {
 				// We reverse the value then store it
-				me.board[item.id] = !me.board[item.id]
-				$store.set(item.id, me.board[item.id])
+				me.board[itemId] = !me.board[itemId]
+				$store.set(itemId, me.board[itemId])
 			}
 		}
 
@@ -356,9 +373,10 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			var _instance = null
 			var _uuid = createUUID()
 
-			var _emit = (id, message) => {
+			var _emit = (id, message, uuid=true) => {
 				if (_instance != null) {
-					message.uuid = _uuid
+					if (uuid) message.uuid = _uuid
+					message._uuid = _uuid
 					_instance.emit(id, message)
 				}
 			}
@@ -391,7 +409,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 						})
 			
 						// We receive data from the server app
-						_instance.on('message', function(message) {
+						_instance.on('web_message', function(message) {
 							//console.log(message)
 
 							// Message might be not for us...
@@ -402,6 +420,19 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 							const square = Chessboard.drawGraphicSquare
 			
 							const socketmessages = {
+
+								cuuid: (value) => {
+									me.cuuid = value
+								},
+
+								username: (value) => {
+									me.username = value
+								},
+
+								chat_message: (value) => {
+									if (!value.cuuid) return
+									$chat.add(value)
+								},
 
 								plugin: (value) => me.board.plugin = value,
 
@@ -761,7 +792,7 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 					return _instance
 				},
 
-				emit: (id, message) => _emit(id, message)
+				emit: (id, message, uuid=true) => _emit(id, message, uuid)
 			}
 		}
 
@@ -772,6 +803,12 @@ angular.module("dgt-centaur-mods", ['ngMaterial', 'angular-storage', 'ngAnimate'
 			me.chessboard = buildChessboard(me.board, { keyboard:true })
 
 			SOCKET.initialize()
+
+			$chat.initialize((message) => {
+				if (message) {
+					SOCKET.emit('web_message', {'chat_message': { author:me.username || "Anonymous", message:message }}, false)
+				}
+			})
 			
 		}, 500)
 	}

@@ -25,9 +25,10 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23092504"
+TAG_RELEASE = "ON23092801"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
+SOCKET_SERVER_URI = "https://alistair-centaur-mods-nodejs.adaptable.app"
 
 HOME_DIRECTORY = str(Path.home())
 OPT_DIRECTORY = f"/opt/{MAIN_ID}"

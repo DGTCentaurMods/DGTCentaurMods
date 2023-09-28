@@ -30,7 +30,7 @@ import time, os, re, importlib, shlex
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
-SOCKET = SocketClient.get()
+SOCKET = SocketClient.connect_local_server()
 
 _CURRENT_INDEX = "current_index"
 _CURRENT_NODE = "current_node"
@@ -108,7 +108,7 @@ class Main:
 
         Log.info(f"Starting {consts.MAIN_ID} service...")
 
-        def _on_socket_request(data, socket):
+        def _on_socket_request(data, socket:SocketClient._SocketClient):
             try:
 
                 # Common sys requests handling
@@ -122,7 +122,7 @@ class Main:
 
                 if "web_move" in data:
                     # No game in progress - we send back the current FEN
-                    socket.send_message({ "fen":common.get_Centaur_FEN() })
+                    socket.send_web_message({ "fen":common.get_Centaur_FEN() })
 
                 if "web_button" in data:
                     CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
@@ -145,7 +145,7 @@ class Main:
 
                             instance.start()
 
-                            socket.send_message({ "loading_screen":False })
+                            socket.send_web_message({ "loading_screen":False })
 
                             while instance._running():
                                 time.sleep(0.1)
@@ -154,7 +154,7 @@ class Main:
                             del class_
                             del module
                         except:
-                            socket.send_message({ "script_output":Log.last_exception() })
+                            socket.send_web_message({ "script_output":Log.last_exception() })
                             pass
 
                         self.end_child_module()
@@ -200,7 +200,7 @@ class Main:
 
         SOCKET.initialize(on_socket_request=_on_socket_request)
 
-        SCREEN.on_change(lambda image:SOCKET.send_message({ "centaur_screen":image }))
+        SCREEN.on_change(lambda image:SOCKET.send_web_message({ "centaur_screen":image }))
 
         self.initialize_web_menu({ "ping":True, "loading_screen":False, "popup":"The service is up and running!" })
 
@@ -329,14 +329,14 @@ class Main:
             "latest_tag":LASTEST_TAG
         }
 
-        SOCKET.send_message(message)
+        SOCKET.send_web_message(message)
 
     def start_child_module(self):
 
         SCREEN.clear_area()
         SCREEN.write_text(8, "Loading...")
     
-        SOCKET.send_message({ 
+        SOCKET.send_web_message({ 
             "loading_screen":True,
             "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
         })

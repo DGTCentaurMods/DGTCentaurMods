@@ -38,7 +38,7 @@ import re
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
-SOCKET = SocketClient.get()
+SOCKET = SocketClient.connect_local_server()
 
 UNDEFINED_SQUARE: chess.Square = -1
 
@@ -512,15 +512,15 @@ class Engine():
 
             if "pgn" in data:
                 response["pgn"] = self.get_current_pgn()
-                socket.send_message(response)
+                socket.send_web_message(response)
 
             if "fen" in data:
                 response["fen"] = self._chessboard.fen()
-                socket.send_message(response)
+                socket.send_web_message(response)
 
             if "uci_move" in data:
                 response["uci_move"] = self.last_uci_move
-                socket.send_message(response)
+                socket.send_web_message(response)
 
             if "web_menu" in data:
                 self.initialize_web_menu()
@@ -531,7 +531,7 @@ class Engine():
                 
                 if not CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("target", None)), Enums.PieceAction.PLACE):
                     response["fen"] = self._chessboard.fen()
-                    socket.send_message(response)
+                    socket.send_web_message(response)
 
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
@@ -872,7 +872,7 @@ class Engine():
 
     def initialize_web_menu(self):
 
-        SOCKET.send_message({ 
+        SOCKET.send_web_message({ 
             "update_menu": menu.get(menu.Tag.ONLY_WEB, ["homescreen", "links", "settings", "system"])
         })
     
@@ -1053,7 +1053,7 @@ class Engine():
         if self._evaluation_disabled:
             message["evaluation_disabled"] = True
 
-        SOCKET.send_message(message)
+        SOCKET.send_web_message(message)
 
     def update_web_ui(self, args={}):
         # We send the new FEN to all connected clients
@@ -1069,7 +1069,7 @@ class Engine():
             "kings":[common.Converters.to_square_name(self._chessboard.king(chess.WHITE)), common.Converters.to_square_name(self._chessboard.king(chess.BLACK))],
         }, **args}
 
-        SOCKET.send_message(message)
+        SOCKET.send_web_message(message)
 
     def get_current_pgn(self):
 

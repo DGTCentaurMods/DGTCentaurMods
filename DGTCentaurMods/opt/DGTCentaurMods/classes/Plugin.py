@@ -36,7 +36,7 @@ TPlayResult = ChessEngine.TPlayResult
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
-SOCKET = SocketClient.get()
+SOCKET = SocketClient.connect_local_server()
 
 class Centaur():
 
@@ -97,7 +97,7 @@ class Centaur():
             common.Converters.to_square_index(uci_move[2:4]))
         
         if web:
-            SOCKET.send_message({ 
+            SOCKET.send_web_message({ 
                 "tip_uci_move":uci_move
             })
 
@@ -117,7 +117,7 @@ class Centaur():
         CENTAUR_BOARD.led_array(squares)
         
         if web:
-            SOCKET.send_message({ 
+            SOCKET.send_web_message({ 
                 "tip_uci_moves":moves
             })
     
@@ -133,7 +133,7 @@ class Centaur():
     def header(text:str,web_text:str=None):
         SCREEN.write_text(1, text, font=fonts.MEDIUM_MAIN_FONT)
 
-        SocketClient.get().send_message({"turn_caption":web_text or text})
+        SocketClient.connect_local_server().send_web_message({"turn_caption":web_text or text})
 
     @staticmethod
     def start_game(
@@ -244,7 +244,7 @@ class Plugin():
 
     def _initialize_web_menu(self):
 
-        SOCKET.send_message({ 
+        SOCKET.send_web_message({ 
                 "turn_caption":"Plugin "+common.camel_case_to_snake_case(self._id),
                 "plugin":self._id,
                 "clear_board_graphic_moves":True,
@@ -270,7 +270,7 @@ class Plugin():
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
 
         except:
-            socket.send_message({ "script_output":Log.last_exception() })
+            socket.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __key_callback(self, key:Enums.Btn):
@@ -290,7 +290,7 @@ class Plugin():
             return self.key_callback(key)
 
         except:
-            SOCKET.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __field_callback(self,
@@ -302,7 +302,7 @@ class Plugin():
                 self.field_callback(common.Converters.to_square_name(field_index), field_action, web_move)
         
         except:
-            SOCKET.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
 
     def __event_callback(self, event:Enums.Event, outcome:Optional[chess.Outcome]):
@@ -311,7 +311,7 @@ class Plugin():
                 self.event_callback(event, outcome)
 
         except:
-            SOCKET.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
     
     def __move_callback(self, uci_move:str, san_move:str, color:chess.Color, field_index:chess.Square):
@@ -320,7 +320,7 @@ class Plugin():
                 return self.move_callback(uci_move, san_move, color, field_index)
         
         except:
-            SOCKET.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
         
         return False
@@ -331,7 +331,7 @@ class Plugin():
                 return self.undo_callback(uci_move, san_move, field_index)
         
         except:
-            SOCKET.send_message({ "script_output":Log.last_exception() })
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
             self.stop()
         
         return False

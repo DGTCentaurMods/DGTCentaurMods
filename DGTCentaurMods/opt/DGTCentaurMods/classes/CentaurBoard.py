@@ -28,7 +28,7 @@ from DGTCentaurMods.consts import Enums, consts
 
 from typing import Optional, Callable
 
-SOCKET = SocketClient.get()
+SOCKET = SocketClient.connect_local_server()
 
 def _rotate_field(index):
     R = (index // 8)

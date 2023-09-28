@@ -24,10 +24,10 @@ from flask_socketio import SocketIO
 
 from DGTCentaurMods.lib import common
 from DGTCentaurMods.consts import consts, menu
-from DGTCentaurMods.classes import DAL
+from DGTCentaurMods.classes import DAL, SocketClient, Log
 from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
-import os, time, logging, subprocess
+import os, time, logging, subprocess, uuid
 
 #logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
@@ -35,48 +35,96 @@ logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("werkzeug").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").propagate = False
 
+# Centaur UUID
+CUUID = CentaurConfig.get_system_settings("cuuid", uuid.uuid4())
+CentaurConfig.update_system_settings("cuuid", CUUID)
+
 appFlask = Flask(__name__)
 
 socketio = SocketIO(appFlask, cors_allowed_origins="*")
 
+Log.debug("-> Starting socketio server...", console=True)
+
 if __name__ == '__main__':
-	print("Starting socketio server...")
 	#socketio.run(appFlask, port=5000, host='0.0.0.0', ssl_context='adhoc', allow_unsafe_werkzeug=True)
 	socketio.run(appFlask, port=5000, host='0.0.0.0', allow_unsafe_werkzeug=True)
 
+def on_external_socket_request(message, socket):
+
+	try:
+		# The chat message comes from outside
+		if "chat_message" in message:
+			# External message
+			# Broadcast to all connected local clients
+			# We reject anonymous messages
+			if not "cuuid" in message["chat_message"]:
+				return
+
+			socketio.emit('web_message', message)
+
+	except Exception as e:
+		Log.exception(on_external_socket_request.__name__, e)
+		pass
+
+# Node.js connection - external socket server
+try:
+	SOCKET_EX = SocketClient.connect_external_server()
+
+	if SOCKET_EX:
+		SOCKET_EX.initialize(on_socket_request = on_external_socket_request)
+except:
+	SOCKET_EX = None
+	pass
+
+
 @socketio.on('connect')
 def on_connect():
-    print("New client connected!")
+	print("New client connected!")
 
 	# We send back the stored FEN
-    socketio.emit('message', {'fen': common.get_Centaur_FEN()})
+	socketio.emit('web_message', {'fen': common.get_Centaur_FEN()})
 
 @socketio.on('disconnect')
 def on_disconnect():
     print('Client disconnected!')
 
-@socketio.on('message')
-def on_message(message):
+@socketio.on('web_message')
+def on_web_message(message):
 
-    # Broadcast to all connected clients
-    socketio.emit('message', message)
-    
+	# The chat message comes from inside
+	if "chat_message" in message:
+		# Broadcast to all connected external clients
+		# The message becomes a request to be handled by external clients
+
+		message["chat_message"]["cuuid"] = CUUID
+
+		if SOCKET_EX:
+			SOCKET_EX.send_request(message)
+
+	else:
+		# Internal message
+		# Broadcast to all connected local web clients
+		socketio.emit('web_message', message)
+
 @socketio.on('request')
 def on_request(message):
 
-	response = {}
-	
+	# We send back the username and the CUUID to the local web clients
+	response = {
+		"username":CentaurConfig.get_lichess_settings("username") or "Anonymous",
+		"cuuid":CUUID,
+	}
+
 	# We send back the UUID if the request contains one
 	if "uuid" in message:
 		response["uuid"] = message["uuid"]
-
 
 	if "web_menu" in message:
 
 		# Minimalist menu when the core service is down
 		response["update_menu"] = menu.get_minimalist_menu()
-
-		socketio.emit('message', response)
+		socketio.emit('web_message', response)
+		del response["update_menu"]
 
 	# Script request
 	if "script" in message:
@@ -86,11 +134,11 @@ def on_request(message):
 			result = subprocess.check_output(["python3", f"{consts.OPT_DIRECTORY}/scripts/{script}.py"])
 
 			response["script_output"] = result.decode()
-			socketio.emit('message', response)
+			socketio.emit('web_message', response)
 		
 		except Exception as e:
 			response["script_output"] = str(e)
-			socketio.emit('message', response)
+			socketio.emit('web_message', response)
 			
 			pass
 
@@ -142,7 +190,7 @@ def on_request(message):
 
 		if action == "log_events":
 			response["log_events"] = common.tail(open(consts.LOG_FILENAME, "r"), 500)
-			socketio.emit('message', response)
+			socketio.emit('web_message', response)
 
 	else:
 
@@ -209,7 +257,7 @@ def on_request(message):
 					"can_delete":file_descriptor["can_delete"],
 				}
 				
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 			return
 
 		if "write" in message:
@@ -228,7 +276,7 @@ def on_request(message):
 				if action["new_file"] == "__new__":
 
 					response["popup"] = "You need to rename your " + file_descriptor["label"] + "!"
-					socketio.emit('message', response)
+					socketio.emit('web_message', response)
 
 					return
 				
@@ -237,7 +285,7 @@ def on_request(message):
 					os.system(f'sudo rm -f "{path}"')
 
 					response["popup"] = "The " + file_descriptor["label"] + " has been successfuly deleted!"
-					socketio.emit('message', response)
+					socketio.emit('web_message', response)
 
 					return
 
@@ -251,7 +299,7 @@ def on_request(message):
 					os.system(f'sudo mv "{path}" "{newpath}"')
 
 				response["popup"] = "The " + file_descriptor["label"] + " has been successfuly updated!"
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 			return
 		
 		if "data" in message:
@@ -261,7 +309,7 @@ def on_request(message):
 
 			if action == "previous_games":
 				response["previous_games"] = _dal.get_all_games()
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 
 			if action == "sounds_settings_set":
 
@@ -276,11 +324,11 @@ def on_request(message):
 
 				response["sounds_settings"] = consts.SOUNDS_SETTINGS
 
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 
 			if action == "game_moves":
 				response["game_moves"] = _dal.read_game_moves_by_id(message["id"])
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 
 			if action == "remove_game":
 
@@ -291,7 +339,7 @@ def on_request(message):
 				else:
 					response["popup"] = "An error occured during the delete process!"
 
-				socketio.emit('message', response)
+				socketio.emit('web_message', response)
 
 		else:
 

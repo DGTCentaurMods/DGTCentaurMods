@@ -21,55 +21,70 @@
 
 from DGTCentaurMods.classes import Log
 from DGTCentaurMods.lib import common
+from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 import socketio
 
-class SocketClient(common.Singleton):
+class _SocketClient(common.Singleton):
 
-    __socket = None
+    _socket = None
     _on_socket_request = None
 
-    __callbacks_queue = []
+    _callbacks_queue = []
         
-    def initialize(self, on_socket_request = None):
+    def initialize(self, on_socket_request:callable = None, uri:str = None):
 
         try:
             if on_socket_request:
-                self.__callbacks_queue.append(self._on_socket_request)
+                self._callbacks_queue.append(self._on_socket_request)
                 self._on_socket_request = on_socket_request
 
             # If the one socket already exists, we use the same one
-            if self.__socket == None:
+            if self._socket == None:
+
+                uri = uri or 'http://localhost'
+
+                Log.debug(f"-> Connecting to {uri}...", console=True)
 
                 sio = socketio.Client()
-                sio.connect('http://localhost')
+                sio.connect(uri)
+
+                '''
+                @sio.event
+                def connect():
+                    Log.debug(f"-> Connected to {uri}...", console=True)
+
+                @sio.event
+                def disconnect():
+                    Log.debug(f"-> Disconnected from {uri}...", console=True)
+                '''
 
                 @sio.on('request')
                 def request(data):
                     if self._on_socket_request:
                         self._on_socket_request(data, self)
 
-                self.__socket = sio
+                self._socket = sio
 
         except:
-            Log.exception(SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
+            Log.exception(_SocketClient.__init__, "Unable to connect to SOCKETIO SERVER!")
             pass
 
         return self
 
-    def send_request(self, message):
+    def send_request(self, request):
         try:
-            if self.__socket != None:
-                self.__socket.emit('request', message)
+            if self._socket != None:
+                self._socket.emit('request', request)
 
         except:
             Log.info("Socket disconnected...")
             pass
 
-    def send_message(self, message):
+    def send_web_message(self, message):
         try:
-            if self.__socket != None:
-                self.__socket.emit('message', message)
+            if self._socket != None:
+                self._socket.emit('web_message', message)
 
         except Exception as e:
             Log.info("Socket disconnected...")
@@ -78,22 +93,21 @@ class SocketClient(common.Singleton):
     def disconnect(self):
 
         try:
-            if self.__socket != None:
+            if self._socket != None:
 
-                self._on_socket_request = self.__callbacks_queue.pop()
-
-                if self._on_socket_request == None:
-                    self.__socket.disconnect()
-
+                if len(self._callbacks_queue):
+                    # We don't disconnect the socket while we have
+                    # one available callback
+                    self._on_socket_request = self._callbacks_queue.pop()
                 else:
-                    # We don't disconnect the socket since we have
-                    # One available callback
-                    pass
+                    self._socket.disconnect()
 
         except Exception as e:
-            Log.exception(SocketClient.disconnect, e)
+            Log.exception(_SocketClient.disconnect, e)
             pass
 
+def connect_local_server() -> _SocketClient:
+    return _SocketClient().initialize()
 
-def get() -> SocketClient:
-    return SocketClient().initialize()
+def connect_external_server() -> _SocketClient:
+    return _SocketClient().initialize(uri=CentaurConfig.get_external_socket_server())

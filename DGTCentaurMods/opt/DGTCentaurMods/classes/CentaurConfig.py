@@ -57,6 +57,10 @@ class CentaurConfig:
         return None
     
     @staticmethod
+    def get_external_socket_server() -> str:
+        return CentaurConfig._get('system', 'socket_server_uri', consts.SOCKET_SERVER_URI)
+    
+    @staticmethod
     def update_system_settings(id:str, value:str) -> None:
         CentaurConfig._update('system', id, value, '')
 
