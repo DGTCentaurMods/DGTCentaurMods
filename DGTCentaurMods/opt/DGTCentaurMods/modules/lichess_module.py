@@ -353,7 +353,14 @@ def main():
             # We get the PERFS to compute a correct ELO range
             # from the creation page
             current_game[_PERFS] = lichess_profile[_PERFS]
-            current_game[_USERNAME] = lichess_profile[_USERNAME]
+
+            lichess_username = CentaurConfig.get_lichess_settings("username")
+
+            if lichess_username == None or len(lichess_username) == 0:
+                lichess_username = lichess_profile[_USERNAME]
+                CentaurConfig.update_lichess_settings("username", lichess_username)
+
+            current_game[_USERNAME] = lichess_username
 
         except Exception as e:
 

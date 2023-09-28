@@ -107,5 +107,7 @@ def info(message):
 def exception(source, message):
     _Log._exception(source, message)
 
-def debug(message):
+def debug(message, console=False):
+    if console:
+        print(message)
     _Log._debug(message)

@@ -30,7 +30,7 @@ import chess
 
 SCREEN = CentaurScreen.get()
 CENTAUR_BOARD = CentaurBoard.get()
-SOCKET = SocketClient.get()
+SOCKET = SocketClient.connect_local_server()
 
 class _api():
 
@@ -65,6 +65,7 @@ class _api():
             CENTAUR_BOARD.push_button(Enums.Btn.DOWN)
             time.sleep(.5)
 
+        time.sleep(.5)
         CENTAUR_BOARD.push_button(Enums.Btn.TICK)
         time.sleep(.5)
 
@@ -228,9 +229,9 @@ class _LiveScript(common.Singleton):
 
                 try:
                     exec(script, module.__dict__)
-                    SOCKET.send_message({ "popup":"Live script ended successfully!" })
+                    SOCKET.send_web_message({ "popup":"Live script ended successfully!" })
                 except Exception as e:
-                    SOCKET.send_message({ "script_output":Log.last_exception() })
+                    SOCKET.send_web_message({ "script_output":Log.last_exception() })
                     pass
 
             self._worker = threading.Thread(target=_live_script_worker)

@@ -21,13 +21,13 @@
 
 "use strict";
 
-angular.module("dgt-centaur-mods.lib", [])
+angular.module("dgt-centaur-mods.lib.history", [])
 
-	.factory('$history', ['$timeout', function($timeout) {
+    .factory('$history', ['$timeout', function($timeout) {
 
-		const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
-		return (() => {
+        return (() => {
             
             var _fens = []
             var _index = 0
