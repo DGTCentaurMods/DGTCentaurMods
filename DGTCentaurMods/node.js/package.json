@@ -1,5 +1,5 @@
 {
-    "name": "alistair-centaur-mods",
+    "name": "alistair-centaur-mods-nodejs",
     "version": "0.0.1",
     "description": "Alistair-Centaur-Mods Node.js server",
     "main": "main.js",
