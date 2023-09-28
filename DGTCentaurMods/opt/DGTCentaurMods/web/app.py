@@ -352,4 +352,7 @@ def on_request(message):
 def index():
 	return render_template('2.0/index.html', data={"title":consts.WEB_NAME, "boardsize": 550, "iconsize": int(550/9)})
 
+# Waiting 3 seconds before connecting the external node.js server
+time.sleep(3)
+
 EXTERNAL_SOCKET = get_external_server()
