@@ -85,7 +85,7 @@ sudo apt install -y ./_DGTCentaurMods_A.alpha-latest.deb
 
 ## Support & Requests
 
-You can send a mail to: dgtcentaurmods@moult.org.
+You can send an email to: dgtcentaurmods@moult.org or join our discord server at: https://discord.gg/d8JXud22RE
 
 ## Contributors welcome!
 
