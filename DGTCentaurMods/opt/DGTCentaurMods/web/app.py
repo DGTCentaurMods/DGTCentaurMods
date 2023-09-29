@@ -29,6 +29,8 @@ from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 import os, time, logging, subprocess, uuid
 
+SOCKET_EX = SocketClient.get()
+
 #logging.getLogger('chess.engine').setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
@@ -49,36 +51,37 @@ if __name__ == '__main__':
 	#socketio.run(appFlask, port=5000, host='0.0.0.0', ssl_context='adhoc', allow_unsafe_werkzeug=True)
 	socketio.run(appFlask, port=5000, host='0.0.0.0', allow_unsafe_werkzeug=True)
 
-def get_external_server():
-	def on_external_socket_request(message, socket):
 
-		try:
-			# The chat message comes from outside
-			if "chat_message" in message:
-				# External message
-				# Broadcast to all connected local clients
-				# We reject anonymous messages
-				if not "cuuid" in message["chat_message"]:
-					return
+def on_external_socket_request(message, socket):
 
-				socketio.emit('web_message', message)
-
-		except Exception as e:
-			Log.exception(on_external_socket_request.__name__, e)
-			pass
-
-	# Node.js connection - external socket server
 	try:
-		sio = SocketClient.connect_external_server()
+		# The chat message comes from outside
+		if "chat_message" in message:
+			# External message
+			# Broadcast to all connected local clients
+			# We reject anonymous messages
+			if not "cuuid" in message["chat_message"]:
+				return
 
-		if sio:
-			sio.initialize(on_socket_request = on_external_socket_request)
-	
-	except:
-		sio = None
+			socketio.emit('web_message', message)
+
+		# The external request comes from outside
+		if consts.EXTERNAL_REQUEST in message:
+			# External message
+			# Broadcast to all connected local clients
+			# We reject anonymous messages
+			if not "cuuid" in message[consts.EXTERNAL_REQUEST]:
+				return
+			
+			# If we are the source, we reject the request
+			if message[consts.EXTERNAL_REQUEST]["cuuid"] == CUUID:
+				return
+
+			socketio.emit('request', message)
+
+	except Exception as e:
+		Log.exception(on_external_socket_request.__name__, e)
 		pass
-
-	return sio
 
 @socketio.on('connect')
 def on_connect():
@@ -94,22 +97,36 @@ def on_disconnect():
 @socketio.on('web_message')
 def on_web_message(message):
 
-	# The chat message comes from inside
-	if "chat_message" in message:
-		# Broadcast to all connected external clients
-		# The message becomes a request to be handled by external clients
+	try:
+		if consts.EXTERNAL_REQUEST in message:
+			message[consts.EXTERNAL_REQUEST]["cuuid"] = CUUID
 
-		message["chat_message"]["cuuid"] = CUUID
+			SOCKET_EX.send_request(message)
 
-		EXTERNAL_SOCKET.send_request(message)
+		# The chat message comes from inside
+		elif "chat_message" in message:
+			# Broadcast to all connected external clients
+			# The message becomes a request to be handled by external clients
 
-	else:
-		# Internal message
-		# Broadcast to all connected local web clients
-		socketio.emit('web_message', message)
+			message["chat_message"]["cuuid"] = CUUID
+
+			SOCKET_EX.send_request(message)
+
+		else:
+			# Internal message
+			# Broadcast to all connected local web clients
+			socketio.emit('web_message', message)
+
+	except Exception as e:
+		Log.exception(on_web_message.__name__, e)
+		pass
 
 @socketio.on('request')
 def on_request(message):
+
+	if not SOCKET_EX.initialized:
+		SOCKET_EX.initialize(uri=CentaurConfig.get_external_socket_server(),
+					   on_socket_request=on_external_socket_request)
 
 	# We send back the username and the CUUID to the local web clients
 	response = {
@@ -351,8 +368,3 @@ def on_request(message):
 @appFlask.route("/")
 def index():
 	return render_template('2.0/index.html', data={"title":consts.WEB_NAME, "boardsize": 550, "iconsize": int(550/9)})
-
-# Waiting 3 seconds before connecting the external node.js server
-time.sleep(3)
-
-EXTERNAL_SOCKET = get_external_server()

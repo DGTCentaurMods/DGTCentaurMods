@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 from DGTCentaurMods.classes import GameFactory, Log, ChessEngine, CentaurBoard, CentaurScreen, SocketClient
+from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 from DGTCentaurMods.consts import Enums, consts, fonts
 from DGTCentaurMods.lib import common, sys_requests
 from DGTCentaurMods.consts import menu
@@ -55,6 +56,15 @@ class Centaur():
     @staticmethod
     def delayed_call(call:callable, delay:int):
         common.delayed_call(call, delay)
+
+    @staticmethod
+    def configuration() -> CentaurConfig:
+        return CentaurConfig
+
+    @staticmethod
+    def send_external_request(request:dict):
+        request["_plugin"] = Centaur._plugin.__class__.__name__
+        SOCKET.send_web_message({ consts.EXTERNAL_REQUEST: request })
 
     @staticmethod
     def push_button(button:Enums.Btn):
@@ -150,6 +160,11 @@ class Centaur():
     def play_computer_move(uci_move:str):
         if Centaur._plugin:
             Centaur._plugin._play_computer_move(uci_move)
+
+    @staticmethod
+    def computer_move_is_ready() -> bool:
+        if Centaur._plugin:
+            return Centaur._plugin._computer_move_is_ready()
 
     @staticmethod
     def hint():
@@ -254,20 +269,34 @@ class Plugin():
 
     def _on_socket_request(self, data, socket):
         try:
-
             # Common sys requests handling
             sys_requests.handle_socket_requests(data)
 
             if "web_menu" in data:
                 self._initialize_web_menu()
+                del data["web_menu"]
 
             if "web_move" in data:
                 # A move has been triggered from web UI
                 CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("source", None)), Enums.PieceAction.LIFT)
                 CENTAUR_BOARD.move_piece(common.Converters.to_square_index(data["web_move"].get("target", None)), Enums.PieceAction.PLACE)
+                del data["web_move"]
 
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
+                del data["web_button"]
+
+            # Plugin needs to be started to 
+            # receive socket requests.
+            if self._started:
+
+                if consts.EXTERNAL_REQUEST in data:
+                    # We only accept requests that come from the same plugin
+                    if data[consts.EXTERNAL_REQUEST].get("_plugin", None) == Centaur._plugin.__class__.__name__:
+                        self.on_socket_request(data)
+                else:
+                    pass
+                    self.on_socket_request(data)
 
         except:
             socket.send_web_message({ "script_output":Log.last_exception() })
@@ -276,7 +305,11 @@ class Plugin():
     def __key_callback(self, key:Enums.Btn):
         try:
             if key == Enums.Btn.BACK:
-                self.stop()
+
+                if self._game_engine:
+                    self._game_engine.end()
+                else:
+                    self.stop()
 
                 # The key has been handled
                 return True
@@ -336,6 +369,18 @@ class Plugin():
         
         return False
     
+    def __socket_callback(self, data:dict, _):
+
+        try:
+            if self._started and len(data.keys())>0:
+                return self.on_socket_request(data)
+        
+        except:
+            SOCKET.send_web_message({ "script_output":Log.last_exception() })
+            self.stop()
+        
+        return False
+    
     def _running(self):
         return not self._exit_requested
     
@@ -353,6 +398,12 @@ class Plugin():
         
         self._game_engine.set_computer_move(uci_move)
 
+    # Invoked from Centaur API
+    def _computer_move_is_ready(self) -> bool:
+        if not self._game_engine:
+            raise Exception("Game engine not started!")
+        
+        return self._game_engine.computer_move_is_ready
         
     # Invoked from Centaur API
     def _start_game(self, event:str, site:str, white:str, black:str, flags:Enums.BoardOption, chess_engine: Optional[ChessEngine.ChessEngineWrapper] = None):
@@ -363,7 +414,8 @@ class Plugin():
                 undo_callback = self.__undo_callback,
                 event_callback = self.__event_callback,
                 key_callback = self.__key_callback,
-                move_callback= self.__move_callback,
+                move_callback = self.__move_callback,
+                socket_callback = self.__socket_callback,
 
                 flags = flags,
 
@@ -435,6 +487,9 @@ class Plugin():
     
     def on_start_callback(self, key:Enums.Btn) -> bool:
         return True
+    
+    def on_socket_request(self, data:dict):
+        return
 
     def splash_screen(self) -> bool:
         self._started = True

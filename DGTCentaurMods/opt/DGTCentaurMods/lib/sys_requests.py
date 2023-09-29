@@ -49,10 +49,13 @@ def handle_socket_requests(data):
 
     if "battery" in  data:
         SCREEN.set_battery_value(data["battery"])
+        del data["battery"]
 
     if "sys" in data:
         
         command = data["sys"]
+
+        del data["sys"]
 
         if command == "homescreen":
             CENTAUR_BOARD.push_button(Enums.Btn.BACK)
@@ -83,3 +86,4 @@ def handle_socket_requests(data):
         
     if "live_script" in data:
         LiveScript.execute(data["live_script"] or "")
+        del data["live_script"]

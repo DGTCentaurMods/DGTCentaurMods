@@ -49,6 +49,7 @@ function removeDev {
     rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/maia_weights
     rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/personalities
     rm -fr /tmp/${STAGE}/opt/DGTCentaurMods/engines/books
+    rm -fr /tmp/${STAGE}/node.js
 
     find /tmp/${STAGE} -name '.DS_Store' -type f -delete
     find /tmp/${STAGE} -name 'fen.log' -type f -delete

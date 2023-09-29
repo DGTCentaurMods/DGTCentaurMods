@@ -196,7 +196,7 @@ class _api():
         
         time_start = time.time()
 
-        while not _api._game_engine.computer_move_is_set:
+        while not _api._game_engine.computer_move_is_ready:
 
             if time.time()-time_start>timeout:
                 raise Exception("Timeout when waiting for computer move!")

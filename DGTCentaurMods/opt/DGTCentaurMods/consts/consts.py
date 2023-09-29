@@ -25,7 +25,7 @@ from pathlib import Path
 
 MAIN_ID = "DGTCentaurMods"
 
-TAG_RELEASE = "ON23092802"
+TAG_RELEASE = "ON23092901"
 
 GITHUB_URI = "https://api.github.com/repos/Alistair-Crompton/DGTCentaurMods/releases/latest"
 SOCKET_SERVER_URI = "https://alistair-centaur-mods-nodejs.adaptable.app"
@@ -57,6 +57,8 @@ PACIFICO_FONT_FILE = OPT_DIRECTORY + "/resources/Pacifico.ttf"
 
 #STOCKFISH_ENGINE_PATH = HOME_DIRECTORY+"/centaur/engines/stockfish_pi"
 STOCKFISH_ENGINE_PATH = OPT_DIRECTORY+"/engines/stockfish"
+
+EXTERNAL_REQUEST = "external_request"
 
 EMPTY_LINE = ' '*20
 

@@ -507,36 +507,6 @@ def main():
 
             def _game_engine_key_callback(key:Enums.Btn):
 
-                if key == Enums.Btn.TICK:
-                    CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
-                    SCREEN.draw_resignation_window()
-
-                    def wait_for_resignation_input():
-
-                        def _confirm_key_callback(key:Enums.Btn):
-
-                            if key == Enums.Btn.TICK:
-                                # Back to original callbacks
-                                CENTAUR_BOARD.unsubscribe_events()
-
-                                lichess_client.board.resign_game(current_game[_ID])
-                               
-                                # Then back to homescreen
-                                CENTAUR_BOARD.push_button(Enums.Btn.BACK)
-                                pass
-
-                            if key == Enums.Btn.BACK:
-                                # Back to original callbacks
-                                CENTAUR_BOARD.unsubscribe_events()
-                                gfe.display_board()
-                                pass
-
-                        # We temporary disable the board field callback
-                        # and we add a new temporary board key callback
-                        CENTAUR_BOARD.subscribe_events(_confirm_key_callback)
-
-                    wait_for_resignation_input()
-
                 # Nothing to do there - we keep the Factory default keys...
                 # Key has not been handled, Factory will handle it!
                 return False
@@ -550,6 +520,11 @@ def main():
                 if event == Enums.Event.QUIT:
 
                     CLOCK_PANEL.enable(False)
+
+                    try:
+                        lichess_client.board.resign_game(current_game[_ID])
+                    except:
+                        pass
 
                     exit_requested = True
 
@@ -586,7 +561,7 @@ def main():
 
                 # From GameFactory perspective,
                 # Computer move == Lichess opponent move
-                return gfe.computer_move_is_set
+                return gfe.computer_move_is_ready
 
             stream_incoming_events.close()
             stream_incoming_events = None

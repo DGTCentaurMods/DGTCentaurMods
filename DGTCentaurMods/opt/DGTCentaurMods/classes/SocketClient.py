@@ -21,7 +21,6 @@
 
 from DGTCentaurMods.classes import Log
 from DGTCentaurMods.lib import common
-from DGTCentaurMods.classes.CentaurConfig import CentaurConfig
 
 import socketio
 
@@ -31,10 +30,18 @@ class _SocketClient(common.Singleton):
     _on_socket_request = None
 
     _callbacks_queue = []
+
+    _initialized = False
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
         
     def initialize(self, on_socket_request:callable = None, uri:str = None):
 
         try:
+            self._initialized = True
+
             if on_socket_request:
                 self._callbacks_queue.append(self._on_socket_request)
                 self._on_socket_request = on_socket_request
@@ -109,5 +116,5 @@ class _SocketClient(common.Singleton):
 def connect_local_server() -> _SocketClient:
     return _SocketClient().initialize()
 
-def connect_external_server() -> _SocketClient:
-    return _SocketClient().initialize(uri=CentaurConfig.get_external_socket_server())
+def get() -> _SocketClient:
+    return _SocketClient()

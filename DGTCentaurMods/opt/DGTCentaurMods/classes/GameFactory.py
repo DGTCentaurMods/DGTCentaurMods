@@ -23,7 +23,7 @@ from DGTCentaurMods.classes import ChessEngine, DAL, Log, SocketClient, CentaurS
 from DGTCentaurMods.consts import Enums, consts, fonts, menu
 from DGTCentaurMods.lib import common, sys_requests
 
-from typing import Tuple
+from typing import Tuple, Optional
 
 #from pympler import muppy, summary
 
@@ -34,7 +34,6 @@ import chess
 import chess.pgn
 import sys
 import inspect
-import re
 
 CENTAUR_BOARD = CentaurBoard.get()
 SCREEN = CentaurScreen.get()
@@ -136,7 +135,7 @@ class PieceHandler:
          # We test there the basic board move, from square to square,
          # ignoring the promotion if exists
 
-        if self._engine._computer_move_is_set and not self._can_force_moves:
+        if self._engine._computer_move_is_ready and not self._can_force_moves:
             return uci_move[0:4] == self._computer_uci_move
         else:
             legal_board_moves = (str(move)[0:4] for move in self._chessboard.legal_moves)
@@ -146,7 +145,7 @@ class PieceHandler:
     def _commit_move(self, uci_move: str, san_move: str) -> None:
         if self._dal.insert_new_game_move(uci_move, str(self._fen())):
             Log.debug(f'Move "{uci_move}/{san_move}" has been committed.')
-            self._engine._computer_move_is_set = False
+            self._engine._computer_move_is_ready = False
             self._engine._san_move_list.append(san_move)
             
             CENTAUR_BOARD.beep(Enums.Sound.CORRECT_MOVE)
@@ -201,7 +200,7 @@ class PieceHandler:
             self, player_uci_move: str, promoted_piece: str = "") -> str:
 
         player_move = player_uci_move + promoted_piece
-        if self._engine._computer_move_is_set:
+        if self._engine._computer_move_is_ready:
             if self._can_force_moves and \
                     player_uci_move != self._computer_uci_move:
                 # Player has overridden computer's choice of move
@@ -227,7 +226,7 @@ class PieceHandler:
             self._chessboard.push(move)
             san_move = self._engine.last_san_move
             return self._accept_move(uci_move, san_move)
-        except:
+        except Exception as e:
             Log.debug(f'INVALID move "{uci_move}"')
             self._wrong_move()
             return False
@@ -246,7 +245,7 @@ class PieceHandler:
     def _ask_user_for_promotion(self) -> bool:
         """Promotion menu display if player is human or if player
         overrides computer move"""
-        return not self._engine._computer_move_is_set or \
+        return not self._engine._computer_move_is_ready or \
             self._move_name() != self._computer_uci_move
 
     _PROMOTION_KEYS = {
@@ -298,7 +297,7 @@ class PieceHandler:
         Log.debug(f'Move "{previous_uci_move}/{previous_san_move}" will be removed from DB...')
         self._dal.delete_last_game_move()
 
-        self._engine._computer_move_is_set = False
+        self._engine._computer_move_is_ready = False
 
         CENTAUR_BOARD.beep(Enums.Sound.TAKEBACK_MOVE)
         CENTAUR_BOARD.led(self._place1)
@@ -441,6 +440,7 @@ class Engine():
     _previous_move_displayed = False
 
     _invalid_board_state = False
+    _computer_move_is_ready = False
 
     _chessboard = None
 
@@ -455,6 +455,7 @@ class Engine():
                  move_callback = None,
                  undo_callback = None,
                  key_callback = None,
+                 socket_callback = None,
                  
                  flags = Enums.BoardOption.CAN_DO_COFFEE,
 
@@ -479,6 +480,7 @@ class Engine():
         self._move_callback_function = move_callback
         self._undo_callback_function = undo_callback
         self._event_callback_function = event_callback
+        self._socket_callback = socket_callback
 
         self._game_informations = game_informations
 
@@ -493,6 +495,8 @@ class Engine():
         db_record_disabled = Enums.BoardOption.DB_RECORD_DISABLED in flags
 
         self._partial_pgn_disabled = Enums.BoardOption.PARTIAL_PGN_DISABLED in flags
+
+        self._resume_disabled = Enums.BoardOption.RESUME_DISABLED in flags
 
         self._dal = DAL.get()
 
@@ -513,17 +517,21 @@ class Engine():
             if "pgn" in data:
                 response["pgn"] = self.get_current_pgn()
                 socket.send_web_message(response)
+                del data["pgn"]
 
             if "fen" in data:
                 response["fen"] = self._chessboard.fen()
                 socket.send_web_message(response)
+                del data["fen"]
 
             if "uci_move" in data:
                 response["uci_move"] = self.last_uci_move
                 socket.send_web_message(response)
+                del data["uci_move"]
 
             if "web_menu" in data:
                 self.initialize_web_menu()
+                del data["web_menu"]
 
             if "web_move" in data:
                 # A move has been triggered from web UI
@@ -533,8 +541,15 @@ class Engine():
                     response["fen"] = self._chessboard.fen()
                     socket.send_web_message(response)
 
+                del data["web_move"]
+
             if "web_button" in data:
                 CENTAUR_BOARD.push_button(Enums.Btn(data["web_button"]))
+                del data["web_button"]
+
+            if self._socket_callback:
+
+                self._socket_callback(data, socket)
 
         except Exception as e:
             Log.exception(Engine._on_socket_request, e)
@@ -556,13 +571,13 @@ class Engine():
         CENTAUR_BOARD.leds_off()
 
         self._computer_uci_move = ""
-        self._computer_move_is_set = False
+        self._computer_move_is_ready = False
         self._san_move_list = []
         self._piece_handler = PieceHandler(self)
 
         self._new_evaluation_requested = False
 
-    def __key_callback(self, key):
+    def __key_callback(self, key:Enums.Btn):
 
         if not self._started:
             return
@@ -571,6 +586,7 @@ class Engine():
             # Key has not been handled by the client!
 
             # Default tick key
+            # Disable/Enable evaluation
             if not self._evaluation_disabled and key == Enums.Btn.TICK:
                 self._show_evaluation = not self._show_evaluation
 
@@ -581,26 +597,58 @@ class Engine():
                 self.display_partial_PGN()
                 self.display_board()
 
+            # Default up key
+            # Resign
+            if key == Enums.Btn.UP:
+                CENTAUR_BOARD.beep(Enums.Sound.COMPUTER_MOVE)
+                SCREEN.draw_resignation_window()
+
+                def wait_for_resignation_input():
+
+                    def _confirm_key_callback(key:Enums.Btn):
+
+                        if key == Enums.Btn.TICK:
+                            # Back to original callbacks
+                            CENTAUR_BOARD.unsubscribe_events()
+                            self.display_board()
+                            self.end()
+                            self.stop()
+                            return
+
+                        if key == Enums.Btn.BACK:
+                            # Back to original callbacks
+                            CENTAUR_BOARD.unsubscribe_events()
+                            self.display_board()
+                            return
+
+                    # We temporary disable the board field callback
+                    # and we add a new temporary board key callback
+                    CENTAUR_BOARD.subscribe_events(_confirm_key_callback)
+
+                wait_for_resignation_input()
+
             # Default exit key
             if key == Enums.Btn.BACK:
                 
-                Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT, outcome=None)
+                self.end()
                 self.stop()
         
-            # Default down key: show previous move
+            # Default down key
+            # Show previous move
             if key == Enums.Btn.DOWN:
 
                 if self._previous_move_displayed:
-                     
+
                      self._previous_move_displayed = False
                      
-                     if self._computer_move_is_set:
+                     if self._computer_move_is_ready:
                         self.set_computer_move(self._computer_uci_move)
                           
                      else:
                         CENTAUR_BOARD.leds_off()
 
                 else:
+
                     # We read the last move that has been recorded
                     previous_uci_move = self.last_uci_move
 
@@ -609,6 +657,11 @@ class Engine():
                         to_num = common.Converters.to_square_index(previous_uci_move, Enums.SquareType.TARGET)
 
                         CENTAUR_BOARD.led_from_to(from_num,to_num)
+
+                        self.send_message_to_web_ui({
+                            "clear_board_graphic_moves":False,
+                            "uci_move":previous_uci_move,
+                        })
 
                         self._previous_move_displayed = True
 
@@ -731,7 +784,7 @@ class Engine():
 
                     uci_moves_history = self._uci_moves_at_start if len(self._uci_moves_at_start)>0 else self._dal.read_uci_moves_history()
 
-                    if len(uci_moves_history) > 0:
+                    if not self._resume_disabled and len(uci_moves_history) > 0:
 
                         Log.info("RESUMING LAST GAME!")
 
@@ -905,6 +958,8 @@ class Engine():
 
         Log.info(f"{Engine.__name__} thread started.")
 
+    def end(self):
+        Engine.__invoke_callback(self._event_callback_function, event=Enums.Event.QUIT, outcome=None)
 
     def stop(self):
         
@@ -986,7 +1041,7 @@ class Engine():
             pass
 
     @property
-    def last_uci_move(self):
+    def last_uci_move(self) -> Optional[str]:
         
         if not self._started:
             return None
@@ -994,7 +1049,7 @@ class Engine():
         return None if self._chessboard.ply() == 0 else self._chessboard.peek().uci()
 
     @property
-    def last_san_move(self):
+    def last_san_move(self) -> Optional[str]:
 
         if not self._started:
             return None
@@ -1002,10 +1057,10 @@ class Engine():
         try:
             move = self._chessboard.pop()
             san = self._chessboard.san(move)
-
             self._chessboard.push_san(san)
 
             return san
+
         except:
             return None
 
@@ -1153,8 +1208,8 @@ class Engine():
         return self._chessboard
     
     @property
-    def computer_move_is_set(self):
-        return self._computer_move_is_set
+    def computer_move_is_ready(self):
+        return self._computer_move_is_ready
 
     def set_computer_move(self, uci_move) -> bool:
             
@@ -1177,7 +1232,7 @@ class Engine():
 
             # First set the globals so that the thread knows there is a computer move
             self._computer_uci_move = uci_move
-            self._computer_move_is_set = True
+            self._computer_move_is_ready = True
             
             # Next indicate this on the board. First convert the text representation to the field number
             from_num = common.Converters.to_square_index(uci_move, Enums.SquareType.ORIGIN)

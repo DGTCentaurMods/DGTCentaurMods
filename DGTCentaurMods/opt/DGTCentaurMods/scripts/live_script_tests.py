@@ -40,6 +40,12 @@ def home():
     LS.push_button(Enums.Btn.BACK)
     LS.push_button(Enums.Btn.BACK)
 
+def resign():
+    # Resign and quit the current module
+    LS.push_button(Enums.Btn.UP)
+    LS.waitfor_screen_text("Do you really want to resign?")
+    LS.push_button(Enums.Btn.TICK)
+
 def raise_exception(error:str):
     LS.write_text(4, stage_id)
     LS.write_text(5, "ERROR!")
@@ -177,24 +183,7 @@ def _stage_engine(id:str, conf:str):
     LS.write_text(4, id)
     LS.write_text(5, "OK!")
 
-def stage_engines():
-
-    global stage_id
-
-    for args in (
-       ("RODENTIV","Spassky"),
-       ("MAIA","E-1200"),
-       ("TEXEL","L-01"),
-       ("WYLDCHESS","DRUNKEN"),
-       ("GALJOEN","E-1500"),
-       ("ZAHAK","E-1440"),
-       ("STOCKFISH","E-1350"),
-       ("CT800","E-1100")):
-
-       stage_id = args[0]
-
-       _stage_engine(args[0],args[1])
-       time.sleep(2)
+    resign()
 
 def stage_el_professor():
 
@@ -238,7 +227,27 @@ def stage_el_professor():
     
     if LS.play("c1g5"):
        raise Exception(f'c1g5 is not a correct move!')
+    
+    resign()
 
+def stage_engines():
+
+    global stage_id
+
+    for args in (
+       ("RODENTIV","Spassky"),
+       ("MAIA","E-1200"),
+       ("TEXEL","L-01"),
+       ("WYLDCHESS","DRUNKEN"),
+       ("GALJOEN","E-1500"),
+       ("ZAHAK","E-1440"),
+       ("STOCKFISH","E-1350"),
+       ("CT800","E-1100")):
+
+       stage_id = args[0]
+
+       _stage_engine(args[0],args[1])
+       time.sleep(2)
 
 for stager in [
     stage_1vs1,
@@ -252,7 +261,7 @@ for stager in [
 
     LS.write_text(4, stage_id)
     LS.write_text(5, "OK")
-
+    
     time.sleep(2)
 
 LS.write_text(4, "ALL")
