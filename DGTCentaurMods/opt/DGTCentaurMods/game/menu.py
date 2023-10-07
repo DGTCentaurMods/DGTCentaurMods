@@ -31,6 +31,7 @@ import json
 import socket
 import subprocess
 import os
+from DGTCentaurMods.display.ui_components import AssetManager
 
 try:
     logging.basicConfig(level=logging.DEBUG, filename="/home/pi/debug.log",filemode="w")
@@ -897,11 +898,8 @@ while True:
         epaper.writeText(1, "Get support:")
         epaper.writeText(9, "DGTCentaur")
         epaper.writeText(10, "      Mods")
-        epaper.writeText(11, "Ver:" + version)
-        qr = Image.open(
-            str(pathlib.Path(__file__).parent.resolve())
-            + "/../resources/qr-support.png"
-        )
+        epaper.writeText(11, "Ver:" + version)        
+        qr = Image.open(AssetManager.get_resource_path("qr-support.png"))
         qr = qr.resize((128, 128))
         epaper.epaperbuffer.paste(qr, (0, 42))
         timeout = time.time() + 15

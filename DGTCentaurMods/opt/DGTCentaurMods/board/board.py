@@ -25,6 +25,7 @@ import serial
 import sys
 import os
 from DGTCentaurMods.display import epd2in9d, epaper
+from DGTCentaurMods.display.ui_components import AssetManager
 from DGTCentaurMods.board import centaur
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -77,7 +78,7 @@ else:
         ser.close()
         ser.open()
 
-font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
 time.sleep(2)
 
 
@@ -201,7 +202,7 @@ def sleepScreen():
 
 def drawBoard(pieces):
     global screenbuffer
-    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
+    chessfont = Image.open(AssetManager.get_resource_path("chesssprites.bmp"))
     image = screenbuffer.copy()
     for x in range(0,64):
         pos = (x - 63) * -1
@@ -334,8 +335,8 @@ def doMenu(items, fast = 0):
             draw.polygon([(2, (selected * 20) + 2), (2, (selected * 20) + 18),
                           (18, (selected * 20) + 10)], fill=0)
             # Draw an image representing internet connectivity
-            wifion = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiontiny.bmp")
-            wifioff = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/wifiofftiny.bmp")
+            wifion = Image.open(AssetManager.get_resource_path("wifiontiny.bmp"))
+            wifioff = Image.open(AssetManager.get_resource_path("wifiofftiny.bmp"))
             if connected == True:
                 wifidispicon = wifion.resize((20,16))
                 image.paste(wifidispicon, (105, 5))

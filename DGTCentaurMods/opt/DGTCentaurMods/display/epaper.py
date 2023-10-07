@@ -28,6 +28,7 @@
 from DGTCentaurMods.board import centaur,board
 from DGTCentaurMods.display import epd2in9d
 from DGTCentaurMods.display.epaper_driver import epaperDriver
+from DGTCentaurMods.display.ui_components import AssetManager
 import os, time
 from PIL import Image, ImageDraw, ImageFont
 import pathlib
@@ -41,7 +42,7 @@ except:
 
 driver = epaperDriver()
 
-font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
 # Screenbuffer is what we want to display on the screen
 epaperbuffer = Image.new('1', (128, 296), 255) # You can also use pillow to directly change this image
 lastepaperhash = 0
@@ -84,7 +85,7 @@ def epaperUpdate():
             if screensleep == 1:
                 driver.reset()
                 screensleep = 0
-            filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+            filename = str(AssetManager.get_resource_path("epaper.jpg"))
             epaperbuffer.save(filename)
             if screeninverted == 0:
                 im = im.transpose(Image.FLIP_TOP_BOTTOM)
@@ -130,7 +131,7 @@ def refresh():
 def loadingScreen():
     global epaperbuffer
     statusBar().print()
-    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
     lg = Image.open(filename)
     epaperbuffer.paste(lg,(0,20))
     writeText(10,'     Loading')
@@ -140,7 +141,7 @@ def loadingScreen():
 def welcomeScreen():
     global epaperbuffer
     statusBar().print()
-    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
     lg = Image.open(filename)
     epaperbuffer.paste(lg,(0,20))
     writeText(10,'     Press')
@@ -160,7 +161,7 @@ def standbyScreen(show):
         epaperbuffer.save(f)
         statusBar().print()
         
-        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+        filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
         lg = Image.open(filename)
         epaperbuffer.paste(lg,(0,20))
         writeText(10,'   Press [>||]')
@@ -212,11 +213,11 @@ def stopEpaper():
     global lastepaperbytes
     global epaperbuffer
     global kill
-    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
     lg = Image.open(filename)
     lgs = Image.new('1', (128, 296), 255)
     lgs.paste(lg,(0,0))
-    qrfile = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qr-support.png"
+    qrfile = str(AssetManger.get_resource_path("qr-support.png"))
     qr = Image.open(qrfile)
     qr = qr.resize((128,128))
     lgs.paste(qr,(0,160))
@@ -278,7 +279,7 @@ def clearScreen():
 def drawBoard(pieces, startrow=2):         
     global epaperbuffer
     draw = ImageDraw.Draw(epaperbuffer)
-    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
+    chessfont = Image.open(AssetManager.get_resource_path("chesssprites.bmp"))
     for x in range(0,64):
         pos = (x - 63) * -1
         row = ((startrow * 20) + 8) + (16 * (pos // 8))
@@ -342,7 +343,7 @@ def promotionOptions(row):
     global epaperbuffer
     logging.debug("drawing promotion options")
     global epaperprocesschange
-    font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+    font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
     writeText(13, "                    ")
     if epaperprocesschange == 1:    
         offset = row * 20
@@ -361,7 +362,7 @@ def promotionOptions(row):
     else:
         timage = Image.new('1', (128, 20), 255)
         draw = ImageDraw.Draw(timage)
-        font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+        font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
         draw.text((0, 0), "    Q    R    N    B", font=font18, fill=0)      
         offset = 0
         draw.polygon([(2, offset+18), (18, offset+18), (10, offset+3)], fill=0)
@@ -393,7 +394,7 @@ def resignDrawMenu(row):
         # If epaperprocesschange is 0 then assume that the app calling is using the new partial display functions
         timage = Image.new('1', (128, 20), 255)
         draw = ImageDraw.Draw(timage)
-        font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+        font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
         draw.text((0, 0), "    DRW    RESI", font=font18, fill=0)
         draw.polygon([(2, 18), (18, 18), (10, 3)], fill=0)
         draw.polygon([(35+25, 3), (51+25, 3), (43+25, 18)], fill=0)
@@ -455,7 +456,7 @@ def drawWindow(x, y, w, data):
         if tw >= dw:
             tw = 0
             dyoff = dyoff + 1
-    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+    filename = str(AssetManger.get_resource_path("epaper.jpg"))
     epaperbuffer.save(filename)    
 
 def drawImagePartial(x, y, img):
@@ -478,7 +479,7 @@ def drawBatteryIndicator():
         if board.batterylevel == 20:
             batteryindicator = "batterycf"    
     if board.batterylevel >= 0:
-        img = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/" + batteryindicator + ".bmp")
+        img = Image.open(AssetManager.get_resource_path(batteryindicator + ".bmp"))
         epaperbuffer.paste(img,(98, 2))        
         #drawImagePartial(13,0,img)     
 
@@ -550,7 +551,7 @@ class MenuDraw:
             im = im.transpose(Image.FLIP_TOP_BOTTOM)
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
         bytes = im.tobytes()
-        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+        filename = str(AssetManager.get_resource_path("epaper.jpg"))
         epaperbuffer.save(filename)
         epd.send_command(0x91)
         epd.send_command(0x90)
@@ -593,7 +594,7 @@ class MenuDraw:
         draw = ImageDraw.Draw(epaperbuffer)
         draw.rectangle([(0, 40), (8, 191)], fill = 255, outline = 255)
         draw.rectangle([(2,((index + 2) * 20) + 5), (8, ((index+2) * 20) + 14)], fill = 0, outline = 0)
-        filename = str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/epaper.jpg"
+        filename = str(AssetManger.get_resource_path("epaper.jpg"))
         epaperbuffer.save(filename)
         epd.send_command(0x91) # Enter partial mode
         epd.send_command(0x90) # Set resolution

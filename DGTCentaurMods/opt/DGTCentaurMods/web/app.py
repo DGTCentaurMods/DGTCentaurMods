@@ -21,6 +21,7 @@
 
 from flask import Flask, render_template, Response, request, redirect
 from DGTCentaurMods.db import models
+from DGTCentaurMods.display.ui_components import AssetManager
 from chessboard import LiveBoard
 import centaurflask
 from PIL import Image, ImageDraw, ImageFont
@@ -748,18 +749,18 @@ def makePGN(gameid):
 	session.close()
 	return pgn_string
 
-pb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pb.png").convert("RGBA")
-pw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/pw.png").convert("RGBA")
-rb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rb.png").convert("RGBA")
-bb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bb.png").convert("RGBA")
-nb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nb.png").convert("RGBA")
-qb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qb.png").convert("RGBA")
-kb = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kb.png").convert("RGBA")
-rw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/rw.png").convert("RGBA")
-bw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/bw.png").convert("RGBA")
-nw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/nw.png").convert("RGBA")
-qw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/qw.png").convert("RGBA")
-kw = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/kw.png").convert("RGBA")
+pb = Image.open(AssetManager.get_resource_path("pb.png")).convert("RGBA")
+pw = Image.open(AssetManager.get_resource_path("pw.png")).convert("RGBA")
+rb = Image.open(AssetManager.get_resource_path("rb.png")).convert("RGBA")
+bb = Image.open(AssetManager.get_resource_path("bb.png")).convert("RGBA")
+nb = Image.open(AssetManager.get_resource_path("nb.png")).convert("RGBA")
+qb = Image.open(AssetManager.get_resource_path("qb.png")).convert("RGBA")
+kb = Image.open(AssetManager.get_resource_path("kb.png")).convert("RGBA")
+rw = Image.open(AssetManager.get_resource_path("rw.png")).convert("RGBA")
+bw = Image.open(AssetManager.get_resource_path("bw.png")).convert("RGBA")
+nw = Image.open(AssetManager.get_resource_path("nw.png")).convert("RGBA")
+qw = Image.open(AssetManager.get_resource_path("qw.png")).convert("RGBA")
+kw = Image.open(AssetManager.get_resource_path("kw.png")).convert("RGBA")
 logo = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../web/static/logo_mods_web.png")
 moddate = -1
 sc = None
