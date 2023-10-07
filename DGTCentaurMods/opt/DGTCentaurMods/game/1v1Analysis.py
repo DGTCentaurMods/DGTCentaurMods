@@ -23,7 +23,7 @@
 
 from DGTCentaurMods.game import gamemanager
 from DGTCentaurMods.display import epaper
-
+from DGTCentaurMods.display.ui_components import AssetManager
 import time
 import chess
 import chess.engine
@@ -112,7 +112,7 @@ def eventCallback(event):
         if event.startswith("Termination."):
             image = Image.new('1', (128, 12), 255)
             draw = ImageDraw.Draw(image)
-            font12 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 12)
+            font12 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 12)
             txt = event[12:]
             draw.text((30, 0), txt, font=font12, fill=0)
             epaper.drawImagePartial(0, 221, image)
@@ -124,7 +124,7 @@ def eventCallback(event):
             # Let's display an end screen
             image = Image.new('1', (128,292), 255)
             draw = ImageDraw.Draw(image)
-            font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+            font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
             draw.text((0,0), "   GAME OVER", font=font18, fill = 0)
             draw.text((0,20), "          " + gamemanager.getResult(), font=font18, fill = 0)            
             if len(scorehistory) > 0:
@@ -193,7 +193,7 @@ def evaluationGraphs(info):
     if graphson == 1:
         image = Image.new('1', (128, 80), 255)
         draw = ImageDraw.Draw(image)
-        font12 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 12)
+        font12 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 12)
     txt = "{:5.1f}".format(sval)        
     if sval > 999:
         txt = ""
@@ -246,7 +246,7 @@ def writeTextLocal(row,txt):
     # Write Text on a give line number
     image = Image.new('1', (128, 20), 255)
     draw = ImageDraw.Draw(image)
-    font18 = ImageFont.truetype(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/Font.ttc", 18)
+    font18 = ImageFont.truetype(AssetManager.get_resource_path("Font.ttc"), 18)
     draw.text((0, 0), txt, font=font18, fill=0)
     epaper.drawImagePartial(0, (row*20), image)    
 
@@ -269,7 +269,7 @@ def drawBoardLocal(fen):
             nfen = nfen + curfen[((a - 1) * 8) + b]
     lboard = Image.new('1', (128, 128), 255)
     draw = ImageDraw.Draw(lboard)
-    chessfont = Image.open(str(pathlib.Path(__file__).parent.resolve()) + "/../resources/chesssprites.bmp")
+    chessfont = Image.open(AssetManager.get_resource_path("chesssprites.bmp"))
     for x in range(0,64):
         pos = (x - 63) * -1
         row = (16 * (pos // 8))

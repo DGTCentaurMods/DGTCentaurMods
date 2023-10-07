@@ -25,6 +25,7 @@ import dbus
 from DGTCentaurMods.thirdparty.advertisement import Advertisement
 from DGTCentaurMods.thirdparty.service import Application, Service, Characteristic, Descriptor
 from DGTCentaurMods.board import *
+from DGTCentaurMods.display.ui_components import AssetManager
 import time
 import threading
 import os
@@ -51,7 +52,7 @@ statusbar = epaper.statusBar()
 statusbar.start()
 
 def displayLogo():
-    filename = str(pathlib.Path(__file__).parent.resolve()) + "/../resources/logo_mods_screen.jpg"
+    filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
     lg = Image.open(filename)
     lg = lg.resize((48,112))
     return epaper.epaperbuffer.paste(lg,(0,20))
