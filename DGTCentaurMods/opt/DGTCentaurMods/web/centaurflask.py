@@ -21,7 +21,7 @@
 
 #from DGTCentaurMods.display import epaper
 from subprocess import PIPE, Popen, check_output
-from DGTCentaurMods.board.config_system import ConfigSystem
+from DGTCentaurMods.board.settings import Settings
 import subprocess
 import shlex
 import pathlib
@@ -31,61 +31,61 @@ import json
 import urllib.request
 
 def get_lichess_api():
-    return ConfigSystem.read('lichess','api_token','')        
+    return Settings.read('lichess','api_token','')        
 
 def get_lichess_range():
-    return ConfigSystem.read('lichess','range','0-3000')
+    return Settings.read('lichess','range','0-3000')
 
 def get_menuEngines():
-    return ConfigSystem.read('menu','showEngines', 'checked')
+    return Settings.read('menu','showEngines', 'checked')
 
 def get_menuHandBrain():
-    return ConfigSystem.read('menu','showHandBrain', 'checked')
+    return Settings.read('menu','showHandBrain', 'checked')
 
 def get_menu1v1Analysis():
-    return ConfigSystem.read('menu','show1v1Analysis','checked')
+    return Settings.read('menu','show1v1Analysis','checked')
 
 def get_menuEmulateEB():
-    return ConfigSystem.read('menu','showEmulateEB','checked')
+    return Settings.read('menu','showEmulateEB','checked')
 
 def get_menuCast():
-    return ConfigSystem.read('menu','showCast','checked')
+    return Settings.read('menu','showCast','checked')
 
 def get_menuSettings():
-    return ConfigSystem.read('menu','showSettings','checked')
+    return Settings.read('menu','showSettings','checked')
 
 def get_menuAbout():
-    return ConfigSystem.read('menu','showAbout','checked')
+    return Settings.read('menu','showAbout','checked')
 
 def get_sound():
-    return ConfigSystem.read('sound','sound','on')
+    return Settings.read('sound','sound','on')
 
 def set_lichess_api(key):
-    return ConfigSystem.write('lichess','api_token', key)
+    return Settings.write('lichess','api_token', key)
 
 def set_lichess_range(newrange):
-    return ConfigSystem.write('lichess','range',newrange)
+    return Settings.write('lichess','range',newrange)
 
 def set_sound(onoff):
-    return ConfigSystem.write('sound','sound','on')
+    return Settings.write('sound','sound','on')
 
 def set_menuEngines(val):
-    return ConfigSystem.write('menu','showEngines',val)
+    return Settings.write('menu','showEngines',val)
         
 def set_menuHandBrain(val):
-    return ConfigSystem.write('menu','showHandBrain',val)
+    return Settings.write('menu','showHandBrain',val)
 
 def set_menu1v1Analysis(val):
-    return ConfigSystem.write('menu','show1v1Analysis',val)  
+    return Settings.write('menu','show1v1Analysis',val)  
         
 def set_menuEmulateEB(val):
-    return ConfigSystem.write('menu','showEmulateEB',val)
+    return Settings.write('menu','showEmulateEB',val)
         
 def set_menuCast(val):
-    return ConfigSystem.write('menu','showCast',val)
+    return Settings.write('menu','showCast',val)
         
 def set_menuSettings(val):
-    return ConfigSystem.write('menu','showSettings',val)
+    return Settings.write('menu','showSettings',val)
         
 def set_menuAbout(val):
-    return ConfigSystem.write('menu','showAbout',val)
+    return Settings.write('menu','showAbout',val)

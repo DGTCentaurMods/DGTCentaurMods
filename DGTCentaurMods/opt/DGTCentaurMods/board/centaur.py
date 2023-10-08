@@ -20,7 +20,7 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.display import epaper
-from DGTCentaurMods.board.config_system import ConfigSystem
+from DGTCentaurMods.board.settings import Settings
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
@@ -37,64 +37,64 @@ except:
     logging.basicConfig(level=logging.DEBUG)
 
 def get_lichess_api():
-    return ConfigSystem.read('lichess','api_token','')
+    return Settings.read('lichess','api_token','')
 
 def get_lichess_range():    
-    return ConfigSystem.read('lichess','range','0-3000')
+    return Settings.read('lichess','range','0-3000')
 
 def get_menuEngines():
-    return ConfigSystem.read('menu','showEngines', 'checked')
+    return Settings.read('menu','showEngines', 'checked')
 
 def get_menuHandBrain():
-    return ConfigSystem.read('menu','showHandBrain', 'checked')
+    return Settings.read('menu','showHandBrain', 'checked')
 
 def get_menu1v1Analysis():
-    return ConfigSystem.read('menu','show1v1Analysis','checked')
+    return Settings.read('menu','show1v1Analysis','checked')
 
 def get_menuEmulateEB():
-    return ConfigSystem.read('menu','showEmulateEB','checked')
+    return Settings.read('menu','showEmulateEB','checked')
 
 def get_menuCast():
-    return ConfigSystem.read('menu','showCast','checked')
+    return Settings.read('menu','showCast','checked')
 
 def get_menuSettings():
-    return ConfigSystem.read('menu','showSettings','checked')
+    return Settings.read('menu','showSettings','checked')
 
 def get_menuAbout():
-    return ConfigSystem.read('menu','showAbout','checked')
+    return Settings.read('menu','showAbout','checked')
 
 def get_sound():
-    return ConfigSystem.read('sound','sound','on')
+    return Settings.read('sound','sound','on')
 
 def set_lichess_api(key):
-    return ConfigSystem.write('lichess','api_token', key)
+    return Settings.write('lichess','api_token', key)
 
 def set_lichess_range(newrange):
-    return ConfigSystem.write('lichess','range',newrange)
+    return Settings.write('lichess','range',newrange)
 
 def set_sound(onoff):
-    return ConfigSystem.write('sound','sound','on')
+    return Settings.write('sound','sound','on')
 
 def set_menuEngines(val):
-    return ConfigSystem.write('menu','showEngines',val)
+    return Settings.write('menu','showEngines',val)
         
 def set_menuHandBrain(val):
-    return ConfigSystem.write('menu','showHandBrain',val)
+    return Settings.write('menu','showHandBrain',val)
 
 def set_menu1v1Analysis(val):
-    return ConfigSystem.write('menu','show1v1Analysis',val)  
+    return Settings.write('menu','show1v1Analysis',val)  
         
 def set_menuEmulateEB(val):
-    return ConfigSystem.write('menu','showEmulateEB',val)
+    return Settings.write('menu','showEmulateEB',val)
         
 def set_menuCast(val):
-    return ConfigSystem.write('menu','showCast',val)
+    return Settings.write('menu','showCast',val)
         
 def set_menuSettings(val):
-    return ConfigSystem.write('menu','showSettings',val)
+    return Settings.write('menu','showSettings',val)
         
 def set_menuAbout(val):
-    return ConfigSystem.write('menu','showAbout',val)                          
+    return Settings.write('menu','showAbout',val)                          
 
 def dgtcm_path():
     return str(pathlib.Path(__file__).parent.resolve()) + "/.."
@@ -114,10 +114,10 @@ def shell_run(rcmd):
         return response_stdout
 
 
-config = ConfigSystem.get_config()
-lichess_api = ConfigSystem.read('lichess','api_token','')
-lichess_range = ConfigSystem.read('lichess','range','0-3000')
-centaur_sound = ConfigSystem.read('sound','sound','on')
+config = Settings.get_config()
+lichess_api = Settings.read('lichess','api_token','')
+lichess_range = Settings.read('lichess','range','0-3000')
+centaur_sound = Settings.read('sound','sound','on')
 
 class UpdateSystem:
     def __init__(self):
@@ -126,7 +126,7 @@ class UpdateSystem:
 
     def info(self):
         logging.debug('Update system status: ' + self.getStatus())
-        logging.debug("Update source: ", ConfigSystem.read('update', 'source', 'EdNekebno/DGTCentaurMods'))
+        logging.debug("Update source: ", Settings.read('update', 'source', 'EdNekebno/DGTCentaurMods'))
         logging.debug('Update channel: ' + self.getChannel())
         logging.debug('Policy: ' + self.getPolicy())
 
@@ -218,39 +218,39 @@ class UpdateSystem:
 
 
     def enable(self):
-        ConfigSystem.write('update','status','enabled')
+        Settings.write('update','status','enabled')
         logging.debug('Autoupdate has been enabled')
         return
         
 
     def disable(self):
-        ConfigSystem.write('update','status','disable')        
+        Settings.write('update','status','disable')        
         logging.debug('Autoupdate has beed disabled.')
         return
 
 
     def setPolicy(self,policy):
-        ConfigSystem.write('update','policy',policy)        
+        Settings.write('update','policy',policy)        
         logging.debug('Policy set to: ' + policy)
         return
 
 
     def setChannel(self,channel):
-        ConfigSystem.write('update','channel',channel)        
+        Settings.write('update','channel',channel)        
         logging.debug('Update channel  has beed set to ',channel)
         return
 
 
     def getChannel(self):        
-        return ConfigSystem.read('update', 'channel', 'stable')        
+        return Settings.read('update', 'channel', 'stable')        
 
 
     def getStatus(self):
-        return ConfigSystem.read('update', 'status', 'disabled')        
+        return Settings.read('update', 'status', 'disabled')        
 
 
     def getPolicy(self):
-        return ConfigSystem.read('update', 'policy', 'always')        
+        return Settings.read('update', 'policy', 'always')        
 
 
     def updateInstall(self):
@@ -271,7 +271,7 @@ class UpdateSystem:
 
     def main(self):
         #Download update ingormation file
-        self.update_source = ConfigSystem.read('update','source','EdNekebno/DGTCentaurMods')
+        self.update_source = Settings.read('update','source','EdNekebno/DGTCentaurMods')
         logging.debug('Downloading update information...')
         url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(self.update_source)
         try:
