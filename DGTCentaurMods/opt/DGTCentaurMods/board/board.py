@@ -26,6 +26,7 @@ import sys
 import os
 from DGTCentaurMods.display import epd2in9d, epaper
 from DGTCentaurMods.display.ui_components import AssetManager
+from DGTCentaurMods.board.settings import Settings
 from DGTCentaurMods.board import centaur
 import time
 from PIL import Image, ImageDraw, ImageFont
@@ -57,9 +58,7 @@ BTNPLAY = 6
 BTNLONGPLAY = 7
 
 # Get the config
-conf = centaur.ConfigSystem()
-
-dev = conf.read_value('system', 'developer')
+dev = Settings.read('system', 'developer', 'False')
 
 # Various setup
 if dev == "True":
