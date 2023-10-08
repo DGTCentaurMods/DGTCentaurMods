@@ -20,10 +20,10 @@
 # distribution, modification, variant, or derivative of this software.
 
 from DGTCentaurMods.display import epaper
+from DGTCentaurMods.board.config_system import ConfigSystem
 from subprocess import PIPE, Popen, check_output
 import subprocess
 import shlex
-import configparser
 import pathlib
 import os, sys
 import time
@@ -37,169 +37,64 @@ except:
     logging.basicConfig(level=logging.DEBUG)
 
 def get_lichess_api():
-    global config
-    lichess_api = config["lichess"]["api_token"]
-    return lichess_api
+    return ConfigSystem.read('lichess','api_token','')
 
-def get_lichess_range():
-    global config
-    lichess_range = config["lichess"]["range"]
-    return lichess_range
+def get_lichess_range():    
+    return ConfigSystem.read('lichess','range','0-3000')
 
 def get_menuEngines():
-    global config
-    try:
-        ret = config["menu"]["showEngines"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showEngines', 'checked')
 
 def get_menuHandBrain():
-    global config
-    try:
-        ret = config["menu"]["showHandBrain"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showHandBrain', 'checked')
 
 def get_menu1v1Analysis():
-    global config
-    try:
-        ret = config["menu"]["show1v1Analysis"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','show1v1Analysis','checked')
 
 def get_menuEmulateEB():
-    global config
-    try:
-        ret = config["menu"]["showEmulateEB"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showEmulateEB','checked')
 
 def get_menuCast():
-    global config
-    try:
-        ret = config["menu"]["showCast"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showCast','checked')
 
 def get_menuSettings():
-    global config
-    try:
-        ret = config["menu"]["showSettings"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showSettings','checked')
 
 def get_menuAbout():
-    global config
-    try:
-        ret = config["menu"]["showAbout"]
-    except:
-        return None
-    return ret
+    return ConfigSystem.read('menu','showAbout','checked')
 
 def get_sound():
-    global config
-    centaur_sound = config["sound"]["sound"]
-    return centaur_sound
+    return ConfigSystem.read('sound','sound','on')
 
 def set_lichess_api(key):
-    global config
-    global config_file
-    config.set('lichess', 'api_token', key)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()
+    return ConfigSystem.write('lichess','api_token', key)
 
 def set_lichess_range(newrange):
-    global config
-    global config_file
-    config.set('lichess', 'range', newrange)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()
+    return ConfigSystem.write('lichess','range',newrange)
 
 def set_sound(onoff):
-    global config
-    global config_file
-    config.set('sound', 'sound', onoff)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()
-        
+    return ConfigSystem.write('sound','sound','on')
+
 def set_menuEngines(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showEngines', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()
+    return ConfigSystem.write('menu','showEngines',val)
         
 def set_menuHandBrain(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showHandBrain', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()   
+    return ConfigSystem.write('menu','showHandBrain',val)
 
 def set_menu1v1Analysis(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'show1v1Analysis', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()   
+    return ConfigSystem.write('menu','show1v1Analysis',val)  
         
 def set_menuEmulateEB(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showEmulateEB', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()  
+    return ConfigSystem.write('menu','showEmulateEB',val)
         
 def set_menuCast(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showCast', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close() 
+    return ConfigSystem.write('menu','showCast',val)
         
 def set_menuSettings(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showSettings', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()  
+    return ConfigSystem.write('menu','showSettings',val)
         
 def set_menuAbout(val):
-    global config
-    global config_file
-    if not config.has_section("menu"): 
-        config.add_section("menu")    
-    config.set('menu', 'showAbout', val)
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-        configfile.close()                             
+    return ConfigSystem.write('menu','showAbout',val)                          
 
 def dgtcm_path():
     return str(pathlib.Path(__file__).parent.resolve()) + "/.."
@@ -219,33 +114,19 @@ def shell_run(rcmd):
         return response_stdout
 
 
-config_file = dgtcm_path() + "/config/centaur.ini"
-config = configparser.ConfigParser()
-config.read(config_file)
-
-# Import configs
-try:
-    lichess_api = config["lichess"]["api_token"]
-except:
-    lichess_api = ""
-try:
-    lichess_range = config["lichess"]["range"]
-except:
-    lichess_range = ""
-try:
-    centaur_sound = config["sound"]["sound"]
-except:
-    centaur_sound = "on"
+config = ConfigSystem.get_config()
+lichess_api = ConfigSystem.read('lichess','api_token','')
+lichess_range = ConfigSystem.read('lichess','range','0-3000')
+centaur_sound = ConfigSystem.read('sound','sound','on')
 
 class UpdateSystem:
     def __init__(self):
-        self.conf = ConfigSystem()
         self.status = self.getStatus()
         
 
     def info(self):
         logging.debug('Update system status: ' + self.getStatus())
-        logging.debug("Update source: ",self.conf.read_value('update', 'source'))
+        logging.debug("Update source: ", ConfigSystem.read('update', 'source', 'EdNekebno/DGTCentaurMods'))
         logging.debug('Update channel: ' + self.getChannel())
         logging.debug('Policy: ' + self.getPolicy())
 
@@ -309,7 +190,7 @@ class UpdateSystem:
         #Evaluate policies
         #On 'revision' install only if revision is newer
         if policy == 'revision':
-            if local_major == update_major and local_minor == updrate_minor:
+            if local_major == update_major and local_minor == update_minor:
                 if local_revision < update_revision:
                     return True
             else:
@@ -337,39 +218,39 @@ class UpdateSystem:
 
 
     def enable(self):
-        self.conf.update_value('update','status','enabled')
+        ConfigSystem.write('update','status','enabled')
         logging.debug('Autoupdate has been enabled')
         return
         
 
     def disable(self):
-        self.conf.update_value('update','status','disabled')
+        ConfigSystem.write('update','status','disable')        
         logging.debug('Autoupdate has beed disabled.')
         return
 
 
     def setPolicy(self,policy):
-        self.conf.update_value('update','policy',policy)
+        ConfigSystem.write('update','policy',policy)        
         logging.debug('Policy set to: ' + policy)
         return
 
 
     def setChannel(self,channel):
-        self.conf.update_value('update','channel',channel)
+        ConfigSystem.write('update','channel',channel)        
         logging.debug('Update channel  has beed set to ',channel)
         return
 
 
-    def getChannel(self):
-        return self.conf.read_value('update', 'channel')
+    def getChannel(self):        
+        return ConfigSystem.read('update', 'channel', 'stable')        
 
 
     def getStatus(self):
-        return self.conf.read_value('update', 'status')
+        return ConfigSystem.read('update', 'status', 'disabled')        
 
 
     def getPolicy(self):
-        return self.conf.read_value('update', 'policy')
+        return ConfigSystem.read('update', 'policy', 'always')        
 
 
     def updateInstall(self):
@@ -390,7 +271,7 @@ class UpdateSystem:
 
     def main(self):
         #Download update ingormation file
-        self.update_source = self.conf.read_value('update', 'source')
+        self.update_source = ConfigSystem.read('update','source','EdNekebno/DGTCentaurMods')
         logging.debug('Downloading update information...')
         url = 'https://raw.githubusercontent.com/{}/master/DGTCentaurMods/DEBIAN/versions'.format(self.update_source)
         try:
@@ -406,70 +287,3 @@ class UpdateSystem:
             return
         logging.debug('Update not needed or disabled')
         return
-
-
-class ConfigSystem:
-    def __init__(self):
-        self.configfile = dgtcm_path() +'/config/centaur.ini'
-        self.defconfigfile = dgtcm_path() + '/defaults/config/centaur.ini'
-        
-        #Get current config
-        self.config = configparser.ConfigParser()
-        self.config.read(self.configfile)
-        
-        #Get the defaults
-        self.defconfig = configparser.ConfigParser()
-        self.defconfig.read(self.defconfigfile)
-
-
-    def add_defaults(self, section, key):
-        '''
-        Check if key is in configfile orherwise it will get it from default config
-        '''
-        if not self.config.has_section(section):
-            self.config.add_section(section)
-            self.write_config()
-        # Add the new key from default
-        def_value = self.defconfig[section][key]
-        self.config.set(section, key, def_value)
-        self.write_config()
-        self.config.read(self.configfile)
-
-
-    def write_config(self):
-        with open(self.configfile, 'w') as f:
-            self.config.write(f)
-
-
-    def read_value(self, section, key):
-        self.config.read(self.configfile)
-        try:
-            value = self.config[section][key]
-        except:
-            self.add_defaults(section, key)
-            self.write_config()
-            self.config.read(self.configfile)
-            value = self.config[section][key]
-        return value
-
-
-    def update_value(self, section, key, value):
-        self.config.read(self.configfile)
-        try:
-            self.config.set(section, key, value)
-            self.write_config()
-        except:
-            self.add_defaults(section,key)
-            self.congif.set(section, key, value)
-            self.write_config()
-            self.config.read(self.config_file)
- 
-
-    def delete_key(self, section, key):
-        self.config.read(self.configfile)
-        try:
-            self.config.remove_option(section, key)
-            self.write_config()
-            self.config.read(configfile)
-        except:
-            pass
