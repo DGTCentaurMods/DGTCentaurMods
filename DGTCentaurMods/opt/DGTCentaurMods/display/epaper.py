@@ -319,7 +319,6 @@ def drawBoard(pieces, startrow=2):
         piece = chessfont.crop((px, py, px+16, py+16))
         epaperbuffer.paste(piece,(col, row))
     startpoint = ((startrow * 20) + 8)
-    #draw.rectangle([(0,19 + (startrow * 16)),(128,148 + (startrow * 16))],fill=None,outline='black')
     draw.rectangle([(0, startpoint),(127, startpoint + 127)], fill = None, outline='black')
 
 def drawFen(fen, startrow=2):
