@@ -318,6 +318,7 @@ def writeTextLocal(row,txt):
 def drawBoardLocal(fen):
     # This local version of drawboard - we draw into a 64x64 image and then
     # use epaper.drawWindow to write that to the screen
+    global computeronturn
     curfen = str(fen)
     curfen = curfen.replace("/", "")
     curfen = curfen.replace("1", " ")
@@ -372,24 +373,9 @@ def drawBoardLocal(fen):
         if nfen[x] == "k":
             px = 192
         piece = chessfont.crop((px, py, px+16, py+16))
-        if nfen[x] == "p":
+        if computeronturn == 1:
             piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
-        if nfen[x] == "r":
-            piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
-        if nfen[x] == "n":
-            piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
-        if nfen[x] == "b":
-            piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
-        if nfen[x] == "q":
-            piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)
-        if nfen[x] == "k":
-            piece = piece.transpose(Image.FLIP_TOP_BOTTOM)
-            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)            
+            piece = piece.transpose(Image.FLIP_LEFT_RIGHT)                    
         lboard.paste(piece,(col, row))
     draw.rectangle([(0,0),(127,127)],fill=None,outline='black')
     epaper.drawImagePartial(0, 81, lboard)    
