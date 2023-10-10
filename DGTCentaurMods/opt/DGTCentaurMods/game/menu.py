@@ -123,16 +123,15 @@ def doMenu(menu, title=None):
     global selection
     global quickselect
     global event_key
-    epaper.epapermode = 0
-    epaper.clearScreen()  
+    #epaper.epapermode = 0
+    #epaper.clearScreen()  
     
     selection = ""
     curmenu = menu
     # Display the given menu
-    menuitem = 1
-    quickselect = 0    
-
-    quickselect = 1    
+    menuitem = 1    
+    epaper.pauseEpaper()
+    epaper.clearArea(0,0,127,295)
     if title:
         row = 2
         shift = 20
@@ -140,14 +139,10 @@ def doMenu(menu, title=None):
     else:
         shift = 0
         row = 1
-    # Print a fresh status bar.
-    statusbar.print()
-    epaper.pauseEpaper()
+    # Print a fresh status bar.    
     for k, v in menu.items():
         epaper.writeText(row, "    " + str(v))
-        row = row + 1
-    epaper.unPauseEpaper()    
-    time.sleep(0.1)
+        row = row + 1          
     epaper.clearArea(0, 20 + shift, 17, 295)
     draw = ImageDraw.Draw(epaper.epaperbuffer)
     draw.polygon(
@@ -159,7 +154,10 @@ def doMenu(menu, title=None):
         fill=0,
     )
     draw.line((17, 20 + shift, 17, 295), fill=0, width=1)
-    statusbar.print()         
+    statusbar.print()       
+    epaper.driver.DisplayPartialInverted(epaper.epaperbuffer,6)
+    time.sleep(0.1)
+    epaper.unPauseEpaper()      
     event_key.wait()
     event_key.clear()
     return selection
@@ -192,8 +190,6 @@ def show_welcome():
 
 
 show_welcome()
-epaper.quickClear()
-
 
 def get_lichess_client():
     logging.debug("get_lichess_client")
@@ -270,16 +266,18 @@ while True:
         board.unPauseEvents()
         statusbar.start()
     if result == "Centaur":
-        epaper.loadingScreen()
+        #epaper.loadingScreen()
         #time.sleep(1)
         board.pauseEvents()
         statusbar.stop()
         board.ser.close()
-        time.sleep(1)
+        epaper.driver.reset()
+        epaper.driver.init()
+        epaper.driver.displayInverted(Image.open(str(AssetManager.get_resource_path("logo_mods_screen.jpg"))),1)
+        time.sleep(1)        
         os.chdir("/home/pi/centaur")
         os.system("sudo ./centaur")
-        # Once started we cannot return to DGTCentaurMods, we can kill that
-        time.sleep(3)
+        # Once started we cannot return to DGTCentaurMods, we can kill that        
         os.system("sudo systemctl stop DGTCentaurMods.service")
         sys.exit()
     if result == "pegasus":
@@ -606,7 +604,10 @@ while True:
                         board.unPauseEvents()
                 else:
                     logging.warning("No ongoing games!")
+                    epaper.pauseEpaper()
                     epaper.writeText(1, "No ongoing games!")
+                    epaper.driver.DisplayPartialInverted(epaper.epaperbuffer,10)
+                    epaper.unPauseEpaper()
                     time.sleep(3)
 
 

@@ -60,13 +60,13 @@ class epaperDriver(object):
                     newy = 296 - x - 1
                     if pixels[x, y] == 0:
                         buf[int((newx + newy * 128) / 8)
-                            ] &= ~(0x80 >> (y % 8))
-        else:        
+                            ] &= ~(0x80 >> (y % 8))      
+        else:
             for y in range(imheight):
                 for x in range(imwidth):
                     if pixels[x, y] == 0:
-                        buf[int((x + y * 128) / 8)
-                        ] &= ~(0x80 >> (x % 8))                        
+                        buf[int((x + y * imwidth) / 8)
+                        ] &= ~(0x80 >> (x % 8))                         
         return bytes(buf)
     
     def init(self):
@@ -81,22 +81,42 @@ class epaperDriver(object):
         """ Clear the epaper display """
         self.driverFunc.clear()
         
-    def display(self, bitmap):
+    def display(self, bitmap, poweroff = 0):
         """ Display the passed black and white bitmap image """
         self.driverFunc.display(self.getbuffer(bitmap))
+
+    def displayInverted(self, bitmap, poweroff = 0):
+        """ Display the passed black and white bitmap image but upside down """
+        self.driverFunc.displayInverted(self.getbuffer(bitmap))          
         
-    def DisplayPartial(self, bitmap):
+    def DisplayPartial(self, bitmap, repeats = 1):
         """ Display the passed black and white bitmap image in Partial mode """
-        self.driverFunc.displayPartial(self.getbuffer(bitmap))
+        self.driverFunc.displayPartial(self.getbuffer(bitmap), repeats)
+        
+    def DisplayPartialInverted(self, bitmap, repeats = 1):
+        """ Display the passed black and white bitmap image in Partial mode but upside down """
+        self.driverFunc.displayPartialInverted(self.getbuffer(bitmap), repeats)        
+        
+    def DisplayPartialOldNew(self, bitmap, repeats = 1):
+        """ Display the passed black and white bitmap image in Partial mode with old screen state """
+        self.driverFunc.displayPartialOldNew(self.getbuffer(bitmap), repeats)             
+
+    def DisplayPartialOldNewInverted(self, bitmap, repeats = 1):
+        """ Display the passed black and white bitmap image in Partial mode with old screen state upside down """
+        self.driverFunc.displayPartialOldNewInverted(self.getbuffer(bitmap), repeats)           
     
-    def DisplayRegion(self, y0, y1, bitmap):
-        """ Display the passed black and white part bitmap image in Partial mode """
-        self.driverFunc.displayRegion(y0, y1, self.getbuffer(bitmap))
+    def DisplayRegion(self, y0, y1, bitmap, repeats = 1):
+        """ Display the passed black and white part bitmap image in Region mode """
+        self.driverFunc.displayRegion(y0, y1, self.getbuffer(bitmap), repeats)
         
     def sleepDisplay(self):
         """ Puts the epaper display in sleep mode """
         self.driverFunc.sleepDisplay()
-        
+
     def powerOffDisplay(self):
-        """ Powers down the epaper display """
-        self.driverFunc.powerOffDisplay()        
+        """ Powers off the display """
+        self.driverFunc.powerOffDisplay()
+
+    def powerOnDisplay(self):
+        """ Powers on the display """
+        self.driverFunc.powerOnDisplay()        

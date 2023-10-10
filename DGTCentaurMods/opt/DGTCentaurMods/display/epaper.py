@@ -89,9 +89,9 @@ def epaperUpdate():
             epaperbuffer.save(filename)
             if screeninverted == 0:
                 im = im.transpose(Image.FLIP_TOP_BOTTOM)
-                im = im.transpose(Image.FLIP_LEFT_RIGHT)                        
+                im = im.transpose(Image.FLIP_LEFT_RIGHT)                          
             if epapermode == 0 or first == 1:                
-                driver.DisplayPartial(im)
+                driver.DisplayPartial(im, 4)
                 first = 0
             else:
                 rs = 0
@@ -114,7 +114,7 @@ def epaperUpdate():
                 bb = im2.crop((0, rs + 1, 128, re))
                 bb = bb.transpose(Image.FLIP_TOP_BOTTOM)
                 bb = bb.transpose(Image.FLIP_LEFT_RIGHT)                
-                driver.DisplayRegion(296 - re, 295 - rs, bb)                             
+                driver.DisplayRegion(296 - re, 295 - rs, bb, 2)                             
             lastepaperbytes = tepaperbytes
             #event_refresh.set() 
         sleepcount = sleepcount + 1
@@ -130,12 +130,14 @@ def refresh():
 
 def loadingScreen():
     global epaperbuffer
-    statusBar().print()
+    pauseEpaper()
     filename = str(AssetManager.get_resource_path("logo_mods_screen.jpg"))
     lg = Image.open(filename)
     epaperbuffer.paste(lg,(0,20))
     writeText(10,'     Loading')
     logging.debug('Display loading screen')
+    driver.DisplayPartialInverted(epaperbuffer,10)
+    driver.powerOffDisplay()
     
 
 def welcomeScreen():
@@ -190,7 +192,8 @@ def initEpaper(mode = 0):
     epaperbuffer = Image.new('1', (128, 296), 255)
     logging.debug("init epaper")
     driver.reset()
-    driver.init()      
+    driver.init()   
+    driver.display(epaperbuffer)   
     epaperUpd = threading.Thread(target=epaperUpdate, args=())
     epaperUpd.daemon = True
     epaperUpd.start()
@@ -271,8 +274,8 @@ def clearScreen():
     pauseEpaper()
     draw = ImageDraw.Draw(epaperbuffer)
     draw.rectangle([(0, 0), (128, 296)], fill=255, outline=255)
-    driver.DisplayRegion(0, 295, epaperbuffer)
-    driver.clear()
+    driver.DisplayPartial(epaperbuffer, 10)
+    #driver.clear()
     first = 0    
     unPauseEpaper()
 
