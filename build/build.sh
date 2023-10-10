@@ -39,7 +39,7 @@ function build {
 
 function insertStockfish {
     REPLY="Y"
-    if [ ! $FULL -eq 1 ]; then
+    if [ $FULL -eq 1 ]; then
         read -p "Do you want to compile and insert Stockfinsh in this build? (y/n): "
     fi 
         case $REPLY in
