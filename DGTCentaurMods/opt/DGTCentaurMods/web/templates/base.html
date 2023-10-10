@@ -241,6 +241,10 @@
                     a2.className = "card-footer-item";
                     a2.innerHTML = "<a href='/analyse/" + obj[x]["id"] + "'>Analyse</a>";
                     ft.appendChild(a2);
+                    var a2 = document.createElement("a");
+                    a2.className = "card-footer-item";
+                    a2.innerHTML = "<a href='/getgif/" + obj[x]["id"] + "' target=_new>Animated GIF</a>";
+                    ft.appendChild(a2);
                     card.appendChild(ft);
                     card.style.marginBottom = "10px";
                     gl.appendChild(card);
