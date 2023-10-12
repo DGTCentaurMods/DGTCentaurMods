@@ -59,6 +59,7 @@ Currently we are working on...
 
 ## Install procedure
 See the install procedure in the release info page.
+Note: when installing Raspbian please select Bullseye (legacy) and not the new "bookworm".
 
 ## Support
 
